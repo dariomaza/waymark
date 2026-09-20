@@ -27,12 +27,12 @@ describe("Photo", () => {
     expect(createPhoto(baseInput).originalPath).toBe("uploads/photo-1.jpg");
   });
 
-  it("takes the first position when none is given", () => {
-    expect(createPhoto(baseInput).position).toBe(0);
-  });
-
-  it("keeps the position it was given", () => {
-    expect(createPhoto({ ...baseInput, position: 3 }).position).toBe(3);
+  /**
+   * ADR 9: a photo carries no ordering of its own. Order belongs to whatever
+   * references the photo, and only `Item.photos` orders anything at all.
+   */
+  it("carries no position of its own", () => {
+    expect(createPhoto(baseInput)).not.toHaveProperty("position");
   });
 
   it("falls back to the original path while it is not processed", () => {

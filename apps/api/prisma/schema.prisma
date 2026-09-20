@@ -98,7 +98,7 @@ model ItemTag {
   @@index([tag])
 }
 
-/// Photo ordering lives here, on the item side.
+/// Photo ordering lives here, on the item side, and NOWHERE else (ADR 9).
 ///
 /// `Item.photos` is an ordered list of photo ids owned by the item aggregate,
 /// while `Photo` is its own aggregate with an independent lifecycle (ADR 4:
@@ -133,10 +133,12 @@ model Photo {
   /// PENDING | DONE | FAILED | SKIPPED. String for the same reason as
   /// `StorageUnit.kind`.
   processingStatus String
-  /// The photo's own slot within its item, mirroring `Photo.position` in the
-  /// domain entity. `ItemPhoto.position` is what ordering actually reads.
-  position         Int     @default(0)
 
+  /// ADR 9: there is deliberately NO `position` column here. Ordering is owned
+  /// by whatever references the photo, and `ItemPhoto.position` is the only
+  /// place any order is written or read. A second copy on this row was write
+  /// only, went stale the moment an item's photos were reordered, and had no
+  /// meaning at all for the single photo a storage unit points at.
   @@index([processingStatus])
 }
 

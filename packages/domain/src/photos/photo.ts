@@ -14,6 +14,14 @@ export const PhotoProcessingStatus = {
 export type PhotoProcessingStatus =
   (typeof PhotoProcessingStatus)[keyof typeof PhotoProcessingStatus];
 
+/**
+ * A stored image file and the state of its optional background removal.
+ *
+ * ADR 9: a photo has no ordering of its own. Whatever REFERENCES a photo owns
+ * the order, and only one thing orders anything at all — `Item.photos`, whose
+ * array index is the order and whose first element is the cover. A storage unit
+ * points at a single `photoId` and has no order to express.
+ */
 export interface Photo {
   readonly id: PhotoId;
   /** Always written synchronously; the photo is usable from this alone. */
@@ -21,14 +29,11 @@ export interface Photo {
   /** Written only once background removal succeeded. */
   readonly processedPath: string | null;
   readonly processingStatus: PhotoProcessingStatus;
-  /** Order within the photos of an item; the first one is the cover. */
-  readonly position: number;
 }
 
 export interface CreatePhotoInput {
   readonly id: PhotoId;
   readonly originalPath: string;
-  readonly position?: number;
 }
 
 export const createPhoto = (input: CreatePhotoInput): Photo => ({
@@ -36,7 +41,6 @@ export const createPhoto = (input: CreatePhotoInput): Photo => ({
   originalPath: input.originalPath,
   processedPath: null,
   processingStatus: PhotoProcessingStatus.PENDING,
-  position: input.position ?? 0,
 });
 
 export const markPhotoProcessed = (photo: Photo, processedPath: string): Photo => ({
