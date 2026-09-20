@@ -1,0 +1,65 @@
+# The Ariadna stack: one API container, two volumes, and nothing else.
+#
+#   docker compose up -d --build
+#
+# That is a COMPLETE installation. Background removal is a separate file
+# (`docker-compose.image-processing.yml`) because it is a separate decision:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.image-processing.yml up -d --build
+#
+# Two files rather than a profile and an environment variable, because the
+# sidecar being present and the API knowing its address have to be the SAME
+# fact. Split across two mechanisms, the interesting state is the broken one:
+# an address configured with no container behind it, where every photo retries
+# five times and ends up FAILED. Here, turning it on is one flag.
+
+name: ariadna
+
+services:
+  api:
+    build:
+      # The repository root: a pnpm workspace is one unit, and the API imports
+      # `packages/domain` from source.
+      context: .
+      dockerfile: docker/api.Dockerfile
+    image: ariadna-api:latest
+    restart: unless-stopped
+
+    environment:
+      # Everything here is documented, with its reasoning, in
+      # `apps/api/.env.example`. The defaults are the ones a fresh homelab needs
+      # changed; the rest can be left alone.
+      ARIADNA_PUBLIC_BASE_URL: ${ARIADNA_PUBLIC_BASE_URL:-http://localhost:5173}
+      ARIADNA_ALLOWED_ORIGINS: ${ARIADNA_ALLOWED_ORIGINS:-}
+      ARIADNA_TRUSTED_PROXIES: ${ARIADNA_TRUSTED_PROXIES:-127.0.0.1,::1}
+      ARIADNA_MAX_PHOTO_MB: ${ARIADNA_MAX_PHOTO_MB:-12}
+      ARIADNA_LOGIN_ATTEMPT_LIMIT: ${ARIADNA_LOGIN_ATTEMPT_LIMIT:-10}
+      ARIADNA_LOGIN_WINDOW_MINUTES: ${ARIADNA_LOGIN_WINDOW_MINUTES:-15}
+      # ARIADNA_IMAGE_PROCESSOR_URL is deliberately absent. Unset means the
+      # feature is off, which is what this file describes (ADR 4).
+
+    ports:
+      # Published on the HOST'S loopback only.
+      #
+      # `cloudflared` holds an outbound tunnel and forwards over loopback, so
+      # nothing else ever needs to reach this port. `3000:3000` would publish a
+      # private inventory to every device on the home network — the printer, the
+      # TV, the guest phone — as a side effect of installing a tunnel.
+      - "127.0.0.1:3000:3000"
+
+    volumes:
+      # OUTSIDE the image, both of them, and this is the line that matters most
+      # in the file. An upgrade replaces the image; anything durable inside it
+      # goes with the old one. A named volume survives `docker compose down`,
+      # survives a rebuild, and is what `docker run --rm -v ariadna_photos:/p`
+      # backs up.
+      - photos:/data/photos
+      - database:/data/db
+
+    # The healthcheck is baked into the image and deliberately says nothing
+    # about background removal: this container is healthy with or without a
+    # sidecar, which is ADR 4 written as a probe.
+
+volumes:
+  photos:
+  database:

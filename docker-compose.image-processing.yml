@@ -1,0 +1,65 @@
+# Background removal, added to the base stack.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.image-processing.yml up -d --build
+#
+# Adding the sidecar and telling the API where it is are the same fact, so they
+# live in the same file. Remove the flag and the feature is gone: photos already
+# processed keep their white background, photos in flight stay PENDING, and
+# uploading still works exactly as before.
+
+services:
+  api:
+    environment:
+      # `image-processor` is the compose service name, resolved on the project
+      # network. Nothing is published to the host: the only thing that should
+      # ever talk to this sidecar is the API.
+      ARIADNA_IMAGE_PROCESSOR_URL: http://image-processor:8000
+
+    # There is deliberately NO `depends_on`.
+    #
+    # Waiting for the sidecar would make the inventory unavailable while a ~180
+    # MB model downloads, which is the dependency ADR 4 exists to refuse. The
+    # API starts, serves, accepts uploads, finds the sidecar unreachable,
+    # retries with a backoff, and gets on with it.
+
+  image-processor:
+    build:
+      context: ./services/image-processor
+    image: ariadna-image-processor:latest
+    restart: unless-stopped
+
+    environment:
+      # `u2netp` is a 4 MB version of the same model for a board that cannot
+      # spare the memory, at a visible cost in edge quality.
+      REMBG_MODEL: ${REMBG_MODEL:-u2net}
+      # One removal at a time inside the container, matching what the API sends.
+      REMBG_CONCURRENCY: ${REMBG_CONCURRENCY:-1}
+      # Leave a core for the API, the database and the rest of the box. Without
+      # this, onnxruntime takes every core it can see and a background nicety
+      # makes the primary feature slow.
+      OMP_NUM_THREADS: ${OMP_NUM_THREADS:-2}
+
+    volumes:
+      # The model cache, and the reason this is a named volume rather than a
+      # directory in the image: 176 MB downloaded once, kept across every
+      # restart and every image upgrade. In the image it would be re-downloaded
+      # by each new container, over a home connection, before a single photo
+      # could be processed.
+      - models:/models
+
+    # Not published, not even on loopback. It is reachable from the API over the
+    # project network and from nowhere else.
+    expose:
+      - "8000"
+
+    deploy:
+      resources:
+        limits:
+          # A ceiling, not a reservation. rembg is CPU bound and will use
+          # everything it is given; this is what keeps "the photo of the drill
+          # looks nicer" from making "find the drill" slow.
+          cpus: "2.0"
+          memory: 2G
+
+volumes:
+  models:

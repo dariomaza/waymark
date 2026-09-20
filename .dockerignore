@@ -1,0 +1,22 @@
+# Everything the build does not need, and a few things it must never see.
+node_modules
+**/node_modules
+.git
+.gitignore
+
+# Photos and databases are VOLUMES. Copying a developer's into the image would
+# ship somebody's house to the server, and would be deleted by the next upgrade.
+data
+**/*.db
+**/*.db-journal
+**/*.sqlite
+
+# Secrets. `.env.example` is documentation and is deliberately kept.
+**/.env
+**/.env.*
+!**/.env.example
+
+apps/web
+apps/mobile
+docs
+README.md
