@@ -54,14 +54,29 @@ secondary feature must never be able to block the primary one.
 Android Studio in the build path. Native Kotlin would mean two independent
 implementations of the same domain.
 
-**QR codes are generated and persisted server-side** when a storage unit is
-created, and served as PNG/SVG so they stay stable and printable.
+**QR codes are generated on demand, not persisted.** A symbol is a pure function
+of the unit's `publicId` and the configured public base URL, so storing one only
+buys a picture of a dead URL the day the base URL moves — silently, until
+somebody scans a box in a garage and gets a connection error. The stable thing is
+the `publicId` glued to the box; the picture of it is a rendering. Served as PNG
+and SVG at error correction level Q, which is what a scuffed sticker needs.
+
+**Photo files live on a plain directory**, bucketed into 256 subdirectories, with
+nothing in SQLite but the row that points at them. Every upload is validated by
+sniffing its bytes, re-oriented, stripped of EXIF and thumbnailed before a byte
+reaches disk.
+
+**Photo order belongs to the item, not to the photo** (ADR 9). A photo is a file
+and a processing state; the order is a property of the relationship, which is why
+it lives on the join table and nowhere else. The cover is `photos[0]`, not a
+field, so choosing one is spelled as a reorder.
 
 ## Stack
 
 - pnpm workspaces
 - TypeScript everywhere
 - Fastify, Prisma, SQLite
+- sharp for image ingestion, qrcode for label symbols
 - React + Vite (PWA), `@zxing/browser` for scanning
 - Expo / React Native
 - Python + rembg (sidecar only)
@@ -86,7 +101,16 @@ Everything but `GET /health` and `POST /auth/login` needs a session.
 | `POST`   | `/items`                    | `201 { item }`                               |
 | `GET`    | `/items/:id`                | `{ item, storageUnit, path }`                |
 | `POST`   | `/items/move`               | `{ items }` — body `{ itemIds, targetUnitId }` |
-| `DELETE` | `/items/:id`                | `{ releasedPhotoIds }`                       |
+| `DELETE` | `/items/:id`                | `{ releasedPhotoIds }` — and the files go     |
+| `GET`    | `/storage-units/:id/qr.png` | A QR encoding `<base>/u/<publicId>`          |
+| `GET`    | `/storage-units/:id/qr.svg` | The same symbol, for printing                |
+| `POST`   | `/storage-units/:id/photo`  | `201 { photo, unit, releasedPhotoIds }`      |
+| `DELETE` | `/storage-units/:id/photo`  | `{ unit, releasedPhotoIds }`                 |
+| `POST`   | `/items/:id/photos`         | `201 { photo, item }` — multipart `file`      |
+| `POST`   | `/items/:id/photos/order`   | `{ item }` — body `{ photoIds }`, first is cover |
+| `DELETE` | `/items/:id/photos/:photoId`| `{ item, releasedPhotoIds }`                 |
+| `GET`    | `/photos/:id`               | The image, streamed                          |
+| `GET`    | `/photos/:id/thumbnail`     | The small one, for list screens              |
 
 Move and empty are named operations rather than a `PATCH`, because a storage
 unit has no general update: the domain exposes create, move, empty and delete,
@@ -104,12 +128,52 @@ that changing a parent is guarded by a subtree invariant (ADR 2).
 | `CyclicStorageUnitMove`         | 409    | Refused by the shape of the tree (ADR 2).            |
 | `MissingEmptyTarget`            | 422    | The request is incomplete.                           |
 | `InvalidQuantity`               | 422    | Valid JSON, value the domain refuses.                |
+| `TooManyItemPhotos`             | 409    | Refused by the current contents of the item.         |
+| `PhotoNotOnItem`                | 422    | The request names a photo the item does not hold.    |
 
 409 means "fix the world, then retry": the same bytes succeed once somebody
 empties the box or moves the target out of the subtree. 422 means "fix the
 request": nothing anybody else does will make these exact bytes work. A test
 walks every `DomainError` the domain exports and fails if one has no entry in
 the table, so an unmapped error can never become an accidental 500.
+
+## QR codes
+
+Every storage unit has a `publicId`: ten characters of Crockford Base32, printed
+under the symbol so it can be read aloud across a garage. The QR itself encodes
+`<ARIADNA_PUBLIC_BASE_URL>/u/<publicId>` — a URL, never a bare id, because
+Android's stock camera offers to OPEN a URL and offers to copy a string, and
+"install the app, open it, then scan" is the workflow the label exists to avoid.
+
+Error correction is **level Q**, 25%. L is sized for a symbol on a screen and one
+scuff turns the label into decoration. H is not simply better: more redundancy
+means a larger symbol, so at a fixed sticker size every module gets smaller until
+the camera stops resolving them. A test scrubs out a square of the symbol and
+asserts Q still decodes where both L and M lose the URL.
+
+## Photos
+
+A storage unit holds at most one photo; an item holds up to ten, ordered, first
+one is the cover. Files live on `ARIADNA_PHOTO_ROOT`, a plain directory mounted
+as a Docker volume — no S3, no MinIO, and no blobs in SQLite, which would turn
+the one file you want small enough to copy anywhere into tens of gigabytes.
+
+- **The bytes decide the format, never the header.** `Content-Type` is a string
+  the client picked about bytes the same client picked. Signatures are sniffed,
+  and only JPEG, PNG and WebP are accepted. SVG is refused because it is a
+  document that happens to draw.
+- **EXIF is stripped, orientation first.** Phone photos carry GPS, and this
+  service is internet-reachable and serves the photos back. The order matters: a
+  phone held upright records landscape pixels plus a tag saying "turn me", so
+  stripping the tag before honouring it leaves every portrait photo sideways.
+- **A thumbnail is written at upload.** A grid of 200 items over mobile data is
+  the first screen anybody opens.
+- **Serving needs a session**, streams instead of buffering, and is cached
+  `private, immutable`. A stored image never changes: an edit is a new id.
+- **Deleting releases the files.** The rows go first, then the files, and a
+  failed unlink is logged rather than thrown. A read-only volume must not make
+  deleting an item impossible; a file with no row costs disk, a lost delete is a
+  lie to the user.
 
 ## Authentication
 
@@ -142,8 +206,9 @@ public internet, which is why the hardening above is not optional. See
 
 ## Status
 
-Domain, persistence, HTTP and authentication implemented. No QR generation or
-photo file handling yet.
+Domain, persistence, HTTP, authentication, QR generation and photo storage
+implemented. The `ImageProcessor` port is declared; the rembg sidecar, the web
+PWA, the Expo app, the Docker stack and printable label sheets are not built yet.
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against
