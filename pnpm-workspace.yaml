@@ -7,3 +7,5 @@ allowBuilds:
   "@prisma/client": true
   "@prisma/engines": true
   prisma: true
+  # Only copies the browser service worker, which the web tests never use.
+  msw: false
