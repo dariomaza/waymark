@@ -7,7 +7,9 @@ import { FailureKind, failureKindOf } from "../api/api-error.js";
 import type { AriadnaClient } from "../api/ariadna-client.js";
 import { LoginScreen } from "../auth/login-screen.js";
 import { RequireSession } from "../auth/require-session.js";
+import { ItemScreen } from "../items/item-screen.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
+import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
 import { createDefaultClient } from "./create-client.js";
 import { NotFoundScreen } from "./not-found-screen.js";
@@ -47,6 +49,8 @@ export const App = ({ client }: AppProps = {}): JSX.Element => {
           <Route element={<RequireSession />}>
             <Route element={<AppShell />}>
               <Route path="/" element={<InventoryScreen />} />
+              <Route path="/units/:id" element={<UnitScreen />} />
+              <Route path="/items/:id" element={<ItemScreen />} />
             </Route>
           </Route>
 

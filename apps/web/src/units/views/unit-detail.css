@@ -1,0 +1,29 @@
+.unit-detail__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.unit-detail__kind {
+  margin: 0;
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.unit-detail__description {
+  margin: 0;
+  color: var(--color-ink-muted);
+}
+
+.unit-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.unit-detail__actions .button {
+  /* Two per row on a narrow phone, never a single cramped column. */
+  flex: 1 1 8rem;
+}

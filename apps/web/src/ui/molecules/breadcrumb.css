@@ -1,0 +1,21 @@
+.breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+}
+
+.breadcrumb__step + .breadcrumb__step::before {
+  content: ">";
+  margin-right: var(--space-2);
+  color: var(--color-line);
+}
+
+.breadcrumb__step a {
+  /* A breadcrumb is tapped with a thumb as often as it is read. */
+  display: inline-block;
+  padding: var(--space-1) 0;
+  min-height: 32px;
+}

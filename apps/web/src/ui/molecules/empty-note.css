@@ -1,0 +1,20 @@
+.empty-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-m);
+  color: var(--color-ink-muted);
+}
+
+.empty-note__text {
+  margin: 0;
+}
+
+.empty-note__action {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

@@ -1,0 +1,7 @@
+.unit-tree__children {
+  /* Depth is drawn with one line and a small indent: on a phone, four levels
+     of generous padding leaves no room for the name of the box. */
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--color-line);
+}
