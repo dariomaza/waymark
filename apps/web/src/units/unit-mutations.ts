@@ -6,6 +6,7 @@ import type {
   CreateStorageUnitInput,
   EmptyStorageUnitResponse,
   StorageUnitResponse,
+  UpdateStorageUnitInput,
 } from "../api/contract.js";
 import { useInvalidateInventory } from "../api/use-invalidate-inventory.js";
 
@@ -19,6 +20,27 @@ export const useCreateUnit = (): UseMutationResult<
 
   return useMutation({
     mutationFn: async (input: CreateStorageUnitInput) => await api.createUnit(input),
+    onSuccess: invalidate,
+  });
+};
+
+/**
+ * Changing what a unit SAYS about itself: its name, its kind, its description.
+ *
+ * Not where it is. The API refuses a `parentId` on this route, and a client
+ * that tried to slip one in would get a 400 naming the key rather than a
+ * silent no-op — which is the right way round, because a box that did not
+ * move while the screen said it did is the failure this product cannot have.
+ */
+export const useUpdateUnit = (
+  id: UnitId,
+): UseMutationResult<StorageUnitResponse, Error, UpdateStorageUnitInput> => {
+  const api = useApi();
+  const invalidate = useInvalidateInventory();
+
+  return useMutation({
+    mutationFn: async (changes: UpdateStorageUnitInput) =>
+      await api.updateUnit(id, changes),
     onSuccess: invalidate,
   });
 };

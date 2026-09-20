@@ -184,6 +184,109 @@ describe("looking after items", () => {
     });
   });
 
+  it("renames and retags an item from its own screen", async () => {
+    const edits: unknown[] = [];
+    apiServer.use(
+      http.patch(`${API_URL}/items/drill`, async ({ request }) => {
+        edits.push(await request.json());
+
+        return HttpResponse.json({ item: { ...drill, name: "Cordless drill 18V" } });
+      }),
+    );
+
+    renderApp({ route: "/items/drill" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    await userEvent.clear(screen.getByRole("textbox", { name: /^name/i }));
+    await userEvent.type(
+      screen.getByRole("textbox", { name: /^name/i }),
+      "Cordless drill 18V",
+    );
+    await userEvent.type(screen.getByRole("textbox", { name: /tags/i }), "tools, 18v");
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(edits).toEqual([
+        {
+          name: "Cordless drill 18V",
+          description: null,
+          quantity: 1,
+          tags: ["tools", "18v"],
+        },
+      ]);
+    });
+  });
+
+  it("never sends a storage unit while editing: moving is its own thing", async () => {
+    const edits: Record<string, unknown>[] = [];
+    apiServer.use(
+      http.patch(`${API_URL}/items/drill`, async ({ request }) => {
+        edits.push((await request.json()) as Record<string, unknown>);
+
+        return HttpResponse.json({ item: drill });
+      }),
+    );
+
+    renderApp({ route: "/items/drill" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(edits).toHaveLength(1);
+    });
+    expect(edits[0]).not.toHaveProperty("storageUnitId");
+  });
+
+  it("opens the edit form already holding what the item says", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/items/drill`, () =>
+        HttpResponse.json({
+          item: { ...drill, quantity: 4, tags: ["tools", "18v"] },
+          storageUnit: box,
+          path: [garage, box],
+        }),
+      ),
+    );
+
+    renderApp({ route: "/items/drill" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+
+    expect(screen.getByRole("textbox", { name: /^name/i })).toHaveValue("Cordless drill");
+    expect(screen.getByRole("spinbutton", { name: /quantity/i })).toHaveValue(4);
+    expect(screen.getByRole("textbox", { name: /tags/i })).toHaveValue("tools, 18v");
+  });
+
+  it("passes on the domain's refusal of a quantity while editing", async () => {
+    apiServer.use(
+      http.patch(`${API_URL}/items/drill`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "INVALID_QUANTITY",
+              message: "quantity must be an integer of at least 1",
+              details: { quantity: 0 },
+            },
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+
+    renderApp({ route: "/items/drill" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: /quantity/i }));
+    await userEvent.type(screen.getByRole("spinbutton", { name: /quantity/i }), "0");
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+
+    // 422 is about the REQUEST, so it reads as something to fix here.
+    const complaint = await screen.findByText(/integer of at least 1/i);
+    expect(complaint).toBeVisible();
+    expect(complaint.closest(".callout")).toHaveClass("callout--wrong");
+  });
+
   it("deletes an item and goes back to the box it was in", async () => {
     let deleted = false;
     apiServer.use(

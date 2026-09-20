@@ -5,6 +5,7 @@ import type { StorageUnitView } from "../api/contract.js";
 import { Button } from "../ui/atoms/button.js";
 import { CreateUnitDialog } from "./create-unit-dialog.js";
 import { DeleteUnitDialog } from "./delete-unit-dialog.js";
+import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
 
@@ -14,7 +15,7 @@ export interface UnitActionsProps {
   readonly path: readonly StorageUnitView[];
 }
 
-type OpenDialog = "create" | "move" | "empty" | "delete" | null;
+type OpenDialog = "create" | "edit" | "move" | "empty" | "delete" | null;
 
 /**
  * Everything that can be done to a storage unit, and the sheets that ask.
@@ -24,10 +25,11 @@ type OpenDialog = "create" | "move" | "empty" | "delete" | null;
  * can offer to empty the box without any of this knowing that deleting can
  * even be refused.
  *
- * There is no "edit": the API exposes create, move, empty and delete and no
- * general update, deliberately (see `storage-unit-routes.ts`). A rename would
- * need a route that does not exist, and inventing one in the client is not
- * something a client can do.
+ * "Edit" and "Move" are separate buttons because they are separate things.
+ * Editing changes what the unit SAYS about itself and is a `PATCH` that
+ * cannot carry a parent; moving changes where it IS and is guarded by the
+ * subtree invariant (ADR 2). One button for both would hide the second
+ * behind the first.
  */
 export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
   const [open, setOpen] = useState<OpenDialog>(null);
@@ -46,6 +48,13 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
         }}
       >
         Add a unit inside
+      </Button>
+      <Button
+        onClick={() => {
+          setOpen("edit");
+        }}
+      >
+        Edit
       </Button>
       <Button
         onClick={() => {
@@ -79,6 +88,8 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
       {open === "create" ? (
         <CreateUnitDialog parentId={unit.id} onClose={close} />
       ) : null}
+
+      {open === "edit" ? <EditUnitDialog unit={unit} onClose={close} /> : null}
 
       {open === "move" ? <MoveUnitDialog unit={unit} onClose={close} /> : null}
 

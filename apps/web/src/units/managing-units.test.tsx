@@ -113,6 +113,101 @@ describe("looking after a storage unit", () => {
     expect(await screen.findByText(/<=200 characters/i)).toBeVisible();
   });
 
+  it("renames a box from its own screen", async () => {
+    const edits: unknown[] = [];
+    apiServer.use(
+      http.patch(`${API_URL}/storage-units/box3`, async ({ request }) => {
+        edits.push(await request.json());
+
+        return HttpResponse.json({ unit: { ...box, name: "Box 4" } });
+      }),
+    );
+
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    await userEvent.clear(screen.getByRole("textbox", { name: /^name/i }));
+    await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "Box 4");
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(edits).toEqual([{ name: "Box 4", kind: "BOX", description: null }]);
+    });
+  });
+
+  it("never sends a parent while editing: moving is its own thing", async () => {
+    const edits: Record<string, unknown>[] = [];
+    apiServer.use(
+      http.patch(`${API_URL}/storage-units/box3`, async ({ request }) => {
+        edits.push((await request.json()) as Record<string, unknown>);
+
+        return HttpResponse.json({ unit: box });
+      }),
+    );
+
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(edits).toHaveLength(1);
+    });
+    // ADR 2 guards moving, and the API refuses a parentId on this route. The
+    // client must not be the one that finds that out.
+    expect(edits[0]).not.toHaveProperty("parentId");
+  });
+
+  it("opens the edit form already holding what the box says", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/storage-units/box3`, () =>
+        HttpResponse.json({
+          unit: { ...box, description: "Cables, mostly" },
+          path: [garage, wardrobe, box],
+          children: [],
+          items: [drill],
+        }),
+      ),
+    );
+
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+
+    expect(screen.getByRole("textbox", { name: /^name/i })).toHaveValue("Box 3");
+    expect(screen.getByRole("textbox", { name: /description/i })).toHaveValue(
+      "Cables, mostly",
+    );
+  });
+
+  it("puts the API's complaint about a new name next to the field", async () => {
+    apiServer.use(
+      http.patch(`${API_URL}/storage-units/box3`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "VALIDATION_FAILED",
+              message: "The request body or path is malformed",
+              details: {
+                issues: [
+                  { path: "name", message: "Too big: expected string to have <=200 characters" },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+
+    expect(await screen.findByText(/<=200 characters/i)).toBeVisible();
+  });
+
   it("does not throw away a box that still has things in it, and offers to empty it", async () => {
     const calls: string[] = [];
     let emptied = false;

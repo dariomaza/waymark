@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";
-import { Callout } from "../../ui/atoms/callout.js";
+import { Callout, type CalloutTone } from "../../ui/atoms/callout.js";
 import { TextArea } from "../../ui/atoms/text-area.js";
 import { TextField } from "../../ui/atoms/text-field.js";
 import type { FieldComplaint } from "../../units/unit-messages.js";
@@ -15,8 +15,12 @@ export interface ItemFormValues {
 
 export interface ItemFormProps {
   readonly submitLabel: string;
+  /** Empty when adding, what the item currently says when editing. */
+  readonly initial: ItemFormValues;
   readonly busy: boolean;
   readonly failure: string | null;
+  /** `blocked` for a refusal about the world, `wrong` about the request (ADR 8). */
+  readonly failureTone?: CalloutTone;
   readonly fieldProblems: readonly FieldComplaint[];
   readonly onSubmit: (values: ItemFormValues) => void;
   readonly onCancel: () => void;
@@ -36,16 +40,19 @@ export interface ItemFormProps {
  */
 export const ItemForm = ({
   submitLabel,
+  initial,
   busy,
   failure,
+  failureTone = "wrong",
   fieldProblems,
   onSubmit,
   onCancel,
 }: ItemFormProps): JSX.Element => {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [tags, setTags] = useState("");
+  const [name, setName] = useState(initial.name);
+  const [description, setDescription] = useState(initial.description);
+  const [quantity, setQuantity] = useState(String(initial.quantity));
+  // A comma separated line, which is also how they are read back out.
+  const [tags, setTags] = useState(initial.tags.join(", "));
 
   const complaintFor = (field: string): string | undefined =>
     fieldProblems.find((problem) => problem.field === field)?.message;
@@ -66,7 +73,7 @@ export const ItemForm = ({
   return (
     <form onSubmit={submit} noValidate>
       <div className="sheet__body">
-        {failure === null ? null : <Callout tone="wrong">{failure}</Callout>}
+        {failure === null ? null : <Callout tone={failureTone}>{failure}</Callout>}
 
         <TextField
           id="item-name"

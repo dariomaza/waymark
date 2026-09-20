@@ -31,5 +31,18 @@ export const describeFailure = (error: unknown): string => {
   }
 };
 
+/**
+ * ADR 8, as the tone of the box the sentence goes in.
+ *
+ * A 409 is about the WORLD and the same request works once somebody changes
+ * it, so it reads as something blocking rather than something wrong.
+ * Everything else — a 422, a 400, a dead connection — is about this request
+ * or this app, and reads as wrong. Deciding it from the KIND rather than from
+ * a list of codes means a refusal nobody has met yet still lands in the right
+ * box.
+ */
+export const failureTone = (error: unknown): "blocked" | "wrong" =>
+  failureKindOf(error) === FailureKind.CONFLICT ? "blocked" : "wrong";
+
 const capitalise = (sentence: string): string =>
   sentence.length === 0 ? sentence : sentence[0]!.toUpperCase() + sentence.slice(1);

@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { aStorageUnit } from "../testing/fixtures.js";
+import { anItem, aStorageUnit } from "../testing/fixtures.js";
 import { ApiError, FailureKind, failureKindOf } from "./api-error.js";
 import { createAriadnaClient } from "./ariadna-client.js";
 
@@ -151,6 +151,56 @@ describe("the Ariadna API client", () => {
     ).rejects.toBeInstanceOf(ApiError);
 
     expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it("edits a unit with a PATCH carrying only what it was given", async () => {
+    const seen: { method: string; body: unknown }[] = [];
+    apiServer.use(
+      http.patch(`${API_URL}/storage-units/u1`, async ({ request }) => {
+        seen.push({ method: request.method, body: await request.json() });
+
+        return HttpResponse.json({ unit: aStorageUnit({ id: "u1", name: "Box 4" }) });
+      }),
+    );
+
+    const { unit } = await clientWith().updateUnit(unitId("u1"), { name: "Box 4" });
+
+    expect(seen).toEqual([{ method: "PATCH", body: { name: "Box 4" } }]);
+    expect(unit.name).toBe("Box 4");
+  });
+
+  it("edits an item with a PATCH, tags and all", async () => {
+    const seen: unknown[] = [];
+    apiServer.use(
+      http.patch(`${API_URL}/items/i1`, async ({ request }) => {
+        seen.push(await request.json());
+
+        return HttpResponse.json({ item: anItem({ id: "i1", tags: ["cables"] }) });
+      }),
+    );
+
+    await clientWith().updateItem(itemId("i1"), { tags: ["cables"] });
+
+    expect(seen).toEqual([{ tags: ["cables"] }]);
+  });
+
+  it("asks once for every item, and takes the location from the answer", async () => {
+    const asked: string[] = [];
+    const garage = aStorageUnit({ id: "garage", name: "Garage" });
+    apiServer.use(
+      http.get(`${API_URL}/items`, ({ request }) => {
+        asked.push(new URL(request.url).pathname);
+
+        return HttpResponse.json({
+          items: [{ item: anItem({ id: "i1" }), path: [garage], location: "Garage" }],
+        });
+      }),
+    );
+
+    const { items } = await clientWith().items();
+
+    expect(asked).toEqual(["/items"]);
+    expect(items[0]?.location).toBe("Garage");
   });
 
   it("asks for a search the way the route documents it", async () => {

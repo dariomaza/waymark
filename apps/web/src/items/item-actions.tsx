@@ -6,6 +6,7 @@ import { describeFailure } from "../api/describe-failure.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Sheet } from "../ui/organisms/sheet.js";
+import { EditItemDialog } from "./edit-item-dialog.js";
 import { useDeleteItem } from "./item-mutations.js";
 import { MoveItemsDialog } from "./move-items-dialog.js";
 
@@ -18,13 +19,13 @@ export interface ItemActionsProps {
 /**
  * What can be done to one item.
  *
- * There is no edit here: the API exposes create, move and delete for items
- * and no update route. Renaming one means deleting and adding it again,
- * which is worth saying out loud rather than hiding behind a disabled
- * button.
+ * "Edit" changes what the item says about itself — its name, its quantity,
+ * its tags. "Move" changes which box holds it. They are two buttons because
+ * they are two different acts, and only one of them can make the inventory
+ * lie about where something is.
  */
 export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => {
-  const [open, setOpen] = useState<"move" | "delete" | null>(null);
+  const [open, setOpen] = useState<"edit" | "move" | "delete" | null>(null);
   const navigate = useNavigate();
   const remove = useDeleteItem(item.id);
 
@@ -34,6 +35,13 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
 
   return (
     <>
+      <Button
+        onClick={() => {
+          setOpen("edit");
+        }}
+      >
+        Edit
+      </Button>
       <Button
         onClick={() => {
           setOpen("move");
@@ -49,6 +57,8 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
       >
         Delete
       </Button>
+
+      {open === "edit" ? <EditItemDialog item={item} onClose={close} /> : null}
 
       {open === "move" ? (
         <MoveItemsDialog

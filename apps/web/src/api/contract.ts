@@ -214,6 +214,29 @@ export interface CreateStorageUnitInput {
   readonly description: string | null;
 }
 
+/**
+ * What an edit of a unit may say. Absent means "leave it alone"; `null` on
+ * the description is how one is taken off.
+ *
+ * There is no `parentId`, in this type or on the route it feeds. Moving is
+ * guarded by the subtree invariant (ADR 2), it is its own call, and the API
+ * refuses the key rather than ignoring it.
+ */
+export interface UpdateStorageUnitInput {
+  readonly name?: string;
+  readonly kind?: StorageUnitKind;
+  readonly description?: string | null;
+}
+
+/** The same bargain for an item: no `storageUnitId`, because moving is moving. */
+export interface UpdateItemInput {
+  readonly name?: string;
+  readonly description?: string | null;
+  readonly quantity?: number;
+  /** The COMPLETE list; a revision that could only add cannot remove. */
+  readonly tags?: readonly string[];
+}
+
 export interface CreateItemInput {
   readonly storageUnitId: UnitId;
   readonly name: string;

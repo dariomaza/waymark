@@ -21,6 +21,8 @@ import type {
   StorageUnitPhotoResponse,
   StorageUnitResponse,
   StorageUnitTreeResponse,
+  UpdateItemInput,
+  UpdateStorageUnitInput,
   UserView,
 } from "./contract.js";
 
@@ -57,6 +59,11 @@ export interface AriadnaClient {
   tree(): Promise<StorageUnitTreeResponse>;
   unit(id: UnitId): Promise<StorageUnitDetailResponse>;
   createUnit(input: CreateStorageUnitInput): Promise<StorageUnitResponse>;
+  /**
+   * What the unit SAYS about itself. It cannot move one: the API refuses a
+   * `parentId` on this route, and moving is `moveUnit`, which is guarded.
+   */
+  updateUnit(id: UnitId, changes: UpdateStorageUnitInput): Promise<StorageUnitResponse>;
   moveUnit(id: UnitId, parentId: UnitId | null): Promise<StorageUnitResponse>;
   emptyUnit(id: UnitId, targetUnitId?: UnitId): Promise<EmptyStorageUnitResponse>;
   deleteUnit(id: UnitId): Promise<void>;
@@ -65,6 +72,8 @@ export interface AriadnaClient {
   /** Every item in the house, each with where it is. One request. */
   items(): Promise<ItemListResponse>;
   createItem(input: CreateItemInput): Promise<ItemResponse>;
+  /** What the item SAYS about itself; moving it is `moveItems`. */
+  updateItem(id: ItemId, changes: UpdateItemInput): Promise<ItemResponse>;
   moveItems(itemIds: readonly ItemId[], targetUnitId: UnitId): Promise<MovedItemsResponse>;
   deleteItem(id: ItemId): Promise<ReleasedPhotosResponse>;
 
@@ -140,6 +149,13 @@ export const createAriadnaClient = (options: AriadnaClientOptions): AriadnaClien
         : { headers: JSON_HEADERS, body: JSON.stringify(body) }),
     });
 
+  const patch = async <T>(path: string, body: unknown): Promise<T> =>
+    readJson<T>(path, {
+      method: "PATCH",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(body),
+    });
+
   const upload = async <T>(path: string, file: File): Promise<T> => {
     const form = new FormData();
     // `file` is the field name `@fastify/multipart` reads on the API side.
@@ -177,6 +193,13 @@ export const createAriadnaClient = (options: AriadnaClientOptions): AriadnaClien
       return post<StorageUnitResponse>("/storage-units", input);
     },
 
+    async updateUnit(id, changes) {
+      return patch<StorageUnitResponse>(
+        `/storage-units/${encodeURIComponent(id)}`,
+        changes,
+      );
+    },
+
     async moveUnit(id, parentId) {
       return post<StorageUnitResponse>(
         `/storage-units/${encodeURIComponent(id)}/move`,
@@ -205,6 +228,10 @@ export const createAriadnaClient = (options: AriadnaClientOptions): AriadnaClien
 
     async createItem(input) {
       return post<ItemResponse>("/items", input);
+    },
+
+    async updateItem(id, changes) {
+      return patch<ItemResponse>(`/items/${encodeURIComponent(id)}`, changes);
     },
 
     async moveItems(itemIds, targetUnitId) {

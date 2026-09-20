@@ -28,7 +28,13 @@ export const CreateUnitDialog = ({
     >
       <UnitForm
         submitLabel="Create"
-        defaultKind={parentId === null ? StorageUnitKind.ROOM : StorageUnitKind.BOX}
+        // What a person most likely means here: a root is a room, a child is
+        // a box. A guess, never a rule — nesting is not constrained by kind.
+        initial={{
+          name: "",
+          kind: parentId === null ? StorageUnitKind.ROOM : StorageUnitKind.BOX,
+          description: "",
+        }}
         busy={create.isPending}
         failure={
           create.isError && problems.length === 0 ? describeFailure(create.error) : null

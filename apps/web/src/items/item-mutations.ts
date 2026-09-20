@@ -7,6 +7,7 @@ import type {
   ItemResponse,
   MovedItemsResponse,
   ReleasedPhotosResponse,
+  UpdateItemInput,
 } from "../api/contract.js";
 import { useInvalidateInventory } from "../api/use-invalidate-inventory.js";
 
@@ -16,6 +17,28 @@ export const useCreateItem = (): UseMutationResult<ItemResponse, Error, CreateIt
 
   return useMutation({
     mutationFn: async (input: CreateItemInput) => await api.createItem(input),
+    onSuccess: invalidate,
+  });
+};
+
+/**
+ * Changing what an item SAYS about itself: its name, its description, how
+ * many there are, its tags.
+ *
+ * Tags go in whole. That is the API's shape and it is the only one that can
+ * take a mistyped tag OFF — and a tag is the entire reason searching
+ * `cables` finds an item called `HDMI 2.1`.
+ *
+ * Not where it is: moving is `useMoveItems`, which is all or nothing (ADR 3).
+ */
+export const useUpdateItem = (
+  id: ItemId,
+): UseMutationResult<ItemResponse, Error, UpdateItemInput> => {
+  const api = useApi();
+  const invalidate = useInvalidateInventory();
+
+  return useMutation({
+    mutationFn: async (changes: UpdateItemInput) => await api.updateItem(id, changes),
     onSuccess: invalidate,
   });
 };

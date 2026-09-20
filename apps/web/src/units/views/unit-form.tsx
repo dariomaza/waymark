@@ -2,7 +2,7 @@ import { StorageUnitKind } from "@ariadna/domain";
 import { useState, type FormEvent, type JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";
-import { Callout } from "../../ui/atoms/callout.js";
+import { Callout, type CalloutTone } from "../../ui/atoms/callout.js";
 import { SelectField } from "../../ui/atoms/select-field.js";
 import { TextArea } from "../../ui/atoms/text-area.js";
 import { TextField } from "../../ui/atoms/text-field.js";
@@ -17,11 +17,17 @@ export interface UnitFormValues {
 
 export interface UnitFormProps {
   readonly submitLabel: string;
-  /** What a person most likely means here. A root is a room; a child is a box. */
-  readonly defaultKind: StorageUnitKind;
+  /**
+   * What the fields start holding: empty and a likely kind when creating,
+   * what the unit currently says when editing. One prop, because a form that
+   * knew which of the two it was would be two forms.
+   */
+  readonly initial: UnitFormValues;
   readonly busy: boolean;
   /** One sentence about a failure that was not about a single field. */
   readonly failure: string | null;
+  /** `blocked` for a refusal about the world, `wrong` about the request (ADR 8). */
+  readonly failureTone?: CalloutTone;
   /** The API's own complaints, shown against the fields they name. */
   readonly fieldProblems: readonly FieldComplaint[];
   readonly onSubmit: (values: UnitFormValues) => void;
@@ -37,16 +43,17 @@ export interface UnitFormProps {
  */
 export const UnitForm = ({
   submitLabel,
-  defaultKind,
+  initial,
   busy,
   failure,
+  failureTone = "wrong",
   fieldProblems,
   onSubmit,
   onCancel,
 }: UnitFormProps): JSX.Element => {
-  const [name, setName] = useState("");
-  const [kind, setKind] = useState<StorageUnitKind>(defaultKind);
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState(initial.name);
+  const [kind, setKind] = useState<StorageUnitKind>(initial.kind);
+  const [description, setDescription] = useState(initial.description);
 
   const complaintFor = (field: string): string | undefined =>
     fieldProblems.find((problem) => problem.field === field)?.message;
@@ -59,7 +66,7 @@ export const UnitForm = ({
   return (
     <form onSubmit={submit} noValidate>
       <div className="sheet__body">
-        {failure === null ? null : <Callout tone="wrong">{failure}</Callout>}
+        {failure === null ? null : <Callout tone={failureTone}>{failure}</Callout>}
 
         <TextField
           id="unit-name"
