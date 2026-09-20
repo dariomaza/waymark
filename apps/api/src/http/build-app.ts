@@ -13,6 +13,8 @@ import {
   ReorderItemPhotos,
   SearchInventory,
   SetStorageUnitPhoto,
+  UpdateItem,
+  UpdateStorageUnit,
   type Clock,
   type IdGenerator,
   type ItemRepository,
@@ -149,6 +151,10 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       storageUnits: deps.storageUnits,
       clock: deps.clock,
     }),
+    updateStorageUnit: new UpdateStorageUnit({
+      storageUnits: deps.storageUnits,
+      clock: deps.clock,
+    }),
     deleteStorageUnit: new DeleteStorageUnit({
       storageUnits: deps.storageUnits,
       items: deps.items,
@@ -172,6 +178,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       storageUnits: deps.storageUnits,
       clock: deps.clock,
     }),
+    updateItem: new UpdateItem({ items: deps.items, clock: deps.clock }),
     deleteItem: new DeleteItem({ items: deps.items }),
     attachItemPhoto: new AttachItemPhoto({
       items: deps.items,
@@ -340,7 +347,11 @@ const registerSecurityPlugins = (
 
       callback(null, security.allowedOrigins.includes(origin));
     },
-    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    // `PATCH` is here because editing a unit or an item is a patch of the
+    // resource (see `storage-unit-routes.ts`). It is not a simple method, so
+    // a browser preflights it, and a list that forgot it would fail in the
+    // PWA only — never in a test that injects straight into Fastify.
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Authorization", "Content-Type"],
     exposedHeaders: ["Location", "Retry-After"],
     // The session is an `Authorization` header, not a cookie. Without cookies

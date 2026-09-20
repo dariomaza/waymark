@@ -573,6 +573,79 @@ describe("search over HTTP", () => {
       ]);
     });
 
+    it("finds a renamed item by its new name, and stops finding the old one", async () => {
+      const box = await createUnit("Box 3");
+      const drill = await createItem("Taladro", box.id);
+
+      const renamed = await call({
+        method: "PATCH",
+        url: `/items/${drill.id}`,
+        payload: { name: "Atornillador" },
+      });
+      expect(renamed.statusCode).toBe(200);
+
+      await expect(itemNames("q=atornillador")).resolves.toEqual(["Atornillador"]);
+      await expect(itemNames("q=taladro")).resolves.toEqual([]);
+    });
+
+    it("finds a renamed unit by its new name, and stops finding the old one", async () => {
+      const crate = await createUnit("Wooden crate");
+
+      const renamed = await call({
+        method: "PATCH",
+        url: `/storage-units/${crate.id}`,
+        payload: { name: "Plastic bin" },
+      });
+      expect(renamed.statusCode).toBe(200);
+
+      await expect(unitNames("q=bin")).resolves.toEqual(["Plastic bin"]);
+      await expect(unitNames("q=crate")).resolves.toEqual([]);
+    });
+
+    it("answers with the new breadcrumb once the unit holding it is renamed", async () => {
+      const garage = await createUnit("Garage", null, StorageUnitKind.ROOM);
+      const box = await createUnit("Box 3", garage.id);
+      await createItem("Cordless drill", box.id);
+
+      await call({
+        method: "PATCH",
+        url: `/storage-units/${garage.id}`,
+        payload: { name: "Storage room" },
+      });
+
+      const [result] = (await search("q=drill")).items;
+      expect(result?.location).toBe("Storage room > Box 3");
+    });
+
+    it("finds a retagged item by its new tag, and not by the one taken off", async () => {
+      const box = await createUnit("Box 3");
+      const cable = await createItem("HDMI 2.1", box.id, { tags: ["vidoe"] });
+
+      const retagged = await call({
+        method: "PATCH",
+        url: `/items/${cable.id}`,
+        payload: { tags: ["video"] },
+      });
+      expect(retagged.statusCode).toBe(200);
+
+      await expect(itemNames("q=video")).resolves.toEqual(["HDMI 2.1"]);
+      await expect(itemNames("q=vidoe")).resolves.toEqual([]);
+    });
+
+    it("says a retagged item was found by its tag, not by its name", async () => {
+      const box = await createUnit("Box 3");
+      const cable = await createItem("HDMI 2.1", box.id);
+
+      await call({
+        method: "PATCH",
+        url: `/items/${cable.id}`,
+        payload: { tags: ["cables"] },
+      });
+
+      const [result] = (await search("q=cables")).items;
+      expect(result?.matchedFields).toEqual(["TAG"]);
+    });
+
     it("stops finding an item once it is deleted", async () => {
       const box = await createUnit("Box 3");
       const drill = await createItem("Cordless drill", box.id, { tags: ["taladros"] });

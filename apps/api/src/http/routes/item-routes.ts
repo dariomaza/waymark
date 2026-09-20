@@ -8,18 +8,25 @@ import {
   type GetStorageUnitPath,
   type ItemRepository,
   type MoveItems,
+  type UpdateItem,
 } from "@ariadna/domain";
 import type { FastifyPluginAsync } from "fastify";
 
 import type { PhotoRelease } from "../../photos/photo-release.js";
 
-import { createItemBodySchema, idParamsSchema, moveItemsBodySchema } from "../validation.js";
+import {
+  createItemBodySchema,
+  idParamsSchema,
+  moveItemsBodySchema,
+  updateItemBodySchema,
+} from "../validation.js";
 import { itemView, storageUnitView } from "../views.js";
 
 export interface ItemRouteOptions {
   readonly items: ItemRepository;
   readonly createItem: CreateItem;
   readonly moveItems: MoveItems;
+  readonly updateItem: UpdateItem;
   readonly deleteItem: DeleteItem;
   readonly getStorageUnitPath: GetStorageUnitPath;
   readonly photoRelease: PhotoRelease;
@@ -27,6 +34,18 @@ export interface ItemRouteOptions {
 
 /**
  * # Resource shapes
+ *
+ * `PATCH /items/:id` changes what an item says about itself: its name, its
+ * description, how many there are, its tags. Retagging is the one worth
+ * naming — a tag is the entire reason searching `cables` finds an item called
+ * `HDMI 2.1` (ADR 11), and before this route the only way to fix a typo in
+ * one was to delete the item, which also deletes its photos.
+ *
+ * It cannot move the item. `updateItemBodySchema` is strict and has no
+ * `storageUnitId`, so a request carrying one is refused with a 400 naming the
+ * key rather than silently ignored. Where a thing is, is the one fact this
+ * product exists to be right about, and it changes through a route that says
+ * `move`.
  *
  * `POST /items/move` is a collection level operation, not N calls to N items.
  * `MoveItems` is all or nothing by design (ADR 3): one unknown id rejects the
@@ -82,6 +101,21 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
       storageUnit: storageUnit === undefined ? null : storageUnitView(storageUnit),
       path: path.map(storageUnitView),
     });
+  });
+
+  app.patch("/items/:id", async (request, reply) => {
+    const { id } = idParamsSchema.parse(request.params);
+    const body = updateItemBodySchema.parse(request.body);
+
+    const item = await options.updateItem.execute({
+      id: toItemId(id),
+      ...(body.name === undefined ? {} : { name: body.name }),
+      ...(body.description === undefined ? {} : { description: body.description }),
+      ...(body.quantity === undefined ? {} : { quantity: body.quantity }),
+      ...(body.tags === undefined ? {} : { tags: body.tags }),
+    });
+
+    return reply.code(200).send({ item: itemView(item) });
   });
 
   app.post("/items/move", async (request, reply) => {

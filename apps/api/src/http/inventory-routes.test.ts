@@ -89,8 +89,10 @@ describe("inventory over HTTP", () => {
       ["DELETE", "/storage-units/any-id"],
       ["POST", "/storage-units/any-id/move"],
       ["POST", "/storage-units/any-id/empty"],
+      ["PATCH", "/storage-units/any-id"],
       ["GET", "/items/any-id"],
       ["POST", "/items"],
+      ["PATCH", "/items/any-id"],
       ["DELETE", "/items/any-id"],
       ["POST", "/items/move"],
     ])("answers 401 for an anonymous %s %s", async (method, url) => {
@@ -426,6 +428,176 @@ describe("inventory over HTTP", () => {
       // Absent is not the same as `null`: one is a forgotten field, the other
       // is "make it a root".
       expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe("PATCH /storage-units/:id", () => {
+    it("renames a unit and answers with the new one", async () => {
+      const box = await createUnit("Box 3");
+
+      const response = await call({
+        method: "PATCH",
+        url: `/storage-units/${box.id}`,
+        payload: { name: "Box 4" },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect((response.json() as { unit: UnitView }).unit.name).toBe("Box 4");
+    });
+
+    it("stores the new name, so the next read sees it", async () => {
+      const box = await createUnit("Box 3");
+
+      await call({
+        method: "PATCH",
+        url: `/storage-units/${box.id}`,
+        payload: { name: "Box 4" },
+      });
+
+      const after = await call({ method: "GET", url: `/storage-units/${box.id}` });
+      expect((after.json() as { unit: UnitView }).unit.name).toBe("Box 4");
+    });
+
+    it("keeps the publicId, because the label is already on the box", async () => {
+      const box = await createUnit("Box 3");
+
+      const response = await call({
+        method: "PATCH",
+        url: `/storage-units/${box.id}`,
+        payload: { name: "Box 4" },
+      });
+
+      expect((response.json() as { unit: UnitView }).unit.publicId).toBe(box.publicId);
+    });
+
+    it("changes the kind and the description in one request", async () => {
+      const box = await createUnit("Box 3");
+
+      const response = await call({
+        method: "PATCH",
+        url: `/storage-units/${box.id}`,
+        payload: { kind: StorageUnitKind.BAG, description: "Winter clothes" },
+      });
+
+      const { unit } = response.json() as {
+        unit: UnitView & { description: string | null };
+      };
+      expect(unit.kind).toBe(StorageUnitKind.BAG);
+      expect(unit.description).toBe("Winter clothes");
+      expect(unit.name).toBe("Box 3");
+    });
+
+    it("clears a description with an explicit null", async () => {
+      const box = await createUnit("Box 3");
+      await call({
+        method: "PATCH",
+        url: `/storage-units/${box.id}`,
+        payload: { description: "Cables, mostly" },
+      });
+
+      const response = await call({
+        method: "PATCH",
+        url: `/storage-units/${box.id}`,
+        payload: { description: null },
+      });
+
+      expect(
+        (response.json() as { unit: { description: string | null } }).unit.description,
+      ).toBeNull();
+    });
+
+    it("answers 404 for a unit nobody created", async () => {
+      const response = await call({
+        method: "PATCH",
+        url: "/storage-units/ghost",
+        payload: { name: "Box 4" },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(errorCodeOf(response)).toBe("STORAGE_UNIT_NOT_FOUND");
+    });
+
+    describe("it cannot move anything", () => {
+      it("refuses a parentId rather than ignoring it", async () => {
+        const garage = await createUnit("Garage", null, StorageUnitKind.ROOM);
+        const box = await createUnit("Box 3", garage.id);
+
+        const response = await call({
+          method: "PATCH",
+          url: `/storage-units/${box.id}`,
+          payload: { name: "Box 4", parentId: null },
+        });
+
+        // Loudly, and naming the key: silently dropping it would let a client
+        // believe it had moved a box out of a room (ADR 2).
+        expect(response.statusCode).toBe(400);
+        expect(errorCodeOf(response)).toBe("VALIDATION_FAILED");
+        expect(response.body).toContain("parentId");
+      });
+
+      it("leaves the unit under the parent it had", async () => {
+        const garage = await createUnit("Garage", null, StorageUnitKind.ROOM);
+        const box = await createUnit("Box 3", garage.id);
+
+        const response = await call({
+          method: "PATCH",
+          url: `/storage-units/${box.id}`,
+          payload: { name: "Box 4" },
+        });
+
+        expect((response.json() as { unit: UnitView }).unit.parentId).toBe(garage.id);
+      });
+    });
+
+    describe("input validation", () => {
+      it("refuses a request that names nothing to change", async () => {
+        const box = await createUnit("Box 3");
+
+        const response = await call({
+          method: "PATCH",
+          url: `/storage-units/${box.id}`,
+          payload: {},
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(errorCodeOf(response)).toBe("VALIDATION_FAILED");
+      });
+
+      it("refuses an empty name", async () => {
+        const box = await createUnit("Box 3");
+
+        const response = await call({
+          method: "PATCH",
+          url: `/storage-units/${box.id}`,
+          payload: { name: "   " },
+        });
+
+        expect(response.statusCode).toBe(400);
+      });
+
+      it("refuses a kind the domain has never heard of", async () => {
+        const box = await createUnit("Box 3");
+
+        const response = await call({
+          method: "PATCH",
+          url: `/storage-units/${box.id}`,
+          payload: { kind: "SHOEBOX" },
+        });
+
+        expect(response.statusCode).toBe(400);
+      });
+
+      it("refuses a photoId, which is the upload route's business", async () => {
+        const box = await createUnit("Box 3");
+
+        const response = await call({
+          method: "PATCH",
+          url: `/storage-units/${box.id}`,
+          payload: { photoId: "photo-1" },
+        });
+
+        expect(response.statusCode).toBe(400);
+      });
     });
   });
 
@@ -781,6 +953,202 @@ describe("inventory over HTTP", () => {
       });
 
       expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe("PATCH /items/:id", () => {
+    it("renames an item and answers with the new one", async () => {
+      const box = await createUnit("Box 3");
+      const drill = await createItem("Drill", box.id);
+
+      const response = await call({
+        method: "PATCH",
+        url: `/items/${drill.id}`,
+        payload: { name: "Cordless drill" },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect((response.json() as { item: ItemView }).item.name).toBe("Cordless drill");
+    });
+
+    it("stores the new name, so the next read sees it", async () => {
+      const box = await createUnit("Box 3");
+      const drill = await createItem("Drill", box.id);
+
+      await call({
+        method: "PATCH",
+        url: `/items/${drill.id}`,
+        payload: { name: "Cordless drill" },
+      });
+
+      const after = await call({ method: "GET", url: `/items/${drill.id}` });
+      expect((after.json() as { item: ItemView }).item.name).toBe("Cordless drill");
+    });
+
+    it("replaces the tags outright, so a mistyped one can come off", async () => {
+      const box = await createUnit("Box 3");
+      const cable = await createItem("HDMI 2.1", box.id, {
+        tags: ["cables", "vidoe"],
+      });
+
+      const response = await call({
+        method: "PATCH",
+        url: `/items/${cable.id}`,
+        payload: { tags: ["cables", "video"] },
+      });
+
+      expect((response.json() as { item: ItemView }).item.tags).toEqual([
+        "cables",
+        "video",
+      ]);
+    });
+
+    it("takes every tag off when the request asks for none", async () => {
+      const box = await createUnit("Box 3");
+      const cable = await createItem("HDMI 2.1", box.id, { tags: ["cables"] });
+
+      const response = await call({
+        method: "PATCH",
+        url: `/items/${cable.id}`,
+        payload: { tags: [] },
+      });
+
+      expect((response.json() as { item: ItemView }).item.tags).toEqual([]);
+    });
+
+    it("changes the quantity and clears the description in one request", async () => {
+      const box = await createUnit("Box 3");
+      const screws = await createItem("Screws", box.id, {
+        quantity: 10,
+        description: "Mixed",
+      });
+
+      const response = await call({
+        method: "PATCH",
+        url: `/items/${screws.id}`,
+        payload: { quantity: 250, description: null },
+      });
+
+      const { item } = response.json() as {
+        item: ItemView & { description: string | null };
+      };
+      expect(item.quantity).toBe(250);
+      expect(item.description).toBeNull();
+      expect(item.name).toBe("Screws");
+    });
+
+    it("answers 422 for a quantity the domain refuses (ADR 8)", async () => {
+      const box = await createUnit("Box 3");
+      const drill = await createItem("Drill", box.id);
+
+      const response = await call({
+        method: "PATCH",
+        url: `/items/${drill.id}`,
+        payload: { quantity: 0 },
+      });
+
+      // Fix the request, not the world: no amount of waiting makes a
+      // quantity of zero acceptable.
+      expect(response.statusCode).toBe(422);
+      expect(errorCodeOf(response)).toBe("INVALID_QUANTITY");
+    });
+
+    it("leaves the item untouched when the quantity is refused", async () => {
+      const box = await createUnit("Box 3");
+      const drill = await createItem("Drill", box.id);
+
+      await call({
+        method: "PATCH",
+        url: `/items/${drill.id}`,
+        payload: { name: "Cordless drill", quantity: 0 },
+      });
+
+      const after = await call({ method: "GET", url: `/items/${drill.id}` });
+      expect((after.json() as { item: ItemView }).item.name).toBe("Drill");
+    });
+
+    it("answers 404 for an item nobody created", async () => {
+      const response = await call({
+        method: "PATCH",
+        url: "/items/ghost",
+        payload: { name: "Cordless drill" },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(errorCodeOf(response)).toBe("ITEM_NOT_FOUND");
+    });
+
+    describe("it cannot move anything", () => {
+      it("refuses a storageUnitId rather than ignoring it", async () => {
+        const box = await createUnit("Box 3");
+        const crate = await createUnit("Crate");
+        const drill = await createItem("Drill", box.id);
+
+        const response = await call({
+          method: "PATCH",
+          url: `/items/${drill.id}`,
+          payload: { name: "Cordless drill", storageUnitId: crate.id },
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(errorCodeOf(response)).toBe("VALIDATION_FAILED");
+        expect(response.body).toContain("storageUnitId");
+      });
+
+      it("leaves the item in the unit it was in", async () => {
+        const box = await createUnit("Box 3");
+        const drill = await createItem("Drill", box.id);
+
+        const response = await call({
+          method: "PATCH",
+          url: `/items/${drill.id}`,
+          payload: { name: "Cordless drill" },
+        });
+
+        expect((response.json() as { item: ItemView }).item.storageUnitId).toBe(box.id);
+      });
+    });
+
+    describe("input validation", () => {
+      it("refuses a request that names nothing to change", async () => {
+        const box = await createUnit("Box 3");
+        const drill = await createItem("Drill", box.id);
+
+        const response = await call({
+          method: "PATCH",
+          url: `/items/${drill.id}`,
+          payload: {},
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(errorCodeOf(response)).toBe("VALIDATION_FAILED");
+      });
+
+      it("refuses an empty name", async () => {
+        const box = await createUnit("Box 3");
+        const drill = await createItem("Drill", box.id);
+
+        const response = await call({
+          method: "PATCH",
+          url: `/items/${drill.id}`,
+          payload: { name: "" },
+        });
+
+        expect(response.statusCode).toBe(400);
+      });
+
+      it("refuses a photos list, which the photo routes own (ADR 9)", async () => {
+        const box = await createUnit("Box 3");
+        const drill = await createItem("Drill", box.id);
+
+        const response = await call({
+          method: "PATCH",
+          url: `/items/${drill.id}`,
+          payload: { photos: [] },
+        });
+
+        expect(response.statusCode).toBe(400);
+      });
     });
   });
 

@@ -9,6 +9,7 @@ import {
   type ItemRepository,
   type MoveStorageUnit,
   type StorageUnitRepository,
+  type UpdateStorageUnit,
 } from "@ariadna/domain";
 import type { FastifyPluginAsync } from "fastify";
 
@@ -18,6 +19,7 @@ import {
   emptyStorageUnitBodySchema,
   idParamsSchema,
   moveStorageUnitBodySchema,
+  updateStorageUnitBodySchema,
 } from "../validation.js";
 import { itemView, storageUnitTreeView, storageUnitView } from "../views.js";
 
@@ -26,6 +28,7 @@ export interface StorageUnitRouteOptions {
   readonly items: ItemRepository;
   readonly createStorageUnit: CreateStorageUnit;
   readonly moveStorageUnit: MoveStorageUnit;
+  readonly updateStorageUnit: UpdateStorageUnit;
   readonly deleteStorageUnit: DeleteStorageUnit;
   readonly emptyStorageUnit: EmptyStorageUnit;
   readonly getStorageUnitPath: GetStorageUnitPath;
@@ -40,13 +43,31 @@ const byName = <T extends { readonly name: string; readonly id: string }>(
 /**
  * # Resource shapes
  *
- * `POST /storage-units/:id/move` and `POST /storage-units/:id/empty` are named
- * operations rather than a `PATCH` of the resource, for one reason: a storage
- * unit has no general update. The domain exposes create, move, empty and
- * delete, and nothing else. A `PATCH /storage-units/:id` accepting `parentId`
- * would advertise that the other fields are patchable too, and would hide the
- * fact that changing a parent is guarded by a subtree invariant (ADR 2) while
- * changing a name would not be.
+ * ## `PATCH` for what a unit says, named operations for what it IS
+ *
+ * There are now two kinds of change and they are spelled differently on
+ * purpose.
+ *
+ * `PATCH /storage-units/:id` changes what the unit says about itself — its
+ * name, its kind, its description. Those are plain attributes with no rule
+ * beyond the field itself, they are edited together in one form, and naming
+ * an operation for each would mean `/rename`, `/redescribe` and `/rekind`:
+ * three routes for one screen, and a form that changed two of them at once
+ * would be two round trips that can half-fail.
+ *
+ * `POST /storage-units/:id/move` and `POST /storage-units/:id/empty` stay
+ * named operations, because they are not attribute changes. Moving is guarded
+ * by the subtree invariant (ADR 2) and emptying relocates everything inside.
+ * A route called `move` says that; a field called `parentId` on a patch does
+ * not, and the whole risk of a general update is that the one dangerous
+ * change ends up looking exactly like a rename.
+ *
+ * The line is held by the schema rather than by discipline:
+ * `updateStorageUnitBodySchema` is strict and has no `parentId`, so a request
+ * carrying one is refused with a 400 that names the key. Ignoring it would be
+ * worse than refusing it — a client would believe it had moved a box.
+ *
+ * ## One screen, one response
  *
  * `GET /storage-units/:id` answers with the unit, its path, its children and
  * its items in one response, because that is one screen. Making a client do
@@ -113,6 +134,22 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const unit = await options.moveStorageUnit.execute({
       id: unitId(id),
       targetParentId: body.parentId === null ? null : unitId(body.parentId),
+    });
+
+    return reply.code(200).send({ unit: storageUnitView(unit) });
+  });
+
+  app.patch("/storage-units/:id", async (request, reply) => {
+    const { id } = idParamsSchema.parse(request.params);
+    const body = updateStorageUnitBodySchema.parse(request.body);
+
+    const unit = await options.updateStorageUnit.execute({
+      id: unitId(id),
+      // Spread field by field, so an absent field stays absent rather than
+      // becoming an explicit `undefined` the use case would have to unpick.
+      ...(body.name === undefined ? {} : { name: body.name }),
+      ...(body.kind === undefined ? {} : { kind: body.kind }),
+      ...(body.description === undefined ? {} : { description: body.description }),
     });
 
     return reply.code(200).send({ unit: storageUnitView(unit) });

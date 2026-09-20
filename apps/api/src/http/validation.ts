@@ -98,6 +98,59 @@ export const moveStorageUnitBodySchema = z.strictObject({
   parentId: id.nullable(),
 });
 
+/**
+ * An edit must say what it changes.
+ *
+ * A `PATCH` with an empty body is a request that means nothing, and answering
+ * `200` to it would be the server agreeing it did something. It is refused as
+ * a shape problem, like any other malformed body, and never reaches a use
+ * case that would only bump `updatedAt`.
+ *
+ * Zod drops absent optional keys from its output, so counting them is enough
+ * to tell "change nothing" from "clear the description".
+ */
+const namesSomethingToChange = (revision: object): boolean =>
+  Object.keys(revision).length > 0;
+
+const NOTHING_TO_CHANGE = "An edit must name at least one field to change";
+
+/**
+ * # Editing is a PATCH, and the field list is the guard
+ *
+ * These two schemas are the reason a `PATCH` is safe here. They are
+ * `strictObject`s, so a key that is not listed is REFUSED rather than
+ * ignored — and `parentId` and `storageUnitId` are not listed.
+ *
+ * That matters more than it reads. Moving a unit is guarded by the subtree
+ * invariant (ADR 2) and moving items is all or nothing across a batch
+ * (ADR 3); both are named operations whose URL says what they do. If an edit
+ * accepted a parent and quietly dropped it, a client would believe it had
+ * moved a box. If it accepted one and honoured it, the guard would be hidden
+ * behind a field that looks exactly as innocent as a rename. Refusing the key
+ * outright is the only answer that is true either way, and the 400 names it.
+ *
+ * `photoId` and `photos` are absent for the same reason: files have their own
+ * lifecycle and their own routes (ADR 9).
+ */
+export const updateStorageUnitBodySchema = z
+  .strictObject({
+    name: name.optional(),
+    kind: kind.optional(),
+    description,
+  })
+  .refine(namesSomethingToChange, { message: NOTHING_TO_CHANGE });
+
+export const updateItemBodySchema = z
+  .strictObject({
+    name: name.optional(),
+    description,
+    /** A number, and nothing more. `InvalidQuantity` is the domain's to raise. */
+    quantity: z.number().optional(),
+    /** The COMPLETE list. A revision that could only add leaves no way to remove. */
+    tags: z.array(z.string().trim().min(1).max(MAX_TAG_LENGTH)).max(MAX_TAGS).optional(),
+  })
+  .refine(namesSomethingToChange, { message: NOTHING_TO_CHANGE });
+
 export const emptyStorageUnitBodySchema = z.strictObject({
   targetUnitId: id.optional(),
 });
