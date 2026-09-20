@@ -8,6 +8,7 @@ import {
   DomainError,
   EmptyStorageUnit,
   GetStorageUnitPath,
+  ListItems,
   MoveItems,
   MoveStorageUnit,
   ReorderItemPhotos,
@@ -173,6 +174,10 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       storageUnits: deps.storageUnits,
       ids: deps.ids,
       clock: deps.clock,
+    }),
+    listItems: new ListItems({
+      items: deps.items,
+      storageUnits: deps.storageUnits,
     }),
     moveItems: new MoveItems({
       items: deps.items,

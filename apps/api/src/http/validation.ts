@@ -179,6 +179,16 @@ export const searchQuerySchema = z.strictObject({
   limit: z.coerce.number().int().min(1).max(MAX_SEARCH_LIMIT).optional(),
 });
 
+/**
+ * `GET /items` takes nothing at all, and says so rather than ignoring what it
+ * was sent.
+ *
+ * There is no pagination here (see `item-routes.ts` for why). A `?limit=20`
+ * quietly dropped would tell a client it had been handed the first twenty of
+ * something, which is a lie about the answer rather than a missing feature.
+ */
+export const listItemsQuerySchema = z.strictObject({});
+
 export const moveItemsBodySchema = z.strictObject({
   itemIds: z.array(id).max(MAX_BATCH_SIZE),
   targetUnitId: id,

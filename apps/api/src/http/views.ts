@@ -107,6 +107,22 @@ export interface ItemSearchResultView extends SearchResultView {
   readonly item: ItemView;
 }
 
+/**
+ * An item and where it is, for the flat list of everything in the house.
+ *
+ * The same two shapes a search hit carries, minus `matchedFields`, because
+ * nothing here matched anything — it is the whole inventory. Sharing the
+ * shape is deliberate: a client that can draw a search result can draw one of
+ * these, and "a thing AND where it is" is the one sentence this product has.
+ */
+export interface ItemAtLocationView {
+  readonly item: ItemView;
+  /** Root first, ending at the unit that holds it. */
+  readonly path: readonly StorageUnitView[];
+  /** The same path already joined, `Garage > Metal wardrobe > Box 3`. */
+  readonly location: string;
+}
+
 export interface StorageUnitSearchResultView extends SearchResultView {
   readonly unit: StorageUnitView;
 }
@@ -182,6 +198,15 @@ export const itemSearchResultView = (
   path: result.path.map(storageUnitView),
   location: formatStorageUnitPath(result.path),
   matchedFields: [...result.matchedFields],
+});
+
+export const itemAtLocationView = (
+  item: ItemView,
+  path: readonly StorageUnit[],
+): ItemAtLocationView => ({
+  item,
+  path: path.map(storageUnitView),
+  location: formatStorageUnitPath(path),
 });
 
 export const storageUnitSearchResultView = (

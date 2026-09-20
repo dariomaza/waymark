@@ -90,6 +90,7 @@ describe("inventory over HTTP", () => {
       ["POST", "/storage-units/any-id/move"],
       ["POST", "/storage-units/any-id/empty"],
       ["PATCH", "/storage-units/any-id"],
+      ["GET", "/items"],
       ["GET", "/items/any-id"],
       ["POST", "/items"],
       ["PATCH", "/items/any-id"],
@@ -863,6 +864,112 @@ describe("inventory over HTTP", () => {
 
         expect(response.statusCode).toBe(400);
       });
+    });
+  });
+
+  describe("GET /items", () => {
+    interface ItemAtLocationView {
+      readonly item: ItemView;
+      readonly path: readonly UnitView[];
+      readonly location: string;
+    }
+
+    const listItems = async (
+      url = "/items",
+    ): Promise<readonly ItemAtLocationView[]> => {
+      const response = await call({ method: "GET", url });
+
+      expect(response.statusCode).toBe(200);
+
+      return (response.json() as { items: readonly ItemAtLocationView[] }).items;
+    };
+
+    it("answers with an empty list for an empty house", async () => {
+      await expect(listItems()).resolves.toEqual([]);
+    });
+
+    it("answers with every item, whichever box holds it", async () => {
+      const garage = await createUnit("Garage", null, StorageUnitKind.ROOM);
+      const kitchen = await createUnit("Kitchen", null, StorageUnitKind.ROOM);
+      await createItem("Cordless drill", garage.id);
+      await createItem("Whisk", kitchen.id);
+
+      const rows = await listItems();
+
+      expect(rows.map((row) => row.item.name)).toEqual(["Cordless drill", "Whisk"]);
+    });
+
+    it("carries where each item is, as a path and as a sentence", async () => {
+      const garage = await createUnit("Garage", null, StorageUnitKind.ROOM);
+      const wardrobe = await createUnit("Metal wardrobe", garage.id);
+      const box = await createUnit("Box 3", wardrobe.id);
+      await createItem("Cordless drill", box.id);
+
+      const [row] = await listItems();
+
+      // Both shapes, for the same reason a search result ships both: the path
+      // makes every step tappable, the sentence saves a list row the work.
+      expect(row?.path.map((unit) => unit.name)).toEqual([
+        "Garage",
+        "Metal wardrobe",
+        "Box 3",
+      ]);
+      expect(row?.location).toBe("Garage > Metal wardrobe > Box 3");
+    });
+
+    it("orders by name, so two reads of an unchanged house look the same", async () => {
+      const box = await createUnit("Box 3");
+      await createItem("Whisk", box.id);
+      await createItem("Anvil", box.id);
+      await createItem("Drill", box.id);
+
+      const rows = await listItems();
+
+      expect(rows.map((row) => row.item.name)).toEqual(["Anvil", "Drill", "Whisk"]);
+    });
+
+    it("carries the whole item, not a name and an id", async () => {
+      const box = await createUnit("Box 3");
+      await createItem("HDMI 2.1", box.id, { tags: ["cables"], quantity: 3 });
+
+      const [row] = await listItems();
+
+      expect(row?.item.tags).toEqual(["cables"]);
+      expect(row?.item.quantity).toBe(3);
+    });
+
+    it("answers one request where the client used to make one per unit", async () => {
+      const garage = await createUnit("Garage", null, StorageUnitKind.ROOM);
+      const box = await createUnit("Box 3", garage.id);
+      await createItem("Drill", box.id);
+      await createItem("Whisk", garage.id);
+
+      const rows = await listItems();
+
+      expect(rows).toHaveLength(2);
+    });
+
+    it("refuses a page rather than pretending to answer one", async () => {
+      const response = await call({ method: "GET", url: "/items?limit=20" });
+
+      // There is no pagination here on purpose, and silently ignoring the
+      // parameter would tell a client it got the first twenty of something.
+      expect(response.statusCode).toBe(400);
+      expect(errorCodeOf(response)).toBe("VALIDATION_FAILED");
+    });
+
+    it("follows a renamed box, because the location is computed", async () => {
+      const garage = await createUnit("Garage", null, StorageUnitKind.ROOM);
+      await createItem("Drill", garage.id);
+
+      await call({
+        method: "PATCH",
+        url: `/storage-units/${garage.id}`,
+        payload: { name: "Storage room" },
+      });
+
+      const [row] = await listItems();
+      expect(row?.location).toBe("Storage room");
     });
   });
 
