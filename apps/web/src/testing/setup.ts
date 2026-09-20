@@ -23,6 +23,12 @@ import { apiServer } from "./api-server.js";
  * `Response`. Doing this here rather than working around it in the client
  * matters: the client must build the same request a browser would, and the
  * test must send it through the same machinery MSW intercepts.
+ *
+ * The one thing Node's `FormData` will not do is what a DOM does with it:
+ * React builds `new FormData(formElement)` on every submit, and the Node
+ * constructor refuses arguments outright. The subclass below closes that gap
+ * by reading the form's own fields, which keeps both sides working with the
+ * same object model.
  */
 globalThis.File = NodeFile as unknown as typeof File;
 globalThis.Blob = NodeBlob as unknown as typeof Blob;
@@ -32,7 +38,33 @@ const probe = await new Response(
   { headers: { "content-type": "multipart/form-data; boundary=b" } },
 ).formData();
 
-globalThis.FormData = probe.constructor as typeof FormData;
+const NodeFormData = probe.constructor as new () => FormData;
+
+class DomAwareFormData extends NodeFormData {
+  constructor(form?: HTMLFormElement) {
+    super();
+
+    for (const element of form?.elements ?? []) {
+      const field = element as HTMLInputElement;
+      const skip =
+        field.name === "" ||
+        field.disabled ||
+        field.type === "submit" ||
+        field.type === "button" ||
+        // Files are left out on purpose: nothing in this app submits a form
+        // to build an upload, and a foreign `File` copied in here would be
+        // re-encoded into something that is no longer those bytes.
+        field.type === "file" ||
+        ((field.type === "checkbox" || field.type === "radio") && !field.checked);
+
+      if (!skip) {
+        this.append(field.name, field.value);
+      }
+    }
+  }
+}
+
+globalThis.FormData = DomAwareFormData as unknown as typeof FormData;
 
 beforeAll(() => {
   // A request no test declared a handler for is a test that does not know what
