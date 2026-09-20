@@ -1,6 +1,7 @@
 import type {
   ItemRepository,
   PhotoRepository,
+  SearchRepository,
   StorageUnitRepository,
   UnitId,
 } from "@ariadna/domain";
@@ -36,6 +37,19 @@ export interface ItemRepositoryContext {
  */
 export interface PhotoRepositoryContext {
   readonly photos: PhotoRepository;
+}
+
+/**
+ * Search reads what the other two ports wrote, so a run needs all three: the
+ * suite seeds through the real repositories precisely because an adapter that
+ * keeps an index beside the tables has to be told about a write by the write
+ * itself, and a contract that wrote straight into the index would be testing
+ * the wrong half of it.
+ */
+export interface SearchRepositoryContext {
+  readonly search: SearchRepository;
+  readonly items: ItemRepository;
+  readonly storageUnits: StorageUnitRepository;
 }
 
 /** Both ports at once, so the domain use cases can be wired to them. */

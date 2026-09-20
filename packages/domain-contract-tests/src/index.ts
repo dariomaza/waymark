@@ -25,9 +25,11 @@ export type {
   ItemRepositoryContext,
   PhotoRepositoryContext,
   RepositoryHarness,
+  SearchRepositoryContext,
   StorageUnitRepositoryContext,
 } from "./harness.js";
 export { storageUnitRepositoryContract } from "./storage-unit-repository.contract.js";
 export { itemRepositoryContract } from "./item-repository.contract.js";
 export { photoRepositoryContract } from "./photo-repository.contract.js";
+export { searchRepositoryContract } from "./search-repository.contract.js";
 export { domainUseCaseContract } from "./domain-use-case.contract.js";

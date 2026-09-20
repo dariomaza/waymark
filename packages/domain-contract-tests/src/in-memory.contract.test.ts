@@ -2,6 +2,7 @@ import type { UnitId } from "@ariadna/domain";
 import {
   InMemoryItemRepository,
   InMemoryPhotoRepository,
+  InMemorySearchRepository,
   InMemoryStorageUnitRepository,
 } from "@ariadna/domain/testing";
 
@@ -10,10 +11,12 @@ import type {
   DomainUseCaseContext,
   ItemRepositoryContext,
   PhotoRepositoryContext,
+  SearchRepositoryContext,
   StorageUnitRepositoryContext,
 } from "./harness.js";
 import { itemRepositoryContract } from "./item-repository.contract.js";
 import { photoRepositoryContract } from "./photo-repository.contract.js";
+import { searchRepositoryContract } from "./search-repository.contract.js";
 import { storageUnitRepositoryContract } from "./storage-unit-repository.contract.js";
 
 /**
@@ -59,6 +62,20 @@ photoRepositoryContract({
   setUp: async (): Promise<PhotoRepositoryContext> => ({
     photos: new InMemoryPhotoRepository(),
   }),
+  tearDown: async () => {},
+});
+
+searchRepositoryContract({
+  name: "InMemorySearchRepository",
+  setUp: async (): Promise<SearchRepositoryContext> => {
+    const storageUnits = newStorageUnits();
+    const items = new InMemoryItemRepository();
+    return {
+      search: new InMemorySearchRepository({ items, storageUnits }),
+      items,
+      storageUnits,
+    };
+  },
   tearDown: async () => {},
 });
 
