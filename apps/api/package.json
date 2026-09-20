@@ -12,18 +12,27 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "create-user": "tsx src/scripts/create-user.ts",
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ariadna/domain": "workspace:*",
-    "@prisma/client": "^6.16.2"
+    "@fastify/cors": "^11.3.0",
+    "@fastify/helmet": "^13.1.1",
+    "@prisma/client": "^6.16.2",
+    "fastify": "^5.12.5",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@ariadna/domain-contract-tests": "workspace:*",
     "@types/node": "^24.3.0",
     "prisma": "^6.16.2",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
