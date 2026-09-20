@@ -1,0 +1,141 @@
+// Ariadna persistence schema.
+//
+// The domain in `packages/domain` knows nothing about this file. Everything
+// here is a faithful projection of the domain entities onto SQLite, and the
+// adapters in `src/persistence` are the only code allowed to read it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// ADR 1: a location is not an attribute of a storage unit, it IS a storage
+/// unit. Plain adjacency list (`parentId`), walked with a recursive CTE. No
+/// closure table and no materialized path: real depth in a homelab is 4-5
+/// levels, and both alternatives buy read speed with write complexity nobody
+/// here needs.
+model StorageUnit {
+  id       String  @id
+  parentId String?
+
+  /// `Restrict`, never `Cascade`. ADR 3 forbids destructive cascades in the
+  /// domain; a schema that quietly disagreed would make the database the last
+  /// word on a rule the domain owns.
+  parent   StorageUnit?  @relation("StorageUnitTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  children StorageUnit[] @relation("StorageUnitTree")
+
+  name        String
+  /// Presentational hint only (ADR 1). SQLite has no enum type and Prisma does
+  /// not emulate one here, so the column is a string and the mapper rejects
+  /// anything outside `StorageUnitKind` on the way out.
+  kind        String
+  description String?
+  /// Cross-aggregate reference by id, deliberately not a foreign key: a photo
+  /// has its own lifecycle (ADR 4) and may be uploaded, reprocessed or dropped
+  /// independently of the unit that points at it.
+  photoId     String?
+  /// Printed inside the QR code, so it must be unique at the storage level and
+  /// not merely by convention.
+  publicId    String  @unique
+
+  /// Written by the domain's `Clock` port. Deliberately NOT `@updatedAt`:
+  /// letting Prisma stamp the time would put a second, invisible source of
+  /// time next to the one the use cases are tested with.
+  createdAt DateTime
+  updatedAt DateTime
+
+  items Item[]
+
+  @@index([parentId])
+  @@index([name])
+}
+
+/// A thing stored inside exactly one storage unit.
+model Item {
+  id            String @id
+  storageUnitId String
+
+  storageUnit StorageUnit @relation(fields: [storageUnitId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  name        String
+  description String?
+  quantity    Int
+
+  createdAt DateTime
+  updatedAt DateTime
+
+  tags   ItemTag[]
+  photos ItemPhoto[]
+
+  @@index([storageUnitId])
+  @@index([name])
+}
+
+/// Tags are a child table rather than a JSON or comma separated column.
+///
+/// SQLite has no array type, so the alternatives were a serialized blob or
+/// this. A blob turns "find everything tagged `winter`" into a `LIKE '%winter%'`
+/// full scan that also matches `winterproof`; a child table makes it an indexed
+/// equality lookup. Searching is half the point of the product (see README), so
+/// the extra table pays for itself immediately.
+///
+/// The primary key is `(itemId, position)`, not `(itemId, tag)`: the domain
+/// models tags as an ORDERED array that may legally repeat, and a key on the
+/// tag itself would silently collapse duplicates and diverge from the in-memory
+/// repository.
+model ItemTag {
+  itemId   String
+  position Int
+  tag      String
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([itemId, position])
+  @@index([tag])
+}
+
+/// Photo ordering lives here, on the item side.
+///
+/// `Item.photos` is an ordered list of photo ids owned by the item aggregate,
+/// while `Photo` is its own aggregate with an independent lifecycle (ADR 4:
+/// uploaded synchronously, processed later, possibly never). Two aggregates
+/// with independent lifecycles reference each other by id, not by foreign key,
+/// so this table carries no FK to `Photo`: an item keeps its photo order even
+/// while the corresponding photo rows are still being written by the upload
+/// flow, and deleting an item releases its photos (ADR 3) instead of deleting
+/// them.
+///
+/// Position 0 is the cover, which is simply `Item.photos[0]` in the domain.
+/// `(itemId, position)` as the primary key makes "one photo per slot"
+/// structural rather than a convention.
+model ItemPhoto {
+  itemId   String
+  position Int
+  photoId  String
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([itemId, position])
+  @@index([photoId])
+}
+
+/// ADR 4: background removal is optional and out of process, so the status is
+/// part of the photo rather than an assumption about it. `originalPath` is
+/// always written; reads fall back to it whenever `processedPath` is null.
+model Photo {
+  id               String  @id
+  originalPath     String
+  processedPath    String?
+  /// PENDING | DONE | FAILED | SKIPPED. String for the same reason as
+  /// `StorageUnit.kind`.
+  processingStatus String
+  /// The photo's own slot within its item, mirroring `Photo.position` in the
+  /// domain entity. `ItemPhoto.position` is what ordering actually reads.
+  position         Int     @default(0)
+
+  @@index([processingStatus])
+}
