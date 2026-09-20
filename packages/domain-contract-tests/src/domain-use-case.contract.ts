@@ -9,6 +9,7 @@ import {
   GetStorageUnitPath,
   InvalidQuantity,
   ItemNotFound,
+  ListItems,
   MoveItems,
   MoveStorageUnit,
   StorageUnitKind,
@@ -59,6 +60,7 @@ export const domainUseCaseContract = (
     let getStorageUnitPath: GetStorageUnitPath;
     let createItem: CreateItem;
     let moveItems: MoveItems;
+    let listItems: ListItems;
     let updateStorageUnit: UpdateStorageUnit;
     let updateItem: UpdateItem;
     let deleteItem: DeleteItem;
@@ -96,6 +98,7 @@ export const domainUseCaseContract = (
         clock,
       });
       moveItems = new MoveItems({ items, storageUnits, clock });
+      listItems = new ListItems({ items, storageUnits });
       updateStorageUnit = new UpdateStorageUnit({ storageUnits, clock });
       updateItem = new UpdateItem({ items, clock });
       deleteItem = new DeleteItem({ items });
@@ -355,6 +358,70 @@ export const domainUseCaseContract = (
             name: "Drill",
           }),
         ).rejects.toBeInstanceOf(StorageUnitNotFound);
+      });
+    });
+
+    describe("everything you own, in one read", () => {
+      it("lists every item with the breadcrumb that says where it is", async () => {
+        const garage = await aUnit("Garage");
+        const wardrobe = await aUnit("Metal wardrobe", garage.id);
+        const box = await aUnit("Box 3", wardrobe.id);
+        const kitchen = await aUnit("Kitchen");
+        await createItem.execute({ storageUnitId: box.id, name: "Cordless drill" });
+        await createItem.execute({ storageUnitId: kitchen.id, name: "Whisk" });
+
+        const rows = await listItems.execute();
+
+        expect(
+          rows.map(
+            (row) => `${row.item.name} @ ${formatStorageUnitPath(row.path)}`,
+          ),
+        ).toEqual([
+          "Cordless drill @ Garage > Metal wardrobe > Box 3",
+          "Whisk @ Kitchen",
+        ]);
+      });
+
+      it("follows a moved item to its new location", async () => {
+        const garage = await aUnit("Garage");
+        const kitchen = await aUnit("Kitchen");
+        const whisk = await createItem.execute({
+          storageUnitId: garage.id,
+          name: "Whisk",
+        });
+
+        await moveItems.execute({
+          itemIds: [whisk.id],
+          targetUnitId: kitchen.id,
+        });
+
+        const rows = await listItems.execute();
+        expect(formatStorageUnitPath(rows[0]?.path ?? [])).toBe("Kitchen");
+      });
+
+      it("shows a renamed box under its new name", async () => {
+        const garage = await aUnit("Garage");
+        await createItem.execute({ storageUnitId: garage.id, name: "Drill" });
+
+        await updateStorageUnit.execute({ id: garage.id, name: "Storage room" });
+
+        const rows = await listItems.execute();
+        expect(formatStorageUnitPath(rows[0]?.path ?? [])).toBe("Storage room");
+      });
+
+      it("carries the tags and the photos, not only the name", async () => {
+        const box = await aUnit("Box 3");
+        await createItem.execute({
+          storageUnitId: box.id,
+          name: "HDMI 2.1",
+          tags: ["cables"],
+          photos: [aPhotoId("photo-1")],
+        });
+
+        const rows = await listItems.execute();
+
+        expect(rows[0]?.item.tags).toEqual(["cables"]);
+        expect(rows[0]?.item.photos).toEqual(["photo-1"]);
       });
     });
 

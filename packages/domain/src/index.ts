@@ -95,6 +95,11 @@ export {
   type MoveItemsDependencies,
 } from "./items/move-items.js";
 export {
+  ListItems,
+  type ItemAtLocation,
+  type ListItemsDependencies,
+} from "./items/list-items.js";
+export {
   UpdateItem,
   type UpdateItemCommand,
   type UpdateItemDependencies,

@@ -14,6 +14,7 @@ describe("@ariadna/domain public surface", () => {
         "GetStorageUnitPath",
         "CreateItem",
         "MoveItems",
+        "ListItems",
         "UpdateItem",
         "DeleteItem",
         "AttachItemPhoto",
