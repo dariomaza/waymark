@@ -71,6 +71,25 @@ judgement — a name beats a tag beats a description — and because bm25 scores
 are the one thing the in-memory repository and the real adapter could never be
 made to agree on.
 
+**Editing is a `PATCH` whose field list cannot move anything** (ADR 14). The
+first requirement said a unit's information must be consultable at any time
+AND editable; for a long time it was not, and a typo in a box name was
+permanent — with a printed label already glued to the box, delete-and-recreate
+is a trip to the garage with a printer. A name, a kind, a description, a
+quantity and a set of tags are plain attributes with no rule beyond the field
+itself, so one patch beats five named operations. Where a thing IS is not one
+of them: the patch schemas are strict and carry no `parentId` and no
+`storageUnitId`, so the guards that matter — the subtree invariant (ADR 2) and
+the all-or-nothing batch move (ADR 3) — stay behind routes whose names say
+what they do.
+
+**Every item is one unpaginated request** (ADR 15). `GET /items` answers the
+whole inventory, each row carrying the same breadcrumb a search hit does,
+because a flat list of names answers nothing in a product about knowing where
+things are. It is unpaginated for the reason ADR 1, ADR 11 and ADR 12 already
+gave: a homelab inventory is small enough to read whole, and the honest answer
+to one that is not is search, which takes a limit.
+
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no
 Android Studio in the build path. Native Kotlin would mean two independent
@@ -118,11 +137,14 @@ Everything but `GET /health` and `POST /auth/login` needs a session.
 | `GET`    | `/storage-units`            | `{ tree }` — the whole forest, nested        |
 | `POST`   | `/storage-units`            | `201 { unit }`                               |
 | `GET`    | `/storage-units/:id`        | `{ unit, path, children, items }`            |
+| `PATCH`  | `/storage-units/:id`        | `{ unit }` — name, kind, description         |
 | `POST`   | `/storage-units/:id/move`   | `{ unit }` — body `{ parentId }`             |
 | `POST`   | `/storage-units/:id/empty`  | `{ movedItems, movedChildUnits }`            |
 | `DELETE` | `/storage-units/:id`        | `204`                                        |
+| `GET`    | `/items`                    | `{ items }` — every item, each with its path |
 | `POST`   | `/items`                    | `201 { item }`                               |
 | `GET`    | `/items/:id`                | `{ item, storageUnit, path }`                |
+| `PATCH`  | `/items/:id`                | `{ item }` — name, description, quantity, tags |
 | `POST`   | `/items/move`               | `{ items }` — body `{ itemIds, targetUnitId }` |
 | `DELETE` | `/items/:id`                | `{ releasedPhotoIds }` — and the files go     |
 | `GET`    | `/storage-units/:id/qr.png` | A QR encoding `<base>/u/<publicId>`          |
@@ -138,10 +160,17 @@ Everything but `GET /health` and `POST /auth/login` needs a session.
 | `POST`   | `/photos/:id/reprocess`     | `202 { photo }` — back to `PENDING`          |
 | `POST`   | `/photos/processing/retry`  | `202 { requeued }` — every `FAILED` photo    |
 
-Move and empty are named operations rather than a `PATCH`, because a storage
-unit has no general update: the domain exposes create, move, empty and delete,
-and a `PATCH` would advertise fields that are not patchable and hide the fact
-that changing a parent is guarded by a subtree invariant (ADR 2).
+`PATCH` changes what a thing SAYS about itself; move and empty stay named
+operations because they change what it IS (ADR 14). The line is held by the
+schema rather than by discipline: the patch bodies are strict and carry no
+`parentId` and no `storageUnitId`, so a request that tries to rename and move
+in one call is refused with a 400 naming the key. Ignoring it would be the
+worse failure — a client would believe it had moved a box.
+
+`GET /items` answers the whole inventory in one request, unpaginated, and
+every row carries its breadcrumb (ADR 15). A flat list of names answers
+nothing in a product about knowing where things are, and the honest answer to
+an inventory too large to list is search rather than a page.
 
 ### Domain errors are mapped, never left to fall through
 
@@ -280,6 +309,10 @@ the one file you want small enough to copy anywhere into tens of gigabytes.
   `immutable`; the one exception is a photo still waiting for its background to
   be removed, where the same id is about to start serving a different file, so
   it revalidates instead (ADR 10).
+- **An item carries its photos, not their ids.** `ItemView.photos` is a list
+  of whole `PhotoView`s, ordered, first one is the cover — so a client never
+  builds a `/photos/:id` by hand, and can say which picture is still waiting
+  for a background removal that may never happen.
 - **Deleting releases the files.** The rows go first, then the files, and a
   failed unlink is logged rather than thrown. A read-only volume must not make
   deleting an item impossible; a file with no row costs disk, a lost delete is a
@@ -361,8 +394,8 @@ served from its own origin — never by the API, which answers JSON under
 
 ```
 src/auth       Signing in, the session, and the gate every other screen sits behind.
-src/units      The tree, one unit, create / move / empty / delete, the printable label.
-src/items      One item, adding, bulk move, delete, and everything you own.
+src/units      The tree, one unit, create / edit / move / empty / delete, the label.
+src/items      One item, adding, editing, bulk move, delete, and everything you own.
 src/search     The screen the product is named after.
 src/scanning   The camera, and the `/u/<publicId>` a label opens.
 src/photos     Uploading, ordering, and drawing a picture that needs a session.
@@ -383,7 +416,13 @@ enforces them, and this app renders the answer — including the refusal. What
 it does carefully is tell the two kinds of refusal apart: a 409 is about the
 WORLD and comes with a button that changes it ("empty it into Metal wardrobe
 and delete"), a 422 is about the REQUEST and lands next to the field that
-caused it (ADR 8).
+caused it (ADR 8). Editing follows the same rule and picks the tone from the
+failure KIND rather than from a list of codes, so a refusal nobody has met yet
+still lands in the right box.
+
+**Editing and moving are separate buttons**, on the unit screen and on the
+item screen, because they are separate acts and only one of them can make the
+inventory lie about where something is (ADR 14).
 
 - **Mobile first.** Tap targets of 48px and up, navigation at the bottom
   where the thumb is, sheets that slide up from the bottom rather than
@@ -457,15 +496,13 @@ reachable is precisely the dependency ADR 4 refuses.
 
 ## Status
 
-Domain, persistence, HTTP, authentication, search, QR generation, photo
-storage, background removal, the Docker stack and the web PWA are implemented.
-The Expo app and multi-label print sheets are not built yet.
+Domain, persistence, HTTP, authentication, search, editing, QR generation,
+photo storage, background removal, the Docker stack and the web PWA are
+implemented. The Expo app and multi-label print sheets are not built yet.
 
-Two things the web client cannot do, because the API does not offer them:
-renaming a storage unit or an item (there is no update route, deliberately —
-see "Resource shapes" in `storage-unit-routes.ts`), and listing every item in
-one request (there is no `GET /items`, so that screen asks each unit and says
-so in a comment).
+One asymmetry is left: a storage unit still hands out a bare `photoId` rather
+than a photo view, so the web client builds that single URL by hand. Items no
+longer do, and the unit is the only thing left in `photos/photo-urls.ts`.
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against
