@@ -39,6 +39,16 @@ const MAX_TAGS = 50;
  */
 const MAX_PHOTOS = MAX_ITEM_PHOTOS;
 const MAX_BATCH_SIZE = 500;
+/**
+ * Long enough for any sentence somebody would type into a search box, short
+ * enough that the query cannot become a way to make the tokenizer work.
+ */
+const MAX_SEARCH_QUERY_LENGTH = 200;
+/**
+ * The most results one request may ask for. A cap and not a clamp: silently
+ * answering 100 to a request for 5000 is a lie about what came back.
+ */
+export const MAX_SEARCH_LIMIT = 100;
 const MAX_USERNAME_LENGTH = 100;
 const MAX_PASSWORD_LENGTH = 1_024;
 
@@ -100,6 +110,20 @@ export const createItemBodySchema = z.strictObject({
   quantity: z.number().optional(),
   tags: z.array(z.string().trim().min(1).max(MAX_TAG_LENGTH)).max(MAX_TAGS).optional(),
   photos: z.array(id).max(MAX_PHOTOS).optional(),
+});
+
+/**
+ * A query string, so every value arrives as text and `limit` is coerced.
+ *
+ * `q` is required and may be empty: "the box is empty" and "there is no box"
+ * are different requests, and a search page that has not been typed into yet
+ * is the first of the two. An empty `q` answers with no results rather than
+ * with the whole inventory.
+ */
+export const searchQuerySchema = z.strictObject({
+  q: z.string().max(MAX_SEARCH_QUERY_LENGTH),
+  within: id.optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_SEARCH_LIMIT).optional(),
 });
 
 export const moveItemsBodySchema = z.strictObject({

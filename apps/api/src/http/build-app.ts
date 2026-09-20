@@ -11,12 +11,14 @@ import {
   MoveItems,
   MoveStorageUnit,
   ReorderItemPhotos,
+  SearchInventory,
   SetStorageUnitPhoto,
   type Clock,
   type IdGenerator,
   type ItemRepository,
   type PhotoRepository,
   type PublicIdGenerator,
+  type SearchRepository,
   type StorageUnitRepository,
 } from "@ariadna/domain";
 import cors from "@fastify/cors";
@@ -53,6 +55,7 @@ import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
 import { photoRoutes } from "./routes/photo-routes.js";
 import { qrRoutes } from "./routes/qr-routes.js";
+import { searchRoutes } from "./routes/search-routes.js";
 import { storageUnitRoutes } from "./routes/storage-unit-routes.js";
 import { toValidationIssues } from "./validation.js";
 
@@ -87,6 +90,8 @@ export interface AppDependencies {
   readonly storageUnits: StorageUnitRepository;
   readonly items: ItemRepository;
   readonly photos: PhotoRepository;
+  /** Finds the candidates a query could answer; see `SearchRepository`. */
+  readonly search: SearchRepository;
   readonly users: UserRepository;
   readonly sessions: SessionRepository;
   readonly hasher: PasswordHasher;
@@ -183,6 +188,10 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       photos: deps.photos,
       clock: deps.clock,
     }),
+    searchInventory: new SearchInventory({
+      search: deps.search,
+      storageUnits: deps.storageUnits,
+    }),
   };
 
   const photoFiles = new PhotoFileStore(deps.photoStorage.root);
@@ -276,6 +285,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       processing: deps.photoProcessing,
       ...useCases,
     });
+    void scope.register(searchRoutes, { searchInventory: useCases.searchInventory });
     void scope.register(qrRoutes, {
       storageUnits: deps.storageUnits,
       publicBaseUrl: deps.publicBaseUrl,

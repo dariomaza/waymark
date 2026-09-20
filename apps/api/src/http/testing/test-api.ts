@@ -14,6 +14,7 @@ import { FixedWindowRateLimiter } from "../../auth/login-rate-limiter.js";
 import { ScryptPasswordHasher } from "../../auth/password-hasher.js";
 import { PrismaItemRepository } from "../../persistence/prisma-item-repository.js";
 import { PrismaPhotoRepository } from "../../persistence/prisma-photo-repository.js";
+import { PrismaSearchRepository } from "../../persistence/prisma-search-repository.js";
 import { PrismaSessionRepository } from "../../persistence/prisma-session-repository.js";
 import { PrismaStorageUnitRepository } from "../../persistence/prisma-storage-unit-repository.js";
 import { PrismaUserRepository } from "../../persistence/prisma-user-repository.js";
@@ -123,6 +124,7 @@ export const createTestApi = async (
   const storageUnits = new PrismaStorageUnitRepository(database.client);
   const items = new PrismaItemRepository(database.client);
   const photos = new PrismaPhotoRepository(database.client);
+  const search = new PrismaSearchRepository(database.client);
   const files = new PhotoFileStore(photoRoot);
   const queue = new PrismaPhotoProcessingQueue(database.client);
 
@@ -176,6 +178,7 @@ export const createTestApi = async (
         storageUnits,
         items,
         photos,
+        search,
         users,
         sessions,
         hasher,
