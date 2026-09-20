@@ -127,6 +127,80 @@ describe("loadConfig", () => {
     expect(config.databaseUrl).toBe("file:/data/ariadna.db");
   });
 
+  describe("background removal", () => {
+    /**
+     * ADR 4: the sidecar is optional. An installation that never sets the URL
+     * is a complete, working installation, so the absence of the variable is
+     * the OFF switch and not a misconfiguration.
+     */
+    it("is switched off when no sidecar is named", () => {
+      const config = loadConfig({});
+
+      expect(config.imageProcessing.url).toBeNull();
+    });
+
+    it("is switched off by an empty value, not left half-configured", () => {
+      const config = loadConfig({ ARIADNA_IMAGE_PROCESSOR_URL: "   " });
+
+      expect(config.imageProcessing.url).toBeNull();
+    });
+
+    it("reads the sidecar address and trims the trailing slash", () => {
+      const config = loadConfig({
+        ARIADNA_IMAGE_PROCESSOR_URL: "http://image-processor:8000/",
+      });
+
+      expect(config.imageProcessing.url).toBe("http://image-processor:8000");
+    });
+
+    /**
+     * rembg saturates every core it is given for a single image, so a second
+     * concurrent request does not raise throughput: it doubles latency and
+     * doubles the resident memory on a box that is also serving the API.
+     */
+    it("processes one photo at a time by default", () => {
+      const config = loadConfig({});
+
+      expect(config.imageProcessing.concurrency).toBe(1);
+    });
+
+    it("waits two minutes for a sidecar on a slow homelab CPU", () => {
+      const config = loadConfig({});
+
+      expect(config.imageProcessing.timeoutMs).toBe(120_000);
+    });
+
+    it("gives up on a photo after five attempts", () => {
+      const config = loadConfig({});
+
+      expect(config.imageProcessing.maxAttempts).toBe(5);
+    });
+
+    it("looks for work every fifteen seconds", () => {
+      const config = loadConfig({});
+
+      expect(config.imageProcessing.pollIntervalMs).toBe(15_000);
+    });
+
+    it("reads every knob from the environment", () => {
+      const config = loadConfig({
+        ARIADNA_IMAGE_PROCESSOR_URL: "http://sidecar:8000",
+        ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS: "30",
+        ARIADNA_IMAGE_PROCESSOR_CONCURRENCY: "2",
+        ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS: "3",
+        ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS: "5",
+      });
+
+      expect(config.imageProcessing).toEqual({
+        url: "http://sidecar:8000",
+        timeoutMs: 30_000,
+        concurrency: 2,
+        maxAttempts: 3,
+        pollIntervalMs: 5_000,
+      });
+    });
+  });
+
   describe("refuses nonsense rather than starting with it", () => {
     it.each([
       ["a port that is not a number", { PORT: "http" }],
@@ -142,6 +216,22 @@ describe("loadConfig", () => {
       ["an empty photo root", { ARIADNA_PHOTO_ROOT: "   " }],
       ["a photo limit of zero", { ARIADNA_MAX_PHOTO_MB: "0" }],
       ["a photo limit that is not a number", { ARIADNA_MAX_PHOTO_MB: "big" }],
+      [
+        "a sidecar address that is not absolute",
+        { ARIADNA_IMAGE_PROCESSOR_URL: "image-processor:8000" },
+      ],
+      [
+        "a sidecar address that is not http",
+        { ARIADNA_IMAGE_PROCESSOR_URL: "tcp://image-processor:8000" },
+      ],
+      [
+        "a sidecar address carrying a query",
+        { ARIADNA_IMAGE_PROCESSOR_URL: "http://sidecar:8000/?model=u2net" },
+      ],
+      ["a concurrency of zero", { ARIADNA_IMAGE_PROCESSOR_CONCURRENCY: "0" }],
+      ["a timeout of zero", { ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS: "0" }],
+      ["no attempts at all", { ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS: "0" }],
+      ["a poll interval that is not a number", { ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS: "often" }],
     ])("rejects %s", (_name, env) => {
       expect(() => loadConfig(env)).toThrow(InvalidConfiguration);
     });

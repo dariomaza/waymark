@@ -22,6 +22,24 @@ export interface PhotoConfig {
   readonly maxBytes: number;
 }
 
+/**
+ * Background removal, which is optional in the strongest sense (ADR 4): with no
+ * sidecar address configured, nothing here runs at all and every photo is
+ * served from the original it was uploaded as.
+ */
+export interface ImageProcessingConfig {
+  /** `null` means switched off. Never trailing-slashed. */
+  readonly url: string | null;
+  /** How long a single background removal may take before it is abandoned. */
+  readonly timeoutMs: number;
+  /** How many photos may be in flight at the sidecar at the same time. */
+  readonly concurrency: number;
+  /** Attempts at one photo before it is marked `FAILED` and left alone. */
+  readonly maxAttempts: number;
+  /** How often the worker looks for photos nobody has processed yet. */
+  readonly pollIntervalMs: number;
+}
+
 export interface ApiConfig {
   readonly host: string;
   readonly port: number;
@@ -35,6 +53,7 @@ export interface ApiConfig {
   readonly security: SecurityConfig;
   readonly login: LoginRateLimitConfig;
   readonly photos: PhotoConfig;
+  readonly imageProcessing: ImageProcessingConfig;
 }
 
 const DEFAULTS = {
@@ -84,6 +103,50 @@ const DEFAULTS = {
    * decode-and-resize on the way in cannot be used to pin the CPU.
    */
   maxPhotoMegabytes: 12,
+  /**
+   * Two minutes for one background removal.
+   *
+   * rembg decodes the image, runs a U²-Net forward pass on the CPU and encodes
+   * a mask. On a homelab x86 box that is two to six seconds for a 2048px photo;
+   * on the ARM board this may end up on, twenty or thirty. Two minutes is an
+   * order of magnitude past the worst honest case, which is what a timeout is
+   * for: it exists to notice a sidecar that has STOPPED answering, not to
+   * second-guess a slow one. Without it, a hung read holds a worker slot for
+   * ever and the queue stops moving while every request still succeeds — the
+   * failure that looks exactly like everything working.
+   */
+  imageProcessorTimeoutSeconds: 120,
+  /**
+   * One photo at a time.
+   *
+   * onnxruntime already uses every core for a single forward pass, so a second
+   * concurrent image buys no throughput at all: it halves the speed of both and
+   * doubles the resident memory, on the same small box that is serving the API,
+   * the database and the photo volume. The bound is the point — an unbounded
+   * fan-out over a backlog of two hundred photos would take the machine down,
+   * and a homelab has no autoscaler to hide behind.
+   */
+  imageProcessorConcurrency: 1,
+  /**
+   * Five attempts, then the photo is left alone.
+   *
+   * With the backoff in `PhotoProcessingWorker` that spans about a quarter of an
+   * hour, which covers a sidecar restart, an image pull or a reboot, and stops
+   * well short of retrying a genuinely broken photo for ever. What comes after
+   * is not silence: the photo becomes `FAILED`, the reason is kept, and the
+   * retry route exists precisely so a person can say "try again" once the cause
+   * is fixed (ADR 4).
+   */
+  imageProcessorMaxAttempts: 5,
+  /**
+   * Fifteen seconds between sweeps for work nobody has claimed.
+   *
+   * Uploads wake the worker immediately, so this interval is not the latency of
+   * a normal photo; it is how long a photo waits when the wake-up was lost — a
+   * restart, a crash mid-flight, a lease that expired. One indexed query every
+   * fifteen seconds is free next to one background removal.
+   */
+  imageProcessorPollSeconds: 15,
 } as const;
 
 /**
@@ -113,6 +176,31 @@ export const loadConfig = (env: NodeJS.ProcessEnv): ApiConfig => ({
       ) *
       1024 *
       1024,
+  },
+  imageProcessing: {
+    url: readImageProcessorUrl(env["ARIADNA_IMAGE_PROCESSOR_URL"]),
+    timeoutMs:
+      readPositiveInteger(
+        "ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS",
+        env["ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS"],
+        DEFAULTS.imageProcessorTimeoutSeconds,
+      ) * 1_000,
+    concurrency: readPositiveInteger(
+      "ARIADNA_IMAGE_PROCESSOR_CONCURRENCY",
+      env["ARIADNA_IMAGE_PROCESSOR_CONCURRENCY"],
+      DEFAULTS.imageProcessorConcurrency,
+    ),
+    maxAttempts: readPositiveInteger(
+      "ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS",
+      env["ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS"],
+      DEFAULTS.imageProcessorMaxAttempts,
+    ),
+    pollIntervalMs:
+      readPositiveInteger(
+        "ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS",
+        env["ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS"],
+        DEFAULTS.imageProcessorPollSeconds,
+      ) * 1_000,
   },
   login: {
     limit: readPositiveInteger(
@@ -252,6 +340,52 @@ const readPublicBaseUrl = (raw: string | undefined): string => {
   if (parsed.search !== "" || parsed.hash !== "") {
     throw new InvalidConfiguration(
       "ARIADNA_PUBLIC_BASE_URL",
+      `"${candidate}" carries a query or a fragment, which cannot survive appending a path`,
+    );
+  }
+
+  return candidate.replace(/\/+$/u, "");
+};
+
+/**
+ * The address of the rembg sidecar, or nothing at all.
+ *
+ * Absence is a valid, complete configuration and the reason this variable is
+ * the on/off switch rather than a separate `ARIADNA_IMAGE_PROCESSING_ENABLED`:
+ * two settings that can disagree ("enabled, with no address") is one more state
+ * than the feature has, and the extra state is always the one that breaks.
+ *
+ * What IS refused is a half-written address, for the same reason every other
+ * value here is: a sidecar URL that parses but is wrong produces a deployment
+ * where every photo silently fails to be processed and nothing says why.
+ */
+const readImageProcessorUrl = (raw: string | undefined): string | null => {
+  if (raw === undefined || raw.trim().length === 0) {
+    return null;
+  }
+
+  const candidate = raw.trim();
+
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new InvalidConfiguration(
+      "ARIADNA_IMAGE_PROCESSOR_URL",
+      `"${candidate}" is not an absolute URL`,
+    );
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new InvalidConfiguration(
+      "ARIADNA_IMAGE_PROCESSOR_URL",
+      `"${candidate}" is not an http(s) URL`,
+    );
+  }
+
+  if (parsed.search !== "" || parsed.hash !== "") {
+    throw new InvalidConfiguration(
+      "ARIADNA_IMAGE_PROCESSOR_URL",
       `"${candidate}" carries a query or a fragment, which cannot survive appending a path`,
     );
   }

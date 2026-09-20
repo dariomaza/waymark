@@ -132,6 +132,12 @@ export {
 } from "./photos/photo-file-store.js";
 export { PhotoRelease, type ReleaseOutcome } from "./photos/photo-release.js";
 export {
+  PermanentProcessingFailure,
+  RembgImageProcessor,
+  TransientProcessingFailure,
+  type RembgImageProcessorDependencies,
+} from "./photos/rembg-image-processor.js";
+export {
   MissingPhotoUpload,
   PhotoNotFound,
   PhotoTooLarge,
@@ -152,6 +158,7 @@ export {
   InvalidConfiguration,
   loadConfig,
   type ApiConfig,
+  type ImageProcessingConfig,
   type PhotoConfig,
 } from "./config.js";
 export { createAppDependencies } from "./composition-root.js";

@@ -205,6 +205,66 @@ describe("PhotoFileStore", () => {
     });
   });
 
+  describe("reading a whole file back", () => {
+    /**
+     * Serving streams; background removal cannot. The sidecar is handed one
+     * request with one complete image in it, so the bytes have to be in memory
+     * at some point, and the cap on what may be stored is what makes that safe.
+     */
+    it("hands back the bytes of a stored photo", async () => {
+      const written = await write("photo-1");
+
+      expect(await store.read(written.originalPath)).toEqual(
+        Buffer.from("original bytes"),
+      );
+    });
+
+    it("answers null for a file that is not there", async () => {
+      expect(await store.read("ab/missing.jpg")).toBeNull();
+    });
+
+    it("refuses a path that would leave the root", async () => {
+      await writeFile(join(root, "decoy"), "not yours");
+
+      await expect(store.read("../decoy")).rejects.toThrow(/outside the photo root/u);
+    });
+  });
+
+  describe("the processed variant", () => {
+    /**
+     * It sits in the same bucket as the original it came from, so a photo is
+     * still one `ls` in one directory, and it is always a JPEG because it is
+     * always composited onto white (ADR 4 asks for a white background, not for
+     * transparency), which leaves nothing for an alpha channel to carry.
+     */
+    it("lands beside the original, as a jpeg", async () => {
+      const written = await write("photo-1");
+      const path = await store.writeProcessed(
+        photoId("photo-1"),
+        Buffer.from("white background bytes"),
+      );
+
+      expect(path).toMatch(/^[0-9a-f]{2}\/photo-1\.processed\.jpg$/u);
+      expect(path.split("/")[0]).toBe(written.originalPath.split("/")[0]);
+      expect(await readFile(join(root, path), "utf8")).toBe("white background bytes");
+    });
+
+    it("replaces the previous result when a photo is processed again", async () => {
+      await write("photo-1");
+      await store.writeProcessed(photoId("photo-1"), Buffer.from("first"));
+
+      const path = await store.writeProcessed(photoId("photo-1"), Buffer.from("second"));
+
+      expect(await readFile(join(root, path), "utf8")).toBe("second");
+    });
+
+    it("is written even when the bucket directory does not exist yet", async () => {
+      const path = await store.writeProcessed(photoId("photo-9"), Buffer.from("x"));
+
+      expect(await readFile(join(root, path), "utf8")).toBe("x");
+    });
+  });
+
   describe("the root is a boundary, not a suggestion", () => {
     it("never writes outside it, whatever an id contains", async () => {
       const written = await write("../../escape");

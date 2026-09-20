@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 
 import type { PhotoId } from "@ariadna/domain";
@@ -52,6 +52,16 @@ export const PHOTO_BUCKET_LENGTH = 2;
 
 /** Every thumbnail is a JPEG, whatever the original was. */
 const THUMBNAIL_SUFFIX = ".thumb.jpg";
+
+/**
+ * And so is every background-removed variant.
+ *
+ * ADR 4 is about a WHITE background, not about transparency, so the cutout the
+ * sidecar returns is composited onto white before it is stored. Nothing is left
+ * for an alpha channel to carry, and a JPEG of a photograph is a fraction of
+ * the size of the PNG the model produces.
+ */
+const PROCESSED_SUFFIX = ".processed.jpg";
 
 export interface WritePhotoFiles {
   readonly id: PhotoId;
@@ -139,6 +149,57 @@ export class PhotoFileStore {
     await writeFile(thumbnail, files.thumbnail);
 
     return paths;
+  }
+
+  /**
+   * Where the background-removed variant of a photo goes.
+   *
+   * The same bucket as the original, so one photo is still one place on disk,
+   * and derived from the id rather than from the original's path: the original
+   * may be a `.jpg`, a `.png` or a `.webp`, and the processed file is a JPEG in
+   * every one of those cases.
+   */
+  processedPathFor(id: PhotoId): string {
+    return `${this.bucketOf(id)}/${safeFileName(id)}${PROCESSED_SUFFIX}`;
+  }
+
+  /**
+   * Writes the background-removed variant and answers with its path.
+   *
+   * Overwriting is deliberate: reprocessing a photo produces a better version
+   * of the same derived file, not a new photo. The ORIGINAL is what is
+   * immutable, and it is never touched here.
+   */
+  async writeProcessed(id: PhotoId, bytes: Buffer): Promise<string> {
+    const relativePath = this.processedPathFor(id);
+    const absolute = this.#absolute(relativePath);
+
+    await mkdir(dirname(absolute), { recursive: true });
+    await writeFile(absolute, bytes);
+
+    return relativePath;
+  }
+
+  /**
+   * Reads a whole stored file into memory, or `null` if it is not there.
+   *
+   * The counterpart to `open`, and the exception to the streaming rule above.
+   * Background removal hands the sidecar ONE request containing ONE complete
+   * image, so the bytes have to be resident at some point; the upload cap is
+   * what bounds how many they can be.
+   */
+  async read(relativePath: string): Promise<Buffer | null> {
+    const absolute = this.#absolute(relativePath);
+
+    try {
+      return await readFile(absolute);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return null;
+      }
+
+      throw error;
+    }
   }
 
   /**

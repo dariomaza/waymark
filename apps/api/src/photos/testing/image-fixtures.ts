@@ -113,6 +113,32 @@ export const aPhotoLargerThan = async (minBytes: number): Promise<Buffer> => {
 export const aHugePhoto = async (width: number, height: number): Promise<Buffer> =>
   solidImage(width, height).jpeg({ quality: 60 }).toBuffer();
 
+/**
+ * What `rembg` hands back: a CUTOUT, as a PNG with an alpha channel.
+ *
+ * The left half is opaque red — the subject — and the right half is fully
+ * transparent, which is what the background became. It is deliberately not a
+ * white image: transparency and white are exactly the two things that must not
+ * be confused, because a viewer renders "transparent" as whatever is behind it,
+ * which on a dark themed phone is black.
+ */
+export const aCutout = async (width = 64, height = 32): Promise<Buffer> => {
+  const pixels = Buffer.alloc(width * height * 4);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const at = (y * width + x) * 4;
+      const opaque = x < width / 2;
+      pixels[at] = opaque ? 255 : 0;
+      pixels[at + 1] = 0;
+      pixels[at + 2] = 0;
+      pixels[at + 3] = opaque ? 255 : 0;
+    }
+  }
+
+  return sharp(pixels, { raw: { width, height, channels: 4 } }).png().toBuffer();
+};
+
 /** Bytes that are not an image at all, whatever anybody claims they are. */
 export const notAnImage = (): Buffer =>
   Buffer.from("<?php system($_GET['cmd']); ?>", "utf8");
