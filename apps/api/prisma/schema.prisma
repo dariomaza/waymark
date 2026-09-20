@@ -139,3 +139,53 @@ model Photo {
 
   @@index([processingStatus])
 }
+
+/// An account. Credentials and nothing else.
+///
+/// Ariadna is ONE SHARED INVENTORY: a user is a way to get in, not a tenant.
+/// There is deliberately no owner column on `StorageUnit`, `Item` or `Photo`,
+/// no per-user scoping of any query, and no role. Everyone who can log in sees
+/// and edits the same house. Adding a tenant id "just in case" would put a
+/// filter on every single query to express a rule the product does not have.
+model User {
+  id           String @id
+  /// Stored lower case. SQLite compares TEXT case sensitively and Postgres
+  /// does too, so the normalization happens in the application rather than in a
+  /// collation that would not survive the move between the two.
+  username     String @unique
+  /// `scrypt$N=...,r=...,p=...$<salt>$<digest>`. The parameters travel with the
+  /// hash so they can be raised later without locking anybody out.
+  passwordHash String
+
+  createdAt DateTime
+  updatedAt DateTime
+
+  sessions Session[]
+}
+
+/// An opaque session token, stored hashed.
+///
+/// No JWT and no cookie. A JWT cannot be revoked without building the very
+/// server-side table it was meant to avoid, and a cookie would need SameSite,
+/// CSRF protection and a shared registrable domain that the Expo app does not
+/// have. A random token in an `Authorization` header works identically for the
+/// browser PWA and for the Android app, and revoking it is `DELETE FROM
+/// "Session"`.
+model Session {
+  id String @id
+  /// SHA-256 of the token. The token itself is shown once, at login, and never
+  /// stored: a dump of this table contains nothing anybody can log in with.
+  tokenHash String @unique
+
+  userId String
+  /// `Cascade` here, unlike everywhere else in this schema. ADR 3 is about not
+  /// destroying inventory by accident; a session is not inventory, and a
+  /// deleted account whose sessions kept working would be a security bug.
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime
+  expiresAt DateTime
+
+  @@index([userId])
+  @@index([expiresAt])
+}

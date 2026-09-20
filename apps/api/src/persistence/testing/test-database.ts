@@ -84,6 +84,8 @@ export const createTestDatabase = async (): Promise<TestDatabase> => {
       await client.$executeRawUnsafe(`DELETE FROM "Item"`);
       await client.$executeRawUnsafe(`DELETE FROM "Photo"`);
       await client.$executeRawUnsafe(`DELETE FROM "StorageUnit"`);
+      await client.$executeRawUnsafe(`DELETE FROM "Session"`);
+      await client.$executeRawUnsafe(`DELETE FROM "User"`);
     },
 
     async destroy(): Promise<void> {
