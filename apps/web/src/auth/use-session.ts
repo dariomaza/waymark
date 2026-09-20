@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 
 import { useApi } from "../api/api-context.js";
 import { clearCachedResponses } from "../app/cached-responses.js";
-import type { Credentials } from "../api/contract.js";
+import type { Credentials } from "@ariadna/api-client";
 import { sessionStore, type Session } from "./session-store.js";
 
 /** Re-renders whatever reads it the moment the session appears or goes. */

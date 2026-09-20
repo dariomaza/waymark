@@ -1,18 +1,44 @@
 import { itemId, unitId } from "@ariadna/domain";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { apiServer, API_URL } from "../testing/api-server.js";
-import { anItem, aStorageUnit } from "../testing/fixtures.js";
 import { ApiError, FailureKind, failureKindOf } from "./api-error.js";
-import { createAriadnaClient } from "./ariadna-client.js";
+import { createAriadnaClient, PHOTO_FIELD_NAME } from "./ariadna-client.js";
+import { anItem, aStorageUnit } from "./testing/fixtures.js";
 
+/**
+ * The network is stubbed at the HTTP boundary and nowhere else.
+ *
+ * This is the client's own contract suite: it runs the real `fetch`, the real
+ * error envelope reading and the real URL building against MSW answering the
+ * way `apps/api` does. Both clients share this file's subject, so a change
+ * that would break the Android app breaks here first.
+ */
+const API_URL = "http://127.0.0.1:3000";
+
+const apiServer = setupServer();
+
+beforeAll(() => {
+  apiServer.listen({ onUnhandledRequest: "error" });
+});
+afterEach(() => {
+  apiServer.resetHandlers();
+});
+afterAll(() => {
+  apiServer.close();
+});
+
+/** What a browser hands over: a `File`, appended with its own name. */
 const clientWith = (
-  overrides: Partial<Parameters<typeof createAriadnaClient>[0]> = {},
+  overrides: Partial<Parameters<typeof createAriadnaClient<File>>[0]> = {},
 ) =>
-  createAriadnaClient({
+  createAriadnaClient<File>({
     baseUrl: API_URL,
     token: () => "a-live-token",
+    appendPhoto: (form, field, file) => {
+      form.append(field, file, file.name);
+    },
     ...overrides,
   });
 
@@ -264,6 +290,50 @@ describe("the Ariadna API client", () => {
     expect(seen).toEqual([{ name: "drill.jpg", type: "image/jpeg" }]);
   });
 
+  /**
+   * The one place the two platforms genuinely differ.
+   *
+   * A browser has a `File`; React Native has a local `file://` URI and no way
+   * to turn it into one without reading a whole photo into memory. So the
+   * client asks its caller to put the part in, and pins here that it asks with
+   * the field name the API reads and does not touch it afterwards.
+   */
+  it("lets the platform decide what the file part of an upload IS", async () => {
+    const appended: { field: string; part: unknown }[] = [];
+    apiServer.use(
+      http.post(`${API_URL}/storage-units/u1/photo`, () =>
+        HttpResponse.json(
+          {
+            photo: {
+              id: "p1",
+              processingStatus: "PENDING",
+              url: "/photos/p1",
+              thumbnailUrl: "/photos/p1/thumbnail",
+            },
+            unit: aStorageUnit({ id: "u1" }),
+            releasedPhotoIds: [],
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+
+    const nativeAsset = { uri: "file:///tmp/box.jpg", name: "box.jpg", type: "image/jpeg" };
+    const client = createAriadnaClient<typeof nativeAsset>({
+      baseUrl: API_URL,
+      token: () => "a-live-token",
+      appendPhoto: (form, field, asset) => {
+        appended.push({ field, part: asset });
+        form.append(field, new File(["bytes"], asset.name, { type: asset.type }));
+      },
+    });
+
+    await client.uploadUnitPhoto(unitId("u1"), nativeAsset);
+
+    expect(appended).toEqual([{ field: PHOTO_FIELD_NAME, part: nativeAsset }]);
+    expect(PHOTO_FIELD_NAME).toBe("file");
+  });
+
   it("fetches an image by the URL the API handed out, never one it built", async () => {
     apiServer.use(
       http.get(`${API_URL}/photos/p1/thumbnail`, () =>
@@ -277,6 +347,18 @@ describe("the Ariadna API client", () => {
 
     expect(blob.type).toBe("image/jpeg");
     expect(blob.size).toBe(3);
+  });
+
+  /**
+   * A React Native `<Image>` carries its own `Authorization` header rather
+   * than an object URL, so it needs the absolute address of a path the API
+   * handed out. It is the same address `fetchImage` would have asked for.
+   */
+  it("spells out the absolute address of a path the API handed out", () => {
+    expect(clientWith().absoluteUrl("/photos/p1/thumbnail")).toBe(
+      `${API_URL}/photos/p1/thumbnail`,
+    );
+    expect(clientWith().qrPngUrl(unitId("u1"))).toBe(`${API_URL}/storage-units/u1/qr.png`);
   });
 
   it("reads the whole forest of storage units", async () => {

@@ -12,11 +12,11 @@ import type {
   ItemSearchResultView,
   ItemView,
   PhotoView,
+  SessionView,
   StorageUnitSearchResultView,
   StorageUnitTreeView,
   StorageUnitView,
-} from "../api/contract.js";
-import type { Session } from "../auth/session-store.js";
+} from "../contract.js";
 
 /**
  * Builders for the JSON the API sends.
@@ -136,7 +136,7 @@ export interface SessionOverrides {
 }
 
 /** A session that is live for years, unless a test says otherwise. */
-export const aSession = (overrides: SessionOverrides = {}): Session => ({
+export const aSession = (overrides: SessionOverrides = {}): SessionView => ({
   token: overrides.token ?? "a-live-token",
   expiresAt: overrides.expiresAt ?? "2099-01-01T00:00:00.000Z",
   user: { id: "u1", username: overrides.username ?? "dario" },

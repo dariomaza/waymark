@@ -2,12 +2,7 @@ import type { UnitId } from "@ariadna/domain";
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";
-import type {
-  CreateStorageUnitInput,
-  EmptyStorageUnitResponse,
-  StorageUnitResponse,
-  UpdateStorageUnitInput,
-} from "../api/contract.js";
+import type { CreateStorageUnitInput, EmptyStorageUnitResponse, StorageUnitResponse, UpdateStorageUnitInput } from "@ariadna/api-client";
 import { useInvalidateInventory } from "../api/use-invalidate-inventory.js";
 
 export const useCreateUnit = (): UseMutationResult<

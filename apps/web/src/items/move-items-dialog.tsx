@@ -1,7 +1,7 @@
 import { unitId, type ItemId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 
-import { describeFailure } from "../api/describe-failure.js";
+import { describeFailure } from "@ariadna/api-client";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { SelectField } from "../ui/atoms/select-field.js";

@@ -26,8 +26,34 @@ import type {
   UserView,
 } from "./contract.js";
 
-export interface AriadnaClientOptions {
-  /** Absolute; this app and the API live on different origins. */
+/**
+ * The multipart field name `@fastify/multipart` reads on the API side. It is
+ * part of the contract, so it is written down once here rather than in each
+ * platform's upload adapter.
+ */
+export const PHOTO_FIELD_NAME = "file";
+
+/**
+ * Puts the bytes of one photo into the multipart body.
+ *
+ * This is the ONE thing the two clients cannot agree on, so it is a parameter
+ * rather than a branch. A browser holds a `File` and appends it with its own
+ * name. React Native holds a local `file://` URI and appends
+ * `{ uri, name, type }`, because turning that URI into a `File` means reading
+ * a whole photo into the JavaScript heap on the device it was taken with.
+ *
+ * Pretending those are the same call would be an abstraction that is a lie in
+ * one of the two apps; asking each to state its own is four lines each and
+ * true in both.
+ */
+export type AppendPhoto<TFile> = (
+  form: FormData,
+  field: typeof PHOTO_FIELD_NAME,
+  file: TFile,
+) => void;
+
+export interface AriadnaClientOptions<TFile> {
+  /** Absolute; a client and the API never live on the same origin. */
   readonly baseUrl: string;
   /** Read per request, so a refreshed session takes effect immediately. */
   readonly token: () => string | null;
@@ -37,21 +63,26 @@ export interface AriadnaClientOptions {
    * and it must not throw the user out of a session they never had.
    */
   readonly onUnauthorized?: (() => void) | undefined;
+  readonly appendPhoto: AppendPhoto<TFile>;
 }
 
 /**
- * # The only place in the app that speaks HTTP
+ * # The only place either client speaks HTTP
  *
  * Every call goes through `send`, so the bearer token, the error envelope and
  * the difference between "the API refused" and "the request never left the
- * phone" are decided once. Nothing above this file has heard of `fetch`,
- * `Authorization` or a status code.
+ * phone" are decided once — for the PWA and for the Android app at the same
+ * time. Nothing above this file has heard of `fetch`, `Authorization` or a
+ * status code.
  *
  * It is an interface with a factory rather than a class with methods to stub,
  * because the tests do not stub it: they run this code against MSW. A test
  * that replaced this module would only prove that the replacement was called.
+ *
+ * `TFile` is what the platform calls a photo on its way up. It is the only
+ * thing in this contract that is not the same on both.
  */
-export interface AriadnaClient {
+export interface AriadnaClient<TFile> {
   login(credentials: Credentials): Promise<SessionView>;
   me(): Promise<{ readonly user: UserView }>;
   logout(): Promise<void>;
@@ -79,28 +110,39 @@ export interface AriadnaClient {
 
   search(query: SearchQuery): Promise<SearchResponse>;
 
-  uploadItemPhoto(id: ItemId, file: File): Promise<ItemPhotoResponse>;
+  uploadItemPhoto(id: ItemId, file: TFile): Promise<ItemPhotoResponse>;
   reorderItemPhotos(id: ItemId, photoIds: readonly PhotoId[]): Promise<ItemResponse>;
   deleteItemPhoto(id: ItemId, photoId: PhotoId): Promise<DetachedItemPhotoResponse>;
-  uploadUnitPhoto(id: UnitId, file: File): Promise<StorageUnitPhotoResponse>;
+  uploadUnitPhoto(id: UnitId, file: TFile): Promise<StorageUnitPhotoResponse>;
   deleteUnitPhoto(id: UnitId): Promise<DetachedStorageUnitPhotoResponse>;
 
   /**
    * Photos and QR symbols are behind the session like everything else, so a
-   * plain `<img src>` would answer 401. They are fetched with the token and
-   * handed to the DOM as object URLs; see `photos/`.
+   * plain `<img src>` would answer 401. The browser fetches the bytes with the
+   * token and hands them to the DOM as an object URL; see `apps/web/photos/`.
    *
    * The path is whatever the API put in `photo.url`. This client never builds
    * one, which is the point of the API spelling them out.
    */
   fetchImage(path: string): Promise<Blob>;
+  /**
+   * The same path, as an address something else can fetch.
+   *
+   * A React Native `<Image>` carries its own `Authorization` header rather
+   * than an object URL, which is how a phone streams a photo into the decoder
+   * instead of holding all of it. It still needs the absolute URL, and it
+   * still must not build one out of an id.
+   */
+  absoluteUrl(path: string): string;
   qrSvg(id: UnitId): Promise<string>;
   qrPngUrl(id: UnitId): string;
 }
 
 const JSON_HEADERS = { "content-type": "application/json" } as const;
 
-export const createAriadnaClient = (options: AriadnaClientOptions): AriadnaClient => {
+export const createAriadnaClient = <TFile>(
+  options: AriadnaClientOptions<TFile>,
+): AriadnaClient<TFile> => {
   const url = (path: string): string => `${options.baseUrl}${path}`;
 
   const send = async (path: string, init: RequestInit = {}): Promise<Response> => {
@@ -156,10 +198,9 @@ export const createAriadnaClient = (options: AriadnaClientOptions): AriadnaClien
       body: JSON.stringify(body),
     });
 
-  const upload = async <T>(path: string, file: File): Promise<T> => {
+  const upload = async <T>(path: string, file: TFile): Promise<T> => {
     const form = new FormData();
-    // `file` is the field name `@fastify/multipart` reads on the API side.
-    form.append("file", file, file.name);
+    options.appendPhoto(form, PHOTO_FIELD_NAME, file);
 
     return readJson<T>(path, { method: "POST", body: form });
   };
@@ -291,6 +332,10 @@ export const createAriadnaClient = (options: AriadnaClientOptions): AriadnaClien
       const response = await send(path);
 
       return await response.blob();
+    },
+
+    absoluteUrl(path) {
+      return url(path);
     },
 
     async qrSvg(id) {

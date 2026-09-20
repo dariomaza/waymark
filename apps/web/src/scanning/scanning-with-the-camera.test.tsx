@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { aSession, aStorageUnit, aTree } from "../testing/fixtures.js";
+import { aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent } from "../testing/render-app.js";
 import { CameraUnavailable, type QrScanner } from "./qr-scanner.js";
 import { publicIdFromScannedText } from "./scanned-url.js";

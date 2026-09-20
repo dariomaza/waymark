@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type JSX } from "react";
 
-import type { Credentials } from "../api/contract.js";
+import type { Credentials } from "@ariadna/api-client";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { TextField } from "../ui/atoms/text-field.js";

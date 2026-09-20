@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { aSession } from "../testing/fixtures.js";
+import { aSession } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
 import { sessionStore } from "./session-store.js";
 

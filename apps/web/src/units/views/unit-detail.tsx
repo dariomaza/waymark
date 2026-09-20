@@ -1,6 +1,6 @@
 import type { JSX, ReactNode } from "react";
 
-import type { ItemView, StorageUnitView } from "../../api/contract.js";
+import type { ItemView, StorageUnitView } from "@ariadna/api-client";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { RowLink } from "../../ui/molecules/row-link.js";

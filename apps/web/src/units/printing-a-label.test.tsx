@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { aSession, aStorageUnit, aTree } from "../testing/fixtures.js";
+import { aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });

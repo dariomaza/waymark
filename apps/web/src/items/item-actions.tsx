@@ -1,8 +1,7 @@
 import { useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 
-import type { ItemView, StorageUnitView } from "../api/contract.js";
-import { describeFailure } from "../api/describe-failure.js";
+import { describeFailure, type ItemView, type StorageUnitView } from "@ariadna/api-client";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Sheet } from "../ui/organisms/sheet.js";

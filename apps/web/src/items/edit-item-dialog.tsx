@@ -1,7 +1,6 @@
 import type { JSX } from "react";
 
-import type { ItemView } from "../api/contract.js";
-import { describeFailure, failureTone } from "../api/describe-failure.js";
+import { describeFailure, failureTone, type ItemView } from "@ariadna/api-client";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { fieldComplaints } from "../units/unit-messages.js";
 import { useUpdateItem } from "./item-mutations.js";

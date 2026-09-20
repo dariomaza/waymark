@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 
-import type { StorageUnitTreeView } from "../../api/contract.js";
+import type { StorageUnitTreeView } from "@ariadna/api-client";
 import { RowLink } from "../../ui/molecules/row-link.js";
 import { kindLabel } from "../kind-label.js";
 import "./unit-tree.css";

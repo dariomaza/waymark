@@ -1,4 +1,4 @@
-import { ApiError, ApiErrorCode, detailNumber } from "../api/api-error.js";
+import { ApiError, ApiErrorCode, detailNumber } from "@ariadna/api-client";
 
 const count = (n: number, singular: string): string =>
   `${String(n)} ${n === 1 ? singular : `${singular}s`}`;

@@ -68,6 +68,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@ariadna/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
       '@ariadna/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -135,6 +138,25 @@ importers:
       workbox-window:
         specifier: ^7.4.1
         version: 7.4.1
+
+  packages/api-client:
+    dependencies:
+      '@ariadna/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.13.6
+      msw:
+        specifier: ^2.11.2
+        version: 2.15.0(@types/node@24.13.6)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.6)(jiti@2.7.0)(jsdom@27.4.0)(msw@2.15.0(@types/node@24.13.6)(typescript@5.9.3))(terser@5.51.2)(tsx@4.23.13)
 
   packages/domain:
     devDependencies:

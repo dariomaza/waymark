@@ -1,4 +1,4 @@
-import { ApiError, ApiErrorCode, FailureKind, failureKindOf } from "../api/api-error.js";
+import { ApiError, ApiErrorCode, FailureKind, failureKindOf } from "@ariadna/api-client";
 
 /**
  * What to tell somebody whose sign-in did not work.

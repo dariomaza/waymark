@@ -1,7 +1,7 @@
 import type { UnitId } from "@ariadna/domain";
 import type { JSX } from "react";
 
-import { describeFailure } from "../api/describe-failure.js";
+import { describeFailure } from "@ariadna/api-client";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { fieldComplaints } from "../units/unit-messages.js";
 import { useCreateItem } from "./item-mutations.js";

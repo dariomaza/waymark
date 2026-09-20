@@ -1,6 +1,6 @@
 import type { PublicId, UnitId } from "@ariadna/domain";
 
-import type { StorageUnitTreeView, StorageUnitView } from "../api/contract.js";
+import type { StorageUnitTreeView, StorageUnitView } from "@ariadna/api-client";
 
 export interface FlatUnit {
   readonly unit: StorageUnitView;

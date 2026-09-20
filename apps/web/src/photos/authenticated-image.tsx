@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type JSX } from "react";
 
 import { useApi } from "../api/api-context.js";
-import { queryKeys } from "../api/query-keys.js";
+import { queryKeys } from "@ariadna/api-client";
 import "./authenticated-image.css";
 
 export interface AuthenticatedImageProps {

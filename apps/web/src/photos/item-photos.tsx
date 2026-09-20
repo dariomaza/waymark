@@ -1,9 +1,7 @@
 import { MAX_ITEM_PHOTOS } from "@ariadna/domain";
 import type { JSX } from "react";
 
-import { detailNumber } from "../api/api-error.js";
-import type { ItemView } from "../api/contract.js";
-import { describeFailure } from "../api/describe-failure.js";
+import { describeFailure, detailNumber, type ItemView } from "@ariadna/api-client";
 import { tooManyPhotosMessage } from "../items/item-messages.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";

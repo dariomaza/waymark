@@ -1,5 +1,4 @@
-import { ApiError, ApiErrorCode, FailureKind, failureKindOf } from "../api/api-error.js";
-import { describeFailure } from "../api/describe-failure.js";
+import { ApiError, ApiErrorCode, describeFailure, FailureKind, failureKindOf } from "@ariadna/api-client";
 
 /**
  * A move is all or nothing (ADR 3): one unknown id rejects the whole batch,

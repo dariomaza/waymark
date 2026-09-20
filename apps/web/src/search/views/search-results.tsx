@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 
-import type { SearchResponse } from "../../api/contract.js";
+import type { SearchResponse } from "@ariadna/api-client";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { SearchHit } from "./search-hit.js";
 

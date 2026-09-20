@@ -2,9 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type JSX } from "react";
 import { Route, Routes } from "react-router-dom";
 
+import { FailureKind, failureKindOf } from "@ariadna/api-client";
+
 import { ApiProvider } from "../api/api-context.js";
-import { FailureKind, failureKindOf } from "../api/api-error.js";
-import type { AriadnaClient } from "../api/ariadna-client.js";
+import type { WebApiClient } from "../api/web-client.js";
 import { LoginScreen } from "../auth/login-screen.js";
 import { RequireSession } from "../auth/require-session.js";
 import { AllItemsScreen } from "../items/all-items-screen.js";
@@ -27,7 +28,7 @@ export interface AppProps {
    * they answer the network with MSW instead — but a client pointed at a
    * different API is the one thing worth being able to inject.
    */
-  readonly client?: AriadnaClient;
+  readonly client?: WebApiClient;
   /**
    * The camera. Injected because jsdom has none: see `qr-scanner.ts` for why
    * that is a port and not a stubbed module.

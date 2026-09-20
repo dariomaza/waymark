@@ -1,4 +1,4 @@
-import type { UserView } from "../api/contract.js";
+import type { UserView } from "@ariadna/api-client";
 
 /**
  * The session as this client holds it: the opaque token the API issued, when

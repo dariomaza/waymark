@@ -1,4 +1,4 @@
-import { createAriadnaClient, type AriadnaClient } from "../api/ariadna-client.js";
+import { createWebApiClient, type WebApiClient } from "../api/web-client.js";
 import { sessionStore } from "../auth/session-store.js";
 
 /** Where the API lives. See `.env.example`. */
@@ -13,8 +13,8 @@ export const apiBaseUrl = (): string =>
  * refuses one — which is what turns a revoked token into a trip back to the
  * login screen instead of a screen full of failures.
  */
-export const createDefaultClient = (): AriadnaClient =>
-  createAriadnaClient({
+export const createDefaultClient = (): WebApiClient =>
+  createWebApiClient({
     baseUrl: apiBaseUrl(),
     token: () => sessionStore.read()?.token ?? null,
     onUnauthorized: () => {

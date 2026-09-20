@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ariadna/api-client": "workspace:*",
     "@ariadna/domain": "workspace:*",
     "@tanstack/react-query": "^5.90.2",
     "@zxing/browser": "^0.1.5",
