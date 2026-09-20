@@ -123,6 +123,27 @@ export interface ItemResponse {
   readonly item: ItemView;
 }
 
+/**
+ * An item and where it is. The same two shapes a search hit carries, minus
+ * `matchedFields` — nothing matched anything, this is the whole inventory.
+ */
+export interface ItemAtLocationView {
+  /** Root first, ending at the unit that holds it. */
+  readonly path: readonly StorageUnitView[];
+  /** The same path already joined, `Garage > Metal wardrobe > Box 3`. */
+  readonly location: string;
+  readonly item: ItemView;
+}
+
+/**
+ * Every item in the house, in one request. Unpaginated on purpose: see the
+ * API's own reasoning in `item-routes.ts`, which is the same reading of a
+ * homelab inventory that makes the whole forest one request too.
+ */
+export interface ItemListResponse {
+  readonly items: readonly ItemAtLocationView[];
+}
+
 export interface MovedItemsResponse {
   readonly items: readonly ItemView[];
 }

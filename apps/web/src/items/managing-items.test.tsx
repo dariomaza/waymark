@@ -206,11 +206,54 @@ describe("looking after items", () => {
   });
 
   it("lists every item in the house, each with where it is", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/items`, () =>
+        HttpResponse.json({
+          items: [
+            { item: drill, path: [garage, box], location: "Garage > Box 3" },
+            { item: hdmi, path: [garage, box], location: "Garage > Box 3" },
+          ],
+        }),
+      ),
+    );
+
     renderApp({ route: "/items" });
 
     const list = await screen.findByRole("list", { name: /every item/i });
     const drillRow = within(list).getByRole("link", { name: /cordless drill/i });
     expect(drillRow).toBeVisible();
     expect(within(list).getAllByText("Garage > Box 3").length).toBeGreaterThan(0);
+  });
+
+  it("asks once for everything you own, not once per box", async () => {
+    const asked: string[] = [];
+    apiServer.use(
+      http.get(`${API_URL}/items`, ({ request }) => {
+        asked.push(new URL(request.url).pathname);
+
+        return HttpResponse.json({
+          items: [{ item: drill, path: [garage, box], location: "Garage > Box 3" }],
+        });
+      }),
+    );
+
+    renderApp({ route: "/items" });
+
+    await screen.findByRole("list", { name: /every item/i });
+    // The screen used to be assembled from one request per unit. It is one
+    // request now, and the tree is not even needed to draw it.
+    expect(asked).toEqual(["/items"]);
+  });
+
+  it("offers a way to try again when everything you own cannot be loaded", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/items`, () => HttpResponse.error()),
+    );
+
+    renderApp({ route: "/items" });
+
+    expect(
+      await screen.findByRole("button", { name: /try again/i }, { timeout: 3000 }),
+    ).toBeVisible();
   });
 });

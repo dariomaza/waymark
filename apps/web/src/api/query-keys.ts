@@ -14,6 +14,8 @@ export const queryKeys = {
   /** The whole forest. Every mutation on a unit touches it. */
   tree: () => ["storage-units"] as const,
   unit: (id: UnitId) => ["storage-unit", id] as const,
+  /** Everything you own, in one request rather than one per unit. */
+  items: () => ["items"] as const,
   item: (id: ItemId) => ["item", id] as const,
   search: (query: string, within: UnitId | null, limit: number | undefined) =>
     ["search", query, within, limit] as const,
@@ -22,4 +24,10 @@ export const queryKeys = {
 } as const;
 
 /** What a change to the inventory makes stale. Used by every mutation. */
-export const INVENTORY_ROOTS = [["storage-units"], ["storage-unit"], ["item"], ["search"]];
+export const INVENTORY_ROOTS = [
+  ["storage-units"],
+  ["storage-unit"],
+  ["items"],
+  ["item"],
+  ["search"],
+];

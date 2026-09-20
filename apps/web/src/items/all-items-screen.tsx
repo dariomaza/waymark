@@ -9,11 +9,13 @@ import { useEveryItem } from "./item-queries.js";
 /**
  * Every item in the house, each with where it is.
  *
- * This screen is assembled rather than fetched: see `useEveryItem` for why,
- * and for what it costs.
+ * One request, one answer, in the order the API sent it. The location is not
+ * decoration on the row — it is the point of the screen, which is why it is
+ * never a list of bare names.
  */
 export const AllItemsScreen = (): JSX.Element => {
   const everything = useEveryItem();
+  const rows = everything.data?.items ?? [];
 
   return (
     <main className="screen">
@@ -21,17 +23,22 @@ export const AllItemsScreen = (): JSX.Element => {
 
       {everything.isPending ? <Loading label="Gathering every item" /> : null}
 
-      {everything.error === null ? null : (
-        <FailureNote error={everything.error} onRetry={everything.refetch} />
-      )}
+      {everything.isError ? (
+        <FailureNote
+          error={everything.error}
+          onRetry={() => {
+            void everything.refetch();
+          }}
+        />
+      ) : null}
 
-      {!everything.isPending && everything.rows.length === 0 ? (
+      {everything.isSuccess && rows.length === 0 ? (
         <EmptyNote>No items yet. Open a unit and add one.</EmptyNote>
       ) : null}
 
-      {everything.rows.length === 0 ? null : (
+      {rows.length === 0 ? null : (
         <ul aria-label="Every item">
-          {everything.rows.map((row) => (
+          {rows.map((row) => (
             <li key={row.item.id}>
               <RowLink
                 to={`/items/${row.item.id}`}

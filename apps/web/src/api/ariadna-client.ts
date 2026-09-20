@@ -9,6 +9,7 @@ import type {
   DetachedStorageUnitPhotoResponse,
   EmptyStorageUnitResponse,
   ItemDetailResponse,
+  ItemListResponse,
   ItemPhotoResponse,
   ItemResponse,
   MovedItemsResponse,
@@ -61,6 +62,8 @@ export interface AriadnaClient {
   deleteUnit(id: UnitId): Promise<void>;
 
   item(id: ItemId): Promise<ItemDetailResponse>;
+  /** Every item in the house, each with where it is. One request. */
+  items(): Promise<ItemListResponse>;
   createItem(input: CreateItemInput): Promise<ItemResponse>;
   moveItems(itemIds: readonly ItemId[], targetUnitId: UnitId): Promise<MovedItemsResponse>;
   deleteItem(id: ItemId): Promise<ReleasedPhotosResponse>;
@@ -194,6 +197,10 @@ export const createAriadnaClient = (options: AriadnaClientOptions): AriadnaClien
 
     async item(id) {
       return readJson<ItemDetailResponse>(`/items/${encodeURIComponent(id)}`);
+    },
+
+    async items() {
+      return readJson<ItemListResponse>("/items");
     },
 
     async createItem(input) {
