@@ -57,6 +57,20 @@ the job was lost on a restart, and nothing notices. Claims take a lease, so no
 photo is processed twice and no photo is lost with the process that died holding
 it.
 
+**Search is an FTS5 index the database keeps honest** (ADR 11). Accent
+folding cannot be written as a SQL predicate, so the alternative to an index
+was loading the whole inventory into the process on every keystroke. The cost
+of an index is that it can go stale, and a stale search index does not fail —
+it quietly stops finding a box. That cost is paid with triggers rather than
+with application code: nine of them rebuild the index inside the same
+transaction as the write that changed the row, so no write path can skip it. A
+test writes straight into the tables with raw SQL and then searches.
+
+Ranking is NOT in the index. It lives in the domain, because it is product
+judgement — a name beats a tag beats a description — and because bm25 scores
+are the one thing the in-memory repository and the real adapter could never be
+made to agree on.
+
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no
 Android Studio in the build path. Native Kotlin would mean two independent
@@ -83,7 +97,7 @@ field, so choosing one is spelled as a reorder.
 
 - pnpm workspaces
 - TypeScript everywhere
-- Fastify, Prisma, SQLite
+- Fastify, Prisma, SQLite (FTS5 for search)
 - sharp for image ingestion, qrcode for label symbols
 - React + Vite (PWA), `@zxing/browser` for scanning
 - Expo / React Native
@@ -100,6 +114,7 @@ Everything but `GET /health` and `POST /auth/login` needs a session.
 | `POST`   | `/auth/login`               | `{ token, expiresAt, user }`                 |
 | `GET`    | `/auth/me`                  | `{ user }`                                   |
 | `POST`   | `/auth/logout`              | `204`                                        |
+| `GET`    | `/search`                   | `{ query, terms, items, storageUnits }`      |
 | `GET`    | `/storage-units`            | `{ tree }` — the whole forest, nested        |
 | `POST`   | `/storage-units`            | `201 { unit }`                               |
 | `GET`    | `/storage-units/:id`        | `{ unit, path, children, items }`            |
@@ -147,6 +162,86 @@ empties the box or moves the target out of the subtree. 422 means "fix the
 request": nothing anybody else does will make these exact bytes work. A test
 walks every `DomainError` the domain exports and fails if one has no entry in
 the table, so an unmapped error can never become an accidental 500.
+
+## Search
+
+The feature the product is named after. Things get stored and then lost — not
+lost as in gone, lost as in "it is somewhere in one of forty boxes" — and this
+is the thread out of that labyrinth.
+
+```
+GET /search?q=cab&within=<unitId>&limit=20
+```
+
+```json
+{
+  "query": "cab",
+  "terms": ["cab"],
+  "items": [
+    {
+      "item": { "id": "...", "name": "HDMI 2.1", "tags": ["cables"], "...": "..." },
+      "path": [{ "name": "Garage", "...": "..." }, { "name": "Box 3", "...": "..." }],
+      "location": "Garage > Box 3",
+      "matchedFields": ["TAG"]
+    }
+  ],
+  "storageUnits": [
+    {
+      "unit": { "id": "...", "name": "Caja de cables", "...": "..." },
+      "path": [{ "name": "Garage", "...": "..." }, { "name": "Caja de cables", "...": "..." }],
+      "location": "Garage > Caja de cables",
+      "matchedFields": ["NAME"]
+    }
+  ]
+}
+```
+
+- **Every result carries its breadcrumb.** That is the whole point: "you own a
+  cordless drill" is something the person already knew. `path` is the units
+  themselves, so a client can make each step tappable; `location` is the same
+  path already joined, so a list row does not have to.
+- **Items and storage units are two lists**, not one. They answer two
+  different questions — "where is my drill" and "where is Box 3" — and
+  interleaving them would need a made-up rule for whether a box called
+  `Cables` beats an item tagged `cables`.
+- **Items match on name, tags and description**; units match on name.
+  Searching `cables` finds an item called `HDMI 2.1` that is tagged `cables`,
+  which is the entire reason tags are worth having.
+- **Accents do not matter, in either direction.** `camara` finds `cámara` and
+  `cámara` finds `camara`. The query and the stored text are folded by the
+  same rule, so the comparison never sees an accent. `ñ` folds to `n` for the
+  same reason.
+- **A term matches the start of a word**, so `cab` finds `cables` before the
+  word is finished.
+- **Every term is required.** `cable usb` does not match a cable that is not
+  USB.
+- **`within` is a subtree, at any depth.** A location IS a storage unit
+  (ADR 1), so "search the garage" means everything under it, four levels down
+  included. An item held directly by the garage is in the garage; the garage
+  itself is not a result, because a box is not inside itself. A `within` that
+  names nothing is a 422 — the id came from the query string, not the path.
+- **An empty `q` answers with nothing**, never with everything. A search page
+  nobody has typed into yet is not a request to dump the inventory.
+
+### The order, and why
+
+A **name** beats a **tag** beats a **description**: a name is what somebody
+deliberately called a thing, a tag is a label they deliberately put on it, a
+description is prose that happens to mention a word. A whole word beats a word
+the query merely starts. A match spread over several fields — `cable video`
+finding `Cable HDMI` tagged `video` — ranks below all three, because neither
+field answers the query on its own. Name and id break the remaining ties, so
+two reads of an unchanged inventory never come back shuffled.
+
+`matchedFields` ships with every result so a client can say WHY it is there.
+The relevance score does not: the order is the promise, and a number clients
+could re-sort by would freeze a ranking rule that is meant to improve.
+
+The ranking is computed in `packages/domain`, from the entities, and not by
+the index. bm25 is a number that depends on how many other rows happen to
+contain the word, and it is the one thing the in-memory repository and the
+Prisma adapter could never have been made to agree on — which would have put
+the most important half of this feature outside the contract suite.
 
 ## QR codes
 
@@ -296,15 +391,23 @@ reachable is precisely the dependency ADR 4 refuses.
 
 ## Status
 
-Domain, persistence, HTTP, authentication, QR generation, photo storage,
-background removal and the Docker stack are implemented. The web PWA, the Expo
-app and printable label sheets are not built yet.
+Domain, persistence, HTTP, authentication, search, QR generation, photo
+storage, background removal and the Docker stack are implemented. The web PWA,
+the Expo app and printable label sheets are not built yet.
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against
 the Prisma adapters on a real SQLite file. The fake and the real adapter are
 therefore proven interchangeable, which is the only thing that makes the ports
 worth the indirection.
+
+Search runs that same suite, and most of it is about the inventory CHANGING:
+an index that silently stops tracking a rename is a feature that looks like it
+works and quietly cannot find a box. So the contract renames, retags, clears a
+description, moves and deletes, against both implementations. On top of that,
+one file writes straight into the tables with raw SQL — past every adapter and
+every use case — and then searches, which is a bar no application-maintained
+index could clear.
 
 Background removal is tested the same way — against a real HTTP server on a
 loopback port rather than a mocked client, because every interesting property of
