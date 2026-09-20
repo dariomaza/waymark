@@ -1,12 +1,13 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { App } from "./app.js";
+import { renderApp, screen } from "../testing/render-app.js";
 
-describe("the app", () => {
-  it("names itself, so a phone home screen has something to show", () => {
-    render(<App />);
+describe("the route table", () => {
+  it("answers an address that means nothing without asking anybody to sign in", async () => {
+    renderApp({ route: "/somewhere-that-never-existed" });
 
-    expect(screen.getByRole("banner")).toHaveTextContent("Ariadna");
+    expect(
+      await screen.findByRole("heading", { name: /nothing at this address/i }),
+    ).toBeVisible();
   });
 });

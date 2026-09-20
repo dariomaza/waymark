@@ -5,6 +5,7 @@ import { Blob as NodeBlob, File as NodeFile } from "node:buffer";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
+import { sessionStore } from "../auth/session-store.js";
 import { apiServer } from "./api-server.js";
 
 /**
@@ -42,6 +43,9 @@ beforeAll(() => {
 afterEach(() => {
   cleanup();
   apiServer.resetHandlers();
+  // The session outlives a render on purpose — it is in storage — so a test
+  // that signed in must not decide the next one's starting state.
+  sessionStore.clear();
 });
 
 afterAll(() => {

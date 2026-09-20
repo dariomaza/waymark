@@ -16,6 +16,7 @@ import type {
   StorageUnitTreeView,
   StorageUnitView,
 } from "../api/contract.js";
+import type { Session } from "../auth/session-store.js";
 
 /**
  * Builders for the JSON the API sends.
@@ -123,4 +124,17 @@ export const aUnitHit = (
   path,
   location: path.map((step) => step.name).join(" > "),
   matchedFields,
+});
+
+export interface SessionOverrides {
+  readonly token?: string;
+  readonly expiresAt?: string;
+  readonly username?: string;
+}
+
+/** A session that is live for years, unless a test says otherwise. */
+export const aSession = (overrides: SessionOverrides = {}): Session => ({
+  token: overrides.token ?? "a-live-token",
+  expiresAt: overrides.expiresAt ?? "2099-01-01T00:00:00.000Z",
+  user: { id: "u1", username: overrides.username ?? "dario" },
 });
