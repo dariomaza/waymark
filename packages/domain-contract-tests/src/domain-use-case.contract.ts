@@ -7,12 +7,15 @@ import {
   EmptyStorageUnit,
   formatStorageUnitPath,
   GetStorageUnitPath,
+  InvalidQuantity,
   ItemNotFound,
   MoveItems,
   MoveStorageUnit,
   StorageUnitKind,
   StorageUnitNotEmpty,
   StorageUnitNotFound,
+  UpdateItem,
+  UpdateStorageUnit,
   itemId,
   unitId,
   type ItemRepository,
@@ -56,6 +59,8 @@ export const domainUseCaseContract = (
     let getStorageUnitPath: GetStorageUnitPath;
     let createItem: CreateItem;
     let moveItems: MoveItems;
+    let updateStorageUnit: UpdateStorageUnit;
+    let updateItem: UpdateItem;
     let deleteItem: DeleteItem;
 
     const aUnit = async (
@@ -91,6 +96,8 @@ export const domainUseCaseContract = (
         clock,
       });
       moveItems = new MoveItems({ items, storageUnits, clock });
+      updateStorageUnit = new UpdateStorageUnit({ storageUnits, clock });
+      updateItem = new UpdateItem({ items, clock });
       deleteItem = new DeleteItem({ items });
     });
 
@@ -348,6 +355,136 @@ export const domainUseCaseContract = (
             name: "Drill",
           }),
         ).rejects.toBeInstanceOf(StorageUnitNotFound);
+      });
+    });
+
+    describe("editing, which is never moving", () => {
+      it("renames a unit and reads the new name back", async () => {
+        const box = await aUnit("Box 3");
+
+        clock.advanceBy(1_000);
+        await updateStorageUnit.execute({ id: box.id, name: "Box 4" });
+
+        expect((await storageUnits.findById(box.id))?.name).toBe("Box 4");
+      });
+
+      it("renames a unit without touching the label glued to it", async () => {
+        const box = await aUnit("Box 3");
+
+        await updateStorageUnit.execute({ id: box.id, name: "Box 4" });
+
+        expect((await storageUnits.findById(box.id))?.publicId).toBe(box.publicId);
+      });
+
+      it("keeps a renamed unit where it was, and keeps its children", async () => {
+        const room = await aUnit("Storage room");
+        const wardrobe = await aUnit("Metal wardrobe", room.id);
+        const box = await aUnit("Box 3", wardrobe.id);
+
+        await updateStorageUnit.execute({ id: wardrobe.id, name: "Wooden wardrobe" });
+
+        const revised = await storageUnits.findById(wardrobe.id);
+        expect(revised?.parentId).toBe(room.id);
+        expect(formatStorageUnitPath(await getStorageUnitPath.execute(box.id))).toBe(
+          "Storage room > Wooden wardrobe > Box 3",
+        );
+      });
+
+      it("changes a unit's kind and description, and clears the description", async () => {
+        const box = await aUnit("Box 3");
+
+        await updateStorageUnit.execute({
+          id: box.id,
+          kind: StorageUnitKind.BAG,
+          description: "Winter clothes",
+        });
+        expect((await storageUnits.findById(box.id))?.description).toBe(
+          "Winter clothes",
+        );
+
+        await updateStorageUnit.execute({ id: box.id, description: null });
+        const cleared = await storageUnits.findById(box.id);
+        expect(cleared?.description).toBeNull();
+        expect(cleared?.kind).toBe(StorageUnitKind.BAG);
+      });
+
+      it("refuses to edit a unit that is not there", async () => {
+        await expect(
+          updateStorageUnit.execute({ id: unitId("ghost"), name: "Box 4" }),
+        ).rejects.toBeInstanceOf(StorageUnitNotFound);
+      });
+
+      it("renames an item and reads the new name back", async () => {
+        const box = await aUnit("Box 3");
+        const drill = await createItem.execute({
+          storageUnitId: box.id,
+          name: "Drill",
+        });
+
+        clock.advanceBy(1_000);
+        await updateItem.execute({ id: drill.id, name: "Cordless drill" });
+
+        expect((await items.findById(drill.id))?.name).toBe("Cordless drill");
+      });
+
+      it("retags an item outright, dropping the tags the revision leaves out", async () => {
+        const box = await aUnit("Box 3");
+        const cable = await createItem.execute({
+          storageUnitId: box.id,
+          name: "HDMI 2.1",
+          tags: ["cables", "typo"],
+        });
+
+        await updateItem.execute({ id: cable.id, tags: ["cables", "video"] });
+
+        expect((await items.findById(cable.id))?.tags).toEqual(["cables", "video"]);
+      });
+
+      it("takes every tag off an item when the revision asks for none", async () => {
+        const box = await aUnit("Box 3");
+        const cable = await createItem.execute({
+          storageUnitId: box.id,
+          name: "HDMI 2.1",
+          tags: ["cables"],
+        });
+
+        await updateItem.execute({ id: cable.id, tags: [] });
+
+        expect((await items.findById(cable.id))?.tags).toEqual([]);
+      });
+
+      it("keeps an edited item in its unit, holding the photos it held", async () => {
+        const box = await aUnit("Box 3");
+        const drill = await createItem.execute({
+          storageUnitId: box.id,
+          name: "Drill",
+          photos: [aPhotoId("photo-1"), aPhotoId("photo-2")],
+        });
+
+        await updateItem.execute({ id: drill.id, name: "Cordless drill" });
+
+        const revised = await items.findById(drill.id);
+        expect(revised?.storageUnitId).toBe(box.id);
+        expect(revised?.photos).toEqual(["photo-1", "photo-2"]);
+      });
+
+      it("leaves the stored item alone when the new quantity is refused", async () => {
+        const box = await aUnit("Box 3");
+        const drill = await createItem.execute({
+          storageUnitId: box.id,
+          name: "Drill",
+        });
+
+        await expect(
+          updateItem.execute({ id: drill.id, name: "Cordless drill", quantity: 0 }),
+        ).rejects.toBeInstanceOf(InvalidQuantity);
+        expect((await items.findById(drill.id))?.name).toBe("Drill");
+      });
+
+      it("refuses to edit an item that is not there", async () => {
+        await expect(
+          updateItem.execute({ id: itemId("ghost"), name: "Cordless drill" }),
+        ).rejects.toBeInstanceOf(ItemNotFound);
       });
     });
   });
