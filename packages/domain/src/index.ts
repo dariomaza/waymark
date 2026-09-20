@@ -121,6 +121,7 @@ export {
   createPhoto,
   displayPathOf,
   markPhotoFailed,
+  markPhotoPending,
   markPhotoProcessed,
   markPhotoSkipped,
   PhotoProcessingStatus,

@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { FakeClock } from "@ariadna/domain/testing";
 import type { FastifyInstance } from "fastify";
 
+import type { PhotoId } from "@ariadna/domain";
+
 import { UuidIdGenerator } from "../../adapters/uuid-id-generator.js";
 import { Base32PublicIdGenerator } from "../../adapters/public-id-generator.js";
 import { CreateUser } from "../../auth/create-user.js";
@@ -19,6 +21,14 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "../../persistence/testing/test-database.js";
+import { PhotoFileStore } from "../../photos/photo-file-store.js";
+import { createPhotoProcessing } from "../../photos/photo-processing.js";
+import { PrismaPhotoProcessingQueue } from "../../photos/photo-processing-queue.js";
+import {
+  PhotoProcessingWorker,
+  type RunSummary,
+} from "../../photos/photo-processing-worker.js";
+import { RembgImageProcessor } from "../../photos/rembg-image-processor.js";
 import { buildApp } from "../build-app.js";
 import { LOOPBACK_PROXIES } from "../client-ip.js";
 
@@ -56,6 +66,24 @@ const CHEAP_KDF = {
   saltLength: 16,
 } as const;
 
+/**
+ * Background removal in a test is opt-in, exactly as it is in production: an
+ * API built without this has no processor, no worker and no timers, which is
+ * also the configuration most of the suite runs under — so every photo test
+ * that does not mention the sidecar is, incidentally, a test that the sidecar
+ * is not required.
+ */
+export interface TestImageProcessorOptions {
+  readonly baseUrl: string;
+  readonly timeoutMs?: number;
+  readonly maxAttempts?: number;
+  readonly concurrency?: number;
+}
+
+export interface TestApiOptions {
+  readonly imageProcessor?: TestImageProcessorOptions;
+}
+
 export interface TestApi {
   readonly database: TestDatabase;
   /** A real temporary directory; nothing about the filesystem is faked. */
@@ -65,13 +93,25 @@ export interface TestApi {
   /** Empties the database and rebuilds the app, clock and rate limiter. */
   reset(): Promise<void>;
   destroy(): Promise<void>;
+  /** Where the background-removed variant of a photo would be written. */
+  processedPathOf(photoId: string): string;
+  /**
+   * Runs the worker once, in the foreground, so a test can say "and then the
+   * background happened" without racing a timer. Answers a zero summary when
+   * no sidecar is configured.
+   */
+  runProcessing(): Promise<RunSummary>;
+  /** Re-points the processor, for the cases about a sidecar going away. */
+  pointProcessorAt(baseUrl: string): void;
   createUser(username: string, password: string): Promise<void>;
   /** Logs in and returns the bearer token. */
   login(username?: string, password?: string): Promise<string>;
   authHeaders(token: string): Record<string, string>;
 }
 
-export const createTestApi = async (): Promise<TestApi> => {
+export const createTestApi = async (
+  options: TestApiOptions = {},
+): Promise<TestApi> => {
   const database = await createTestDatabase();
   const photoRoot = await mkdtemp(join(tmpdir(), "ariadna-photo-root-"));
   const hasher = new ScryptPasswordHasher(CHEAP_KDF);
@@ -83,6 +123,37 @@ export const createTestApi = async (): Promise<TestApi> => {
   const storageUnits = new PrismaStorageUnitRepository(database.client);
   const items = new PrismaItemRepository(database.client);
   const photos = new PrismaPhotoRepository(database.client);
+  const files = new PhotoFileStore(photoRoot);
+  const queue = new PrismaPhotoProcessingQueue(database.client);
+
+  let processorBaseUrl = options.imageProcessor?.baseUrl ?? null;
+  let processor: RembgImageProcessor | null = null;
+  let worker: PhotoProcessingWorker | null = null;
+
+  const rebuildProcessing = (): void => {
+    if (processorBaseUrl === null) {
+      processor = null;
+      worker = null;
+      return;
+    }
+
+    processor = new RembgImageProcessor({
+      baseUrl: processorBaseUrl,
+      files,
+      timeoutMs: options.imageProcessor?.timeoutMs ?? 1_000,
+    });
+    worker = new PhotoProcessingWorker({
+      photos,
+      queue,
+      processor,
+      clock: api.clock,
+      concurrency: options.imageProcessor?.concurrency ?? 1,
+      maxAttempts: options.imageProcessor?.maxAttempts ?? 3,
+      // The tests drive the worker by hand; the timer would only add a race.
+      pollIntervalMs: 60_000,
+      leaseMs: 60_000,
+    });
+  };
 
   const api: TestApi = {
     database,
@@ -100,6 +171,7 @@ export const createTestApi = async (): Promise<TestApi> => {
       }
 
       api.clock = new FakeClock(TEST_START);
+      rebuildProcessing();
       api.app = buildApp({
         storageUnits,
         items,
@@ -115,6 +187,14 @@ export const createTestApi = async (): Promise<TestApi> => {
           root: photoRoot,
           maxUploadBytes: MAX_UPLOAD_BYTES_IN_TESTS,
         },
+        // `wake` is deliberately inert: a test that drives `runProcessing`
+        // explicitly is a test that can assert what happened, rather than one
+        // that waits and hopes.
+        photoProcessing: createPhotoProcessing({
+          queue,
+          processor: () => processor,
+          worker: () => null,
+        }),
         rateLimiter: new FixedWindowRateLimiter({
           clock: api.clock,
           limit: LOGIN_ATTEMPT_LIMIT,
@@ -133,6 +213,27 @@ export const createTestApi = async (): Promise<TestApi> => {
       await api.app?.close();
       await database.destroy();
       await rm(photoRoot, { recursive: true, force: true });
+    },
+
+    processedPathOf(photoId: string): string {
+      return files.processedPathFor(photoId as PhotoId);
+    },
+
+    async runProcessing(): Promise<RunSummary> {
+      return (
+        worker?.runOnce() ?? {
+          claimed: 0,
+          processed: 0,
+          skipped: 0,
+          retried: 0,
+          abandoned: 0,
+        }
+      );
+    },
+
+    pointProcessorAt(baseUrl: string): void {
+      processorBaseUrl = baseUrl;
+      rebuildProcessing();
     },
 
     async createUser(username: string, password: string): Promise<void> {

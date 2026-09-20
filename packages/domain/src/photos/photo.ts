@@ -71,6 +71,25 @@ export const markPhotoSkipped = (photo: Photo): Photo => ({
   processingStatus: PhotoProcessingStatus.SKIPPED,
 });
 
+/**
+ * Puts a photo back in the queue, from wherever it ended up.
+ *
+ * ADR 4 notes that `FAILED` photos would otherwise stay unprocessed for ever,
+ * so something has to be able to ask again once the cause is fixed. That ask is
+ * a transition on the photo rather than a flag beside it: "waiting to be
+ * processed" is already spelled `PENDING`, and a second way to say it is how
+ * two of them get to disagree.
+ *
+ * The previous result goes with it. A `PENDING` photo still pointing at a
+ * processed file is exactly the combination `displayPathOf` cannot read
+ * correctly, and it is the one the status exists to rule out.
+ */
+export const markPhotoPending = (photo: Photo): Photo => ({
+  ...photo,
+  processedPath: null,
+  processingStatus: PhotoProcessingStatus.PENDING,
+});
+
 /** Reads always fall back to the original photo (ADR 4). */
 export const displayPathOf = (photo: Photo): string =>
   photo.processedPath ?? photo.originalPath;

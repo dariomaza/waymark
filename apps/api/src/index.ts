@@ -2,8 +2,10 @@
  * `@ariadna/api` — the adapters that implement the `@ariadna/domain` ports,
  * and the HTTP layer that exposes the use cases.
  *
- * Background removal (the rembg sidecar behind the `ImageProcessor` port) is a
- * separate work unit and deliberately absent.
+ * Background removal lives here too, behind the `ImageProcessor` port: the
+ * adapter that talks to the rembg sidecar, the queue that remembers what has
+ * been attempted, and the worker that drains it. All three are optional, and
+ * the API is complete without any of them (ADR 4).
  */
 
 // Ports implemented with the platform
@@ -89,6 +91,7 @@ export { mapDomainError, type MappedDomainError } from "./http/error-mapping.js"
 export {
   DERIVED_CACHE_CONTROL,
   IMMUTABLE_CACHE_CONTROL,
+  PENDING_PHOTO_CACHE_CONTROL,
   etagOf,
   isFresh,
 } from "./http/caching.js";
@@ -140,6 +143,13 @@ export {
   type RembgImageProcessorDependencies,
 } from "./photos/rembg-image-processor.js";
 export {
+  SWITCHED_OFF,
+  createPhotoProcessing,
+  type ImageProcessorStatus,
+  type PhotoProcessingDependencies,
+  type ReachableImageProcessor,
+} from "./photos/photo-processing.js";
+export {
   PhotoProcessingWorker,
   RETRY_BACKOFF_BASE_MS,
   RETRY_BACKOFF_CAP_MS,
@@ -178,4 +188,8 @@ export {
   type ImageProcessingConfig,
   type PhotoConfig,
 } from "./config.js";
-export { createAppDependencies } from "./composition-root.js";
+export {
+  composeApp,
+  createAppDependencies,
+  type ComposedApp,
+} from "./composition-root.js";

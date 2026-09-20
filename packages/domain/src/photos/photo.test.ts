@@ -5,6 +5,7 @@ import {
   createPhoto,
   displayPathOf,
   markPhotoFailed,
+  markPhotoPending,
   markPhotoProcessed,
   markPhotoSkipped,
   PhotoProcessingStatus,
@@ -79,6 +80,57 @@ describe("Photo", () => {
 
     expect(retried.processingStatus).toBe(PhotoProcessingStatus.DONE);
     expect(retried.processedPath).toBe("3f/photo-1.png");
+  });
+
+  describe("being put back in the queue", () => {
+    /**
+     * ADR 4 leaves `FAILED` photos unprocessed for ever unless something can
+     * ask for them again. That ask is a transition on the photo, not a flag
+     * somewhere else: a photo waiting to be processed is spelled `PENDING`, and
+     * a second way to say the same thing is how two of them get to disagree.
+     */
+    it("returns a failed photo to PENDING", () => {
+      const photo = markPhotoPending(markPhotoFailed(createPhoto(baseInput)));
+
+      expect(photo.processingStatus).toBe(PhotoProcessingStatus.PENDING);
+    });
+
+    it("works for a skipped photo too, since a sidecar can change its mind", () => {
+      const photo = markPhotoPending(markPhotoSkipped(createPhoto(baseInput)));
+
+      expect(photo.processingStatus).toBe(PhotoProcessingStatus.PENDING);
+    });
+
+    /**
+     * The processed path goes with it. A photo that is waiting to be processed
+     * while still pointing at the result of a previous run would be a `PENDING`
+     * row that `displayPathOf` reads as done — the one combination the status
+     * exists to rule out.
+     */
+    it("forgets the result of the previous run", () => {
+      const done = markPhotoProcessed(createPhoto(baseInput), "3f/photo-1.png");
+
+      const photo = markPhotoPending(done);
+
+      expect(photo.processedPath).toBeNull();
+      expect(displayPathOf(photo)).toBe("3f/photo-1.jpg");
+    });
+
+    it("keeps the files the photo is made of", () => {
+      const photo = markPhotoPending(markPhotoFailed(createPhoto(baseInput)));
+
+      expect(photo.originalPath).toBe("3f/photo-1.jpg");
+      expect(photo.thumbnailPath).toBe("3f/photo-1.thumb.jpg");
+    });
+
+    it("does not mutate the photo it transitions from", () => {
+      const done = markPhotoProcessed(createPhoto(baseInput), "3f/photo-1.png");
+
+      markPhotoPending(done);
+
+      expect(done.processingStatus).toBe(PhotoProcessingStatus.DONE);
+      expect(done.processedPath).toBe("3f/photo-1.png");
+    });
   });
 
   it("does not mutate the photo it transitions from", () => {

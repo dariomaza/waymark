@@ -1,6 +1,8 @@
 import {
   createPhoto,
   displayPathOf,
+  markPhotoPending,
+  PhotoProcessingStatus,
   ItemNotFound,
   StorageUnitNotFound,
   itemId as toItemId,
@@ -27,8 +29,14 @@ import {
 } from "../../photos/photo-errors.js";
 import { PhotoFileStore, PhotoRootEscape } from "../../photos/photo-file-store.js";
 import { ingestPhoto } from "../../photos/photo-ingestion.js";
+import type { PhotoProcessingDependencies } from "../../photos/photo-processing.js";
 import type { PhotoRelease } from "../../photos/photo-release.js";
-import { IMMUTABLE_CACHE_CONTROL, etagOf, sendUnchangedOrPrepare } from "../caching.js";
+import {
+  IMMUTABLE_CACHE_CONTROL,
+  PENDING_PHOTO_CACHE_CONTROL,
+  etagOf,
+  sendUnchangedOrPrepare,
+} from "../caching.js";
 import {
   idParamsSchema,
   itemPhotoParamsSchema,
@@ -44,6 +52,7 @@ export interface PhotoRouteOptions {
   readonly release: PhotoRelease;
   readonly ids: IdGenerator;
   readonly maxUploadBytes: number;
+  readonly processing: PhotoProcessingDependencies;
   readonly attachItemPhoto: AttachItemPhoto;
   readonly detachItemPhoto: DetachItemPhoto;
   readonly reorderItemPhotos: ReorderItemPhotos;
@@ -90,6 +99,23 @@ export interface PhotoRouteOptions {
  * view opens twenty at once; buffering would make the process hold all of them
  * at the same time for no benefit.
  */
+/**
+ * How many abandoned photos `/photos/processing` shows.
+ *
+ * Enough to see a pattern, few enough that the page stays one screen and one
+ * cheap query. The count beside it is the whole truth; this list is the sample.
+ */
+const ABANDONED_SHOWN = 50;
+
+/**
+ * And how many are requeued by one bulk retry.
+ *
+ * A bound rather than "all of them", because this runs inside a request and the
+ * loop writes one row per photo. Pressing the button twice is a reasonable
+ * thing to ask of somebody who has five hundred failed photos.
+ */
+const MAX_BULK_RETRY = 500;
+
 export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
   app,
   options,
@@ -191,6 +217,8 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
     photo: Photo,
     relativePath: string,
     variant: string,
+    /** True only while the bytes behind this URL may still be replaced. */
+    volatile = false,
   ): Promise<unknown> => {
     let opened;
     try {
@@ -223,7 +251,7 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
       // The path and the size are part of the tag, so a file that somehow
       // changed can never be served from a cache under the old one.
       etag: etagOf("photo", variant, photo.id, relativePath, String(opened.byteSize)),
-      cacheControl: IMMUTABLE_CACHE_CONTROL,
+      cacheControl: volatile ? PENDING_PHOTO_CACHE_CONTROL : IMMUTABLE_CACHE_CONTROL,
       contentType: contentTypeOfPath(relativePath),
       contentLength: opened.byteSize,
     });
@@ -335,12 +363,96 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
       .send({ unit: storageUnitView(result.unit), releasedPhotoIds: [...released] });
   });
 
+  /**
+   * What background removal is doing, for a person rather than for a client.
+   *
+   * It is a route and not a `psql` session on purpose: "is the sidecar up" and
+   * "how many photos are stuck" are the two questions this feature generates,
+   * and needing SSH to answer them is how a background job quietly stops
+   * running for a month.
+   *
+   * Static segments beat parameters in the router, so this is reached even
+   * though `/photos/:id` is declared beside it — and there is a test that says
+   * so, because that precedence is the only thing keeping `processing` from
+   * being read as a photo id.
+   */
+  app.get("/photos/processing", async (_request, reply) => {
+    const [processor, counts, abandoned] = await Promise.all([
+      options.processing.status(),
+      options.processing.queue.counts(),
+      options.processing.queue.abandoned(ABANDONED_SHOWN),
+    ]);
+
+    return reply.code(200).send({
+      processor,
+      counts,
+      abandoned: abandoned.map((photo) => ({
+        photoId: photo.photoId,
+        attempts: photo.attempts,
+        lastError: photo.lastError,
+        lastAttemptAt: photo.lastAttemptAt.toISOString(),
+        url: `/photos/${photo.photoId}`,
+      })),
+    });
+  });
+
+  /**
+   * "Try this one again."
+   *
+   * ADR 4 names the gap this closes: without it, a `FAILED` photo stays
+   * unprocessed for ever, however thoroughly the cause was fixed. Accepted for
+   * a photo in any state, including one that was never processable because no
+   * sidecar was configured — refusing then would make "switch the sidecar on
+   * later" a different workflow from "it was on all along".
+   *
+   * 202, not 200: the photo is queued, and the answer says nothing about the
+   * removal having happened. Waiting for it here is the one thing this design
+   * exists to prevent.
+   */
+  app.post("/photos/:id/reprocess", async (request, reply) => {
+    const { id } = idParamsSchema.parse(request.params);
+    const photo = await findPhoto(id);
+
+    const requeued = markPhotoPending(photo);
+    await options.photos.save(requeued);
+    // The attempts go too. A photo that had already spent them would be
+    // abandoned again on the very next run, which would make this look broken.
+    await options.processing.queue.forget(requeued.id);
+    options.processing.wake();
+
+    return reply.code(202).send({ photo: photoView(requeued) });
+  });
+
+  /** The same thing for everything that failed, because that is the real ask. */
+  app.post("/photos/processing/retry", async (_request, reply) => {
+    const failed = await options.processing.queue.failedPhotoIds(MAX_BULK_RETRY);
+    const photos = await options.photos.findManyByIds(failed);
+
+    for (const photo of photos) {
+      await options.photos.save(markPhotoPending(photo));
+      await options.processing.queue.forget(photo.id);
+    }
+
+    if (photos.length > 0) {
+      options.processing.wake();
+    }
+
+    return reply.code(202).send({ requeued: photos.length });
+  });
+
   app.get("/photos/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
     const photo = await findPhoto(id);
 
     // ADR 4: the processed variant when there is one, the original otherwise.
-    return serve(request, reply, photo, displayPathOf(photo), "full");
+    return serve(
+      request,
+      reply,
+      photo,
+      displayPathOf(photo),
+      "full",
+      photo.processingStatus === PhotoProcessingStatus.PENDING,
+    );
   });
 
   app.get("/photos/:id/thumbnail", async (request, reply) => {

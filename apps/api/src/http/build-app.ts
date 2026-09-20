@@ -43,6 +43,7 @@ import type { PasswordHasher } from "../auth/password-hasher.js";
 import type { SessionRepository } from "../auth/session-repository.js";
 import type { UserRepository } from "../auth/user-repository.js";
 import { PhotoFileStore } from "../photos/photo-file-store.js";
+import type { PhotoProcessingDependencies } from "../photos/photo-processing.js";
 import { PhotoRelease } from "../photos/photo-release.js";
 import { bearerTokenOf } from "./bearer-token.js";
 import { resolveClientIp, type TrustedProxyPolicy } from "./client-ip.js";
@@ -96,6 +97,12 @@ export interface AppDependencies {
   /** What a scanned QR resolves against; see `qr/storage-unit-qr.ts`. */
   readonly publicBaseUrl: string;
   readonly photoStorage: PhotoStorageConfig;
+  /**
+   * Background removal, which is optional in every direction: the routes it
+   * feeds answer "switched off" rather than disappearing, and nothing on the
+   * request path ever waits on it (ADR 4).
+   */
+  readonly photoProcessing: PhotoProcessingDependencies;
   readonly security: SecurityConfig;
   readonly sessionTtlMs?: number;
   readonly renewAfterMs?: number;
@@ -266,6 +273,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       release: photoRelease,
       ids: deps.ids,
       maxUploadBytes: deps.photoStorage.maxUploadBytes,
+      processing: deps.photoProcessing,
       ...useCases,
     });
     void scope.register(qrRoutes, {

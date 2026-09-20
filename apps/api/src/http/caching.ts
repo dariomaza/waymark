@@ -26,6 +26,20 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 export const IMMUTABLE_CACHE_CONTROL = "private, max-age=31536000, immutable";
 
 /**
+ * The one photo that is NOT immutable: one still waiting for its background to
+ * be removed (ADR 4).
+ *
+ * `GET /photos/:id` serves the original until the worker has something better,
+ * and then serves the processed variant under the same id — so for that window,
+ * and only that window, the bytes behind the id really do change. Handing a
+ * phone `immutable, max-age=1 year` in the middle of it would pin the
+ * unprocessed version into its cache for good, and the feature would look
+ * broken on exactly the device it was built for. A minute plus a revalidation
+ * costs one conditional request and an ETag that already changes with the file.
+ */
+export const PENDING_PHOTO_CACHE_CONTROL = "private, max-age=60, must-revalidate";
+
+/**
  * A QR symbol is derived, not stored: it is a function of the public id AND of
  * `ARIADNA_PUBLIC_BASE_URL`, which a redeploy can change. An hour of freshness
  * plus a revalidation keeps the label cheap to fetch without pinning a picture

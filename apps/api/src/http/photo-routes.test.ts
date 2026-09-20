@@ -444,19 +444,40 @@ describe("photos over HTTP", () => {
       );
     });
 
-    it("caches hard, because a stored image never changes", async () => {
+    /**
+     * A freshly uploaded photo is `PENDING` (ADR 4), and `GET /photos/:id` is
+     * the one URL whose bytes can still be replaced: the moment background
+     * removal finishes, the same id starts serving the processed variant. So
+     * this asks for revalidation rather than `immutable`, which would pin the
+     * unprocessed version into a phone's cache for a year. Everything else
+     * about the header is unchanged — never `public`, always a validator.
+     */
+    it("asks a client to revalidate while the photo may still be replaced", async () => {
       const item = await createItem();
       const photo = photoOf(await uploadToItem(item.id, await aPlainImage("jpeg")));
 
       const served = await call({ method: "GET", url: photo.url });
 
-      expect(served.headers["cache-control"]).toContain("immutable");
+      expect(served.headers["cache-control"]).not.toContain("immutable");
+      expect(served.headers["cache-control"]).toContain("must-revalidate");
       // Never `public`: a shared cache must not hold the inside of a house.
       expect(served.headers["cache-control"]).toContain("private");
       expect(served.headers.etag).toBeDefined();
       expect(served.headers["content-length"]).toBe(
         String(served.rawPayload.byteLength),
       );
+    });
+
+    /** A thumbnail is written once at upload and is never touched again. */
+    it("caches the thumbnail hard, because that file really never changes", async () => {
+      const item = await createItem();
+      const photo = photoOf(await uploadToItem(item.id, await aPlainImage("jpeg")));
+
+      const served = await call({ method: "GET", url: photo.thumbnailUrl });
+
+      expect(served.headers["cache-control"]).toContain("immutable");
+      expect(served.headers["cache-control"]).toContain("private");
+      expect(served.headers.etag).toBeDefined();
     });
 
     it("answers 304 to a client that already has it", async () => {
