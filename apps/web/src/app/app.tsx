@@ -8,6 +8,7 @@ import type { AriadnaClient } from "../api/ariadna-client.js";
 import { LoginScreen } from "../auth/login-screen.js";
 import { RequireSession } from "../auth/require-session.js";
 import { ItemScreen } from "../items/item-screen.js";
+import { ScannedLabelScreen } from "../scanning/scanned-label-screen.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
@@ -51,6 +52,8 @@ export const App = ({ client }: AppProps = {}): JSX.Element => {
               <Route path="/" element={<InventoryScreen />} />
               <Route path="/units/:id" element={<UnitScreen />} />
               <Route path="/items/:id" element={<ItemScreen />} />
+              {/* The address printed on every box. See the screen. */}
+              <Route path="/u/:publicId" element={<ScannedLabelScreen />} />
             </Route>
           </Route>
 
