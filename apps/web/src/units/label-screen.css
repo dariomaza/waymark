@@ -1,0 +1,68 @@
+.label-screen__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.label {
+  /* White, always. A label is printed, and a dark one is a cartridge. */
+  background: #ffffff;
+  color: #000000;
+  border-radius: var(--radius-m);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 20rem;
+}
+
+.label__symbol {
+  width: 100%;
+  max-width: 14rem;
+  aspect-ratio: 1;
+  background: #ffffff;
+}
+
+.label__name {
+  margin: 0;
+  font-size: var(--text-l);
+  font-weight: 700;
+  text-align: center;
+}
+
+.label__where {
+  margin: 0;
+  font-size: var(--text-s);
+  text-align: center;
+}
+
+.label__code {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+}
+
+.label-screen__hint {
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+}
+
+/**
+ * Printing sends the label and nothing else. A bar, a bottom navigation and a
+ * breadcrumb on a sticker are ink nobody asked for.
+ */
+@media print {
+  .app-bar,
+  .bottom-nav,
+  .app-shell__who,
+  .label-screen__actions,
+  .label-screen__hint {
+    display: none !important;
+  }
+
+  .label {
+    border: 1px solid #000000;
+    break-inside: avoid;
+  }
+}

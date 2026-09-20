@@ -72,6 +72,9 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
       <Link className="button button--secondary" to={`/search?within=${unit.id}`}>
         Search inside
       </Link>
+      <Link className="button button--secondary" to={`/units/${unit.id}/label`}>
+        Label
+      </Link>
 
       {open === "create" ? (
         <CreateUnitDialog parentId={unit.id} onClose={close} />

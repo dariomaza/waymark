@@ -12,6 +12,7 @@ import { ItemScreen } from "../items/item-screen.js";
 import { ScannedLabelScreen } from "../scanning/scanned-label-screen.js";
 import { SearchScreen } from "../search/search-screen.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
+import { LabelScreen } from "../units/label-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
 import { createDefaultClient } from "./create-client.js";
@@ -54,6 +55,7 @@ export const App = ({ client }: AppProps = {}): JSX.Element => {
               <Route path="/" element={<InventoryScreen />} />
               <Route path="/search" element={<SearchScreen />} />
               <Route path="/units/:id" element={<UnitScreen />} />
+              <Route path="/units/:id/label" element={<LabelScreen />} />
               <Route path="/items" element={<AllItemsScreen />} />
               <Route path="/items/:id" element={<ItemScreen />} />
               {/* The address printed on every box. See the screen. */}
