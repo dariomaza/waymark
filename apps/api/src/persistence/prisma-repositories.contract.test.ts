@@ -3,16 +3,19 @@ import {
   domainUseCaseContract,
   itemRepositoryContract,
   photoRepositoryContract,
+  searchRepositoryContract,
   storageUnitRepositoryContract,
   type DomainUseCaseContext,
   type ItemRepositoryContext,
   type PhotoRepositoryContext,
+  type SearchRepositoryContext,
   type StorageUnitRepositoryContext,
 } from "@ariadna/domain-contract-tests";
 import { afterAll, beforeAll } from "vitest";
 
 import { PrismaItemRepository } from "./prisma-item-repository.js";
 import { PrismaPhotoRepository } from "./prisma-photo-repository.js";
+import { PrismaSearchRepository } from "./prisma-search-repository.js";
 import { PrismaStorageUnitRepository } from "./prisma-storage-unit-repository.js";
 import { createTestDatabase, type TestDatabase } from "./testing/test-database.js";
 
@@ -69,6 +72,19 @@ photoRepositoryContract({
   setUp: async (): Promise<PhotoRepositoryContext> => {
     await database.reset();
     return { photos: new PrismaPhotoRepository(database.client) };
+  },
+  tearDown: async () => {},
+});
+
+searchRepositoryContract({
+  name: "PrismaSearchRepository",
+  setUp: async (): Promise<SearchRepositoryContext> => {
+    await database.reset();
+    return {
+      search: new PrismaSearchRepository(database.client),
+      items: new PrismaItemRepository(database.client),
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+    };
   },
   tearDown: async () => {},
 });

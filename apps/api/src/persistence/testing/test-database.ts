@@ -53,14 +53,46 @@ const loadMigrationStatements = async (): Promise<string[]> => {
   return statements;
 };
 
-const splitStatements = (sql: string): string[] =>
-  sql
+/**
+ * Splits a migration into statements the way SQLite's own `execute_batch`
+ * does, which is what `prisma migrate deploy` ends up calling.
+ *
+ * Splitting on `;` alone is not enough: a `CREATE TRIGGER` carries its body
+ * between `BEGIN` and `END`, semicolons and all, so a naive split hands the
+ * database half a trigger and the other half as a statement of its own. The
+ * fragments are therefore rejoined until the trigger is closed.
+ */
+const isUnclosedTrigger = (statement: string): boolean =>
+  /^CREATE\s+TRIGGER\b/iu.test(statement) && !/\bEND$/iu.test(statement);
+
+const splitStatements = (sql: string): string[] => {
+  const withoutComments = sql
     .split("\n")
     .filter((line) => !line.trimStart().startsWith("--"))
-    .join("\n")
-    .split(";")
-    .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0);
+    .join("\n");
+
+  const statements: string[] = [];
+  let pending = "";
+
+  for (const fragment of withoutComments.split(";")) {
+    pending = pending.length === 0 ? fragment : `${pending};${fragment}`;
+
+    const statement = pending.trim();
+    if (statement.length === 0) {
+      pending = "";
+      continue;
+    }
+
+    if (isUnclosedTrigger(statement)) {
+      continue;
+    }
+
+    statements.push(statement);
+    pending = "";
+  }
+
+  return statements;
+};
 
 export const createTestDatabase = async (): Promise<TestDatabase> => {
   const directory = await mkdtemp(join(tmpdir(), "ariadna-sqlite-"));

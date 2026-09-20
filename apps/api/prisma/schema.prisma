@@ -3,6 +3,19 @@
 // The domain in `packages/domain` knows nothing about this file. Everything
 // here is a faithful projection of the domain entities onto SQLite, and the
 // adapters in `src/persistence` are the only code allowed to read it.
+//
+// THIS FILE IS NOT THE WHOLE SCHEMA. The full-text search index — the
+// `ItemSearch` and `StorageUnitSearch` virtual tables and the nine triggers
+// that keep them in step (ADR 11) — lives only in
+// `migrations/20260921090000_add_full_text_search_index`, because Prisma has
+// no way to declare an FTS5 table or a trigger.
+//
+// The consequence is a trap: `prisma migrate dev` diffs the database against
+// THIS file, does not find them, and offers to DROP them. Accepting that
+// leaves a product whose search answers nothing, quietly, with no error
+// anywhere. Generate new migrations with `--create-only` and delete any
+// `DROP TABLE "ItemSearch"` before applying. `src/persistence/search-index.test.ts`
+// fails if one ever gets through.
 
 generator client {
   provider = "prisma-client-js"
