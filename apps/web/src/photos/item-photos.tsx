@@ -1,4 +1,4 @@
-import { MAX_ITEM_PHOTOS, PhotoProcessingStatus } from "@ariadna/domain";
+import { MAX_ITEM_PHOTOS } from "@ariadna/domain";
 import type { JSX } from "react";
 
 import { detailNumber } from "../api/api-error.js";
@@ -13,7 +13,7 @@ import {
   useReorderItemPhotos,
   useUploadItemPhoto,
 } from "./photo-mutations.js";
-import { photoThumbnailUrl } from "./photo-urls.js";
+import { photoStatusNote } from "./photo-status.js";
 import { movedEarlier, withCoverFirst } from "./reorder.js";
 import { PhotoPicker } from "./views/photo-picker.js";
 import "./item-photos.css";
@@ -31,14 +31,13 @@ export interface ItemPhotosProps {
  *
  * Nothing here waits on background removal. A photo is uploaded, stored and
  * served from its original immediately; a sidecar may replace those bytes
- * later, or may not exist at all (ADR 4). The only thing the UI says about it
- * is a quiet line under a photo that was just uploaded, because that is the
- * one moment somebody might otherwise wonder whether it worked.
+ * later, or may not exist at all (ADR 4). What the screen says about that is
+ * a quiet line under the photo it concerns, and only for the two states that
+ * are news — see `photo-status.ts`.
  *
- * The per-photo status is not available here at all: `ItemView.photos` is a
- * list of ids, and the API exposes a `PhotoView` only in the answer to an
- * upload. That is why the note is tied to the upload that just happened
- * rather than shown against every pending photo.
+ * Every URL comes from the API. `ItemView.photos` carries whole photos, so
+ * nothing here builds `/photos/<id>` out of an id and hopes the route has not
+ * moved.
  */
 export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
   const upload = useUploadItemPhoto(item.id);
@@ -49,8 +48,9 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
     upload.error,
     detailNumber(upload.error, "limit") ?? MAX_ITEM_PHOTOS,
   );
-  const justUploadedIsPending =
-    upload.data?.photo.processingStatus === PhotoProcessingStatus.PENDING;
+  // The order is what the API is asked to store; the photos themselves are
+  // what it hands back (ADR 9).
+  const order = item.photos.map((photo) => photo.id);
 
   return (
     <section className="item-photos">
@@ -70,59 +70,59 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
         </Callout>
       ) : null}
 
-      {justUploadedIsPending ? (
-        <p className="item-photos__pending">
-          Background removal is still pending. The original is shown, and it stays
-          shown whether or not the background is ever removed.
-        </p>
-      ) : null}
-
       {item.photos.length === 0 ? null : (
         <ul className="item-photos__grid" aria-label="Photos">
-          {item.photos.map((id, index) => (
-            <li className="item-photos__cell" key={id}>
-              <AuthenticatedImage
-                src={photoThumbnailUrl(id)}
-                alt={
-                  index === 0
-                    ? `Cover photo of ${item.name}`
-                    : `Photo ${String(index + 1)} of ${item.name}`
-                }
-              />
-              <div className="item-photos__controls">
-                {index === 0 ? (
-                  <span className="item-photos__cover">Cover</span>
-                ) : (
-                  <>
-                    <Button
-                      tone="quiet"
-                      onClick={() => {
-                        reorder.mutate(withCoverFirst(item.photos, id));
-                      }}
-                    >
-                      Make photo {index + 1} the cover
-                    </Button>
-                    <Button
-                      tone="quiet"
-                      onClick={() => {
-                        reorder.mutate(movedEarlier(item.photos, id));
-                      }}
-                    >
-                      Move photo {index + 1} earlier
-                    </Button>
-                  </>
+          {item.photos.map((photo, index) => {
+            const note = photoStatusNote(photo.processingStatus);
+
+            return (
+              <li className="item-photos__cell" key={photo.id}>
+                <AuthenticatedImage
+                  src={photo.thumbnailUrl}
+                  alt={
+                    index === 0
+                      ? `Cover photo of ${item.name}`
+                      : `Photo ${String(index + 1)} of ${item.name}`
+                  }
+                />
+                {note === null ? null : (
+                  <p className="item-photos__pending">{note}</p>
                 )}
-                <Button
-                  tone="quiet"
-                  onClick={() => {
-                    remove.mutate(id);
-                  }}
-                >
-                  Delete photo {index + 1}
-                </Button>
-              </div>
-            </li>
-          ))}
+                <div className="item-photos__controls">
+                  {index === 0 ? (
+                    <span className="item-photos__cover">Cover</span>
+                  ) : (
+                    <>
+                      <Button
+                        tone="quiet"
+                        onClick={() => {
+                          reorder.mutate(withCoverFirst(order, photo.id));
+                        }}
+                      >
+                        Make photo {index + 1} the cover
+                      </Button>
+                      <Button
+                        tone="quiet"
+                        onClick={() => {
+                          reorder.mutate(movedEarlier(order, photo.id));
+                        }}
+                      >
+                        Move photo {index + 1} earlier
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    tone="quiet"
+                    onClick={() => {
+                      remove.mutate(photo.id);
+                    }}
+                  >
+                    Delete photo {index + 1}
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

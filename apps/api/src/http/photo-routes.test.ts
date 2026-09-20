@@ -33,9 +33,12 @@ interface PhotoView {
 
 interface ItemView {
   readonly id: string;
-  readonly photos: readonly string[];
+  /** Whole views, not ids: a client must never have to build a photo URL. */
+  readonly photos: readonly PhotoView[];
   readonly coverPhotoId: string | null;
 }
+
+const photoIdsOf = (item: ItemView): string[] => item.photos.map((photo) => photo.id);
 
 interface UnitView {
   readonly id: string;
@@ -161,7 +164,7 @@ describe("photos over HTTP", () => {
       expect(response.statusCode).toBe(201);
       const body = response.json() as { photo: PhotoView; item: ItemView };
       expect(body.photo.processingStatus).toBe("PENDING");
-      expect(body.item.photos).toEqual([body.photo.id]);
+      expect(photoIdsOf(body.item)).toEqual([body.photo.id]);
       expect(body.item.coverPhotoId).toBe(body.photo.id);
     });
 
@@ -174,6 +177,29 @@ describe("photos over HTTP", () => {
       expect(photo.thumbnailUrl).toBe(`/photos/${photo.id}/thumbnail`);
     });
 
+    it("hands the item's photos back as views, so no client builds a URL", async () => {
+      const item = await createItem();
+
+      const response = await uploadToItem(item.id, await aPlainImage("jpeg"));
+
+      const [photo] = (response.json() as { item: ItemView }).item.photos;
+      expect(photo?.url).toBe(`/photos/${photo?.id ?? ""}`);
+      expect(photo?.thumbnailUrl).toBe(`/photos/${photo?.id ?? ""}/thumbnail`);
+    });
+
+    it("says on the item that a freshly uploaded photo is still PENDING", async () => {
+      const item = await createItem();
+
+      const response = await uploadToItem(item.id, await aPlainImage("jpeg"));
+
+      // Background removal is optional and may never run at all (ADR 4), so
+      // this is the normal state of a photo and possibly its final one. A
+      // client that only sees ids cannot tell anybody that.
+      expect(
+        (response.json() as { item: ItemView }).item.photos[0]?.processingStatus,
+      ).toBe("PENDING");
+    });
+
     it("keeps the first upload as the cover", async () => {
       const item = await createItem();
       const first = photoOf(await uploadToItem(item.id, await aPlainImage("jpeg")));
@@ -181,7 +207,7 @@ describe("photos over HTTP", () => {
       const response = await uploadToItem(item.id, await aPlainImage("png"));
 
       const body = response.json() as { item: ItemView };
-      expect(body.item.photos[0]).toBe(first.id);
+      expect(photoIdsOf(body.item)[0]).toBe(first.id);
       expect(body.item.coverPhotoId).toBe(first.id);
     });
 
@@ -264,7 +290,7 @@ describe("photos over HTTP", () => {
       await uploadToItem(item.id, notAnImage());
 
       const after = await call({ method: "GET", url: `/items/${item.id}` });
-      expect((after.json() as { item: ItemView }).item.photos).toEqual([]);
+      expect(photoIdsOf((after.json() as { item: ItemView }).item)).toEqual([]);
     });
 
     it("writes nothing to disk when the upload is refused", async () => {
@@ -392,7 +418,7 @@ describe("photos over HTTP", () => {
 
       expect(await countStoredFiles(api.photoRoot)).toBe(before);
       const after = await call({ method: "GET", url: `/items/${item.id}` });
-      expect((after.json() as { item: ItemView }).item.photos).toEqual([]);
+      expect(photoIdsOf((after.json() as { item: ItemView }).item)).toEqual([]);
     });
 
     it("accepts one comfortably under the limit", async () => {
@@ -534,7 +560,7 @@ describe("photos over HTTP", () => {
 
       expect(response.statusCode).toBe(200);
       const body = response.json() as { item: ItemView };
-      expect(body.item.photos).toEqual([ids[2], ids[0], ids[1]]);
+      expect(photoIdsOf(body.item)).toEqual([ids[2], ids[0], ids[1]]);
       expect(body.item.coverPhotoId).toBe(ids[2]);
     });
 
@@ -548,7 +574,7 @@ describe("photos over HTTP", () => {
 
       const reread = await call({ method: "GET", url: `/items/${item.id}` });
 
-      expect((reread.json() as { item: ItemView }).item.photos).toEqual([
+      expect(photoIdsOf((reread.json() as { item: ItemView }).item)).toEqual([
         ids[1],
         ids[0],
       ]);
@@ -594,7 +620,7 @@ describe("photos over HTTP", () => {
 
       expect(response.statusCode).toBe(200);
       const body = response.json() as { item: ItemView; releasedPhotoIds: string[] };
-      expect(body.item.photos).toEqual([]);
+      expect(photoIdsOf(body.item)).toEqual([]);
       expect(body.releasedPhotoIds).toEqual([photo.id]);
       expect((await call({ method: "GET", url: photo.url })).statusCode).toBe(404);
       expect(await countStoredFiles(api.photoRoot)).toBe(0);

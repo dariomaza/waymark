@@ -13,6 +13,7 @@ import {
 } from "@ariadna/domain";
 import type { FastifyPluginAsync } from "fastify";
 
+import type { ItemViews } from "../item-views.js";
 import { buildStorageUnitForest } from "../storage-unit-tree.js";
 import {
   createStorageUnitBodySchema,
@@ -21,7 +22,7 @@ import {
   moveStorageUnitBodySchema,
   updateStorageUnitBodySchema,
 } from "../validation.js";
-import { itemView, storageUnitTreeView, storageUnitView } from "../views.js";
+import { storageUnitTreeView, storageUnitView } from "../views.js";
 
 export interface StorageUnitRouteOptions {
   readonly storageUnits: StorageUnitRepository;
@@ -32,6 +33,7 @@ export interface StorageUnitRouteOptions {
   readonly deleteStorageUnit: DeleteStorageUnit;
   readonly emptyStorageUnit: EmptyStorageUnit;
   readonly getStorageUnitPath: GetStorageUnitPath;
+  readonly itemViews: ItemViews;
 }
 
 /** A total order, so two reads of an unchanged unit list the same way. */
@@ -123,7 +125,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
       unit: storageUnitView(unit),
       path: path.map(storageUnitView),
       children: [...children].sort(byName).map(storageUnitView),
-      items: [...items].sort(byName).map(itemView),
+      items: await options.itemViews.ofMany([...items].sort(byName)),
     });
   });
 
@@ -165,7 +167,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     );
 
     return reply.code(200).send({
-      movedItems: result.movedItems.map(itemView),
+      movedItems: await options.itemViews.ofMany(result.movedItems),
       movedChildUnits: result.movedChildUnits.map(storageUnitView),
     });
   });

@@ -1,9 +1,9 @@
 import {
-  coverPhotoId,
   formatStorageUnitPath,
   type Item,
   type ItemSearchResult,
   type Photo,
+  type PhotoId,
   type StorageUnit,
   type StorageUnitSearchResult,
 } from "@ariadna/domain";
@@ -40,8 +40,18 @@ export interface ItemView {
   readonly description: string | null;
   readonly quantity: number;
   readonly tags: readonly string[];
-  readonly photos: readonly string[];
-  /** `photos[0]`, spelled out so a list screen does not have to know that. */
+  /**
+   * Whole photos, ordered, not their ids.
+   *
+   * Ids were the cheaper projection and they were the wrong one. A client
+   * holding an id has to build `/photos/<id>` by hand — which is exactly what
+   * `PhotoView` exists to stop, three lines further down — and it cannot see
+   * `processingStatus` at all, so a photo still waiting for background
+   * removal (ADR 4) looks identical to one that is finished, and the screen
+   * has nothing true to say about it.
+   */
+  readonly photos: readonly PhotoView[];
+  /** `photos[0].id`, spelled out so a list screen does not have to know that. */
   readonly coverPhotoId: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -113,18 +123,38 @@ export const storageUnitView = (unit: StorageUnit): StorageUnitView => ({
   updatedAt: unit.updatedAt.toISOString(),
 });
 
-export const itemView = (item: Item): ItemView => ({
-  id: item.id,
-  storageUnitId: item.storageUnitId,
-  name: item.name,
-  description: item.description,
-  quantity: item.quantity,
-  tags: [...item.tags],
-  photos: [...item.photos],
-  coverPhotoId: coverPhotoId(item),
-  createdAt: item.createdAt.toISOString(),
-  updatedAt: item.updatedAt.toISOString(),
-});
+/**
+ * Projects an item, resolving its photo ids against rows the caller already
+ * loaded. See `item-views.ts` for who loads them and in how many queries.
+ *
+ * A photo id with no row behind it is left OUT rather than projected as a
+ * half-photo. The row is what says where the bytes are and whether they have
+ * settled, so without one there is nothing a client could draw; the cover
+ * follows the list, so it can never point at a photo that is not in it.
+ */
+export const itemView = (
+  item: Item,
+  photos: ReadonlyMap<PhotoId, Photo>,
+): ItemView => {
+  const held = item.photos.flatMap((id) => {
+    const photo = photos.get(id);
+
+    return photo === undefined ? [] : [photoView(photo)];
+  });
+
+  return {
+    id: item.id,
+    storageUnitId: item.storageUnitId,
+    name: item.name,
+    description: item.description,
+    quantity: item.quantity,
+    tags: [...item.tags],
+    photos: held,
+    coverPhotoId: held[0]?.id ?? null,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  };
+};
 
 export const photoView = (photo: Photo): PhotoView => ({
   id: photo.id,
@@ -140,10 +170,15 @@ export const storageUnitTreeView = (
   children: node.children.map(storageUnitTreeView),
 });
 
+/**
+ * Takes the already-projected item rather than the entity, so the photos are
+ * loaded once for the whole answer instead of once per hit.
+ */
 export const itemSearchResultView = (
   result: ItemSearchResult,
+  item: ItemView,
 ): ItemSearchResultView => ({
-  item: itemView(result.item),
+  item,
   path: result.path.map(storageUnitView),
   location: formatStorageUnitPath(result.path),
   matchedFields: [...result.matchedFields],

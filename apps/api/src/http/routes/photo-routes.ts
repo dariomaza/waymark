@@ -31,6 +31,7 @@ import { PhotoFileStore, PhotoRootEscape } from "../../photos/photo-file-store.j
 import { ingestPhoto } from "../../photos/photo-ingestion.js";
 import type { PhotoProcessingDependencies } from "../../photos/photo-processing.js";
 import type { PhotoRelease } from "../../photos/photo-release.js";
+import type { ItemViews } from "../item-views.js";
 import {
   IMMUTABLE_CACHE_CONTROL,
   PENDING_PHOTO_CACHE_CONTROL,
@@ -42,7 +43,7 @@ import {
   itemPhotoParamsSchema,
   reorderItemPhotosBodySchema,
 } from "../validation.js";
-import { itemView, photoView, storageUnitView } from "../views.js";
+import { photoView, storageUnitView } from "../views.js";
 
 export interface PhotoRouteOptions {
   readonly items: ItemRepository;
@@ -53,6 +54,7 @@ export interface PhotoRouteOptions {
   readonly ids: IdGenerator;
   readonly maxUploadBytes: number;
   readonly processing: PhotoProcessingDependencies;
+  readonly itemViews: ItemViews;
   readonly attachItemPhoto: AttachItemPhoto;
   readonly detachItemPhoto: DetachItemPhoto;
   readonly reorderItemPhotos: ReorderItemPhotos;
@@ -288,7 +290,10 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
     return reply
       .code(201)
       .header("location", `/photos/${photo.id}`)
-      .send({ photo: photoView(result.photo), item: itemView(result.item) });
+      .send({
+        photo: photoView(result.photo),
+        item: await options.itemViews.of(result.item),
+      });
   });
 
   app.post("/items/:id/photos/order", async (request, reply) => {
@@ -300,7 +305,7 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
       photoIds: body.photoIds.map(toPhotoId),
     });
 
-    return reply.code(200).send({ item: itemView(item) });
+    return reply.code(200).send({ item: await options.itemViews.of(item) });
   });
 
   app.delete("/items/:id/photos/:photoId", async (request, reply) => {
@@ -315,7 +320,10 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
 
     return reply
       .code(200)
-      .send({ item: itemView(result.item), releasedPhotoIds: [...released] });
+      .send({
+        item: await options.itemViews.of(result.item),
+        releasedPhotoIds: [...released],
+      });
   });
 
   app.post("/storage-units/:id/photo", async (request, reply) => {

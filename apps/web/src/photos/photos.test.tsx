@@ -120,6 +120,67 @@ describe("photos", () => {
     expect(screen.getByText(/background removal is still pending/i)).toBeVisible();
   });
 
+  it("says WHICH photo is still waiting for its background to be removed", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/items/drill`, () =>
+        HttpResponse.json({
+          item: anItem({
+            id: "drill",
+            storageUnitId: "box3",
+            name: "Cordless drill",
+            photos: [
+              aPhoto({ id: "p1", processingStatus: PhotoProcessingStatus.DONE }),
+              aPhoto({ id: "p2", processingStatus: PhotoProcessingStatus.PENDING }),
+            ],
+          }),
+          storageUnit: box,
+          path: [garage, box],
+        }),
+      ),
+    );
+
+    renderApp({ route: "/items/drill" });
+
+    // Only the pending one says anything. A finished photo is just a photo,
+    // and a note on every cell would be noise (ADR 4).
+    const notes = await screen.findAllByText(/background removal is still pending/i);
+    expect(notes).toHaveLength(1);
+
+    const cells = within(await screen.findByRole("list", { name: /photos/i })).getAllByRole(
+      "listitem",
+    );
+    expect(cells[1]).toContainElement(notes[0] ?? null);
+  });
+
+  it("takes every photo URL from the API rather than building one", async () => {
+    const asked: string[] = [];
+    apiServer.use(
+      http.get(`${API_URL}/items/drill`, () =>
+        HttpResponse.json({
+          item: anItem({
+            id: "drill",
+            storageUnitId: "box3",
+            name: "Cordless drill",
+            photos: ["p1"],
+          }),
+          storageUnit: box,
+          path: [garage, box],
+        }),
+      ),
+      http.get(`${API_URL}/photos/:id/thumbnail`, ({ request }) => {
+        asked.push(new URL(request.url).pathname);
+
+        return someBytes();
+      }),
+    );
+
+    renderApp({ route: "/items/drill" });
+
+    await waitFor(() => {
+      expect(asked).toEqual(["/photos/p1/thumbnail"]);
+    });
+  });
+
   it("chooses the cover by reordering, because that is what a cover is", async () => {
     const orders: unknown[] = [];
     apiServer.use(

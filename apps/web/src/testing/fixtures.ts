@@ -66,11 +66,14 @@ export interface ItemOverrides {
   readonly description?: string | null;
   readonly quantity?: number;
   readonly tags?: readonly string[];
-  readonly photos?: readonly string[];
+  /** An id is shorthand for a photo nobody has processed yet. */
+  readonly photos?: readonly (string | PhotoView)[];
 }
 
 export const anItem = (overrides: ItemOverrides = {}): ItemView => {
-  const photos = (overrides.photos ?? []).map(photoId);
+  const photos = (overrides.photos ?? []).map((photo) =>
+    typeof photo === "string" ? aPhoto({ id: photo }) : photo,
+  );
 
   return {
     id: itemId(overrides.id ?? "item-1"),
@@ -80,7 +83,7 @@ export const anItem = (overrides: ItemOverrides = {}): ItemView => {
     quantity: overrides.quantity ?? 1,
     tags: overrides.tags ?? [],
     photos,
-    coverPhotoId: photos[0] ?? null,
+    coverPhotoId: photos[0]?.id ?? null,
     createdAt: AT,
     updatedAt: AT,
   };

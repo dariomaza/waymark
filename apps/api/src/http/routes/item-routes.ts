@@ -14,13 +14,15 @@ import type { FastifyPluginAsync } from "fastify";
 
 import type { PhotoRelease } from "../../photos/photo-release.js";
 
+import type { ItemViews } from "../item-views.js";
+
 import {
   createItemBodySchema,
   idParamsSchema,
   moveItemsBodySchema,
   updateItemBodySchema,
 } from "../validation.js";
-import { itemView, storageUnitView } from "../views.js";
+import { storageUnitView } from "../views.js";
 
 export interface ItemRouteOptions {
   readonly items: ItemRepository;
@@ -29,6 +31,7 @@ export interface ItemRouteOptions {
   readonly updateItem: UpdateItem;
   readonly deleteItem: DeleteItem;
   readonly getStorageUnitPath: GetStorageUnitPath;
+  readonly itemViews: ItemViews;
   readonly photoRelease: PhotoRelease;
 }
 
@@ -80,7 +83,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
     return reply
       .code(201)
       .header("location", `/items/${item.id}`)
-      .send({ item: itemView(item) });
+      .send({ item: await options.itemViews.of(item) });
   });
 
   app.get("/items/:id", async (request, reply) => {
@@ -97,7 +100,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
     const storageUnit = path.at(-1);
 
     return reply.code(200).send({
-      item: itemView(item),
+      item: await options.itemViews.of(item),
       storageUnit: storageUnit === undefined ? null : storageUnitView(storageUnit),
       path: path.map(storageUnitView),
     });
@@ -115,7 +118,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
       ...(body.tags === undefined ? {} : { tags: body.tags }),
     });
 
-    return reply.code(200).send({ item: itemView(item) });
+    return reply.code(200).send({ item: await options.itemViews.of(item) });
   });
 
   app.post("/items/move", async (request, reply) => {
@@ -126,7 +129,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
       targetUnitId: unitId(body.targetUnitId),
     });
 
-    return reply.code(200).send({ items: items.map(itemView) });
+    return reply.code(200).send({ items: await options.itemViews.ofMany(items) });
   });
 
   app.delete("/items/:id", async (request, reply) => {

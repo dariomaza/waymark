@@ -55,8 +55,15 @@ export interface ItemView {
   readonly description: string | null;
   readonly quantity: number;
   readonly tags: readonly string[];
-  /** Ordered. The first one is the cover, which is why choosing one is a move. */
-  readonly photos: readonly PhotoId[];
+  /**
+   * Ordered, and whole photos rather than ids: the first one is the cover,
+   * which is why choosing one is a reorder (ADR 9).
+   *
+   * Each one carries its own `url`, `thumbnailUrl` and `processingStatus`, so
+   * this app builds no photo URL and can say which picture is still waiting
+   * for a background removal that may never happen (ADR 4).
+   */
+  readonly photos: readonly PhotoView[];
   readonly coverPhotoId: PhotoId | null;
   readonly createdAt: string;
   readonly updatedAt: string;

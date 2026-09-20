@@ -110,6 +110,53 @@ describe("background removal over HTTP", () => {
       return (response.json() as { photo: PhotoView }).photo;
     };
 
+    /**
+     * The same upload, addressed to an item instead of a unit, because the
+     * per-photo state a client shows lives on `ItemView.photos`.
+     */
+    const anItemWithAPhoto = async (): Promise<{
+      readonly itemId: string;
+      readonly photo: PhotoView;
+    }> => {
+      const unit = (
+        (
+          await call({
+            method: "POST",
+            url: "/storage-units",
+            payload: { name: "Box 3", parentId: null, kind: StorageUnitKind.BOX },
+          })
+        ).json() as { unit: { id: string } }
+      ).unit;
+      const item = (
+        (
+          await call({
+            method: "POST",
+            url: "/items",
+            payload: { name: "Cordless drill", storageUnitId: unit.id },
+          })
+        ).json() as { item: { id: string } }
+      ).item;
+
+      const body = multipartBody({
+        field: "file",
+        filename: "thing.jpg",
+        contentType: "image/jpeg",
+        bytes: await aPlainImage("jpeg", 120, 60),
+      });
+      const response = await call({
+        method: "POST",
+        url: `/items/${item.id}/photos`,
+        headers: { "content-type": body.contentType },
+        payload: body.payload,
+      });
+      expect(response.statusCode).toBe(201);
+
+      return {
+        itemId: item.id,
+        photo: (response.json() as { photo: PhotoView }).photo,
+      };
+    };
+
     const processing = async (): Promise<ProcessingView> => {
       const response = await call({ method: "GET", url: "/photos/processing" });
       expect(response.statusCode).toBe(200);
@@ -189,6 +236,24 @@ describe("background removal over HTTP", () => {
         const response = await call({ method: "GET", url: `/photos/${photo.id}` });
 
         expect(response.headers["cache-control"]).toContain("immutable");
+      });
+
+      it("says on the item itself that its photo has become DONE", async () => {
+        const { itemId } = await anItemWithAPhoto();
+
+        const before = await call({ method: "GET", url: `/items/${itemId}` });
+        expect(
+          (before.json() as { item: { photos: readonly PhotoView[] } }).item.photos[0]
+            ?.processingStatus,
+        ).toBe(PhotoProcessingStatus.PENDING);
+
+        await api.runProcessing();
+
+        const after = await call({ method: "GET", url: `/items/${itemId}` });
+        expect(
+          (after.json() as { item: { photos: readonly PhotoView[] } }).item.photos[0]
+            ?.processingStatus,
+        ).toBe(PhotoProcessingStatus.DONE);
       });
 
       it("keeps serving the thumbnail from the original", async () => {

@@ -1,11 +1,17 @@
 import { unitId, type SearchInventory } from "@ariadna/domain";
 import type { FastifyPluginAsync } from "fastify";
 
+import type { ItemViews } from "../item-views.js";
 import { searchQuerySchema } from "../validation.js";
-import { itemSearchResultView, storageUnitSearchResultView } from "../views.js";
+import {
+  itemSearchResultView,
+  storageUnitSearchResultView,
+  type ItemView,
+} from "../views.js";
 
 export interface SearchRouteOptions {
   readonly searchInventory: SearchInventory;
+  readonly itemViews: ItemViews;
 }
 
 /**
@@ -45,12 +51,19 @@ export const searchRoutes: FastifyPluginAsync<SearchRouteOptions> = async (
       ...(limit === undefined ? {} : { limit }),
     });
 
+    // One load of the photo rows for the whole answer, not one per hit.
+    const items = await options.itemViews.ofMany(
+      results.items.map((result) => result.item),
+    );
+
     return reply.code(200).send({
       query: q,
       // What the query was actually folded into, so a client can highlight the
       // words that matched instead of guessing at them.
       terms: [...results.terms],
-      items: results.items.map(itemSearchResultView),
+      items: results.items.map((result, index) =>
+        itemSearchResultView(result, items[index] as ItemView),
+      ),
       storageUnits: results.storageUnits.map(storageUnitSearchResultView),
     });
   });
