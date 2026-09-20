@@ -91,13 +91,10 @@ afterAll(() => {
  * can still assert which bytes an `<img>` was pointed at.
  */
 let objectUrls = 0;
-const revoked = new Set<string>();
 
 if (typeof URL.createObjectURL !== "function") {
   URL.createObjectURL = (): string => `blob:ariadna/${(objectUrls += 1)}`;
-  URL.revokeObjectURL = (value: string): void => {
-    revoked.add(value);
+  URL.revokeObjectURL = (): void => {
+    // Nothing to release; the point is that the app calls it.
   };
 }
-
-export const wasRevoked = (value: string): boolean => revoked.has(value);

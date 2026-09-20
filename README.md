@@ -30,7 +30,7 @@ packages/domain-contract-tests  Shared contract suites every adapter of a port
                        against the real ones.
 apps/api               Fastify + Prisma. Adapters that implement the ports, the
                        HTTP layer, and authentication.
-apps/web               React + Vite PWA. Camera and QR scanning in-browser.
+apps/web               React + Vite PWA. The tree, search, photos, QR scanning.
 apps/mobile            Expo (React Native). Android app.
 services/image-processor  rembg sidecar. Optional background removal.
 docker/                The API image and its entrypoint.
@@ -353,6 +353,72 @@ edits the same house.
   socket peer is always the Cloudflare Tunnel. The header is believed only from
   a configured proxy address, so it cannot be forged from the LAN.
 
+## Web client
+
+`apps/web`. React, Vite, TypeScript, installed as a workspace package and
+served from its own origin — never by the API, which answers JSON under
+`default-src 'none'`. Its origin must be listed in `ARIADNA_ALLOWED_ORIGINS`.
+
+```
+src/auth       Signing in, the session, and the gate every other screen sits behind.
+src/units      The tree, one unit, create / move / empty / delete, the printable label.
+src/items      One item, adding, bulk move, delete, and everything you own.
+src/search     The screen the product is named after.
+src/scanning   The camera, and the `/u/<publicId>` a label opens.
+src/photos     Uploading, ordering, and drawing a picture that needs a session.
+src/api        The only place that speaks HTTP: the client, the contract, the errors.
+src/ui         atoms / molecules / organisms — the shared visual vocabulary.
+src/app        The composition root: providers, the route table, the shell.
+```
+
+The top level names what the app DOES. Inside a feature, the split is between
+containers, which fetch and orchestrate, and views, which take props and
+draw — so every view is testable with no network at all, and every screen has
+exactly one place that knows about requests.
+
+**No business rules live here.** The client never checks whether a box is
+empty before deleting it, and the move picker deliberately offers targets
+that would make a cycle. Those rules are the domain's (ADR 2, ADR 3), the API
+enforces them, and this app renders the answer — including the refusal. What
+it does carefully is tell the two kinds of refusal apart: a 409 is about the
+WORLD and comes with a button that changes it ("empty it into Metal wardrobe
+and delete"), a 422 is about the REQUEST and lands next to the field that
+caused it (ADR 8).
+
+- **Mobile first.** Tap targets of 48px and up, navigation at the bottom
+  where the thumb is, sheets that slide up from the bottom rather than
+  dialogs in the middle, safe-area insets, and a dark theme by default
+  because half of this happens in a storage room at night.
+- **Every image is fetched with the session.** `GET /photos/:id` and the QR
+  routes are behind the bearer token, so a plain `<img src>` would answer
+  401; the bytes are fetched like any other request and handed to the DOM as
+  an object URL, revoked when the element goes.
+- **A photo is shown the moment it is stored.** Background removal is
+  optional, out of process and may never happen (ADR 4). Nothing waits for
+  `DONE`.
+- **A scanned label works for somebody who is not signed in yet**: the gate
+  carries the destination into the login screen and back out of it. The code
+  is resolved against the forest the app already loads (ADR 12).
+- **Installable, and honest about offline** (ADR 13): the shell and the
+  photos already seen are cached, reads fall back to what was cached, and no
+  write is ever queued for later.
+
+Tests drive the real app through the DOM and stub the network at the HTTP
+boundary with MSW. Nothing in `src` is ever mocked — a test that replaced the
+app's own fetch wrapper would prove the wrapper was called and say nothing
+about the contract with the API. The one exception is the camera, which is a
+port with a ZXing adapter, because jsdom has no pixels.
+
+```sh
+pnpm --filter @ariadna/web dev      # http://localhost:5173
+pnpm --filter @ariadna/web test
+pnpm --filter @ariadna/web build
+```
+
+`VITE_ARIADNA_API_URL` says where the API is, as a browser sees it. It
+defaults to `http://127.0.0.1:3000`, which is where `pnpm --filter
+@ariadna/api dev` listens.
+
 ## Deployment
 
 The API listens on loopback and is published through a Cloudflare Tunnel, so
@@ -392,8 +458,14 @@ reachable is precisely the dependency ADR 4 refuses.
 ## Status
 
 Domain, persistence, HTTP, authentication, search, QR generation, photo
-storage, background removal and the Docker stack are implemented. The web PWA,
-the Expo app and printable label sheets are not built yet.
+storage, background removal, the Docker stack and the web PWA are implemented.
+The Expo app and multi-label print sheets are not built yet.
+
+Two things the web client cannot do, because the API does not offer them:
+renaming a storage unit or an item (there is no update route, deliberately —
+see "Resource shapes" in `storage-unit-routes.ts`), and listing every item in
+one request (there is no `GET /items`, so that screen asks each unit and says
+so in a comment).
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against
