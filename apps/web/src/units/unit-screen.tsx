@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 
 import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
+import { UnitActions } from "./unit-actions.js";
 import { useStorageUnit } from "./unit-queries.js";
 import { UnitDetail } from "./views/unit-detail.js";
 
@@ -40,6 +41,7 @@ export const UnitScreen = (): JSX.Element => {
           path={unit.data.path}
           childUnits={unit.data.children}
           items={unit.data.items}
+          actions={<UnitActions unit={unit.data.unit} path={unit.data.path} />}
         />
       ) : null}
     </main>

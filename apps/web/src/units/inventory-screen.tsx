@@ -1,8 +1,10 @@
-import type { JSX } from "react";
+import { useState, type JSX } from "react";
 
+import { Button } from "../ui/atoms/button.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
+import { CreateUnitDialog } from "./create-unit-dialog.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { UnitTree } from "./views/unit-tree.js";
 
@@ -17,10 +19,20 @@ import { UnitTree } from "./views/unit-tree.js";
  */
 export const InventoryScreen = (): JSX.Element => {
   const tree = useStorageUnitTree();
+  const [adding, setAdding] = useState(false);
 
   return (
     <main className="screen">
       <h2>Your inventory</h2>
+
+      <Button
+        tone="primary"
+        onClick={() => {
+          setAdding(true);
+        }}
+      >
+        Add a room
+      </Button>
 
       {tree.isPending ? <Loading label="Loading your inventory" /> : null}
 
@@ -39,6 +51,15 @@ export const InventoryScreen = (): JSX.Element => {
 
       {tree.isSuccess && tree.data.tree.length > 0 ? (
         <UnitTree nodes={tree.data.tree} />
+      ) : null}
+
+      {adding ? (
+        <CreateUnitDialog
+          parentId={null}
+          onClose={() => {
+            setAdding(false);
+          }}
+        />
       ) : null}
     </main>
   );
