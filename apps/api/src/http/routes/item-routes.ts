@@ -121,13 +121,10 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.get("/items", async (request, reply) => {
     listItemsQuerySchema.parse(request.query);
 
-    const rows = await options.listItems.execute();
-    const items = await options.itemViews.ofMany(rows.map((row) => row.item));
+    const rows = await options.itemViews.withViews(await options.listItems.execute());
 
     return reply.code(200).send({
-      items: rows.map((row, index) =>
-        itemAtLocationView(items[index] as (typeof items)[number], row.path),
-      ),
+      items: rows.map(({ row, view }) => itemAtLocationView(view, row.path)),
     });
   });
 

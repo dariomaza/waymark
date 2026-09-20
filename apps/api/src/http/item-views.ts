@@ -35,6 +35,23 @@ export class ItemViews {
     return items.map((item) => itemView(item, held));
   }
 
+  /**
+   * Projects the item inside each row and hands it back ATTACHED to the row
+   * it came from.
+   *
+   * A search hit and a row of "everything you own" are both an item plus
+   * something the projection does not know about — a breadcrumb, a list of
+   * matched fields. Pairing them here means no caller has to walk two arrays
+   * by index and assert that they line up.
+   */
+  async withViews<TRow extends { readonly item: Item }>(
+    rows: readonly TRow[],
+  ): Promise<{ readonly row: TRow; readonly view: ItemView }[]> {
+    const held = await this.#photosOf(rows.map((row) => row.item));
+
+    return rows.map((row) => ({ row, view: itemView(row.item, held) }));
+  }
+
   async #photosOf(
     items: readonly Item[],
   ): Promise<ReadonlyMap<PhotoId, Photo>> {
