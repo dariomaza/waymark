@@ -5,6 +5,7 @@ import { useSession, useSignOut } from "../auth/use-session.js";
 import { Button } from "../ui/atoms/button.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { BottomNav } from "../ui/organisms/bottom-nav.js";
+import { OfflineNote } from "./offline-note.js";
 import "./app-shell.css";
 
 /**
@@ -33,6 +34,7 @@ export const AppShell = (): JSX.Element => {
           </Button>
         }
       />
+      <OfflineNote />
       {session === null ? null : (
         <p className="app-shell__who">Signed in as {session.user.username}</p>
       )}

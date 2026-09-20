@@ -1,0 +1,11 @@
+.offline-note {
+  position: sticky;
+  top: var(--bar-height);
+  z-index: 9;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-warning);
+  color: #1a1400;
+  font-size: var(--text-s);
+  font-weight: 600;
+}

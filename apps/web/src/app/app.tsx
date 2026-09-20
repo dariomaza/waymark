@@ -91,17 +91,25 @@ export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
  * never left the phone is worth repeating, and only once — after that the
  * screen says so and offers a button, which in a garage with one bar of
  * signal is more honest than a spinner that hides ten seconds of failure.
+ *
+ * `networkMode: "always"` for the same reason. By default this library
+ * PAUSES every request while `navigator.onLine` is false, which leaves a
+ * screen spinning with no explanation — and that flag is a statement about
+ * an interface being up, not about whether a homelab behind a tunnel can be
+ * reached. So every request is attempted, and a request that cannot leave
+ * the phone comes back as the offline failure the screens already handle.
  */
 const createQueryClient = (): QueryClient =>
   new QueryClient({
     defaultOptions: {
       queries: {
+        networkMode: "always",
         retry: (failureCount, error) =>
           failureKindOf(error) === FailureKind.OFFLINE && failureCount < 1,
         retryDelay: 500,
         refetchOnWindowFocus: false,
         staleTime: 30_000,
       },
-      mutations: { retry: false },
+      mutations: { networkMode: "always", retry: false },
     },
   });
