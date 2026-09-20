@@ -133,10 +133,27 @@ export {
 export { PhotoRelease, type ReleaseOutcome } from "./photos/photo-release.js";
 export {
   PermanentProcessingFailure,
-  RembgImageProcessor,
   TransientProcessingFailure,
+} from "./photos/photo-processing-failures.js";
+export {
+  RembgImageProcessor,
   type RembgImageProcessorDependencies,
 } from "./photos/rembg-image-processor.js";
+export {
+  PhotoProcessingWorker,
+  RETRY_BACKOFF_BASE_MS,
+  RETRY_BACKOFF_CAP_MS,
+  backoffFor,
+  type PhotoProcessingWorkerDependencies,
+  type RunSummary,
+} from "./photos/photo-processing-worker.js";
+export {
+  PrismaPhotoProcessingQueue,
+  type AbandonedPhoto,
+  type ClaimedPhoto,
+  type PhotoProcessingQueue,
+  type ProcessingCounts,
+} from "./photos/photo-processing-queue.js";
 export {
   MissingPhotoUpload,
   PhotoNotFound,

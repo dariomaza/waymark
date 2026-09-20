@@ -148,6 +148,40 @@ model Photo {
   @@index([processingStatus])
 }
 
+/// What a background removal has already cost, and when it may be tried again.
+///
+/// It is deliberately NOT a queue. The queue is `Photo.processingStatus`, which
+/// is the one place a photo's state is written (ADR 4), and this table holds
+/// only what that column cannot express: how many attempts a photo has already
+/// had, when the next one is due, which worker currently holds it, and why it
+/// was abandoned. A row here means "there is history", never "there is work" —
+/// so a lost insert cannot lose a photo, and a photo that was never written
+/// here is simply one nobody has tried yet.
+///
+/// There is no foreign key to `Photo`, for the same reason nothing else in this
+/// schema points at one: a photo is its own aggregate with its own lifecycle.
+/// Rows whose photo is gone are swept on the next claim.
+model PhotoProcessingAttempt {
+  photoId String @id
+
+  /// Incremented when a worker CLAIMS the photo, not when it finishes, so a
+  /// process that dies mid-removal still counts its attempt and a crash loop
+  /// is capped by the same rule as a sidecar that answers 500.
+  attempts Int
+  /// The backoff. A photo is invisible to `claim` until this moment passes.
+  nextAttemptAt DateTime
+  /// Held by whoever is processing it right now; `null` when nobody is. An
+  /// expired lease is the same as no lease: the holder is assumed dead.
+  leaseExpiresAt DateTime?
+  /// Why the last attempt failed. Kept after the attempts run out, because
+  /// "this photo was abandoned" is useless without "and here is what happened".
+  lastError String?
+
+  updatedAt DateTime
+
+  @@index([nextAttemptAt])
+}
+
 /// An account. Credentials and nothing else.
 ///
 /// Ariadna is ONE SHARED INVENTORY: a user is a way to get in, not a tenant.

@@ -1,6 +1,10 @@
 import type { ImageProcessor, PhotoId } from "@ariadna/domain";
 import sharp from "sharp";
 
+import {
+  PermanentProcessingFailure,
+  TransientProcessingFailure,
+} from "./photo-processing-failures.js";
 import type { PhotoFileStore } from "./photo-file-store.js";
 
 /**
@@ -64,22 +68,6 @@ const PROCESSED_QUALITY = 85;
  * enough to be refreshed.
  */
 const HEALTH_TIMEOUT_MS = 2_000;
-
-/** Worth another attempt later. */
-export class TransientProcessingFailure extends Error {
-  constructor(message: string, options?: { cause?: unknown }) {
-    super(message, options);
-    this.name = "TransientProcessingFailure";
-  }
-}
-
-/** Never going to work, however many times it is tried. */
-export class PermanentProcessingFailure extends Error {
-  constructor(message: string, options?: { cause?: unknown }) {
-    super(message, options);
-    this.name = "PermanentProcessingFailure";
-  }
-}
 
 export interface RembgImageProcessorDependencies {
   /** Origin of the sidecar, with no trailing slash. */

@@ -10,9 +10,9 @@ import { sniffImageFormat } from "./image-format.js";
 import { PhotoFileStore } from "./photo-file-store.js";
 import {
   PermanentProcessingFailure,
-  RembgImageProcessor,
   TransientProcessingFailure,
-} from "./rembg-image-processor.js";
+} from "./photo-processing-failures.js";
+import { RembgImageProcessor } from "./rembg-image-processor.js";
 import { aCutout, aPlainImage } from "./testing/image-fixtures.js";
 import {
   anUnusedSidecarUrl,
