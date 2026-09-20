@@ -33,7 +33,7 @@ apps/api               Fastify + Prisma. Adapters that implement the ports, the
 apps/web               React + Vite PWA. Camera and QR scanning in-browser.
 apps/mobile            Expo (React Native). Android app.
 services/image-processor  rembg sidecar. Optional background removal.
-docker/                Compose stack for the homelab.
+docker/                The API image and its entrypoint.
 docs/decisions/        Architecture decision records.
 ```
 
@@ -48,6 +48,14 @@ Postgres later is an adapter swap, not a rewrite.
 container behind an `ImageProcessor` port. If the sidecar is down or switched
 off, items still save with their original photo and can be reprocessed later. A
 secondary feature must never be able to block the primary one.
+
+**Background removal is driven by a polling worker, not a broker** (ADR 10).
+The queue IS the photo table: a photo waiting to be processed is a row that says
+`PENDING`. A broker would be a second copy of that truth to keep in step, and
+the classic failure of that shape is this feature's — the row says `PENDING`,
+the job was lost on a restart, and nothing notices. Claims take a lease, so no
+photo is processed twice and no photo is lost with the process that died holding
+it.
 
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no
@@ -111,6 +119,9 @@ Everything but `GET /health` and `POST /auth/login` needs a session.
 | `DELETE` | `/items/:id/photos/:photoId`| `{ item, releasedPhotoIds }`                 |
 | `GET`    | `/photos/:id`               | The image, streamed                          |
 | `GET`    | `/photos/:id/thumbnail`     | The small one, for list screens              |
+| `GET`    | `/photos/processing`        | `{ processor, counts, abandoned }`           |
+| `POST`   | `/photos/:id/reprocess`     | `202 { photo }` — back to `PENDING`          |
+| `POST`   | `/photos/processing/retry`  | `202 { requeued }` — every `FAILED` photo    |
 
 Move and empty are named operations rather than a `PATCH`, because a storage
 unit has no general update: the domain exposes create, move, empty and delete,
@@ -169,11 +180,61 @@ the one file you want small enough to copy anywhere into tens of gigabytes.
 - **A thumbnail is written at upload.** A grid of 200 items over mobile data is
   the first screen anybody opens.
 - **Serving needs a session**, streams instead of buffering, and is cached
-  `private, immutable`. A stored image never changes: an edit is a new id.
+  `private` — never `public`, because a shared cache must not hold the inside of
+  a house. A stored file never changes, so thumbnails and settled photos are
+  `immutable`; the one exception is a photo still waiting for its background to
+  be removed, where the same id is about to start serving a different file, so
+  it revalidates instead (ADR 10).
 - **Deleting releases the files.** The rows go first, then the files, and a
   failed unlink is logged rather than thrown. A read-only volume must not make
   deleting an item impossible; a file with no row costs disk, a lost delete is a
   lie to the user.
+
+## Background removal
+
+Optional, out of process, and unable to break anything (ADR 4, ADR 10). With
+`ARIADNA_IMAGE_PROCESSOR_URL` unset there is no processor, no worker and no
+timer: photos are uploaded, stored and served from their originals, and every
+one of them sits at `PENDING` until a sidecar appears. That is a complete
+installation.
+
+With a sidecar, an upload still answers `201` immediately and the work happens
+afterwards:
+
+1. The photo is written and saved as `PENDING`. Nothing on the request path
+   ever calls the sidecar.
+2. A worker claims it — one at a time by default — reads the original, posts the
+   bytes to `POST /remove`, and gets back a cutout with an alpha channel.
+3. The cutout is composited onto **white**, not left transparent, and stored as
+   a JPEG beside the original. A transparent PNG on a dark themed phone shows
+   the inside of a box on black.
+4. The photo becomes `DONE` and `GET /photos/:id` starts serving the new file.
+   It is the one URL in this API whose bytes can change, so it revalidates while
+   `PENDING` and is `immutable` afterwards.
+
+**What happens when it goes wrong** is the whole design. A sidecar that is down,
+timing out, overloaded or answering nonsense is a statement about the SIDECAR:
+the photo stays `PENDING` and is retried after 1, 2, 4 then 8 minutes, capped at
+30, five times. A `4xx` is a statement about the BYTES — the decoder read them
+and refused — so the photo is `FAILED` immediately, because the same bytes will
+be refused identically for ever. A `204` means "nothing to remove" and the photo
+is `SKIPPED` and never asked again.
+
+`GET /photos/processing` answers whether the sidecar is configured and
+reachable, how many photos are in each state, and which were abandoned with the
+reason and the attempts spent — so neither question needs SSH and a SQL client.
+`POST /photos/:id/reprocess` and `POST /photos/processing/retry` put photos back
+in the queue and forget their attempts. `GET /health` is deliberately untouched
+by all of this: it answers `ok` while background removal is broken, behind or
+switched off, which is exactly what "optional" has to mean.
+
+| Variable                                  | Default  | What it decides                                    |
+| ----------------------------------------- | -------- | -------------------------------------------------- |
+| `ARIADNA_IMAGE_PROCESSOR_URL`             | _unset_  | The sidecar's address. Unset switches the feature off. |
+| `ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS` | `120`    | When one removal is abandoned as hung.              |
+| `ARIADNA_IMAGE_PROCESSOR_CONCURRENCY`     | `1`      | Photos in flight at once. rembg already uses every core. |
+| `ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS`    | `5`      | Attempts before a photo is left `FAILED`.           |
+| `ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS`    | `15`     | How often work is looked for when no upload woke it. |
 
 ## Authentication
 
@@ -204,17 +265,54 @@ there are no inbound ports and TLS terminates at Cloudflare. It is still on the
 public internet, which is why the hardening above is not optional. See
 `apps/api/.env.example` for every setting.
 
+```sh
+# The whole product: one container, two volumes, no background removal.
+docker compose up -d --build
+
+# The same, plus the rembg sidecar.
+docker compose -f docker-compose.yml -f docker-compose.image-processing.yml up -d --build
+
+docker compose exec api node_modules/.bin/tsx src/scripts/create-user.ts --username dario
+```
+
+The sidecar is a second compose FILE rather than a profile and an environment
+variable, because the container being there and the API knowing its address have
+to be the same fact. Split across two switches, the interesting state is the
+broken one: an address configured with no container behind it, where every photo
+retries five times and ends up `FAILED`.
+
+**Photos and the database are named volumes, mounted outside the image.** That
+is the line that matters most in the compose file: an upgrade replaces the
+image, and anything durable inside it goes with the old one. The rembg model is
+a third volume for a smaller reason — 176 MB downloaded once instead of on every
+container start.
+
+The API image is multi-stage: the build stage has pnpm, the workspace and the
+Prisma generator, and the runtime stage has none of them. Migrations are applied
+by the entrypoint with `prisma migrate deploy`, which applies exactly what is
+checked in and never generates or resets anything. There is no `depends_on` from
+the API to the sidecar: waiting for a model to download before the inventory is
+reachable is precisely the dependency ADR 4 refuses.
+
 ## Status
 
-Domain, persistence, HTTP, authentication, QR generation and photo storage
-implemented. The `ImageProcessor` port is declared; the rembg sidecar, the web
-PWA, the Expo app, the Docker stack and printable label sheets are not built yet.
+Domain, persistence, HTTP, authentication, QR generation, photo storage,
+background removal and the Docker stack are implemented. The web PWA, the Expo
+app and printable label sheets are not built yet.
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against
 the Prisma adapters on a real SQLite file. The fake and the real adapter are
 therefore proven interchangeable, which is the only thing that makes the ports
 worth the indirection.
+
+Background removal is tested the same way — against a real HTTP server on a
+loopback port rather than a mocked client, because every interesting property of
+talking to a container over a network lives exactly where a mock would replace
+it. The suite covers a refused connection, a socket that accepts and never
+answers, an error page served as `image/png`, a refusal, two workers racing for
+the same photo, a backlog larger than the concurrency bound, a process that died
+mid-flight, and the sidecar switched off entirely.
 
 ```sh
 pnpm install
