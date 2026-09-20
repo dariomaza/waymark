@@ -31,6 +31,12 @@ export class PrismaStorageUnitRepository implements StorageUnitRepository {
     return row === null ? null : toDomainStorageUnit(row);
   }
 
+  async findAll(): Promise<StorageUnit[]> {
+    const rows = await this.prisma.storageUnit.findMany();
+
+    return rows.map(toDomainStorageUnit);
+  }
+
   async findChildren(id: UnitId): Promise<StorageUnit[]> {
     const rows = await this.prisma.storageUnit.findMany({
       where: { parentId: id },

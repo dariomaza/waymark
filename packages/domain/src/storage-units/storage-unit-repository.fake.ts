@@ -24,6 +24,10 @@ export class InMemoryStorageUnitRepository implements StorageUnitRepository {
     return this.#units.get(id) ?? null;
   }
 
+  async findAll(): Promise<StorageUnit[]> {
+    return [...this.#units.values()];
+  }
+
   async findChildren(id: UnitId): Promise<StorageUnit[]> {
     return [...this.#units.values()].filter((unit) => unit.parentId === id);
   }

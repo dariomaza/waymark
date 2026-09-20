@@ -168,6 +168,41 @@ export const storageUnitRepositoryContract = (
       });
     });
 
+    describe("findAll", () => {
+      it("returns nothing when nothing is stored", async () => {
+        await expect(storageUnits.findAll()).resolves.toEqual([]);
+      });
+
+      it("returns every unit at every depth, roots included", async () => {
+        const chain = aChainOfStorageUnits("room", "wardrobe", "box");
+        const garage = aStorageUnit("garage", { kind: StorageUnitKind.ROOM });
+        await storageUnits.saveAll([...chain, garage]);
+
+        const all = await storageUnits.findAll();
+
+        expect(sortedIds(all)).toEqual(["box", "garage", "room", "wardrobe"]);
+      });
+
+      it("returns whole units, not just their ids", async () => {
+        const box = aStorageUnit("box", {
+          name: "Box 3",
+          description: "Winter clothes",
+          photoId: aPhotoId("photo-7"),
+        });
+        await storageUnits.save(box);
+
+        await expect(storageUnits.findAll()).resolves.toEqual([box]);
+      });
+
+      it("forgets a deleted unit", async () => {
+        const box = aStorageUnit("box");
+        await storageUnits.save(box);
+        await storageUnits.delete(box.id);
+
+        await expect(storageUnits.findAll()).resolves.toEqual([]);
+      });
+    });
+
     describe("findChildren", () => {
       it("returns the direct children only", async () => {
         const room = aStorageUnit("room", { kind: StorageUnitKind.ROOM });
