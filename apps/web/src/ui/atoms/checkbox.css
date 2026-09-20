@@ -1,0 +1,26 @@
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* The whole label is the target, and it is thumb sized. */
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 var(--space-2);
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--color-accent);
+}
+
+/* On a row, the name is already there; the box alone is the control. */
+.checkbox--bare .checkbox__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 
 import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
+import { ItemActions } from "./item-actions.js";
 import { useItem } from "./item-queries.js";
 import { ItemDetail } from "./views/item-detail.js";
 
@@ -25,7 +26,15 @@ export const ItemScreen = (): JSX.Element => {
         />
       ) : null}
 
-      {item.isSuccess ? <ItemDetail item={item.data.item} path={item.data.path} /> : null}
+      {item.isSuccess ? (
+        <ItemDetail
+          item={item.data.item}
+          path={item.data.path}
+          actions={
+            <ItemActions item={item.data.item} holder={item.data.storageUnit} />
+          }
+        />
+      ) : null}
     </main>
   );
 };

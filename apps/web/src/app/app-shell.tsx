@@ -41,6 +41,7 @@ export const AppShell = (): JSX.Element => {
       <BottomNav
         items={[
           { to: "/", label: "Inventory" },
+          { to: "/items", label: "Items" },
           { to: "/search", label: "Search" },
         ]}
       />

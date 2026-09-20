@@ -19,6 +19,8 @@ export interface UnitDetailProps {
   readonly photo?: ReactNode;
   /** Rendered next to each item row; a checkbox during a bulk move. */
   readonly itemTrailing?: (item: ItemView) => ReactNode;
+  /** Sits under the item list; the bulk move bar, when anything is ticked. */
+  readonly belowItems?: ReactNode;
 }
 
 /**
@@ -36,6 +38,7 @@ export const UnitDetail = ({
   actions,
   photo,
   itemTrailing,
+  belowItems,
 }: UnitDetailProps): JSX.Element => {
   const isEmpty = childUnits.length === 0 && items.length === 0;
 
@@ -93,6 +96,7 @@ export const UnitDetail = ({
               </li>
             ))}
           </ul>
+          {belowItems}
         </section>
       )}
     </>
