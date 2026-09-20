@@ -1,0 +1,201 @@
+import type {
+  ItemId,
+  PhotoId,
+  PhotoProcessingStatus,
+  PublicId,
+  SearchMatchField,
+  StorageUnitKind,
+  UnitId,
+} from "@ariadna/domain";
+
+/**
+ * # What the API promises, written down once
+ *
+ * These are the JSON shapes `apps/api/src/http/views.ts` sends, mirrored here
+ * so that the rest of the client never touches an `any` that came off the
+ * wire. They are views, not entities: the API projects its domain by hand
+ * precisely so a rename inside it is not a breaking change out here, and
+ * copying that projection is what keeps this client honest about the
+ * difference.
+ *
+ * The ids are the domain's branded ones. They serialise as plain strings, so
+ * this costs nothing at runtime and buys the one thing a client of a tree of
+ * units and items needs most: a unit id cannot be passed where an item id was
+ * meant. Reusing `@ariadna/domain` for exactly this — ids, kinds, statuses,
+ * match fields — is the whole of what a client may borrow from the domain. No
+ * rule ever crosses: the API decides whether a box can be deleted, and this
+ * app renders the answer, including the refusal.
+ *
+ * Timestamps arrive as ISO 8601 strings in UTC and are kept that way. A screen
+ * that wants a `Date` makes one; a cache key that holds a `Date` is a cache key
+ * that changes when nothing did.
+ */
+
+export interface StorageUnitView {
+  readonly id: UnitId;
+  readonly parentId: UnitId | null;
+  readonly name: string;
+  readonly kind: StorageUnitKind;
+  readonly description: string | null;
+  readonly photoId: PhotoId | null;
+  /** Ten characters of Crockford Base32; what a QR on a box encodes. */
+  readonly publicId: PublicId;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface StorageUnitTreeView extends StorageUnitView {
+  readonly children: readonly StorageUnitTreeView[];
+}
+
+export interface ItemView {
+  readonly id: ItemId;
+  readonly storageUnitId: UnitId;
+  readonly name: string;
+  readonly description: string | null;
+  readonly quantity: number;
+  readonly tags: readonly string[];
+  /** Ordered. The first one is the cover, which is why choosing one is a move. */
+  readonly photos: readonly PhotoId[];
+  readonly coverPhotoId: PhotoId | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface PhotoView {
+  readonly id: PhotoId;
+  /**
+   * `PENDING` is the normal state of a freshly uploaded photo and may be its
+   * final one: background removal is optional and may not be installed at all
+   * (ADR 4). Nothing in this client waits for `DONE`.
+   */
+  readonly processingStatus: PhotoProcessingStatus;
+  readonly url: string;
+  readonly thumbnailUrl: string;
+}
+
+export interface UserView {
+  readonly id: string;
+  readonly username: string;
+}
+
+export interface SessionView {
+  readonly token: string;
+  readonly expiresAt: string;
+  readonly user: UserView;
+}
+
+export interface StorageUnitTreeResponse {
+  readonly tree: readonly StorageUnitTreeView[];
+}
+
+/** One screen in one response: the unit, its breadcrumb, and what it holds. */
+export interface StorageUnitDetailResponse {
+  readonly unit: StorageUnitView;
+  readonly path: readonly StorageUnitView[];
+  readonly children: readonly StorageUnitView[];
+  readonly items: readonly ItemView[];
+}
+
+export interface StorageUnitResponse {
+  readonly unit: StorageUnitView;
+}
+
+export interface EmptyStorageUnitResponse {
+  readonly movedItems: readonly ItemView[];
+  readonly movedChildUnits: readonly StorageUnitView[];
+}
+
+export interface ItemDetailResponse {
+  readonly item: ItemView;
+  readonly storageUnit: StorageUnitView | null;
+  readonly path: readonly StorageUnitView[];
+}
+
+export interface ItemResponse {
+  readonly item: ItemView;
+}
+
+export interface MovedItemsResponse {
+  readonly items: readonly ItemView[];
+}
+
+export interface ReleasedPhotosResponse {
+  readonly releasedPhotoIds: readonly PhotoId[];
+}
+
+export interface ItemPhotoResponse {
+  readonly photo: PhotoView;
+  readonly item: ItemView;
+}
+
+export interface StorageUnitPhotoResponse {
+  readonly photo: PhotoView;
+  readonly unit: StorageUnitView;
+  readonly releasedPhotoIds: readonly PhotoId[];
+}
+
+export interface DetachedItemPhotoResponse {
+  readonly item: ItemView;
+  readonly releasedPhotoIds: readonly PhotoId[];
+}
+
+export interface DetachedStorageUnitPhotoResponse {
+  readonly unit: StorageUnitView;
+  readonly releasedPhotoIds: readonly PhotoId[];
+}
+
+interface SearchResultView {
+  /** Root first, ending at the unit that answers "where is it". */
+  readonly path: readonly StorageUnitView[];
+  /** The same path already joined, `Garage > Metal wardrobe > Box 3`. */
+  readonly location: string;
+  readonly matchedFields: readonly SearchMatchField[];
+}
+
+export interface ItemSearchResultView extends SearchResultView {
+  readonly item: ItemView;
+}
+
+export interface StorageUnitSearchResultView extends SearchResultView {
+  readonly unit: StorageUnitView;
+}
+
+/**
+ * Items and units come back as two lists because they answer two different
+ * questions — "where is my drill" and "where is Box 3". The API refuses to
+ * invent a rule for interleaving them, and so does this client.
+ */
+export interface SearchResponse {
+  readonly query: string;
+  /** What the query folded into, so a client can say which words matched. */
+  readonly terms: readonly string[];
+  readonly items: readonly ItemSearchResultView[];
+  readonly storageUnits: readonly StorageUnitSearchResultView[];
+}
+
+export interface Credentials {
+  readonly username: string;
+  readonly password: string;
+}
+
+export interface CreateStorageUnitInput {
+  readonly parentId: UnitId | null;
+  readonly name: string;
+  readonly kind: StorageUnitKind;
+  readonly description: string | null;
+}
+
+export interface CreateItemInput {
+  readonly storageUnitId: UnitId;
+  readonly name: string;
+  readonly description: string | null;
+  readonly quantity: number;
+  readonly tags: readonly string[];
+}
+
+export interface SearchQuery {
+  readonly query: string;
+  readonly within?: UnitId | undefined;
+  readonly limit?: number | undefined;
+}
