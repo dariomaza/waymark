@@ -17,10 +17,12 @@ export {
 export {
   createStorageUnit,
   reparentStorageUnit,
+  reviseStorageUnit,
   setStorageUnitPhoto,
   StorageUnitKind,
   type CreateStorageUnitInput,
   type StorageUnit,
+  type StorageUnitRevision,
 } from "./storage-units/storage-unit.js";
 export type { StorageUnitRepository } from "./storage-units/storage-unit-repository.js";
 export {
@@ -40,6 +42,11 @@ export {
   type MoveStorageUnitCommand,
   type MoveStorageUnitDependencies,
 } from "./storage-units/move-storage-unit.js";
+export {
+  UpdateStorageUnit,
+  type UpdateStorageUnitCommand,
+  type UpdateStorageUnitDependencies,
+} from "./storage-units/update-storage-unit.js";
 export {
   DeleteStorageUnit,
   type DeleteStorageUnitDependencies,
@@ -65,8 +72,10 @@ export {
   MAX_ITEM_PHOTOS,
   moveItemTo,
   reorderItemPhotos,
+  reviseItem,
   type CreateItemInput,
   type Item,
+  type ItemRevision,
 } from "./items/item.js";
 export type { ItemRepository } from "./items/item-repository.js";
 export {
@@ -85,6 +94,11 @@ export {
   type MoveItemsCommand,
   type MoveItemsDependencies,
 } from "./items/move-items.js";
+export {
+  UpdateItem,
+  type UpdateItemCommand,
+  type UpdateItemDependencies,
+} from "./items/update-item.js";
 export {
   DeleteItem,
   type DeleteItemDependencies,

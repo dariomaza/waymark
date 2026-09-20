@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { itemId, photoId, unitId } from "../shared/identity.js";
 import { InvalidQuantity } from "./item-errors.js";
-import { coverPhotoId, createItem, moveItemTo } from "./item.js";
+import { coverPhotoId, createItem, moveItemTo, reviseItem } from "./item.js";
 
 const createdAt = new Date("2026-01-01T10:00:00.000Z");
 
@@ -106,5 +106,92 @@ describe("Item", () => {
     expect(moved.updatedAt).toEqual(movedAt);
     expect(moved.createdAt).toEqual(createdAt);
     expect(item.storageUnitId).toBe("unit-1");
+  });
+
+  describe("revising what an item says about itself", () => {
+    const revisedAt = new Date("2026-04-04T13:00:00.000Z");
+
+    const aDrill = () =>
+      createItem({
+        ...baseInput,
+        description: "18V, two batteries",
+        quantity: 2,
+        tags: ["tools"],
+        photos: [photoId("photo-a")],
+      });
+
+    it("renames an item and moves its update timestamp", () => {
+      const revised = reviseItem(aDrill(), { name: "Cordless drill" }, revisedAt);
+
+      expect(revised.name).toBe("Cordless drill");
+      expect(revised.updatedAt).toEqual(revisedAt);
+      expect(revised.createdAt).toEqual(createdAt);
+    });
+
+    it("leaves the original untouched", () => {
+      const item = aDrill();
+
+      reviseItem(item, { name: "Cordless drill" }, revisedAt);
+
+      expect(item.name).toBe("Drill");
+    });
+
+    it("trims the new name", () => {
+      expect(reviseItem(aDrill(), { name: "  Drill  " }, revisedAt).name).toBe("Drill");
+    });
+
+    it("leaves every field the revision does not name alone", () => {
+      const revised = reviseItem(aDrill(), { name: "Cordless drill" }, revisedAt);
+
+      expect(revised.description).toBe("18V, two batteries");
+      expect(revised.quantity).toBe(2);
+      expect(revised.tags).toEqual(["tools"]);
+      expect(revised.photos).toEqual(["photo-a"]);
+    });
+
+    it("replaces the tags outright, so removing one is possible", () => {
+      const revised = reviseItem(aDrill(), { tags: ["diy", "18v"] }, revisedAt);
+
+      expect(revised.tags).toEqual(["diy", "18v"]);
+    });
+
+    it("takes every tag away when the revision says so", () => {
+      expect(reviseItem(aDrill(), { tags: [] }, revisedAt).tags).toEqual([]);
+    });
+
+    it("does not share the new tag array with the caller", () => {
+      const tags = ["diy"];
+
+      const revised = reviseItem(aDrill(), { tags }, revisedAt);
+      tags.push("mutated");
+
+      expect(revised.tags).toEqual(["diy"]);
+    });
+
+    it("tells an absent description from one explicitly cleared", () => {
+      expect(reviseItem(aDrill(), {}, revisedAt).description).toBe("18V, two batteries");
+      expect(reviseItem(aDrill(), { description: null }, revisedAt).description).toBeNull();
+    });
+
+    it("refuses a quantity the domain would never have created", () => {
+      expect(() => reviseItem(aDrill(), { quantity: 0 }, revisedAt)).toThrow(
+        InvalidQuantity,
+      );
+      expect(() => reviseItem(aDrill(), { quantity: 1.5 }, revisedAt)).toThrow(
+        InvalidQuantity,
+      );
+    });
+
+    it("never changes which unit holds the item, whatever the revision carries", () => {
+      const revised = reviseItem(
+        aDrill(),
+        // Moving is its own use case with its own rules (ADR 3); an edit that
+        // could quietly relocate a thing is how an inventory starts lying.
+        { name: "Cordless drill", storageUnitId: unitId("unit-9") } as never,
+        revisedAt,
+      );
+
+      expect(revised.storageUnitId).toBe("unit-1");
+    });
   });
 });

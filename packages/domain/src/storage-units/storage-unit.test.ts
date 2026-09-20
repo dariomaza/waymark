@@ -4,6 +4,7 @@ import { photoId, publicId, unitId } from "../shared/identity.js";
 import {
   createStorageUnit,
   reparentStorageUnit,
+  reviseStorageUnit,
   StorageUnitKind,
 } from "./storage-unit.js";
 
@@ -120,5 +121,79 @@ describe("StorageUnit", () => {
     const moved = reparentStorageUnit(unit, null, createdAt);
 
     expect(moved.parentId).toBeNull();
+  });
+
+  describe("revising what a unit says about itself", () => {
+    const revisedAt = new Date("2026-04-04T13:00:00.000Z");
+
+    const aBox = () =>
+      createStorageUnit({
+        id: unitId("unit-2"),
+        parentId: unitId("unit-1"),
+        name: "Box 3",
+        kind: StorageUnitKind.BOX,
+        description: "Cables, mostly",
+        photoId: photoId("photo-1"),
+        publicId: publicId("PUB-2"),
+        now: createdAt,
+      });
+
+    it("renames a unit and moves its update timestamp", () => {
+      const revised = reviseStorageUnit(aBox(), { name: "Box 4" }, revisedAt);
+
+      expect(revised.name).toBe("Box 4");
+      expect(revised.updatedAt).toEqual(revisedAt);
+      expect(revised.createdAt).toEqual(createdAt);
+    });
+
+    it("leaves the original untouched", () => {
+      const unit = aBox();
+
+      reviseStorageUnit(unit, { name: "Box 4" }, revisedAt);
+
+      expect(unit.name).toBe("Box 3");
+    });
+
+    it("trims the new name, so equal places stay equal", () => {
+      expect(reviseStorageUnit(aBox(), { name: "  Box 4  " }, revisedAt).name).toBe(
+        "Box 4",
+      );
+    });
+
+    it("leaves every field the revision does not name alone", () => {
+      const revised = reviseStorageUnit(aBox(), { name: "Box 4" }, revisedAt);
+
+      expect(revised.kind).toBe(StorageUnitKind.BOX);
+      expect(revised.description).toBe("Cables, mostly");
+      expect(revised.photoId).toBe("photo-1");
+      expect(revised.publicId).toBe("PUB-2");
+    });
+
+    it("changes the kind, which is a label and never a rule (ADR 1)", () => {
+      expect(
+        reviseStorageUnit(aBox(), { kind: StorageUnitKind.BAG }, revisedAt).kind,
+      ).toBe(StorageUnitKind.BAG);
+    });
+
+    it("tells an absent description from one explicitly cleared", () => {
+      expect(reviseStorageUnit(aBox(), {}, revisedAt).description).toBe(
+        "Cables, mostly",
+      );
+      expect(
+        reviseStorageUnit(aBox(), { description: null }, revisedAt).description,
+      ).toBeNull();
+    });
+
+    it("never changes where the unit is, whatever the revision carries", () => {
+      const revised = reviseStorageUnit(
+        aBox(),
+        // A caller that got hold of a `parentId` cannot spend it here: moving
+        // is guarded by the subtree invariant (ADR 2) and has its own use case.
+        { name: "Box 4", parentId: unitId("unit-9") } as never,
+        revisedAt,
+      );
+
+      expect(revised.parentId).toBe("unit-1");
+    });
   });
 });

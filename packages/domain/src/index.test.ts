@@ -8,11 +8,13 @@ describe("@ariadna/domain public surface", () => {
       expect.arrayContaining([
         "CreateStorageUnit",
         "MoveStorageUnit",
+        "UpdateStorageUnit",
         "DeleteStorageUnit",
         "EmptyStorageUnit",
         "GetStorageUnitPath",
         "CreateItem",
         "MoveItems",
+        "UpdateItem",
         "DeleteItem",
         "AttachItemPhoto",
         "DetachItemPhoto",

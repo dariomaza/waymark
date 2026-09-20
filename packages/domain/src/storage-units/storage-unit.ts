@@ -74,6 +74,46 @@ export const reparentStorageUnit = (
 });
 
 /**
+ * What an edit of a storage unit may say. Every field is optional, and an
+ * absent one means "leave it alone" — which is different from `null`, the only
+ * way to take a description off.
+ *
+ * `parentId` is not here, and that is the whole design of this type. Moving a
+ * unit is guarded by the subtree invariant (ADR 2) and has a use case of its
+ * own whose name says so. Folding it into a general edit would hide the one
+ * operation on a storage unit that can corrupt the tree behind a field that
+ * looks exactly as innocent as a rename.
+ *
+ * `photoId` is absent for the same kind of reason: setting one is a file
+ * lifecycle, and `SetStorageUnitPhoto` owns releasing whatever it replaced.
+ */
+export interface StorageUnitRevision {
+  readonly name?: string;
+  readonly kind?: StorageUnitKind;
+  readonly description?: string | null;
+}
+
+/**
+ * Returns a copy of the unit with whatever the revision names changed.
+ *
+ * Built field by field rather than by spreading the revision, so a property
+ * that is not part of `StorageUnitRevision` cannot reach the stored unit even
+ * if a caller with an `as never` and an opinion puts one there.
+ */
+export const reviseStorageUnit = (
+  unit: StorageUnit,
+  revision: StorageUnitRevision,
+  now: Date,
+): StorageUnit => ({
+  ...unit,
+  name: revision.name === undefined ? unit.name : revision.name.trim(),
+  kind: revision.kind ?? unit.kind,
+  description:
+    revision.description === undefined ? unit.description : revision.description,
+  updatedAt: now,
+});
+
+/**
  * Returns a copy of the unit pointing at a different photo, or at none.
  *
  * A unit holds exactly one photo id, so this is always a replacement; who owns

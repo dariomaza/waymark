@@ -87,6 +87,49 @@ export const moveItemTo = (item: Item, storageUnitId: UnitId, now: Date): Item =
 });
 
 /**
+ * What an edit of an item may say. An absent field means "leave it alone";
+ * `null` on the description is the only way to take one off, and `tags` is
+ * always the COMPLETE list, because a revision that could only add tags would
+ * leave no way to remove the one that was a typo.
+ *
+ * `storageUnitId` is not here. Moving an item is `MoveItems`, which is all or
+ * nothing across a batch (ADR 3) and checks the target unit exists; an edit
+ * that could quietly relocate a thing is how an inventory starts lying about
+ * where things are, which is the one thing this product must not do.
+ *
+ * `photos` is absent too: the order is the cover (ADR 9), and it is written by
+ * the three photo operations that own it.
+ */
+export interface ItemRevision {
+  readonly name?: string;
+  readonly description?: string | null;
+  readonly quantity?: number;
+  readonly tags?: readonly string[];
+}
+
+/**
+ * Returns a copy of the item with whatever the revision names changed.
+ *
+ * The quantity is checked by the same assertion `createItem` uses, so an item
+ * cannot be edited into a state it could never have been created in.
+ */
+export const reviseItem = (item: Item, revision: ItemRevision, now: Date): Item => {
+  if (revision.quantity !== undefined) {
+    assertValidQuantity(revision.quantity);
+  }
+
+  return {
+    ...item,
+    name: revision.name === undefined ? item.name : revision.name.trim(),
+    description:
+      revision.description === undefined ? item.description : revision.description,
+    quantity: revision.quantity ?? item.quantity,
+    tags: revision.tags === undefined ? item.tags : [...revision.tags],
+    updatedAt: now,
+  };
+};
+
+/**
  * Appends a photo. Appending, rather than prepending, is what makes the FIRST
  * photo somebody uploads the cover and keeps it there: uploading a detail shot
  * afterwards must not silently replace the picture of the whole box on every
