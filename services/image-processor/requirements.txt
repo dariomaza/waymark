@@ -1,0 +1,8 @@
+# Pinned exactly, because a sidecar that quietly upgrades its model runtime is a
+# sidecar that starts producing different photos on a Tuesday. The versions are
+# the ones resolved when this image was first built and verified.
+rembg[cpu]==2.0.67
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+pillow==11.3.0
+numpy==2.2.6
