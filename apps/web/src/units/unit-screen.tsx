@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { BulkMoveBar } from "../items/bulk-move-bar.js";
 import { CreateItemDialog } from "../items/create-item-dialog.js";
 import { useItemSelection } from "../items/use-item-selection.js";
+import { UnitPhoto } from "../photos/unit-photo.js";
 import { Button } from "../ui/atoms/button.js";
 import { Checkbox } from "../ui/atoms/checkbox.js";
 import { Loading } from "../ui/atoms/loading.js";
@@ -49,6 +50,7 @@ export const UnitScreen = (): JSX.Element => {
             path={unit.data.path}
             childUnits={unit.data.children}
             items={unit.data.items}
+            photo={<UnitPhoto unit={unit.data.unit} />}
             actions={
               <>
                 <Button
