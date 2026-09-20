@@ -14,6 +14,10 @@ describe("@ariadna/domain public surface", () => {
         "CreateItem",
         "MoveItems",
         "DeleteItem",
+        "AttachItemPhoto",
+        "DetachItemPhoto",
+        "ReorderItemPhotos",
+        "SetStorageUnitPhoto",
       ]),
     );
   });
@@ -28,6 +32,8 @@ describe("@ariadna/domain public surface", () => {
         "StorageUnitNotEmpty",
         "InvalidQuantity",
         "MissingEmptyTarget",
+        "TooManyItemPhotos",
+        "PhotoNotOnItem",
       ]),
     );
   });
@@ -50,6 +56,7 @@ describe("@ariadna/domain public surface", () => {
 
   it("does not leak the in-memory test doubles", () => {
     expect(Object.keys(domain)).not.toContain("InMemoryItemRepository");
+    expect(Object.keys(domain)).not.toContain("InMemoryPhotoRepository");
     expect(Object.keys(domain)).not.toContain("InMemoryStorageUnitRepository");
     expect(Object.keys(domain)).not.toContain("FakeClock");
   });

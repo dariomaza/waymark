@@ -129,6 +129,12 @@ model ItemPhoto {
 model Photo {
   id               String  @id
   originalPath     String
+  /// Written at upload, at the same time as the original, because a list view
+  /// is the first screen anybody opens and the full image in a grid of 200
+  /// items is unusable over mobile data. Stored rather than derived from
+  /// `originalPath`: the directory layout is an adapter decision, and a row
+  /// written under one layout must keep pointing at the file it wrote.
+  thumbnailPath    String
   processedPath    String?
   /// PENDING | DONE | FAILED | SKIPPED. String for the same reason as
   /// `StorageUnit.kind`.

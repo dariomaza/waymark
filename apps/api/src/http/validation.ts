@@ -1,4 +1,4 @@
-import { StorageUnitKind } from "@ariadna/domain";
+import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@ariadna/domain";
 import { z } from "zod";
 
 /**
@@ -32,7 +32,12 @@ const MAX_NAME_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 2_000;
 const MAX_TAG_LENGTH = 50;
 const MAX_TAGS = 50;
-const MAX_PHOTOS = 20;
+/**
+ * The domain's cap, not a second one. `MAX_ITEM_PHOTOS` is a rule about an
+ * item, and restating the number here is exactly how the two get to disagree;
+ * importing it keeps the transport check and the invariant the same fact.
+ */
+const MAX_PHOTOS = MAX_ITEM_PHOTOS;
 const MAX_BATCH_SIZE = 500;
 const MAX_USERNAME_LENGTH = 100;
 const MAX_PASSWORD_LENGTH = 1_024;
@@ -48,6 +53,17 @@ const kinds = Object.values(StorageUnitKind) as [
 const kind = z.enum(kinds);
 
 export const idParamsSchema = z.strictObject({ id });
+
+export const itemPhotoParamsSchema = z.strictObject({ id, photoId: id });
+
+/**
+ * The COMPLETE list, in the wanted order; the first one becomes the cover.
+ * That a subset is refused is a domain rule (`reorderItemPhotos`), not a shape
+ * rule, so it is not restated here.
+ */
+export const reorderItemPhotosBodySchema = z.strictObject({
+  photoIds: z.array(id).max(MAX_PHOTOS),
+});
 
 export const loginBodySchema = z.strictObject({
   username: z.string().min(1).max(MAX_USERNAME_LENGTH),

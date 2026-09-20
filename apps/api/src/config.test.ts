@@ -97,6 +97,30 @@ describe("loadConfig", () => {
     expect(config.publicBaseUrl).toBe("https://home.example/ariadna");
   });
 
+  it("stores photos on a plain directory next to the process by default", () => {
+    const config = loadConfig({});
+
+    expect(config.photos.root).toBe("data/photos");
+  });
+
+  it("reads the photo root, which is a docker volume in production", () => {
+    const config = loadConfig({ ARIADNA_PHOTO_ROOT: "/data/photos" });
+
+    expect(config.photos.root).toBe("/data/photos");
+  });
+
+  it("accepts a phone photo without accepting a disk filler", () => {
+    const config = loadConfig({});
+
+    expect(config.photos.maxBytes).toBe(12 * 1024 * 1024);
+  });
+
+  it("reads the upload limit in megabytes", () => {
+    const config = loadConfig({ ARIADNA_MAX_PHOTO_MB: "25" });
+
+    expect(config.photos.maxBytes).toBe(25 * 1024 * 1024);
+  });
+
   it("passes the database url straight through", () => {
     const config = loadConfig({ DATABASE_URL: "file:/data/ariadna.db" });
 
@@ -115,6 +139,9 @@ describe("loadConfig", () => {
       ["a base URL that is not absolute", { ARIADNA_PUBLIC_BASE_URL: "ariadna.example" }],
       ["a base URL with a query", { ARIADNA_PUBLIC_BASE_URL: "https://a.example/?x=1" }],
       ["a base URL that is not http", { ARIADNA_PUBLIC_BASE_URL: "ftp://a.example" }],
+      ["an empty photo root", { ARIADNA_PHOTO_ROOT: "   " }],
+      ["a photo limit of zero", { ARIADNA_MAX_PHOTO_MB: "0" }],
+      ["a photo limit that is not a number", { ARIADNA_MAX_PHOTO_MB: "big" }],
     ])("rejects %s", (_name, env) => {
       expect(() => loadConfig(env)).toThrow(InvalidConfiguration);
     });

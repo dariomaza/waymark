@@ -2,7 +2,8 @@
  * `@ariadna/api` — the adapters that implement the `@ariadna/domain` ports,
  * and the HTTP layer that exposes the use cases.
  *
- * Photo upload and photo file storage are separate work units.
+ * Background removal (the rembg sidecar behind the `ImageProcessor` port) is a
+ * separate work unit and deliberately absent.
  */
 
 // Ports implemented with the platform
@@ -21,10 +22,12 @@ export {
   PrismaStorageUnitRepository,
 } from "./persistence/prisma-storage-unit-repository.js";
 export { PrismaItemRepository } from "./persistence/prisma-item-repository.js";
+export { PrismaPhotoRepository } from "./persistence/prisma-photo-repository.js";
 export { PrismaUserRepository } from "./persistence/prisma-user-repository.js";
 export { PrismaSessionRepository } from "./persistence/prisma-session-repository.js";
 export {
   CorruptStorageUnitHierarchy,
+  UnknownPhotoProcessingStatus,
   UnknownStorageUnitKind,
 } from "./persistence/persistence-errors.js";
 
@@ -73,6 +76,7 @@ export {
 export {
   buildApp,
   type AppDependencies,
+  type PhotoStorageConfig,
   type SecurityConfig,
 } from "./http/build-app.js";
 export {
@@ -95,13 +99,44 @@ export {
 } from "./http/storage-unit-tree.js";
 export {
   itemView,
+  photoView,
   storageUnitTreeView,
   storageUnitView,
   type ItemView,
+  type PhotoView,
   type StorageUnitTreeView,
   type StorageUnitView,
   type UserView,
 } from "./http/views.js";
+
+// Photos
+export {
+  SUPPORTED_IMAGE_FORMATS,
+  contentTypeOf,
+  extensionOf,
+  formatOfExtension,
+  sniffImageFormat,
+  type SupportedImageFormat,
+} from "./photos/image-format.js";
+export {
+  MAX_STORED_EDGE_PX,
+  THUMBNAIL_EDGE_PX,
+  ingestPhoto,
+  type IngestedPhoto,
+} from "./photos/photo-ingestion.js";
+export {
+  PHOTO_BUCKET_LENGTH,
+  PhotoFileStore,
+  PhotoRootEscape,
+  type StoredPhotoPaths,
+} from "./photos/photo-file-store.js";
+export { PhotoRelease, type ReleaseOutcome } from "./photos/photo-release.js";
+export {
+  MissingPhotoUpload,
+  PhotoNotFound,
+  PhotoTooLarge,
+  UnsupportedImageFormat,
+} from "./photos/photo-errors.js";
 
 // QR codes
 export {
@@ -117,5 +152,6 @@ export {
   InvalidConfiguration,
   loadConfig,
   type ApiConfig,
+  type PhotoConfig,
 } from "./config.js";
 export { createAppDependencies } from "./composition-root.js";

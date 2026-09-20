@@ -11,6 +11,8 @@ import {
 } from "@ariadna/domain";
 import type { FastifyPluginAsync } from "fastify";
 
+import type { PhotoRelease } from "../../photos/photo-release.js";
+
 import { createItemBodySchema, idParamsSchema, moveItemsBodySchema } from "../validation.js";
 import { itemView, storageUnitView } from "../views.js";
 
@@ -20,6 +22,7 @@ export interface ItemRouteOptions {
   readonly moveItems: MoveItems;
   readonly deleteItem: DeleteItem;
   readonly getStorageUnitPath: GetStorageUnitPath;
+  readonly photoRelease: PhotoRelease;
 }
 
 /**
@@ -34,6 +37,10 @@ export interface ItemRouteOptions {
  * domain hands back the photos no item references any more (ADR 3), and the
  * caller is the one that owns the files. Throwing that away to return an empty
  * 204 would leak a file per deleted item, forever.
+ *
+ * This route is that caller: it releases them, deleting the rows and then the
+ * files. The order — and what happens when the filesystem refuses — is decided
+ * in `PhotoRelease`, and it is decided in favour of the database.
  */
 export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app,
@@ -93,6 +100,16 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
 
     const result = await options.deleteItem.execute(toItemId(id));
 
-    return reply.code(200).send({ releasedPhotoIds: [...result.releasedPhotoIds] });
+    // The item is gone from the database before a single file is touched. A
+    // disk that refuses to give up a file cannot un-delete the item.
+    const outcome = await options.photoRelease.release(result.releasedPhotoIds);
+    if (outcome.orphanedPaths.length > 0) {
+      request.log.error(
+        { orphanedPaths: outcome.orphanedPaths },
+        "photo rows were deleted but their files could not be removed",
+      );
+    }
+
+    return reply.code(200).send({ releasedPhotoIds: [...outcome.releasedPhotoIds] });
   });
 };

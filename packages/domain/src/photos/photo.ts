@@ -26,6 +26,16 @@ export interface Photo {
   readonly id: PhotoId;
   /** Always written synchronously; the photo is usable from this alone. */
   readonly originalPath: string;
+  /**
+   * A small version of the same image, always written at the same time as the
+   * original.
+   *
+   * It is STORED rather than derived from the original's path because the
+   * layout the files sit in is an adapter decision, and adapters change. A row
+   * written under one layout keeps pointing at the file it was actually
+   * written to, instead of at wherever today's rule says it should be.
+   */
+  readonly thumbnailPath: string;
   /** Written only once background removal succeeded. */
   readonly processedPath: string | null;
   readonly processingStatus: PhotoProcessingStatus;
@@ -34,11 +44,13 @@ export interface Photo {
 export interface CreatePhotoInput {
   readonly id: PhotoId;
   readonly originalPath: string;
+  readonly thumbnailPath: string;
 }
 
 export const createPhoto = (input: CreatePhotoInput): Photo => ({
   id: input.id,
   originalPath: input.originalPath,
+  thumbnailPath: input.thumbnailPath,
   processedPath: null,
   processingStatus: PhotoProcessingStatus.PENDING,
 });

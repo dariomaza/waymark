@@ -1,3 +1,7 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { FakeClock } from "@ariadna/domain/testing";
 import type { FastifyInstance } from "fastify";
 
@@ -7,6 +11,7 @@ import { CreateUser } from "../../auth/create-user.js";
 import { FixedWindowRateLimiter } from "../../auth/login-rate-limiter.js";
 import { ScryptPasswordHasher } from "../../auth/password-hasher.js";
 import { PrismaItemRepository } from "../../persistence/prisma-item-repository.js";
+import { PrismaPhotoRepository } from "../../persistence/prisma-photo-repository.js";
 import { PrismaSessionRepository } from "../../persistence/prisma-session-repository.js";
 import { PrismaStorageUnitRepository } from "../../persistence/prisma-storage-unit-repository.js";
 import { PrismaUserRepository } from "../../persistence/prisma-user-repository.js";
@@ -36,6 +41,12 @@ export const TEST_PASSWORD = "a-real-password";
 export const LOGIN_ATTEMPT_LIMIT = 5;
 export const LOGIN_WINDOW_MS = 15 * 60_000;
 
+/**
+ * Small enough that an oversized upload is a fixture a test can build in
+ * milliseconds, and large enough that every honest fixture fits under it.
+ */
+export const MAX_UPLOAD_BYTES_IN_TESTS = 256 * 1024;
+
 /** Cheap KDF parameters: these tests are about routing, not about cost. */
 const CHEAP_KDF = {
   cost: 1024,
@@ -47,6 +58,8 @@ const CHEAP_KDF = {
 
 export interface TestApi {
   readonly database: TestDatabase;
+  /** A real temporary directory; nothing about the filesystem is faked. */
+  readonly photoRoot: string;
   app: FastifyInstance;
   clock: FakeClock;
   /** Empties the database and rebuilds the app, clock and rate limiter. */
@@ -60,6 +73,7 @@ export interface TestApi {
 
 export const createTestApi = async (): Promise<TestApi> => {
   const database = await createTestDatabase();
+  const photoRoot = await mkdtemp(join(tmpdir(), "ariadna-photo-root-"));
   const hasher = new ScryptPasswordHasher(CHEAP_KDF);
   const ids = new UuidIdGenerator();
   const publicIds = new Base32PublicIdGenerator();
@@ -68,14 +82,19 @@ export const createTestApi = async (): Promise<TestApi> => {
   const sessions = new PrismaSessionRepository(database.client);
   const storageUnits = new PrismaStorageUnitRepository(database.client);
   const items = new PrismaItemRepository(database.client);
+  const photos = new PrismaPhotoRepository(database.client);
 
   const api: TestApi = {
     database,
+    photoRoot,
     app: undefined as unknown as FastifyInstance,
     clock: new FakeClock(TEST_START),
 
     async reset(): Promise<void> {
       await database.reset();
+      // The files go with the rows. A case that starts with the previous
+      // case's photos on disk is a case that proves nothing.
+      await rm(photoRoot, { recursive: true, force: true });
       if (api.app !== undefined) {
         await api.app.close();
       }
@@ -84,6 +103,7 @@ export const createTestApi = async (): Promise<TestApi> => {
       api.app = buildApp({
         storageUnits,
         items,
+        photos,
         users,
         sessions,
         hasher,
@@ -91,6 +111,10 @@ export const createTestApi = async (): Promise<TestApi> => {
         publicIds,
         clock: api.clock,
         publicBaseUrl: TEST_PUBLIC_BASE_URL,
+        photoStorage: {
+          root: photoRoot,
+          maxUploadBytes: MAX_UPLOAD_BYTES_IN_TESTS,
+        },
         rateLimiter: new FixedWindowRateLimiter({
           clock: api.clock,
           limit: LOGIN_ATTEMPT_LIMIT,
@@ -108,6 +132,7 @@ export const createTestApi = async (): Promise<TestApi> => {
     async destroy(): Promise<void> {
       await api.app?.close();
       await database.destroy();
+      await rm(photoRoot, { recursive: true, force: true });
     },
 
     async createUser(username: string, password: string): Promise<void> {

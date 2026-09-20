@@ -2,14 +2,17 @@ import type { UnitId } from "@ariadna/domain";
 import {
   domainUseCaseContract,
   itemRepositoryContract,
+  photoRepositoryContract,
   storageUnitRepositoryContract,
   type DomainUseCaseContext,
   type ItemRepositoryContext,
+  type PhotoRepositoryContext,
   type StorageUnitRepositoryContext,
 } from "@ariadna/domain-contract-tests";
 import { afterAll, beforeAll } from "vitest";
 
 import { PrismaItemRepository } from "./prisma-item-repository.js";
+import { PrismaPhotoRepository } from "./prisma-photo-repository.js";
 import { PrismaStorageUnitRepository } from "./prisma-storage-unit-repository.js";
 import { createTestDatabase, type TestDatabase } from "./testing/test-database.js";
 
@@ -57,6 +60,15 @@ itemRepositoryContract({
       items: new PrismaItemRepository(database.client),
       storageUnits: new PrismaStorageUnitRepository(database.client),
     };
+  },
+  tearDown: async () => {},
+});
+
+photoRepositoryContract({
+  name: "PrismaPhotoRepository",
+  setUp: async (): Promise<PhotoRepositoryContext> => {
+    await database.reset();
+    return { photos: new PrismaPhotoRepository(database.client) };
   },
   tearDown: async () => {},
 });

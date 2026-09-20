@@ -15,6 +15,13 @@ export interface LoginRateLimitConfig {
   readonly windowMs: number;
 }
 
+export interface PhotoConfig {
+  /** The directory photo files live in. A Docker volume in production. */
+  readonly root: string;
+  /** The largest single upload this service will accept, in bytes. */
+  readonly maxBytes: number;
+}
+
 export interface ApiConfig {
   readonly host: string;
   readonly port: number;
@@ -27,6 +34,7 @@ export interface ApiConfig {
   readonly publicBaseUrl: string;
   readonly security: SecurityConfig;
   readonly login: LoginRateLimitConfig;
+  readonly photos: PhotoConfig;
 }
 
 const DEFAULTS = {
@@ -61,6 +69,21 @@ const DEFAULTS = {
    * exactly like working ones.
    */
   publicBaseUrl: "http://localhost:5173",
+  /**
+   * Relative to the working directory, so a checkout runs with no setup. The
+   * container mounts a volume and points `ARIADNA_PHOTO_ROOT` at it; the files
+   * must not live inside the image, or an upgrade deletes the photos.
+   */
+  photoRoot: "data/photos",
+  /**
+   * Twelve megabytes.
+   *
+   * A 50 megapixel phone photo is 8-10 MB, so this accepts anything somebody
+   * actually points a camera at. It is also small enough that filling a homelab
+   * disk through this endpoint takes real effort, and small enough that the
+   * decode-and-resize on the way in cannot be used to pin the CPU.
+   */
+  maxPhotoMegabytes: 12,
 } as const;
 
 /**
@@ -79,6 +102,17 @@ export const loadConfig = (env: NodeJS.ProcessEnv): ApiConfig => ({
   security: {
     trustedProxies: readTrustedProxies(env["ARIADNA_TRUSTED_PROXIES"]),
     allowedOrigins: readAllowedOrigins(env["ARIADNA_ALLOWED_ORIGINS"]),
+  },
+  photos: {
+    root: readPhotoRoot(env["ARIADNA_PHOTO_ROOT"]),
+    maxBytes:
+      readPositiveInteger(
+        "ARIADNA_MAX_PHOTO_MB",
+        env["ARIADNA_MAX_PHOTO_MB"],
+        DEFAULTS.maxPhotoMegabytes,
+      ) *
+      1024 *
+      1024,
   },
   login: {
     limit: readPositiveInteger(
@@ -223,4 +257,29 @@ const readPublicBaseUrl = (raw: string | undefined): string => {
   }
 
   return candidate.replace(/\/+$/u, "");
+};
+
+/**
+ * Where photo files live.
+ *
+ * Only emptiness is refused, and deliberately: whether the path exists, is
+ * writable or is even mounted is not knowable at config time in a container
+ * that has not started yet, and the store creates what it needs on first write.
+ * An empty value, though, would silently mean the working directory, and
+ * scattering photos next to the source is worse than failing to start.
+ */
+const readPhotoRoot = (raw: string | undefined): string => {
+  if (raw === undefined) {
+    return DEFAULTS.photoRoot;
+  }
+
+  const root = raw.trim();
+  if (root.length === 0) {
+    throw new InvalidConfiguration(
+      "ARIADNA_PHOTO_ROOT",
+      "it is empty, which would scatter photo files into the working directory",
+    );
+  }
+
+  return root;
 };

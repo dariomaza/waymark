@@ -38,3 +38,22 @@ export class UnknownStorageUnitKind extends DomainError {
     super(`Stored storage unit kind "${value}" is not a known kind`);
   }
 }
+
+/**
+ * Raised when a `processingStatus` column holds something outside
+ * `PhotoProcessingStatus`, or claims `DONE` with no processed path.
+ *
+ * Same reasoning as `UnknownStorageUnitKind`: the column is a plain string
+ * because SQLite has no enum. The `DONE` case is included because a photo that
+ * says it was processed and has nowhere to point is the database disagreeing
+ * with itself, and `displayPathOf` would quietly fall back to the original and
+ * hide it forever.
+ */
+export class UnknownPhotoProcessingStatus extends DomainError {
+  constructor(
+    readonly photoId: string,
+    readonly value: string,
+  ) {
+    super(`Stored photo ${photoId} has an impossible processing status: "${value}"`);
+  }
+}

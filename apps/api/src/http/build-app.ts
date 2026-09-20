@@ -1,21 +1,27 @@
 import {
+  AttachItemPhoto,
   CreateItem,
   CreateStorageUnit,
   DeleteItem,
   DeleteStorageUnit,
+  DetachItemPhoto,
   DomainError,
   EmptyStorageUnit,
   GetStorageUnitPath,
   MoveItems,
   MoveStorageUnit,
+  ReorderItemPhotos,
+  SetStorageUnitPhoto,
   type Clock,
   type IdGenerator,
   type ItemRepository,
+  type PhotoRepository,
   type PublicIdGenerator,
   type StorageUnitRepository,
 } from "@ariadna/domain";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
+import multipart from "@fastify/multipart";
 import Fastify, {
   type FastifyInstance,
   type FastifyReply,
@@ -36,12 +42,15 @@ import { Logout } from "../auth/logout.js";
 import type { PasswordHasher } from "../auth/password-hasher.js";
 import type { SessionRepository } from "../auth/session-repository.js";
 import type { UserRepository } from "../auth/user-repository.js";
+import { PhotoFileStore } from "../photos/photo-file-store.js";
+import { PhotoRelease } from "../photos/photo-release.js";
 import { bearerTokenOf } from "./bearer-token.js";
 import { resolveClientIp, type TrustedProxyPolicy } from "./client-ip.js";
 import { mapDomainError } from "./error-mapping.js";
 import { errorBody, HttpError } from "./http-error.js";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
+import { photoRoutes } from "./routes/photo-routes.js";
 import { qrRoutes } from "./routes/qr-routes.js";
 import { storageUnitRoutes } from "./routes/storage-unit-routes.js";
 import { toValidationIssues } from "./validation.js";
@@ -67,9 +76,16 @@ export interface SecurityConfig extends TrustedProxyPolicy {
   readonly allowedOrigins: readonly string[];
 }
 
+export interface PhotoStorageConfig {
+  /** Where photo files live. A Docker volume in production. */
+  readonly root: string;
+  readonly maxUploadBytes: number;
+}
+
 export interface AppDependencies {
   readonly storageUnits: StorageUnitRepository;
   readonly items: ItemRepository;
+  readonly photos: PhotoRepository;
   readonly users: UserRepository;
   readonly sessions: SessionRepository;
   readonly hasher: PasswordHasher;
@@ -79,6 +95,7 @@ export interface AppDependencies {
   readonly rateLimiter: RateLimiter;
   /** What a scanned QR resolves against; see `qr/storage-unit-qr.ts`. */
   readonly publicBaseUrl: string;
+  readonly photoStorage: PhotoStorageConfig;
   readonly security: SecurityConfig;
   readonly sessionTtlMs?: number;
   readonly renewAfterMs?: number;
@@ -87,8 +104,11 @@ export interface AppDependencies {
 
 /**
  * The JSON bodies this API accepts are a handful of short strings. 64 KiB is
- * already absurdly generous for that, and photo upload — the one thing that
- * would need more — is a separate endpoint in a separate work unit.
+ * already absurdly generous for that.
+ *
+ * Photo uploads are NOT covered by this: `@fastify/multipart` installs its own
+ * content type parser and consumes the request as a stream, so the limit that
+ * matters for them is `limits.fileSize`, set from `ARIADNA_MAX_PHOTO_MB`.
  */
 const BODY_LIMIT_BYTES = 64 * 1024;
 
@@ -141,7 +161,25 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       clock: deps.clock,
     }),
     deleteItem: new DeleteItem({ items: deps.items }),
+    attachItemPhoto: new AttachItemPhoto({
+      items: deps.items,
+      photos: deps.photos,
+      clock: deps.clock,
+    }),
+    detachItemPhoto: new DetachItemPhoto({ items: deps.items, clock: deps.clock }),
+    reorderItemPhotos: new ReorderItemPhotos({
+      items: deps.items,
+      clock: deps.clock,
+    }),
+    setStorageUnitPhoto: new SetStorageUnitPhoto({
+      storageUnits: deps.storageUnits,
+      photos: deps.photos,
+      clock: deps.clock,
+    }),
   };
+
+  const photoFiles = new PhotoFileStore(deps.photoStorage.root);
+  const photoRelease = new PhotoRelease({ photos: deps.photos, files: photoFiles });
 
   const login = new Login({
     users: deps.users,
@@ -171,6 +209,19 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       { headers: request.headers, remoteAddress: request.socket.remoteAddress },
       deps.security,
     );
+  });
+
+  void app.register(multipart, {
+    limits: {
+      // One file, no other fields, and nothing bigger than the configured cap.
+      // Everything a photo upload needs, and nothing an attacker can use to
+      // make the parser do work that was never asked for.
+      fileSize: deps.photoStorage.maxUploadBytes,
+      files: 1,
+      fields: 0,
+      parts: 2,
+    },
+    throwFileSizeLimit: true,
   });
 
   registerSecurityPlugins(app, deps.security);
@@ -204,6 +255,17 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     });
     void scope.register(itemRoutes, {
       items: deps.items,
+      photoRelease,
+      ...useCases,
+    });
+    void scope.register(photoRoutes, {
+      items: deps.items,
+      storageUnits: deps.storageUnits,
+      photos: deps.photos,
+      files: photoFiles,
+      release: photoRelease,
+      ids: deps.ids,
+      maxUploadBytes: deps.photoStorage.maxUploadBytes,
       ...useCases,
     });
     void scope.register(qrRoutes, {

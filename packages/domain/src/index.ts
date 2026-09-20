@@ -17,6 +17,7 @@ export {
 export {
   createStorageUnit,
   reparentStorageUnit,
+  setStorageUnitPhoto,
   StorageUnitKind,
   type CreateStorageUnitInput,
   type StorageUnit,
@@ -57,14 +58,23 @@ export {
 
 // Items
 export {
+  attachPhotoToItem,
   coverPhotoId,
   createItem,
+  detachPhotoFromItem,
+  MAX_ITEM_PHOTOS,
   moveItemTo,
+  reorderItemPhotos,
   type CreateItemInput,
   type Item,
 } from "./items/item.js";
 export type { ItemRepository } from "./items/item-repository.js";
-export { InvalidQuantity, ItemNotFound } from "./items/item-errors.js";
+export {
+  InvalidQuantity,
+  ItemNotFound,
+  PhotoNotOnItem,
+  TooManyItemPhotos,
+} from "./items/item-errors.js";
 export {
   CreateItem,
   type CreateItemCommand,
@@ -82,6 +92,31 @@ export {
 } from "./items/delete-item.js";
 
 // Photos
+export type { PhotoRepository } from "./photos/photo-repository.js";
+export type { ImageProcessor } from "./photos/image-processor.js";
+export {
+  AttachItemPhoto,
+  type AttachItemPhotoCommand,
+  type AttachItemPhotoDependencies,
+  type AttachItemPhotoResult,
+} from "./photos/attach-item-photo.js";
+export {
+  DetachItemPhoto,
+  type DetachItemPhotoCommand,
+  type DetachItemPhotoDependencies,
+  type DetachItemPhotoResult,
+} from "./photos/detach-item-photo.js";
+export {
+  ReorderItemPhotos,
+  type ReorderItemPhotosCommand,
+  type ReorderItemPhotosDependencies,
+} from "./photos/reorder-item-photos.js";
+export {
+  SetStorageUnitPhoto,
+  type SetStorageUnitPhotoCommand,
+  type SetStorageUnitPhotoDependencies,
+  type SetStorageUnitPhotoResult,
+} from "./photos/set-storage-unit-photo.js";
 export {
   createPhoto,
   displayPathOf,

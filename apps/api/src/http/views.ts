@@ -1,4 +1,4 @@
-import { coverPhotoId, type Item, type StorageUnit } from "@ariadna/domain";
+import { coverPhotoId, type Item, type Photo, type StorageUnit } from "@ariadna/domain";
 
 import type { StorageUnitTreeNode } from "./storage-unit-tree.js";
 
@@ -39,6 +39,24 @@ export interface ItemView {
   readonly updatedAt: string;
 }
 
+/**
+ * A photo never exposes its stored path.
+ *
+ * The path is where a file happens to sit inside a volume the client cannot
+ * reach, and publishing it would leak the layout and invite somebody to
+ * construct one. What a client needs is the two URLs, spelled out here so no
+ * client ever has to build them — and so changing the route is not a breaking
+ * change for the PWA and the Android app at the same time.
+ */
+export interface PhotoView {
+  readonly id: string;
+  readonly processingStatus: string;
+  /** Full size, already background-removed if that ever happened (ADR 4). */
+  readonly url: string;
+  /** What a list screen should use. See `photo-ingestion.ts`. */
+  readonly thumbnailUrl: string;
+}
+
 export interface StorageUnitTreeView extends StorageUnitView {
   readonly children: readonly StorageUnitTreeView[];
 }
@@ -66,6 +84,13 @@ export const itemView = (item: Item): ItemView => ({
   coverPhotoId: coverPhotoId(item),
   createdAt: item.createdAt.toISOString(),
   updatedAt: item.updatedAt.toISOString(),
+});
+
+export const photoView = (photo: Photo): PhotoView => ({
+  id: photo.id,
+  processingStatus: photo.processingStatus,
+  url: `/photos/${photo.id}`,
+  thumbnailUrl: `/photos/${photo.id}/thumbnail`,
 });
 
 export const storageUnitTreeView = (

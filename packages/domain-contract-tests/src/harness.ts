@@ -1,5 +1,6 @@
 import type {
   ItemRepository,
+  PhotoRepository,
   StorageUnitRepository,
   UnitId,
 } from "@ariadna/domain";
@@ -26,6 +27,15 @@ export interface StorageUnitRepositoryContext {
 export interface ItemRepositoryContext {
   readonly items: ItemRepository;
   readonly storageUnits: StorageUnitRepository;
+}
+
+/**
+ * A photo stands alone: it is its own aggregate with its own lifecycle (ADR 4)
+ * and carries no foreign key to the item or unit that references it, so the
+ * contract needs nothing else seeded.
+ */
+export interface PhotoRepositoryContext {
+  readonly photos: PhotoRepository;
 }
 
 /** Both ports at once, so the domain use cases can be wired to them. */

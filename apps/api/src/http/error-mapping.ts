@@ -3,13 +3,16 @@ import {
   InvalidQuantity,
   ItemNotFound,
   MissingEmptyTarget,
+  PhotoNotOnItem,
   StorageUnitNotEmpty,
   StorageUnitNotFound,
+  TooManyItemPhotos,
   type DomainError,
 } from "@ariadna/domain";
 
 import {
   CorruptStorageUnitHierarchy,
+  UnknownPhotoProcessingStatus,
   UnknownStorageUnitKind,
 } from "../persistence/persistence-errors.js";
 
@@ -33,8 +36,11 @@ export interface MappedDomainError {
  * | `CyclicStorageUnitMove`        | 409    | Legal request, refused by the CURRENT shape of the tree (ADR 2).    |
  * | `MissingEmptyTarget`           | 422    | The request is incomplete; the caller must supply a target.         |
  * | `InvalidQuantity`              | 422    | Well formed JSON, value the domain refuses.                         |
+ * | `TooManyItemPhotos`            | 409    | Refused by the CURRENT contents of the item (see below).            |
+ * | `PhotoNotOnItem`               | 422    | The request names a photo this item does not hold.                  |
  * | `CorruptStorageUnitHierarchy`  | 500    | The stored data is broken. Nothing the caller sent is wrong.        |
  * | `UnknownStorageUnitKind`       | 500    | Same: a column holds something the domain says cannot exist.        |
+ * | `UnknownPhotoProcessingStatus` | 500    | Same, for a photo row that contradicts itself.                      |
  *
  * ## The rule behind 404, 409 and 422
  *
@@ -47,6 +53,12 @@ export interface MappedDomainError {
  * - **422** — the request is understood and syntactically valid, and the server
  *   refuses because of the REQUEST. Nothing anybody else does will make these
  *   exact bytes succeed. "Fix the request, then retry."
+ *
+ * `TooManyItemPhotos` is a 409 by the same rule that makes `StorageUnitNotEmpty`
+ * one: the item is full RIGHT NOW. Delete a photo and the identical upload
+ * succeeds, with nothing about the request changed. `PhotoNotOnItem` is a 422
+ * because the photo id came from the body and no amount of waiting makes those
+ * exact bytes name a photo this item holds.
  *
  * `MissingEmptyTarget` is the interesting one. It depends on state — the unit is
  * a root and holds items — so 409 is arguable. It is a 422 because the fix is
@@ -137,6 +149,35 @@ const MAPPINGS = new Map<unknown, Mapper>([
       status: 422,
       code: "INVALID_QUANTITY",
       details: { quantity: (error as InvalidQuantity).quantity },
+    }),
+  ],
+  [
+    TooManyItemPhotos,
+    (error): MappedDomainError => {
+      const { id, limit, photoCount } = error as TooManyItemPhotos;
+      return {
+        status: 409,
+        code: "TOO_MANY_ITEM_PHOTOS",
+        details: { itemId: id, limit, photoCount },
+      };
+    },
+  ],
+  [
+    PhotoNotOnItem,
+    (error): MappedDomainError => {
+      const { id, photoId } = error as PhotoNotOnItem;
+      return {
+        status: 422,
+        code: "PHOTO_NOT_ON_ITEM",
+        details: { itemId: id, photoId },
+      };
+    },
+  ],
+  [
+    UnknownPhotoProcessingStatus,
+    (): MappedDomainError => ({
+      status: 500,
+      code: "UNKNOWN_PHOTO_PROCESSING_STATUS",
     }),
   ],
   [

@@ -9,6 +9,7 @@ import { ScryptPasswordHasher } from "./auth/password-hasher.js";
 import type { ApiConfig } from "./config.js";
 import type { AppDependencies } from "./http/build-app.js";
 import { PrismaItemRepository } from "./persistence/prisma-item-repository.js";
+import { PrismaPhotoRepository } from "./persistence/prisma-photo-repository.js";
 import { PrismaSessionRepository } from "./persistence/prisma-session-repository.js";
 import { PrismaStorageUnitRepository } from "./persistence/prisma-storage-unit-repository.js";
 import { PrismaUserRepository } from "./persistence/prisma-user-repository.js";
@@ -27,6 +28,7 @@ export const createAppDependencies = (
 ): AppDependencies => ({
   storageUnits: new PrismaStorageUnitRepository(prisma),
   items: new PrismaItemRepository(prisma),
+  photos: new PrismaPhotoRepository(prisma),
   users: new PrismaUserRepository(prisma),
   sessions: new PrismaSessionRepository(prisma),
   hasher: new ScryptPasswordHasher(),
@@ -34,6 +36,10 @@ export const createAppDependencies = (
   publicIds: new Base32PublicIdGenerator(),
   clock,
   publicBaseUrl: config.publicBaseUrl,
+  photoStorage: {
+    root: config.photos.root,
+    maxUploadBytes: config.photos.maxBytes,
+  },
   rateLimiter: new FixedWindowRateLimiter({
     clock,
     limit: config.login.limit,

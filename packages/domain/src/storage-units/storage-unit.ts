@@ -72,3 +72,20 @@ export const reparentStorageUnit = (
   parentId,
   updatedAt: now,
 });
+
+/**
+ * Returns a copy of the unit pointing at a different photo, or at none.
+ *
+ * A unit holds exactly one photo id, so this is always a replacement; who owns
+ * the files the old one left behind is decided by `SetStorageUnitPhoto`, not
+ * here.
+ */
+export const setStorageUnitPhoto = (
+  unit: StorageUnit,
+  photoId: PhotoId | null,
+  now: Date,
+): StorageUnit => ({
+  ...unit,
+  photoId,
+  updatedAt: now,
+});

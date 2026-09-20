@@ -5,9 +5,12 @@ import {
   InvalidQuantity,
   ItemNotFound,
   MissingEmptyTarget,
+  PhotoNotOnItem,
   StorageUnitNotEmpty,
   StorageUnitNotFound,
+  TooManyItemPhotos,
   itemId,
+  photoId,
   unitId,
 } from "@ariadna/domain";
 import { describe, expect, it } from "vitest";
@@ -15,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import * as persistenceErrors from "../persistence/persistence-errors.js";
 import {
   CorruptStorageUnitHierarchy,
+  UnknownPhotoProcessingStatus,
   UnknownStorageUnitKind,
 } from "../persistence/persistence-errors.js";
 import { mapDomainError } from "./error-mapping.js";
@@ -189,8 +193,10 @@ describe("mapDomainError", () => {
         "InvalidQuantity",
         "ItemNotFound",
         "MissingEmptyTarget",
+        "PhotoNotOnItem",
         "StorageUnitNotEmpty",
         "StorageUnitNotFound",
+        "TooManyItemPhotos",
       ]);
     });
 
@@ -205,6 +211,42 @@ describe("mapDomainError", () => {
       const mapped = mapDomainError(instance, NOTHING_ADDRESSED);
 
       expect(mapped, `${name} has no entry in the mapping table`).not.toBeNull();
+    });
+  });
+
+  describe("photos", () => {
+    it("refuses an item that is already full with a 409", () => {
+      const mapped = mapDomainError(
+        new TooManyItemPhotos(itemId("drill"), 10, 10),
+        ADDRESSED,
+      );
+
+      // Fix the world, not the request: delete a photo and the identical
+      // upload succeeds (ADR 8).
+      expect(mapped?.status).toBe(409);
+      expect(mapped?.code).toBe("TOO_MANY_ITEM_PHOTOS");
+      expect(mapped?.details).toEqual({ itemId: "drill", limit: 10, photoCount: 10 });
+    });
+
+    it("refuses a photo the item does not hold with a 422", () => {
+      const mapped = mapDomainError(
+        new PhotoNotOnItem(itemId("drill"), photoId("elsewhere")),
+        ADDRESSED,
+      );
+
+      expect(mapped?.status).toBe(422);
+      expect(mapped?.code).toBe("PHOTO_NOT_ON_ITEM");
+    });
+
+    it("calls a self-contradicting photo row what it is: a 500", () => {
+      const mapped = mapDomainError(
+        new UnknownPhotoProcessingStatus("photo-1", "SOMEHOW"),
+        ADDRESSED,
+      );
+
+      expect(mapped?.status).toBe(500);
+      // Nothing about the stored data leaks: the caller can do nothing with it.
+      expect(mapped?.details).toBeUndefined();
     });
   });
 
