@@ -27,6 +27,9 @@ export const TEST_START = new Date("2026-04-01T10:00:00.000Z");
 
 export const TEST_ORIGIN = "https://ariadna.example";
 
+/** What a scanned QR code in these tests is expected to resolve against. */
+export const TEST_PUBLIC_BASE_URL = "https://ariadna.example";
+
 export const TEST_USERNAME = "dario";
 export const TEST_PASSWORD = "a-real-password";
 
@@ -87,6 +90,7 @@ export const createTestApi = async (): Promise<TestApi> => {
         ids,
         publicIds,
         clock: api.clock,
+        publicBaseUrl: TEST_PUBLIC_BASE_URL,
         rateLimiter: new FixedWindowRateLimiter({
           clock: api.clock,
           limit: LOGIN_ATTEMPT_LIMIT,

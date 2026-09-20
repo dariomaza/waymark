@@ -33,6 +33,7 @@ export const createAppDependencies = (
   ids: new UuidIdGenerator(),
   publicIds: new Base32PublicIdGenerator(),
   clock,
+  publicBaseUrl: config.publicBaseUrl,
   rateLimiter: new FixedWindowRateLimiter({
     clock,
     limit: config.login.limit,

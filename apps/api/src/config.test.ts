@@ -67,6 +67,36 @@ describe("loadConfig", () => {
     expect(config.login.windowMs).toBe(60 * 60_000);
   });
 
+  it("points QR codes at the local PWA until a real hostname is configured", () => {
+    const config = loadConfig({});
+
+    expect(config.publicBaseUrl).toBe("http://localhost:5173");
+  });
+
+  it("reads the public base URL the QR codes encode", () => {
+    const config = loadConfig({
+      ARIADNA_PUBLIC_BASE_URL: "https://ariadna.example",
+    });
+
+    expect(config.publicBaseUrl).toBe("https://ariadna.example");
+  });
+
+  it("drops a trailing slash so the URL is built the same way every time", () => {
+    const config = loadConfig({
+      ARIADNA_PUBLIC_BASE_URL: "https://ariadna.example/",
+    });
+
+    expect(config.publicBaseUrl).toBe("https://ariadna.example");
+  });
+
+  it("keeps a path prefix, for an app served under a subpath", () => {
+    const config = loadConfig({
+      ARIADNA_PUBLIC_BASE_URL: "https://home.example/ariadna",
+    });
+
+    expect(config.publicBaseUrl).toBe("https://home.example/ariadna");
+  });
+
   it("passes the database url straight through", () => {
     const config = loadConfig({ DATABASE_URL: "file:/data/ariadna.db" });
 
@@ -82,6 +112,9 @@ describe("loadConfig", () => {
       ["an origin that is not an origin", { ARIADNA_ALLOWED_ORIGINS: "ariadna.example" }],
       ["an origin with a path", { ARIADNA_ALLOWED_ORIGINS: "https://a.example/app" }],
       ["a trusted proxy that is not an IP", { ARIADNA_TRUSTED_PROXIES: "cloudflared" }],
+      ["a base URL that is not absolute", { ARIADNA_PUBLIC_BASE_URL: "ariadna.example" }],
+      ["a base URL with a query", { ARIADNA_PUBLIC_BASE_URL: "https://a.example/?x=1" }],
+      ["a base URL that is not http", { ARIADNA_PUBLIC_BASE_URL: "ftp://a.example" }],
     ])("rejects %s", (_name, env) => {
       expect(() => loadConfig(env)).toThrow(InvalidConfiguration);
     });

@@ -2,8 +2,7 @@
  * `@ariadna/api` — the adapters that implement the `@ariadna/domain` ports,
  * and the HTTP layer that exposes the use cases.
  *
- * QR code generation, photo upload and photo file storage are separate work
- * units and deliberately absent.
+ * Photo upload and photo file storage are separate work units.
  */
 
 // Ports implemented with the platform
@@ -83,6 +82,12 @@ export {
   resolveClientIp,
 } from "./http/client-ip.js";
 export { mapDomainError, type MappedDomainError } from "./http/error-mapping.js";
+export {
+  DERIVED_CACHE_CONTROL,
+  IMMUTABLE_CACHE_CONTROL,
+  etagOf,
+  isFresh,
+} from "./http/caching.js";
 export { HttpError } from "./http/http-error.js";
 export {
   buildStorageUnitForest,
@@ -97,6 +102,15 @@ export {
   type StorageUnitView,
   type UserView,
 } from "./http/views.js";
+
+// QR codes
+export {
+  QR_ERROR_CORRECTION_LEVEL,
+  STORAGE_UNIT_PATH_PREFIX,
+  renderStorageUnitQrPng,
+  renderStorageUnitQrSvg,
+  storageUnitUrl,
+} from "./qr/storage-unit-qr.js";
 
 // Composition
 export {

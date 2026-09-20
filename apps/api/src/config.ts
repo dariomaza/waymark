@@ -20,6 +20,11 @@ export interface ApiConfig {
   readonly port: number;
   /** `undefined` lets Prisma read `DATABASE_URL` from its own environment. */
   readonly databaseUrl: string | undefined;
+  /**
+   * Where a scanned QR code sends a phone. Never trailing-slashed, so
+   * `storageUnitUrl` can append without thinking about it.
+   */
+  readonly publicBaseUrl: string;
   readonly security: SecurityConfig;
   readonly login: LoginRateLimitConfig;
 }
@@ -46,6 +51,16 @@ const DEFAULTS = {
    */
   loginAttemptLimit: 10,
   loginWindowMinutes: 15,
+  /**
+   * The Vite dev server for the PWA.
+   *
+   * A QR code is a picture of a URL, and the URL has to point at the PAGE a
+   * person should land on, which is the web client, not this API. Until the
+   * tunnel hostname exists, a developer's own machine is the only honest
+   * answer; a placeholder domain would print labels that lead nowhere and look
+   * exactly like working ones.
+   */
+  publicBaseUrl: "http://localhost:5173",
 } as const;
 
 /**
@@ -60,6 +75,7 @@ export const loadConfig = (env: NodeJS.ProcessEnv): ApiConfig => ({
   host: env["HOST"] ?? DEFAULTS.host,
   port: readPort(env["PORT"]),
   databaseUrl: env["DATABASE_URL"],
+  publicBaseUrl: readPublicBaseUrl(env["ARIADNA_PUBLIC_BASE_URL"]),
   security: {
     trustedProxies: readTrustedProxies(env["ARIADNA_TRUSTED_PROXIES"]),
     allowedOrigins: readAllowedOrigins(env["ARIADNA_ALLOWED_ORIGINS"]),
@@ -163,4 +179,48 @@ const readAllowedOrigins = (raw: string | undefined): readonly string[] => {
 
     return candidate;
   });
+};
+
+/**
+ * The base a scanned label resolves against.
+ *
+ * It is checked hard, because the failure mode is silent and physical: a base
+ * URL that parses but is wrong produces stickers that get glued to boxes and
+ * only reveal themselves months later, when somebody scans one and gets a
+ * connection error in a garage. A path prefix is allowed (an app served under
+ * `/ariadna`); a query, a fragment or a non-HTTP scheme is not, because none of
+ * them survives having `/u/<publicId>` appended.
+ */
+const readPublicBaseUrl = (raw: string | undefined): string => {
+  if (raw === undefined || raw.trim().length === 0) {
+    return DEFAULTS.publicBaseUrl;
+  }
+
+  const candidate = raw.trim();
+
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new InvalidConfiguration(
+      "ARIADNA_PUBLIC_BASE_URL",
+      `"${candidate}" is not an absolute URL`,
+    );
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new InvalidConfiguration(
+      "ARIADNA_PUBLIC_BASE_URL",
+      `"${candidate}" is not an http(s) URL, and a phone camera will not open it`,
+    );
+  }
+
+  if (parsed.search !== "" || parsed.hash !== "") {
+    throw new InvalidConfiguration(
+      "ARIADNA_PUBLIC_BASE_URL",
+      `"${candidate}" carries a query or a fragment, which cannot survive appending a path`,
+    );
+  }
+
+  return candidate.replace(/\/+$/u, "");
 };

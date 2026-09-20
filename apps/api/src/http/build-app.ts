@@ -42,6 +42,7 @@ import { mapDomainError } from "./error-mapping.js";
 import { errorBody, HttpError } from "./http-error.js";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
+import { qrRoutes } from "./routes/qr-routes.js";
 import { storageUnitRoutes } from "./routes/storage-unit-routes.js";
 import { toValidationIssues } from "./validation.js";
 
@@ -76,6 +77,8 @@ export interface AppDependencies {
   readonly publicIds: PublicIdGenerator;
   readonly clock: Clock;
   readonly rateLimiter: RateLimiter;
+  /** What a scanned QR resolves against; see `qr/storage-unit-qr.ts`. */
+  readonly publicBaseUrl: string;
   readonly security: SecurityConfig;
   readonly sessionTtlMs?: number;
   readonly renewAfterMs?: number;
@@ -202,6 +205,10 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     void scope.register(itemRoutes, {
       items: deps.items,
       ...useCases,
+    });
+    void scope.register(qrRoutes, {
+      storageUnits: deps.storageUnits,
+      publicBaseUrl: deps.publicBaseUrl,
     });
   });
 
