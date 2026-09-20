@@ -9,6 +9,7 @@ import { LoginScreen } from "../auth/login-screen.js";
 import { RequireSession } from "../auth/require-session.js";
 import { ItemScreen } from "../items/item-screen.js";
 import { ScannedLabelScreen } from "../scanning/scanned-label-screen.js";
+import { SearchScreen } from "../search/search-screen.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
@@ -50,6 +51,7 @@ export const App = ({ client }: AppProps = {}): JSX.Element => {
           <Route element={<RequireSession />}>
             <Route element={<AppShell />}>
               <Route path="/" element={<InventoryScreen />} />
+              <Route path="/search" element={<SearchScreen />} />
               <Route path="/units/:id" element={<UnitScreen />} />
               <Route path="/items/:id" element={<ItemScreen />} />
               {/* The address printed on every box. See the screen. */}

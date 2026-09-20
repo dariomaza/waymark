@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { useSession, useSignOut } from "../auth/use-session.js";
 import { Button } from "../ui/atoms/button.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
+import { BottomNav } from "../ui/organisms/bottom-nav.js";
 import "./app-shell.css";
 
 /**
@@ -36,6 +37,13 @@ export const AppShell = (): JSX.Element => {
         <p className="app-shell__who">Signed in as {session.user.username}</p>
       )}
       <Outlet />
+
+      <BottomNav
+        items={[
+          { to: "/", label: "Inventory" },
+          { to: "/search", label: "Search" },
+        ]}
+      />
     </div>
   );
 };

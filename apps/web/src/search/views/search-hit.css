@@ -1,0 +1,31 @@
+.search-hit {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.search-hit__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 48px;
+  padding: var(--space-1) 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.search-hit__title {
+  font-weight: 600;
+}
+
+/* The breadcrumb IS the answer, so it is never truncated to one line. */
+.search-hit__where {
+  font-size: var(--text-s);
+  color: var(--color-accent);
+  overflow-wrap: anywhere;
+}
+
+.search-hit__why {
+  margin: 0;
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+}

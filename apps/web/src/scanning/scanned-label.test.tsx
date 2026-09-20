@@ -84,7 +84,7 @@ describe("a label scanned with the phone's own camera", () => {
     renderApp({ route: "/u/NOTALABEL0" });
 
     expect(await screen.findByText(/no unit in this inventory/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: /inventory/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Go to your inventory" })).toBeVisible();
   });
 
   it("offers to try again when the code cannot be looked up at all", async () => {
