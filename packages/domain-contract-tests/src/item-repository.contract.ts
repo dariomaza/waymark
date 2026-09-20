@@ -352,6 +352,45 @@ export const itemRepositoryContract = (
       });
     });
 
+    describe("findAll", () => {
+      it("returns nothing when nothing is stored", async () => {
+        await expect(items.findAll()).resolves.toEqual([]);
+      });
+
+      it("returns every item, whichever unit holds it", async () => {
+        await items.saveAll([
+          anItem("a", box.id),
+          anItem("b", box.id),
+          anItem("c", crate.id),
+        ]);
+
+        expect(sortedIds(await items.findAll())).toEqual(["a", "b", "c"]);
+      });
+
+      it("returns items field for field, tags and photos included", async () => {
+        const item = anItem("item", box.id, {
+          tags: ["tools", "18v"],
+          photos: [aPhotoId("p1"), aPhotoId("p2")],
+          quantity: 3,
+          description: "18V, two batteries",
+        });
+        await items.save(item);
+
+        // The whole-inventory screen shows what an item IS, not just its
+        // name, so a projection that dropped the tags would be the wrong
+        // read here even though `findByStorageUnit` already proves the shape.
+        await expect(items.findAll()).resolves.toEqual([item]);
+      });
+
+      it("forgets an item as soon as it is deleted", async () => {
+        await items.saveAll([anItem("a", box.id), anItem("b", box.id)]);
+
+        await items.delete(itemId("a"));
+
+        expect(sortedIds(await items.findAll())).toEqual(["b"]);
+      });
+    });
+
     describe("countByStorageUnit", () => {
       it("counts only the items of that unit", async () => {
         await items.saveAll([

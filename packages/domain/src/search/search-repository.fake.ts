@@ -27,9 +27,9 @@ export class InMemorySearchRepository implements SearchRepository {
       return [];
     }
 
-    return this.deps.items.all.filter(
-      (item) => matchItem(item, terms) !== null,
-    );
+    const items = await this.deps.items.findAll();
+
+    return items.filter((item) => matchItem(item, terms) !== null);
   }
 
   async findStorageUnitsMatching(

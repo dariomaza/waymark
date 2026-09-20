@@ -47,6 +47,18 @@ export class PrismaItemRepository implements ItemRepository {
     });
   }
 
+  /**
+   * One query and its two joins, rather than one query per unit. The ordering
+   * that matters — tags and photos inside an item — is the mapper's; the rows
+   * themselves come back in whatever order the planner likes, exactly as the
+   * port promises.
+   */
+  async findAll(): Promise<Item[]> {
+    const rows = await this.prisma.item.findMany({ include: ITEM_RELATIONS });
+
+    return rows.map(toDomainItem);
+  }
+
   async findByStorageUnit(id: UnitId): Promise<Item[]> {
     const rows = await this.prisma.item.findMany({
       where: { storageUnitId: id },

@@ -16,16 +16,6 @@ export class InMemoryItemRepository implements ItemRepository {
     return this.#items.size;
   }
 
-  /**
-   * Every stored item. Deliberately NOT on the port: nothing in production
-   * ever wants the whole item table, and an adapter that offered it would be
-   * an invitation to load a homelab's entire inventory into memory. The
-   * in-memory search repository reads it because it IS the storage.
-   */
-  get all(): Item[] {
-    return [...this.#items.values()];
-  }
-
   async findById(id: ItemId): Promise<Item | null> {
     return this.#items.get(id) ?? null;
   }
@@ -34,6 +24,10 @@ export class InMemoryItemRepository implements ItemRepository {
     return ids
       .map((id) => this.#items.get(id))
       .filter((item): item is Item => item !== undefined);
+  }
+
+  async findAll(): Promise<Item[]> {
+    return [...this.#items.values()];
   }
 
   async findByStorageUnit(id: UnitId): Promise<Item[]> {
