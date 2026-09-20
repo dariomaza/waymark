@@ -1,7 +1,6 @@
+import { INVENTORY_ROOTS } from "@ariadna/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-
-import { INVENTORY_ROOTS } from "@ariadna/api-client";
 
 /**
  * The inventory is one graph.

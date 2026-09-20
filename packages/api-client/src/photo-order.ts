@@ -1,6 +1,8 @@
 import type { PhotoId } from "@ariadna/domain";
 
 /**
+ * ADR 9's cover rule, as the only two edits either client makes to an order.
+ *
  * The cover is `photos[0]` and nothing else (ADR 9), so choosing one is
  * spelled as moving it to the front. Pure, and therefore the one part of
  * reordering that can be reasoned about without a network.

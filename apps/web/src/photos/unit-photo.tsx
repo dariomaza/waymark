@@ -1,6 +1,6 @@
+import { describeFailure, type StorageUnitView } from "@ariadna/api-client";
 import type { JSX } from "react";
 
-import { describeFailure, type StorageUnitView } from "@ariadna/api-client";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { AuthenticatedImage } from "./authenticated-image.js";

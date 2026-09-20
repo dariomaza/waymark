@@ -1,6 +1,6 @@
+import type { ItemView, StorageUnitView } from "@ariadna/api-client";
 import type { JSX, ReactNode } from "react";
 
-import type { ItemView, StorageUnitView } from "@ariadna/api-client";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import "./item-detail.css";
 

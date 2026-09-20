@@ -1,3 +1,4 @@
+import { findByPublicId } from "@ariadna/api-client";
 import { publicId } from "@ariadna/domain";
 import type { JSX } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
@@ -5,7 +6,6 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { Loading } from "../ui/atoms/loading.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
-import { findByPublicId } from "../units/flatten-tree.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
 
 /**

@@ -1,3 +1,4 @@
+import { findById } from "@ariadna/api-client";
 import { unitId } from "@ariadna/domain";
 import { useEffect, useState, type JSX } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -7,11 +8,11 @@ import { Loading } from "../ui/atoms/loading.js";
 import { TextField } from "../ui/atoms/text-field.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
-import { findById } from "../units/flatten-tree.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
 import { useSearch } from "./search-queries.js";
 import { useDebouncedValue } from "./use-debounced-value.js";
 import { SearchResults } from "./views/search-results.js";
+
 import "./search-screen.css";
 
 /**

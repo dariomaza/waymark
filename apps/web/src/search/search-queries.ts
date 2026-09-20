@@ -1,8 +1,8 @@
+import { queryKeys, type SearchResponse } from "@ariadna/api-client";
 import type { UnitId } from "@ariadna/domain";
 import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";
-import { queryKeys, type SearchResponse } from "@ariadna/api-client";
 
 /**
  * An empty query is not a request to dump the inventory — the API says so and

@@ -1,7 +1,13 @@
+import {
+  describeFailure,
+  detailNumber,
+  type ItemView,
+  movedEarlier,
+  withCoverFirst,
+} from "@ariadna/api-client";
 import { MAX_ITEM_PHOTOS } from "@ariadna/domain";
 import type { JSX } from "react";
 
-import { describeFailure, detailNumber, type ItemView } from "@ariadna/api-client";
 import { tooManyPhotosMessage } from "../items/item-messages.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
@@ -12,7 +18,6 @@ import {
   useUploadItemPhoto,
 } from "./photo-mutations.js";
 import { photoStatusNote } from "./photo-status.js";
-import { movedEarlier, withCoverFirst } from "./reorder.js";
 import { PhotoPicker } from "./views/photo-picker.js";
 import "./item-photos.css";
 

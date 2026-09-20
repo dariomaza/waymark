@@ -1,7 +1,17 @@
 import type { PublicId, UnitId } from "@ariadna/domain";
 
-import type { StorageUnitTreeView, StorageUnitView } from "@ariadna/api-client";
+import type { StorageUnitTreeView, StorageUnitView } from "./contract.js";
 
+/**
+ * # Reading the forest the API answers with
+ *
+ * `GET /storage-units` hands back the whole tree, nested, and every screen
+ * that has to ask "which unit?" needs the same flat, path-carrying view of
+ * it — a move picker, a parent picker, a scanned label (ADR 12). It reads
+ * only the contract, so it is shared rather than written twice: the day the
+ * two clients disagree about which box a scanned code names is the day the
+ * flagship feature quietly breaks on one of them.
+ */
 export interface FlatUnit {
   readonly unit: StorageUnitView;
   /** How deep it sits, for indenting a picker. Roots are 0. */

@@ -1,9 +1,9 @@
+import { FailureKind, failureKindOf } from "@ariadna/api-client";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useApi } from "../api/api-context.js";
-import { FailureKind, failureKindOf } from "@ariadna/api-client";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";

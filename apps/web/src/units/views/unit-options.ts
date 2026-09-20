@@ -1,5 +1,6 @@
+import type { FlatUnit } from "@ariadna/api-client";
+
 import type { SelectOption } from "../../ui/atoms/select-field.js";
-import type { FlatUnit } from "../flatten-tree.js";
 
 /**
  * Every unit in the house, as options, labelled by where each one is.

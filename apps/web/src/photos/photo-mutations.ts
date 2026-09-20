@@ -1,8 +1,14 @@
+import type {
+  DetachedItemPhotoResponse,
+  DetachedStorageUnitPhotoResponse,
+  ItemPhotoResponse,
+  ItemResponse,
+  StorageUnitPhotoResponse,
+} from "@ariadna/api-client";
 import type { ItemId, PhotoId, UnitId } from "@ariadna/domain";
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";
-import type { DetachedItemPhotoResponse, DetachedStorageUnitPhotoResponse, ItemPhotoResponse, ItemResponse, StorageUnitPhotoResponse } from "@ariadna/api-client";
 import { useInvalidateInventory } from "../api/use-invalidate-inventory.js";
 
 export const useUploadItemPhoto = (

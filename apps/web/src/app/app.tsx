@@ -1,8 +1,7 @@
+import { FailureKind, failureKindOf } from "@ariadna/api-client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type JSX } from "react";
 import { Route, Routes } from "react-router-dom";
-
-import { FailureKind, failureKindOf } from "@ariadna/api-client";
 
 import { ApiProvider } from "../api/api-context.js";
 import type { WebApiClient } from "../api/web-client.js";

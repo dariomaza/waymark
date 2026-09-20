@@ -1,3 +1,4 @@
+import { publicIdFromScannedText } from "@ariadna/api-client";
 import { useEffect, useRef, useState, type FormEvent, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -5,7 +6,7 @@ import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { TextField } from "../ui/atoms/text-field.js";
 import { useScanner } from "./scanner-context.js";
-import { publicIdFromScannedText } from "./scanned-url.js";
+
 import "./scan-screen.css";
 
 /**

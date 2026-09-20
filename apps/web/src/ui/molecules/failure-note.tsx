@@ -1,6 +1,6 @@
+import { describeFailure, FailureKind, failureKindOf } from "@ariadna/api-client";
 import type { JSX } from "react";
 
-import { describeFailure, FailureKind, failureKindOf } from "@ariadna/api-client";
 import { Button } from "../atoms/button.js";
 import { Callout } from "../atoms/callout.js";
 

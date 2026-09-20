@@ -40,7 +40,15 @@ export {
   type AriadnaClient,
   type AriadnaClientOptions,
 } from "./ariadna-client.js";
+export { movedEarlier, withCoverFirst } from "./photo-order.js";
 export { INVENTORY_ROOTS, queryKeys } from "./query-keys.js";
+export { publicIdFromScannedText } from "./scanned-label.js";
+export {
+  findById,
+  findByPublicId,
+  flattenUnits,
+  type FlatUnit,
+} from "./storage-unit-tree.js";
 export type {
   CreateItemInput,
   CreateStorageUnitInput,

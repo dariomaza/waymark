@@ -1,4 +1,10 @@
-import { ApiError, ApiErrorCode, describeFailure, FailureKind, failureKindOf } from "@ariadna/api-client";
+import {
+  ApiError,
+  ApiErrorCode,
+  describeFailure,
+  FailureKind,
+  failureKindOf,
+} from "@ariadna/api-client";
 
 /**
  * A move is all or nothing (ADR 3): one unknown id rejects the whole batch,

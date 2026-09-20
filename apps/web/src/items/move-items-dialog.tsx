@@ -1,12 +1,11 @@
+import { describeFailure, flattenUnits } from "@ariadna/api-client";
 import { unitId, type ItemId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 
-import { describeFailure } from "@ariadna/api-client";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { SelectField } from "../ui/atoms/select-field.js";
 import { Sheet } from "../ui/organisms/sheet.js";
-import { flattenUnits } from "../units/flatten-tree.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
 import { unitOptions } from "../units/views/unit-options.js";
 import { moveRefusedMessage } from "./item-messages.js";

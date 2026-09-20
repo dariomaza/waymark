@@ -1,7 +1,7 @@
+import type { StorageUnitView } from "@ariadna/api-client";
 import { useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import type { StorageUnitView } from "@ariadna/api-client";
 import { Button } from "../ui/atoms/button.js";
 import { CreateUnitDialog } from "./create-unit-dialog.js";
 import { DeleteUnitDialog } from "./delete-unit-dialog.js";
