@@ -91,6 +91,30 @@ export {
   type DeleteItemResult,
 } from "./items/delete-item.js";
 
+// Search
+export {
+  foldSearchText,
+  searchTokensOf,
+  toSearchTerms,
+} from "./search/search-text.js";
+export {
+  compareSearchMatches,
+  matchItem,
+  matchStorageUnit,
+  SearchMatchField,
+  type SearchMatch,
+} from "./search/search-match.js";
+export type { SearchRepository } from "./search/search-repository.js";
+export {
+  DEFAULT_SEARCH_LIMIT,
+  SearchInventory,
+  type ItemSearchResult,
+  type SearchInventoryCommand,
+  type SearchInventoryDependencies,
+  type SearchInventoryResult,
+  type StorageUnitSearchResult,
+} from "./search/search-inventory.js";
+
 // Photos
 export type { PhotoRepository } from "./photos/photo-repository.js";
 export type { ImageProcessor } from "./photos/image-processor.js";

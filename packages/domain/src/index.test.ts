@@ -18,6 +18,7 @@ describe("@ariadna/domain public surface", () => {
         "DetachItemPhoto",
         "ReorderItemPhotos",
         "SetStorageUnitPhoto",
+        "SearchInventory",
       ]),
     );
   });
@@ -58,6 +59,7 @@ describe("@ariadna/domain public surface", () => {
     expect(Object.keys(domain)).not.toContain("InMemoryItemRepository");
     expect(Object.keys(domain)).not.toContain("InMemoryPhotoRepository");
     expect(Object.keys(domain)).not.toContain("InMemoryStorageUnitRepository");
+    expect(Object.keys(domain)).not.toContain("InMemorySearchRepository");
     expect(Object.keys(domain)).not.toContain("FakeClock");
   });
 });

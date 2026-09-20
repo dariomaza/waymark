@@ -18,3 +18,7 @@ export {
 export { InMemoryStorageUnitRepository } from "./storage-units/storage-unit-repository.fake.js";
 export { InMemoryItemRepository } from "./items/item-repository.fake.js";
 export { InMemoryPhotoRepository } from "./photos/photo-repository.fake.js";
+export {
+  InMemorySearchRepository,
+  type InMemorySearchRepositoryDependencies,
+} from "./search/search-repository.fake.js";
