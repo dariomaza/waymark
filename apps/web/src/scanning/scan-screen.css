@@ -1,0 +1,14 @@
+.scan__video {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 60vh;
+  object-fit: cover;
+  border-radius: var(--radius-m);
+  background: var(--color-surface-sunken);
+}
+
+.scan__by-hand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

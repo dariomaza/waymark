@@ -43,6 +43,7 @@ export const AppShell = (): JSX.Element => {
           { to: "/", label: "Inventory" },
           { to: "/items", label: "Items" },
           { to: "/search", label: "Search" },
+          { to: "/scan", label: "Scan" },
         ]}
       />
     </div>

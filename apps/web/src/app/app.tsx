@@ -9,7 +9,10 @@ import { LoginScreen } from "../auth/login-screen.js";
 import { RequireSession } from "../auth/require-session.js";
 import { AllItemsScreen } from "../items/all-items-screen.js";
 import { ItemScreen } from "../items/item-screen.js";
+import type { QrScanner } from "../scanning/qr-scanner.js";
+import { ScanScreen } from "../scanning/scan-screen.js";
 import { ScannedLabelScreen } from "../scanning/scanned-label-screen.js";
+import { defaultScanner, ScannerProvider } from "../scanning/scanner-context.js";
 import { SearchScreen } from "../search/search-screen.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
@@ -25,6 +28,11 @@ export interface AppProps {
    * different API is the one thing worth being able to inject.
    */
   readonly client?: AriadnaClient;
+  /**
+   * The camera. Injected because jsdom has none: see `qr-scanner.ts` for why
+   * that is a port and not a stubbed module.
+   */
+  readonly scanner?: QrScanner;
 }
 
 /**
@@ -40,31 +48,35 @@ export interface AppProps {
  * the tests mount a `MemoryRouter` at the URL under test, and everything in
  * between is the same app.
  */
-export const App = ({ client }: AppProps = {}): JSX.Element => {
+export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
   const [queries] = useState(createQueryClient);
   const [api] = useState(() => client ?? createDefaultClient());
+  const [camera] = useState(() => scanner ?? defaultScanner());
 
   return (
     <QueryClientProvider client={queries}>
       <ApiProvider client={api}>
-        <Routes>
-          <Route path="/login" element={<LoginScreen />} />
+        <ScannerProvider scanner={camera}>
+          <Routes>
+            <Route path="/login" element={<LoginScreen />} />
 
-          <Route element={<RequireSession />}>
-            <Route element={<AppShell />}>
-              <Route path="/" element={<InventoryScreen />} />
-              <Route path="/search" element={<SearchScreen />} />
-              <Route path="/units/:id" element={<UnitScreen />} />
-              <Route path="/units/:id/label" element={<LabelScreen />} />
-              <Route path="/items" element={<AllItemsScreen />} />
-              <Route path="/items/:id" element={<ItemScreen />} />
-              {/* The address printed on every box. See the screen. */}
-              <Route path="/u/:publicId" element={<ScannedLabelScreen />} />
+            <Route element={<RequireSession />}>
+              <Route element={<AppShell />}>
+                <Route path="/" element={<InventoryScreen />} />
+                <Route path="/search" element={<SearchScreen />} />
+                <Route path="/scan" element={<ScanScreen />} />
+                <Route path="/units/:id" element={<UnitScreen />} />
+                <Route path="/units/:id/label" element={<LabelScreen />} />
+                <Route path="/items" element={<AllItemsScreen />} />
+                <Route path="/items/:id" element={<ItemScreen />} />
+                {/* The address printed on every box. See the screen. */}
+                <Route path="/u/:publicId" element={<ScannedLabelScreen />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<NotFoundScreen />} />
-        </Routes>
+            <Route path="*" element={<NotFoundScreen />} />
+          </Routes>
+        </ScannerProvider>
       </ApiProvider>
     </QueryClientProvider>
   );
