@@ -1,0 +1,126 @@
+import {
+  describeFailure,
+  flattenUnits,
+  notEmptyMessage,
+  type StorageUnitView,
+} from "@ariadna/api-client";
+import { unitId, type UnitId } from "@ariadna/domain";
+import { useState, type JSX } from "react";
+import { StyleSheet, Text, View } from "react-native";
+
+import { Button } from "../ui/atoms/button.js";
+import { Callout } from "../ui/atoms/callout.js";
+import { OptionList } from "../ui/atoms/option-list.js";
+import { Sheet } from "../ui/organisms/sheet.js";
+import { colors, space, text } from "../ui/styles/tokens.js";
+import { useDeleteUnit, useEmptyAndDeleteUnit } from "./unit-mutations.js";
+import { useStorageUnitTree } from "./unit-queries.js";
+import { unitOptions } from "./views/unit-options.js";
+
+export interface DeleteUnitSheetProps {
+  readonly unit: StorageUnitView;
+  readonly parent: StorageUnitView | null;
+  readonly onClose: () => void;
+  readonly onDeleted: () => void;
+}
+
+/**
+ * # Deleting a unit, and the refusal that is a feature
+ *
+ * The domain will not throw away a full box (ADR 3): you empty it first,
+ * then you discard it. The API says so with a 409 — a refusal about the
+ * WORLD, which the same request would pass once the world changed (ADR 8).
+ *
+ * So this sheet does not check whether the unit is empty before asking.
+ * That check belongs to the API, it is the one that cannot be raced, and
+ * repeating it here would be a second copy of a rule that can drift. It
+ * asks, and when the answer is "still holds 1 item" it does the one thing
+ * the person wants next: offers to empty it and delete it, in that order,
+ * which is exactly the two calls ADR 3 provides for.
+ */
+export const DeleteUnitSheet = ({
+  unit,
+  parent,
+  onClose,
+  onDeleted,
+}: DeleteUnitSheetProps): JSX.Element => {
+  const tree = useStorageUnitTree();
+  const remove = useDeleteUnit(unit.id);
+  const emptyAndRemove = useEmptyAndDeleteUnit(unit.id);
+  const [target, setTarget] = useState<string>("");
+
+  const stillFull = notEmptyMessage(remove.error, unit.name);
+  const needsTarget = parent === null;
+  const chosen: UnitId | undefined =
+    needsTarget && target !== "" ? unitId(target) : undefined;
+
+  return (
+    <Sheet title={`Delete ${unit.name}`} onClose={onClose}>
+      {stillFull === null ? (
+        <View style={styles.block}>
+          <Text style={styles.text}>Deleting {unit.name} cannot be undone.</Text>
+          {remove.isError ? (
+            <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+          ) : null}
+          <Button
+            tone="danger"
+            block
+            disabled={remove.isPending}
+            label="Delete this unit"
+            onPress={() => {
+              remove.mutate(undefined, { onSuccess: onDeleted });
+            }}
+          >
+            Delete this unit
+          </Button>
+        </View>
+      ) : (
+        <Callout tone="blocked" title="This one is not empty">
+          <View style={styles.block}>
+            <Text style={styles.text}>{stillFull}</Text>
+
+            {needsTarget ? (
+              <OptionList
+                label="Move everything into"
+                value={target}
+                options={unitOptions(
+                  flattenUnits(tree.data?.tree ?? []).filter(
+                    (entry) => entry.unit.id !== unit.id,
+                  ),
+                )}
+                onChange={setTarget}
+              />
+            ) : null}
+
+            {emptyAndRemove.isError ? (
+              <Callout tone="wrong">{describeFailure(emptyAndRemove.error)}</Callout>
+            ) : null}
+
+            <Button
+              tone="danger"
+              block
+              disabled={emptyAndRemove.isPending || (needsTarget && chosen === undefined)}
+              label={
+                parent === null
+                  ? "Empty it there and delete"
+                  : `Empty it into ${parent.name} and delete`
+              }
+              onPress={() => {
+                emptyAndRemove.mutate(chosen, { onSuccess: onDeleted });
+              }}
+            >
+              {parent === null
+                ? "Empty it there and delete"
+                : `Empty it into ${parent.name} and delete`}
+            </Button>
+          </View>
+        </Callout>
+      )}
+    </Sheet>
+  );
+};
+
+const styles = StyleSheet.create({
+  block: { gap: space.s3 },
+  text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+});

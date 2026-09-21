@@ -1,0 +1,55 @@
+import { describeFailure, type ItemView } from "@ariadna/api-client";
+import type { JSX } from "react";
+import { StyleSheet, Text } from "react-native";
+
+import { Button } from "../ui/atoms/button.js";
+import { Callout } from "../ui/atoms/callout.js";
+import { Sheet } from "../ui/organisms/sheet.js";
+import { colors, text } from "../ui/styles/tokens.js";
+import { useDeleteItem } from "./item-mutations.js";
+
+/**
+ * Deleting an item is unconditional — unlike a unit, an item holds nothing
+ * (ADR 3) — but it takes its photos with it, and those files are gone.
+ */
+export const DeleteItemSheet = ({
+  item,
+  onClose,
+  onDeleted,
+}: {
+  readonly item: ItemView;
+  readonly onClose: () => void;
+  readonly onDeleted: () => void;
+}): JSX.Element => {
+  const remove = useDeleteItem(item.id);
+
+  return (
+    <Sheet title={`Delete ${item.name}`} onClose={onClose}>
+      <Text style={styles.text}>
+        {item.photos.length === 0
+          ? `Deleting ${item.name} cannot be undone.`
+          : `Deleting ${item.name} also deletes its ${item.photos.length === 1 ? "photo" : "photos"}. This cannot be undone.`}
+      </Text>
+
+      {remove.isError ? (
+        <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+      ) : null}
+
+      <Button
+        tone="danger"
+        block
+        disabled={remove.isPending}
+        label="Delete this item"
+        onPress={() => {
+          remove.mutate(undefined, { onSuccess: onDeleted });
+        }}
+      >
+        Delete this item
+      </Button>
+    </Sheet>
+  );
+};
+
+const styles = StyleSheet.create({
+  text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+});

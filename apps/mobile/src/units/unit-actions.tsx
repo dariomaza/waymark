@@ -1,0 +1,101 @@
+import type { StorageUnitView } from "@ariadna/api-client";
+import { useState, type JSX } from "react";
+
+import { Button } from "../ui/atoms/button.js";
+import { CreateUnitSheet } from "./create-unit-sheet.js";
+import { DeleteUnitSheet } from "./delete-unit-sheet.js";
+import { EditUnitSheet } from "./edit-unit-sheet.js";
+import { EmptyUnitSheet } from "./empty-unit-sheet.js";
+import { MoveUnitSheet } from "./move-unit-sheet.js";
+
+export interface UnitActionsProps {
+  readonly unit: StorageUnitView;
+  /** Root first, ending at this unit; the step before last is its parent. */
+  readonly path: readonly StorageUnitView[];
+  readonly onShowLabel: () => void;
+  readonly onDeleted: () => void;
+}
+
+type OpenSheet = "add" | "edit" | "move" | "empty" | "delete" | null;
+
+/**
+ * What can be done to a unit.
+ *
+ * Edit and Move are separate buttons, not one "manage" screen: they are
+ * separate acts, and only one of them can make the inventory lie about where
+ * something is (ADR 14).
+ */
+export const UnitActions = ({
+  unit,
+  path,
+  onShowLabel,
+  onDeleted,
+}: UnitActionsProps): JSX.Element => {
+  const [open, setOpen] = useState<OpenSheet>(null);
+  const parent = path.at(-2) ?? null;
+  const close = (): void => {
+    setOpen(null);
+  };
+
+  return (
+    <>
+      <Button
+        onPress={() => {
+          setOpen("add");
+        }}
+      >
+        Add a unit inside
+      </Button>
+      <Button
+        onPress={() => {
+          setOpen("edit");
+        }}
+      >
+        Edit
+      </Button>
+      <Button
+        onPress={() => {
+          setOpen("move");
+        }}
+      >
+        Move
+      </Button>
+      <Button
+        onPress={() => {
+          setOpen("empty");
+        }}
+      >
+        Empty
+      </Button>
+      <Button onPress={onShowLabel}>Show the label</Button>
+      <Button
+        tone="danger"
+        onPress={() => {
+          setOpen("delete");
+        }}
+      >
+        Delete
+      </Button>
+
+      {open === "add" ? (
+        <CreateUnitSheet parentId={unit.id} parentName={unit.name} onClose={close} />
+      ) : null}
+      {open === "edit" ? <EditUnitSheet unit={unit} onClose={close} /> : null}
+      {open === "move" ? <MoveUnitSheet unit={unit} onClose={close} /> : null}
+      {open === "empty" ? (
+        <EmptyUnitSheet unit={unit} parent={parent} onClose={close} />
+      ) : null}
+      {open === "delete" ? (
+        <DeleteUnitSheet
+          unit={unit}
+          parent={parent}
+          onClose={close}
+          onDeleted={() => {
+            close();
+            onDeleted();
+          }}
+        />
+      ) : null}
+    </>
+  );
+};

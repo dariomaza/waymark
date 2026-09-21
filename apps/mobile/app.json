@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Ariadna",
+    "slug": "ariadna",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "scheme": "ariadna",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "android": {
+      "package": "es.inone.ariadna",
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [{ "scheme": "https", "pathPrefix": "/u" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ariadna uses the camera to read the QR code on a storage unit's label."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ariadna uses your photos so you can put a picture of a thing on it.",
+          "cameraPermission": "Ariadna uses the camera to photograph a thing or a box."
+        }
+      ]
+    ]
+  }
+}
