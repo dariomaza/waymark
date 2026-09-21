@@ -1,6 +1,13 @@
-# The Ariadna stack: one API container, two volumes, and nothing else.
+# The Ariadna stack: one container, two volumes, and nothing else.
 #
 #   docker compose up -d --build
+#
+# One container holds both halves of the product. The image builds the web
+# client and the API serves it from the same origin, so there is no second
+# service, no second hostname on the tunnel, and no CORS between the browser
+# and the API. They are versioned together in one repository and deployed as
+# one unit, which is what makes coupling the build honest rather than merely
+# convenient.
 #
 # That is a COMPLETE installation. Background removal is a separate file
 # (`docker-compose.image-processing.yml`) because it is a separate decision:
@@ -29,8 +36,22 @@ services:
       # Everything here is documented, with its reasoning, in
       # `apps/api/.env.example`. The defaults are the ones a fresh homelab needs
       # changed; the rest can be left alone.
-      ARIADNA_PUBLIC_BASE_URL: ${ARIADNA_PUBLIC_BASE_URL:-http://localhost:5173}
+      # What a QR on a box encodes, and it is THIS container's address now
+      # rather than a separate web server's: the client is served from here.
+      # Set it to the tunnel's hostname before printing a single label — a
+      # sticker is glued to a box and only reveals a wrong base months later,
+      # in a garage.
+      ARIADNA_PUBLIC_BASE_URL: ${ARIADNA_PUBLIC_BASE_URL:-http://localhost:3000}
+      # Empty, and correct: the browser client is on this origin, so nothing
+      # it does is a cross-origin request and there is no origin to allow.
+      # This is now only for a browser client served from somewhere else — a
+      # `vite dev` on :5173 pointed at this API — and it stays an allowlist,
+      # never a reflection. An Ariadna deployed as this file describes runs
+      # with no allowed origin at all, which is tighter than it used to be.
       ARIADNA_ALLOWED_ORIGINS: ${ARIADNA_ALLOWED_ORIGINS:-}
+      # ARIADNA_WEB_ROOT is deliberately absent: the image bakes in where it
+      # put the built client. Setting it to an empty value here would switch
+      # the client off and leave a JSON-only API behind the tunnel.
       ARIADNA_TRUSTED_PROXIES: ${ARIADNA_TRUSTED_PROXIES:-127.0.0.1,::1}
       ARIADNA_MAX_PHOTO_MB: ${ARIADNA_MAX_PHOTO_MB:-12}
       ARIADNA_LOGIN_ATTEMPT_LIMIT: ${ARIADNA_LOGIN_ATTEMPT_LIMIT:-10}
@@ -45,6 +66,9 @@ services:
       # nothing else ever needs to reach this port. `3000:3000` would publish a
       # private inventory to every device on the home network — the printer, the
       # TV, the guest phone — as a side effect of installing a tunnel.
+      #
+      # This is the whole product's port now, the app as well as the API, so
+      # the tunnel needs exactly one hostname pointed at it.
       - "127.0.0.1:3000:3000"
 
     volumes:

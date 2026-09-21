@@ -16,7 +16,12 @@ data
 **/.env.*
 !**/.env.example
 
-apps/web
+# `apps/web` is NOT here any more: the API serves the built client, so the
+# image builds it (see `docker/api.Dockerfile`). Its `dist` is, though — the
+# build inside the image is the only one that counts, and a developer's local
+# one would be a stale copy riding in with the context.
+apps/web/dist
+
 apps/mobile
 docs
 README.md
