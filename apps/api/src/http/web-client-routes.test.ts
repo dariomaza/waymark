@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { MissingWebClient, createWebClient } from "./web-client.js";
 import {
+  TEST_ORIGIN,
   TEST_PASSWORD,
   TEST_USERNAME,
   createTestApi,
@@ -220,6 +221,49 @@ describe("the web client served from the API", () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({ status: "ok" });
+    });
+  });
+
+  describe("CORS, which this client has stopped needing", () => {
+    /**
+     * The one that would break a whole deployment if it were wrong.
+     *
+     * A browser sends `Origin` on every same-origin write, not only on
+     * cross-origin ones. The deployed API has an EMPTY allowlist, because
+     * nothing cross-origin needs to reach it any more — so every write the
+     * PWA makes arrives carrying an origin the allowlist does not contain.
+     *
+     * That must be answered normally. CORS is a rule a browser enforces on
+     * behalf of a document, and it does not enforce it against the document's
+     * own origin; the allowlist only decides whether a header is SENT. An
+     * allowlist that refused the request instead would turn every button in
+     * the app into a 403, and never in a test that injects straight into
+     * Fastify.
+     */
+    it("answers a write carrying an origin it does not allow", async () => {
+      const response = await api.app.inject({
+        method: "POST",
+        url: "/storage-units",
+        headers: {
+          ...api.authHeaders(token),
+          origin: "https://ariadna.invalid",
+        },
+        payload: { name: "Box 3", parentId: null, kind: "BOX" },
+      });
+
+      expect(response.statusCode).toBe(201);
+      expect(response.headers["access-control-allow-origin"]).toBeUndefined();
+    });
+
+    it("still names the one origin it does allow, for a client served elsewhere", async () => {
+      // `vite dev` on its own port is the caller this list still exists for.
+      const response = await api.app.inject({
+        method: "GET",
+        url: "/health",
+        headers: { origin: TEST_ORIGIN },
+      });
+
+      expect(response.headers["access-control-allow-origin"]).toBe(TEST_ORIGIN);
     });
   });
 

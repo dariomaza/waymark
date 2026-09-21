@@ -358,9 +358,13 @@ const registerSecurityPlugins = (
   security: SecurityConfig,
 ): void => {
   void app.register(helmet, {
-    // This process answers JSON and serves no document, so nothing should ever
-    // be loaded on its behalf. `'none'` says exactly that, and it is also the
-    // cheapest possible defence if a response is ever rendered somewhere.
+    // The default, for the JSON this process answers: nothing should ever be
+    // loaded on behalf of a data response, and `'none'` says exactly that.
+    //
+    // The one document it serves overrides this per response, in
+    // `web-client.ts`, rather than loosening it for everything. A document
+    // exists to load its own bundle, and a policy wide enough for that is not
+    // one a JSON answer has any use for.
     contentSecurityPolicy: {
       useDefaults: false,
       directives: {
@@ -375,20 +379,35 @@ const registerSecurityPlugins = (
     hsts: { maxAge: HSTS_MAX_AGE_SECONDS, includeSubDomains: true },
     frameguard: { action: "deny" },
     referrerPolicy: { policy: "no-referrer" },
-    // The PWA lives on its own origin and reaches the API with `fetch`, which
-    // CORS already gates. Blocking cross origin reads on top of that would only
-    // break the very client this API exists for.
+    // The deployed PWA is on THIS origin now (ADR 16), so it needs nothing
+    // from this setting. It stays for the client that is not: a `vite dev`
+    // server on its own port, reaching the API with `fetch`, which CORS
+    // already gates. Tightening it to `same-origin` would break that and buy
+    // nothing the allowlist does not already decide.
     crossOriginResourcePolicy: { policy: "cross-origin" },
   });
 
   void app.register(cors, {
     /**
-     * An allowlist, never a reflection.
+     * An allowlist, never a reflection — and, since ADR 16, one that the
+     * browser client no longer appears in.
      *
-     * A request with no `Origin` header is not a browser cross-origin request
-     * at all: that is the Expo app, `curl`, and a health probe. Refusing those
-     * would block the Android client for no gain, since CORS is a rule browsers
-     * enforce on behalf of a document and there is no document here.
+     * The PWA is served from this origin, so nothing it does is a
+     * cross-origin request and a browser never applies CORS to any of it.
+     * What is left for this list is a browser client served from somewhere
+     * ELSE: in practice a `vite dev` on `:5173` pointed at an API on `:3000`.
+     * A normal deployment runs with the list empty, which is tighter than it
+     * was when the PWA's own origin had to be in it.
+     *
+     * Deciding `false` is not a refusal. `@fastify/cors` answers the request
+     * either way and only decides whether the header is SENT — which matters
+     * here, because a browser sends `Origin` on every same-origin WRITE too,
+     * and every one of those arrives carrying an origin this empty list does
+     * not contain. Turning that into a 403 would break every button in the
+     * app, and never in a test that injects straight into Fastify.
+     *
+     * A request with no `Origin` header at all is not a browser cross-origin
+     * request either: that is the Expo app, `curl`, and a health probe.
      */
     origin: (origin, callback) => {
       if (origin === undefined) {
