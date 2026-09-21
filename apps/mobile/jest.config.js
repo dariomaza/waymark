@@ -5,16 +5,43 @@
  * preset, stands in for the native modules Expo ships, and is the one
  * configuration that stays true as the SDK moves.
  *
- * Two things here exist because the app shares TypeScript source with the web
- * client rather than a built package.
+ * The one thing here that is not a default exists because the app shares
+ * TypeScript source with the web client rather than a built package.
  *
  * `moduleNameMapper` drops the `.js` off a relative specifier, which is what
  * `moduleResolution: NodeNext` makes `@ariadna/domain` and
  * `@ariadna/api-client` write inside themselves. Metro is told the same thing
  * in `metro.config.js`; this is the same fact for the test runner.
  *
- * `transformIgnorePatterns` lets Babel compile React Native, Expo and MSW,
- * none of which ship anything this runtime can read unmodified.
+ * ## There is deliberately no `transformIgnorePatterns` here
+ *
+ * This file used to carry `transformIgnorePatterns: []` — compile everything,
+ * `node_modules` included — on the reasoning that an allowlist of ESM-shipping
+ * packages goes out of date silently and costs "a few seconds on the first run
+ * and nothing afterwards".
+ *
+ * The reasoning about the allowlist is sound and the arithmetic is not quite.
+ * Measured on this suite, from an empty transform cache: the empty list takes
+ * 11.1 s and writes 2128 compiled files; the preset's own patterns take 9.8 s
+ * and write 1481. Not the difference the comment feared, but not nothing
+ * either, and it grows with whatever the dependency tree drags in rather than
+ * with anything this app wrote.
+ *
+ * `jest-expo`'s pattern already handles a pnpm store, which is not obvious
+ * from reading it. It allows `node_modules/.pnpm`, and at a glance that looks
+ * like it allows the whole store — but the pattern is a SEARCH, not an
+ * anchored match, so it goes on to find the second `/node_modules/` in
+ * `.pnpm/nanoid@5.1.6/node_modules/nanoid/index.js` and excludes the package
+ * by its real name there.
+ *
+ * If a package ever does need compiling and is not covered, the failure is a
+ * syntax error naming its own file. The fix is to add that ONE package:
+ *
+ *     const preset = require("jest-expo/jest-preset");
+ *     transformIgnorePatterns: [
+ *       preset.transformIgnorePatterns[0].replace(")", "|the-package)"),
+ *       ...preset.transformIgnorePatterns.slice(1),
+ *     ]
  */
 module.exports = {
   preset: "jest-expo",
@@ -23,14 +50,4 @@ module.exports = {
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
-  /**
-   * Everything is compiled, including `node_modules`.
-   *
-   * The usual allowlist is a list of packages that ship ESM, and it is a list
-   * that goes out of date silently: a transitive dependency of MSW or of a
-   * navigator publishes `.mjs`, and a suite that was passing fails with a
-   * syntax error in somebody else's file. Babel's cache makes the difference
-   * a few seconds on the first run and nothing afterwards.
-   */
-  transformIgnorePatterns: [],
 };
