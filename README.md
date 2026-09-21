@@ -646,6 +646,30 @@ checked in and never generates or resets anything. There is no `depends_on` from
 the API to the sidecar: waiting for a model to download before the inventory is
 reachable is precisely the dependency ADR 4 refuses.
 
+### On the target host, those commands do not exist
+
+The commands above are correct for an ordinary Docker host. The box this is
+actually going to — a ZimaOS NAS — is not one, in two ways that change the
+procedure rather than complicating it.
+
+| Constraint | What it means here |
+|---|---|
+| Docker Engine is present; **`docker compose` is not** — no CLI plugin, no standalone binary. CasaOS drives compose through its own embedded engine. | The compose files are the **source document for a CasaOS import**, not something to run over SSH. Bring the stack up from the CasaOS UI (custom app / import YAML), one compose project per app. |
+| `docker` itself works, including `exec`. | Create the first account with `docker exec -it <container> node_modules/.bin/tsx src/scripts/create-user.ts --username <name>`, not `docker compose exec`. |
+| ~7.7 GiB RAM, of which another app already holds ~2.3 GiB, with swap in use at idle, on a 4-core i5-6400. | Budget against **4–5 GiB, not 8**. |
+
+That last row decides the shape of the first deployment: **bring the stack up
+without the sidecar.** An `onnxruntime` pass saturates every core it can reach,
+and on this box that competes with the API serving the request that triggered
+it.
+
+This is not a workaround. ADR 4 made background removal an optional adapter for
+reasons that had nothing to do with this machine's memory, and a deployment
+without it is a supported configuration, not a degraded one: photos stay
+`PENDING`, originals are served, and `/photos/processing` shows the queue
+waiting. Add the second compose file later, once there is a real inventory to
+judge the cost against.
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` installs with a frozen lockfile and then runs
