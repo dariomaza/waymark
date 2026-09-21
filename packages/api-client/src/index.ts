@@ -68,6 +68,7 @@ export {
   findById,
   findByPublicId,
   flattenUnits,
+  subtreeOf,
   type FlatUnit,
 } from "./storage-unit-tree.js";
 export type {

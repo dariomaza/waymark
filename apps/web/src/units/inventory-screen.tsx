@@ -1,4 +1,5 @@
 import { useState, type JSX } from "react";
+import { Link } from "react-router-dom";
 
 import { Button } from "../ui/atoms/button.js";
 import { Loading } from "../ui/atoms/loading.js";
@@ -7,6 +8,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { CreateUnitDialog } from "./create-unit-dialog.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { UnitTree } from "./views/unit-tree.js";
+import "./label-sheet-screen.css";
 
 /**
  * The home screen: everything you own, as the tree it is stored in.
@@ -25,14 +27,19 @@ export const InventoryScreen = (): JSX.Element => {
     <main className="screen">
       <h2>Your inventory</h2>
 
-      <Button
-        tone="primary"
-        onClick={() => {
-          setAdding(true);
-        }}
-      >
-        Add a room
-      </Button>
+      <div className="inventory-screen__actions">
+        <Button
+          tone="primary"
+          onClick={() => {
+            setAdding(true);
+          }}
+        >
+          Add a room
+        </Button>
+        <Link className="button button--secondary" to="/labels">
+          Label sheet
+        </Link>
+      </div>
 
       {tree.isPending ? <Loading label="Loading your inventory" /> : null}
 

@@ -18,6 +18,16 @@ export interface FlatUnit {
   readonly depth: number;
   /** `Garage > Metal wardrobe > Box 3`, ending at this unit. */
   readonly location: string;
+  /**
+   * The names on the way down, NOT including this unit. Empty for a root.
+   *
+   * Shipped beside `location` for the reason the API ships `path` beside it
+   * too: a caller that wants the parts — a printed label that says the name
+   * loudly and where it lives quietly — should not have to recover them by
+   * splitting the joined string, which is one name containing `" > "` away
+   * from being wrong.
+   */
+  readonly ancestry: readonly string[];
 }
 
 const SEPARATOR = " > ";
@@ -38,7 +48,12 @@ export const flattenUnits = (
     const trail = [...ancestry, node.name];
 
     return [
-      { unit: node, depth: ancestry.length, location: trail.join(SEPARATOR) },
+      {
+        unit: node,
+        depth: ancestry.length,
+        location: trail.join(SEPARATOR),
+        ancestry,
+      },
       ...flattenUnits(node.children, trail),
     ];
   });
@@ -67,3 +82,47 @@ export const findById = (
   id: UnitId,
 ): StorageUnitView | null =>
   flattenUnits(nodes).find((entry) => entry.unit.id === id)?.unit ?? null;
+
+/**
+ * # Everything inside a unit, at any depth
+ *
+ * A location IS a storage unit (ADR 1), so "the garage" means everything
+ * under it however deep, and both clients now have a question shaped like
+ * that: a sheet of printed labels is chosen by ticking a room, not by ticking
+ * sixty boxes one at a time.
+ *
+ * The unit itself is NOT included, which is the same rule `?within=` has had
+ * since ADR 11: a box is not inside itself. A caller that wants the unit as
+ * well says so in one line, and that line cannot be mistaken for the other
+ * meaning.
+ *
+ * Depth first, so the answer comes out in the order the tree is drawn — which
+ * is the order a sheet of labels should print in, so the labels come off the
+ * scissors in the order somebody walks the room.
+ */
+export const subtreeOf = (
+  nodes: readonly StorageUnitTreeView[],
+  id: UnitId,
+): readonly StorageUnitView[] => {
+  const found = findNode(nodes, id);
+
+  return found === null ? [] : flattenUnits(found.children).map((entry) => entry.unit);
+};
+
+const findNode = (
+  nodes: readonly StorageUnitTreeView[],
+  id: UnitId,
+): StorageUnitTreeView | null => {
+  for (const node of nodes) {
+    if (node.id === id) {
+      return node;
+    }
+
+    const inside = findNode(node.children, id);
+    if (inside !== null) {
+      return inside;
+    }
+  }
+
+  return null;
+};

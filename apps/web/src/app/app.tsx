@@ -17,6 +17,7 @@ import { defaultScanner, ScannerProvider } from "../scanning/scanner-context.js"
 import { SearchScreen } from "../search/search-screen.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
+import { LabelSheetScreen } from "../units/label-sheet-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
 import { createDefaultClient } from "./create-client.js";
@@ -68,6 +69,12 @@ export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
                 <Route path="/scan" element={<ScanScreen />} />
                 <Route path="/units/:id" element={<UnitScreen />} />
                 <Route path="/units/:id/label" element={<LabelScreen />} />
+                {/*
+                  Not under `/units/:id`, because a sheet is about a SET of
+                  units rather than about one. `?within=` narrows it; nothing
+                  at all is the whole house.
+                */}
+                <Route path="/labels" element={<LabelSheetScreen />} />
                 <Route path="/items" element={<AllItemsScreen />} />
                 <Route path="/items/:id" element={<ItemScreen />} />
                 {/*

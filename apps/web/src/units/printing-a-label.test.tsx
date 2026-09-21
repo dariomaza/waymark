@@ -61,7 +61,9 @@ describe("the label on a box", () => {
   it("is reachable from the unit itself", async () => {
     renderApp({ route: "/units/box3" });
 
-    await userEvent.click(await screen.findByRole("link", { name: /label/i }));
+    // Exact: the unit now also offers a SHEET of labels for what it holds,
+    // which is a different job and a different screen.
+    await userEvent.click(await screen.findByRole("link", { name: /^label$/i }));
 
     await waitFor(() => {
       expect(screen.getByText("7ZK3QWERTY")).toBeVisible();

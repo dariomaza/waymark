@@ -1,0 +1,151 @@
+/**
+ * # The page, in millimetres
+ *
+ * A4, because this is Spain. 10mm at the sides and 12mm top and bottom: the
+ * extra 2mm is for the browser's own header and footer, which CSS cannot
+ * switch off — the screen asks the person to untick them in the print dialog,
+ * and the margin means a header that is printed anyway lands in white space
+ * instead of on the first row of labels.
+ *
+ * `@page` is not scopable to a selector, so this applies to printing any
+ * screen in the app. That is deliberate rather than tolerated: the only other
+ * printable screen is the single label, which had no page size at all and
+ * therefore came out on whatever the browser guessed. A4 is right for both.
+ */
+@page {
+  size: A4;
+  margin: 12mm 10mm;
+}
+
+/**
+ * The preview is the page at its real size, in a container that scrolls
+ * sideways on a narrow screen. A preview scaled to fit a phone is a picture
+ * of the paper; this IS the paper, which is the only version worth trusting
+ * before spending a sheet of stickers on it.
+ */
+.label-sheet {
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.label-sheet__page {
+  /* 190 × 273mm: A4 less the margins above. */
+  width: 190mm;
+  height: 273mm;
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  /* White, always. A label is printed, and a dark one is a cartridge. */
+  background: #ffffff;
+  color: #000000;
+}
+
+/**
+ * The cut guide. A dashed line on every edge is what scissors follow, and
+ * adjacent labels sharing one is exactly right — the cut is the same cut.
+ */
+.sheet-label {
+  border: 0.2mm dashed #999999;
+  padding: 3mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5mm;
+  overflow: hidden;
+  /* Belt and braces: the pages are chunked in JS, and this stops a printer
+     splitting one label even if that ever changes. */
+  break-inside: avoid;
+}
+
+.sheet-label__name {
+  margin: 0;
+  font-size: 4.2mm;
+  line-height: 1.15;
+  font-weight: 700;
+  text-align: center;
+  /* Two lines of a long name, then clipped: the code below it is the
+     unambiguous identifier, so a clipped name is inconvenient and never
+     wrong. */
+  max-height: 9.7mm;
+  overflow: hidden;
+}
+
+.sheet-label__symbol {
+  width: 36mm;
+  height: 36mm;
+  flex: none;
+  background: #ffffff;
+}
+
+.sheet-label__code {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 3.2mm;
+  letter-spacing: 0.08em;
+}
+
+.sheet-label__where {
+  margin: 0;
+  font-size: 2.6mm;
+  color: #444444;
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/** The picker, the counts and the hints are for the screen, not the paper. */
+@media print {
+  /*
+   * The shell's gutter and its 48rem column exist so a screen reads well on a
+   * phone. On paper they would push a 190mm page off a 190mm margin box, so
+   * the sheet starts at the origin `@page` gave it and nothing else has an
+   * opinion about where that is.
+   */
+  .app-shell,
+  .screen {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .app-bar,
+  .bottom-nav,
+  .app-shell__who,
+  .offline-note,
+  .label-sheet-screen__controls,
+  .label-sheet-screen__picker,
+  .label-sheet-screen__heading,
+  .label-sheet-screen__hint,
+  .callout {
+    display: none !important;
+  }
+
+  .label-sheet {
+    overflow: visible;
+    gap: 0;
+  }
+
+  .label-sheet__page {
+    break-after: page;
+  }
+
+  .label-sheet__page:last-child {
+    break-after: auto;
+  }
+
+  /* The symbol is black on white and the cut guides are grey. A browser
+     "saving ink" turns the first into a grey square a camera cannot read. */
+  .label-sheet,
+  .label-sheet__page,
+  .sheet-label {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

@@ -84,6 +84,15 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
       <Link className="button button--secondary" to={`/units/${unit.id}/label`}>
         Label
       </Link>
+      {/*
+        One label and a sheet of them are two different jobs: sticking a
+        label on THIS box, and labelling everything it holds in one
+        afternoon. `?within=` means the same as it does on a search — what is
+        inside, not the unit itself (ADR 11).
+      */}
+      <Link className="button button--secondary" to={`/labels?within=${unit.id}`}>
+        Label sheet
+      </Link>
 
       {open === "create" ? (
         <CreateUnitDialog parentId={unit.id} onClose={close} />

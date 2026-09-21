@@ -297,6 +297,48 @@ means a larger symbol, so at a fixed sticker size every module gets smaller unti
 the camera stops resolving them. A test scrubs out a square of the symbol and
 asserts Q still decodes where both L and M lose the URL.
 
+### The label sheet
+
+One label at a time is a workflow that never happens: open the box's screen,
+open its label, print, go back, sixty times. So `/labels` in the web client
+prints a sheet, and the real job — label the whole storage room in one
+afternoon — is tick a room, print, cut, stick.
+
+**A label is not just a QR.** Standing in front of twenty boxes, a wall of
+identical squares means scanning every one of them; a name means reading the
+wall. So the name is first and biggest, then the symbol, then the `publicId`
+for the day a label is scuffed past what level Q can recover, then where the
+unit lives — small, and not for the person holding the box but for the ten
+minutes between the printer and the glue, when twelve cut-out squares have to
+be matched to twelve boxes, three of which are called `Box 3`. The KIND is
+left off: "Box" on a label glued to a box costs a line and tells nobody
+anything they cannot see.
+
+**Which units** is a selection, a subtree, or both. "Everything inside the
+garage" is one press because a location IS a storage unit (ADR 1) and the
+forest the app already loads makes the subtree free; `?within=` from a unit's
+own screen means what it means on a search — inside, not the unit itself
+(ADR 11). Printing all sixty every time would be as useless as printing one.
+
+**Plain A4 and scissors**, no proprietary label stock. 10mm side and 12mm
+top/bottom margins leave 190 × 273mm, which is 3 × 4 labels of 63 × 68mm. That
+count is a scanning decision, not a packing one: the payload is around 35
+characters, which at level Q is a 33-module symbol plus its quiet zone, 41
+across, and printed at 36mm that is 0.88mm per module — comfortably past the
+~0.4mm where phone cameras give up, with a long hostname still leaving 0.73mm.
+Eighteen to a page matches an off-the-shelf label sheet and was rejected: the
+cell is then 46mm tall, and either the symbol or the name has to give.
+
+The pages are chunked in code rather than left to the printer. `break-inside:
+avoid` stops one label being cut in half but not a whole row being pushed onto
+the next page, and a preview that disagrees with the paper is worse than no
+preview. Twelve to a page, the break between them, so the preview IS the
+pages — shown at real size, in a container that scrolls sideways on a phone.
+
+A sheet will not print until every symbol has been fetched. Each one is behind
+the session like every other image, and a print dialog opened with three still
+in flight puts blank squares on paper that somebody then cuts up.
+
 ## Photos
 
 A storage unit holds at most one photo; an item holds up to ten, ordered, first
@@ -421,7 +463,7 @@ served from its own origin — never by the API, which answers JSON under
 
 ```
 src/auth       Signing in, the session, and the gate every other screen sits behind.
-src/units      The tree, one unit, create / edit / move / empty / delete, the label.
+src/units      The tree, one unit, create / edit / move / empty / delete, labels.
 src/items      One item, adding, editing, bulk move, delete, and everything you own.
 src/search     The screen the product is named after.
 src/scanning   The camera, and the `/u/<publicId>` a label opens.
@@ -630,7 +672,12 @@ takes.
 
 Domain, persistence, HTTP, authentication, search, editing, QR generation,
 photo storage, background removal, the Docker stack, the web PWA and the
-Android app are implemented. Multi-label print sheets are not built yet.
+Android app are implemented, and so are multi-label print sheets — in the web
+client, which is where a printer is.
+
+The Android app has the single label and not the sheet. That is deliberate:
+the sheet is print CSS and a page box measured in millimetres, and React
+Native has neither a print dialog nor a page.
 
 The Android app is verified as far as this repository can verify anything that
 runs on a phone: it typechecks, its tests pass, `expo prebuild` generates the
