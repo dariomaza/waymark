@@ -1,7 +1,10 @@
-import { rm } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { MissingWebClient, createWebClient } from "./web-client.js";
 import {
   TEST_PASSWORD,
   TEST_USERNAME,
@@ -340,6 +343,22 @@ describe("the web client served from the API", () => {
       expect(response.headers["content-type"]).toContain("application/json");
       expect(response.body).not.toContain(SHELL_MARKER);
     });
+  });
+});
+
+describe("a web root with no build in it", () => {
+  it("refuses to start, and says how to fix it", async () => {
+    const empty = await mkdtemp(join(tmpdir(), "ariadna-empty-web-root-"));
+
+    try {
+      // At boot rather than on the first request. A container built without
+      // the client is broken, and the log line at start is the only place
+      // anybody is looking; a 404 in a garage is not.
+      expect(() => createWebClient({ root: empty })).toThrow(MissingWebClient);
+      expect(() => createWebClient({ root: empty })).toThrow(/index\.html/u);
+    } finally {
+      await rm(empty, { recursive: true, force: true });
+    }
   });
 });
 

@@ -201,6 +201,28 @@ describe("loadConfig", () => {
     });
   });
 
+  describe("the built web client", () => {
+    it("serves none at all until one is named", () => {
+      // An API on its own is a complete configuration: it is what `vite dev`
+      // runs against, and what a checkout with no build in it has.
+      const config = loadConfig({});
+
+      expect(config.webRoot).toBeNull();
+    });
+
+    it("reads the directory the image bakes the client into", () => {
+      const config = loadConfig({ ARIADNA_WEB_ROOT: "/repo/apps/web/dist" });
+
+      expect(config.webRoot).toBe("/repo/apps/web/dist");
+    });
+
+    it("treats a blank value as no client, so an unset variable in compose is not a crash", () => {
+      const config = loadConfig({ ARIADNA_WEB_ROOT: "   " });
+
+      expect(config.webRoot).toBeNull();
+    });
+  });
+
   describe("refuses nonsense rather than starting with it", () => {
     it.each([
       ["a port that is not a number", { PORT: "http" }],

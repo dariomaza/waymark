@@ -76,6 +76,18 @@ try {
   await app.listen({ host: config.host, port: config.port });
 
   /**
+   * Said once, at boot, because the two configurations are indistinguishable
+   * from the outside until somebody opens the hostname in a browser and gets
+   * JSON. `createWebClient` has already refused to start if the directory
+   * holds no build, so reaching this line means the shell is loaded.
+   */
+  if (config.webRoot === null) {
+    app.log.info("no web client is being served; this process answers JSON only");
+  } else {
+    app.log.info({ webRoot: config.webRoot }, "serving the web client");
+  }
+
+  /**
    * Started AFTER the port is open, and never awaited.
    *
    * Background removal is the secondary feature (ADR 4): if it were started

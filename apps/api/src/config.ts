@@ -50,6 +50,16 @@ export interface ApiConfig {
    * `storageUnitUrl` can append without thinking about it.
    */
   readonly publicBaseUrl: string;
+  /**
+   * The built web client this process also serves, or `null` for an API on
+   * its own.
+   *
+   * Both are complete configurations. `null` is what a checkout runs as —
+   * `vite dev` serves the client on its own port — and the container image
+   * bakes the build in and points this at it, which is the deployment the
+   * whole same-origin decision is for.
+   */
+  readonly webRoot: string | null;
   readonly security: SecurityConfig;
   readonly login: LoginRateLimitConfig;
   readonly photos: PhotoConfig;
@@ -162,6 +172,7 @@ export const loadConfig = (env: NodeJS.ProcessEnv): ApiConfig => ({
   port: readPort(env["PORT"]),
   databaseUrl: env["DATABASE_URL"],
   publicBaseUrl: readPublicBaseUrl(env["ARIADNA_PUBLIC_BASE_URL"]),
+  webRoot: readWebRoot(env["ARIADNA_WEB_ROOT"]),
   security: {
     trustedProxies: readTrustedProxies(env["ARIADNA_TRUSTED_PROXIES"]),
     allowedOrigins: readAllowedOrigins(env["ARIADNA_ALLOWED_ORIGINS"]),
@@ -391,6 +402,28 @@ const readImageProcessorUrl = (raw: string | undefined): string | null => {
   }
 
   return candidate.replace(/\/+$/u, "");
+};
+
+/**
+ * Where the built web client lives, or nothing.
+ *
+ * Nothing is a complete configuration and not a degraded one, which is why
+ * absence is the switch rather than a separate `ARIADNA_SERVE_WEB` — two
+ * settings that can disagree ("serving, from nowhere") is one more state than
+ * this has, and the extra state is always the one that breaks.
+ *
+ * Blank counts as absent because that is what an unset variable looks like
+ * coming through a compose file's `${ARIADNA_WEB_ROOT:-}`, and refusing to
+ * start over a variable nobody set would be refusing to start over nothing.
+ * Whether the directory actually holds a build is not decided here: it is
+ * read at boot by `createWebClient`, which fails loudly and says how to fix
+ * it, because a path that exists at config time and is empty at request time
+ * is the case a check here could not have caught anyway.
+ */
+const readWebRoot = (raw: string | undefined): string | null => {
+  const root = raw?.trim() ?? "";
+
+  return root.length === 0 ? null : root;
 };
 
 /**

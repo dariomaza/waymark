@@ -112,6 +112,9 @@ export const composeApp = (
         windowMs: config.login.windowMs,
       }),
       security: config.security,
+      // Absent, not null: an API with no web client behind it registers no
+      // fallback at all, which is exactly what it did before one existed.
+      ...(config.webRoot === null ? {} : { webClient: { root: config.webRoot } }),
     },
   };
 };
