@@ -98,12 +98,18 @@ describe("the web client served from the API", () => {
       expect(response.body).toContain(SHELL_MARKER);
     });
 
-    it("answers a HEAD with the headers and no body", async () => {
+    it("answers a HEAD with the headers a GET would carry, and no body", async () => {
+      const get = await api.app.inject({ method: "GET", url: "/" });
       const response = await api.app.inject({ method: "HEAD", url: "/" });
 
       expect(response.statusCode).toBe(200);
       expect(response.headers["content-type"]).toBe("text/html; charset=utf-8");
       expect(response.body).toBe("");
+      // A HEAD asks what a GET would answer. A `content-length` of 0 beside a
+      // document would be a lie about the document.
+      expect(response.headers["content-length"]).toBe(
+        String(Buffer.byteLength(get.body)),
+      );
     });
   });
 
