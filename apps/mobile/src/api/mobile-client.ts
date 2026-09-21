@@ -1,5 +1,6 @@
 import {
   createAriadnaClient,
+  type AppendPhoto,
   type AriadnaClient,
   type AriadnaClientOptions,
 } from "@ariadna/api-client";
@@ -30,6 +31,20 @@ export interface PhotoUpload {
 
 export type MobileApiClient = AriadnaClient<PhotoUpload>;
 
+/**
+ * Puts a photo into the multipart body the way React Native expects.
+ *
+ * Exported so it can be pinned on its own. It is the one line in this app
+ * whose real behaviour only exists on a device: React Native's `FormData`
+ * recognises `{ uri, name, type }` and streams the file off disk, while the
+ * `FormData` a test runner has is the platform one, which stringifies
+ * anything that is not a `Blob`. So the test says what is appended and under
+ * which name, and the streaming is the platform's to keep.
+ */
+export const appendPhotoPart: AppendPhoto<PhotoUpload> = (form, field, photo) => {
+  form.append(field, photo as unknown as Blob);
+};
+
 export type MobileApiClientOptions = Omit<
   AriadnaClientOptions<PhotoUpload>,
   "appendPhoto"
@@ -38,9 +53,4 @@ export type MobileApiClientOptions = Omit<
 export const createMobileApiClient = (
   options: MobileApiClientOptions,
 ): MobileApiClient =>
-  createAriadnaClient<PhotoUpload>({
-    ...options,
-    appendPhoto: (form, field, photo) => {
-      form.append(field, photo as unknown as Blob);
-    },
-  });
+  createAriadnaClient<PhotoUpload>({ ...options, appendPhoto: appendPhotoPart });

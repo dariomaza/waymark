@@ -250,14 +250,32 @@ const Tabs = (): JSX.Element => (
       tabBarStyle: { backgroundColor: colors.surfaceRaised, borderTopColor: colors.line },
     }}
   >
-    <Tab.Screen name="Scan" component={ScanScreen} options={{ title: "Scan" }} />
+    {/*
+      * Each tab states its accessible name rather than leaving it to be
+      * inferred from the label under the icon. A bar of four one-word buttons
+      * is exactly where an inferred name goes missing, and the name is what a
+      * screen reader announces and what a test asks for.
+      */}
+    <Tab.Screen
+      name="Scan"
+      component={ScanScreen}
+      options={{ title: "Scan", tabBarAccessibilityLabel: "Scan" }}
+    />
     <Tab.Screen
       name="Inventory"
       component={InventoryScreen}
-      options={{ title: "Inventory" }}
+      options={{ title: "Inventory", tabBarAccessibilityLabel: "Inventory" }}
     />
-    <Tab.Screen name="Search" component={SearchScreen} options={{ title: "Search" }} />
-    <Tab.Screen name="Items" component={AllItemsScreen} options={{ title: "Items" }} />
+    <Tab.Screen
+      name="Search"
+      component={SearchScreen}
+      options={{ title: "Search", tabBarAccessibilityLabel: "Search" }}
+    />
+    <Tab.Screen
+      name="Items"
+      component={AllItemsScreen}
+      options={{ title: "Items", tabBarAccessibilityLabel: "Everything you own" }}
+    />
   </Tab.Navigator>
 );
 

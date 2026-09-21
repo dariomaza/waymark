@@ -73,6 +73,10 @@ export const HttpResponse = {
   text(body: string, init: ResponseInit = {}): Response {
     return new Response(body, init);
   },
+  /** A completed call with nothing in it, like a 204. */
+  empty(init: ResponseInit = {}): Response {
+    return new Response(null, init);
+  },
   /** The request never got out. `fetch` rejects; nothing answered. */
   error(): Response {
     return { [NETWORK_ERROR]: true } as unknown as Response;
