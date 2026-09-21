@@ -83,6 +83,13 @@ export interface TestImageProcessorOptions {
 
 export interface TestApiOptions {
   readonly imageProcessor?: TestImageProcessorOptions;
+  /**
+   * A directory shaped like `apps/web/dist`. Absent means the API serves no
+   * web client at all, which is how every other file in this suite runs — so
+   * every one of them is, incidentally, a test that the API is still a
+   * complete JSON service on its own.
+   */
+  readonly webRoot?: string;
 }
 
 export interface TestApi {
@@ -207,6 +214,9 @@ export const createTestApi = async (
           trustedProxies: LOOPBACK_PROXIES,
           allowedOrigins: [TEST_ORIGIN],
         },
+        ...(options.webRoot === undefined
+          ? {}
+          : { webClient: { root: options.webRoot } }),
         logger: false,
       });
       await api.app.ready();

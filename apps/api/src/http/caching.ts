@@ -47,6 +47,35 @@ export const PENDING_PHOTO_CACHE_CONTROL = "private, max-age=60, must-revalidate
  */
 export const DERIVED_CACHE_CONTROL = "private, max-age=3600, must-revalidate";
 
+/**
+ * # The two headers the built web client needs, and why they say `public`
+ *
+ * Everything above is `private` because it sits behind a session and describes
+ * the inside of a house. The static client is the opposite on both counts: the
+ * same bytes are served to everybody, nothing about them depends on who is
+ * asking, and there is no session in front of them — a login screen cannot be
+ * behind a login. So a shared cache holding them leaks nothing, and the
+ * Cloudflare edge the tunnel terminates at is the right place for the bundle
+ * of a homelab served over a home uplink.
+ *
+ * The two of them are opposites, and getting them the wrong way round fails in
+ * two different directions:
+ *
+ * - A file whose NAME is its content hash can never serve different bytes. A
+ *   year and `immutable` is exactly true, and anything less throws away the
+ *   entire point of hashing the name.
+ * - `index.html` and `sw.js` keep their names across every deploy, so their
+ *   URLs serve new bytes on the day an upgrade lands. Cached for a year, the
+ *   old app would keep running — and `sw.js` cached for a year would keep
+ *   serving the old app from the service worker even after a reload.
+ *
+ * `no-cache` does not mean "do not store": it means "store it, and ask before
+ * using it". With the ETag beside it, the usual answer is a 304 with no body,
+ * so the shell costs a round trip and not a download.
+ */
+export const IMMUTABLE_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
+export const REVALIDATED_ASSET_CACHE_CONTROL = "public, no-cache";
+
 /** A strong validator: same tag means byte-identical body, by construction. */
 export const etagOf = (...parts: readonly string[]): string =>
   `"${createHash("sha256").update(parts.join("\u0000")).digest("hex").slice(0, 32)}"`;

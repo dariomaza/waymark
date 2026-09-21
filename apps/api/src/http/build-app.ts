@@ -50,8 +50,10 @@ import type { UserRepository } from "../auth/user-repository.js";
 import { PhotoFileStore } from "../photos/photo-file-store.js";
 import type { PhotoProcessingDependencies } from "../photos/photo-processing.js";
 import { PhotoRelease } from "../photos/photo-release.js";
+import { collectApiNamespace, pathnameOf, rootSegmentOf } from "./api-namespace.js";
 import { bearerTokenOf } from "./bearer-token.js";
 import { resolveClientIp, type TrustedProxyPolicy } from "./client-ip.js";
+import { createWebClient, type WebClient, type WebClientConfig } from "./web-client.js";
 import { mapDomainError } from "./error-mapping.js";
 import { ItemViews } from "./item-views.js";
 import { StorageUnitViews } from "./storage-unit-views.js";
@@ -65,6 +67,15 @@ import { storageUnitRoutes } from "./routes/storage-unit-routes.js";
 import { toValidationIssues } from "./validation.js";
 
 declare module "fastify" {
+  interface FastifyInstance {
+    /**
+     * The first path segments this API answers for, derived from its own
+     * route table. Everything else on this origin belongs to the web client;
+     * see `api-namespace.ts`.
+     */
+    apiNamespace: ReadonlySet<string>;
+  }
+
   interface FastifyRequest {
     /** Resolved once per request; see `resolveClientIp`. */
     clientIp: string;
@@ -114,6 +125,12 @@ export interface AppDependencies {
    */
   readonly photoProcessing: PhotoProcessingDependencies;
   readonly security: SecurityConfig;
+  /**
+   * The built web client this process also serves, or absent for an API on
+   * its own — which is a complete configuration, and the one `vite dev` runs
+   * against. See `web-client.ts`.
+   */
+  readonly webClient?: WebClientConfig;
   readonly sessionTtlMs?: number;
   readonly renewAfterMs?: number;
   readonly logger?: FastifyServerOptions["logger"];
@@ -142,6 +159,18 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     // one too many.
     trustProxy: false,
   });
+
+  /**
+   * Before a single route is registered, because `onRoute` fires as routes
+   * are added and never retroactively.
+   */
+  app.decorate("apiNamespace", collectApiNamespace(app));
+
+  // Read off disk here rather than on the first request: a container whose
+  // image was built without the client is broken, and it should say so at
+  // boot instead of answering 404 to somebody standing in a garage.
+  const webClient =
+    deps.webClient === undefined ? null : createWebClient(deps.webClient);
 
   const useCases = {
     createStorageUnit: new CreateStorageUnit({
@@ -262,7 +291,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   });
 
   registerSecurityPlugins(app, deps.security);
-  registerErrorHandling(app);
+  registerErrorHandling(app, webClient);
 
   app.get("/health", async (_request, reply) => reply.code(200).send({ status: "ok" }));
 
@@ -384,17 +413,58 @@ const registerSecurityPlugins = (
   });
 };
 
-const registerErrorHandling = (app: FastifyInstance): void => {
-  app.setNotFoundHandler(async (request, reply) =>
-    reply
+const registerErrorHandling = (
+  app: FastifyInstance,
+  webClient: WebClient | null,
+): void => {
+  /**
+   * # Where the two namespaces on this origin are told apart
+   *
+   * This runs only when Fastify matched no route, so every API route answers
+   * exactly as it did before the web client existed — there is no wildcard in
+   * front of them and no ordering to get right.
+   *
+   * What is left is a path nothing serves, and it is handed to the client
+   * only when all four of these hold:
+   *
+   * 1. There IS a built client. With none, this is the JSON service it always
+   *    was, which is what every other test file in this suite runs against.
+   * 2. The first segment is not one the API claims. An API path that no
+   *    longer exists must answer `404 application/json`, because a client
+   *    handed `200 text/html` instead reports `unexpected token < in JSON` —
+   *    a sentence about a parser that sends somebody to the wrong layer.
+   * 3. It is a read. A `POST` answered with a page would tell a client its
+   *    write had been accepted.
+   * 4. `web-client.ts` recognises it: a file that exists, or a path with no
+   *    file extension, which is what a client-side route looks like. A
+   *    missing `.js` is a 404 rather than a shell, for reason 2 again one
+   *    layer down.
+   *
+   * The deliberate consequence is that a path belonging to nobody — a typo —
+   * draws the app, which then says it has no such screen. That is the right
+   * half to be generous in: the person typing it is a person, and the client
+   * has its own not-found screen to show them.
+   */
+  app.setNotFoundHandler(async (request, reply) => {
+    const isRead = request.method === "GET" || request.method === "HEAD";
+    const pathname = pathnameOf(request.url);
+    const segment = rootSegmentOf(pathname);
+
+    if (
+      webClient !== null &&
+      isRead &&
+      (segment === null || !app.apiNamespace.has(segment)) &&
+      webClient.send(request, reply, pathname)
+    ) {
+      return reply;
+    }
+
+    return reply
       .code(404)
       .send(
-        errorBody(
-          "NOT_FOUND",
-          `No route for ${request.method} ${request.url}`,
-        ),
-      ),
-  );
+        errorBody("NOT_FOUND", `No route for ${request.method} ${request.url}`),
+      );
+  });
 
   app.setErrorHandler(async (error, request, reply) => {
     if (error instanceof ZodError) {
