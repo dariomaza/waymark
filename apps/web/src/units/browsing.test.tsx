@@ -132,7 +132,7 @@ describe("browsing the inventory", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     expect(await screen.findByRole("heading", { name: "Cordless drill" })).toBeVisible();
 

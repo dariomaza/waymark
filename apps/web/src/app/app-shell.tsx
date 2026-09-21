@@ -45,7 +45,7 @@ export const AppShell = (): JSX.Element => {
         items={[
           { to: ROUTES.inventory, label: "Inventory" },
           { to: ROUTES.everything, label: "Items" },
-          { to: ROUTES.search, label: "Search" },
+          { to: ROUTES.find, label: "Search" },
           { to: ROUTES.scan, label: "Scan" },
         ]}
       />

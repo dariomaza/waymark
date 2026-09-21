@@ -66,7 +66,7 @@ export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
             <Route element={<RequireSession />}>
               <Route element={<AppShell />}>
                 <Route path={ROUTES.inventory} element={<InventoryScreen />} />
-                <Route path={ROUTES.search} element={<SearchScreen />} />
+                <Route path={ROUTES.find} element={<SearchScreen />} />
                 <Route path={ROUTES.scan} element={<ScanScreen />} />
                 <Route path={ROUTES.unit} element={<UnitScreen />} />
                 <Route path={ROUTES.unitLabel} element={<LabelScreen />} />

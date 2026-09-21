@@ -8,7 +8,7 @@ import { DeleteUnitDialog } from "./delete-unit-dialog.js";
 import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
-import { ROUTES, labelsWithinPath, searchWithinPath, unitLabelPath, unitPath } from "../app/routes.js";
+import { ROUTES, labelsWithinPath, findWithinPath, unitLabelPath, unitPath } from "../app/routes.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
@@ -79,7 +79,7 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
       >
         Delete
       </Button>
-      <Link className="button button--secondary" to={searchWithinPath(unit.id)}>
+      <Link className="button button--secondary" to={findWithinPath(unit.id)}>
         Search inside
       </Link>
       <Link className="button button--secondary" to={unitLabelPath(unit.id)}>

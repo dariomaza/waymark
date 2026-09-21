@@ -61,7 +61,7 @@ describe("photos", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     const gallery = await screen.findByRole("list", { name: /photos/i });
     expect(within(gallery).getAllByRole("img")).toHaveLength(2);
@@ -106,7 +106,7 @@ describe("photos", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.upload(await screen.findByLabelText(/add a photo/i), aJpeg());
 
@@ -140,7 +140,7 @@ describe("photos", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     // Only the pending one says anything. A finished photo is just a photo,
     // and a note on every cell would be noise (ADR 4).
@@ -175,7 +175,7 @@ describe("photos", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await waitFor(() => {
       expect(asked).toEqual(["/photos/p1/thumbnail"]);
@@ -206,7 +206,7 @@ describe("photos", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(
       await screen.findByRole("button", { name: /make photo 2 the cover/i }),
@@ -242,7 +242,7 @@ describe("photos", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /delete photo 1/i }));
 
@@ -274,7 +274,7 @@ describe("photos", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.upload(await screen.findByLabelText(/add a photo/i), aJpeg());
 
@@ -389,7 +389,7 @@ describe("a background removal that failed", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     expect(await screen.findByText(/background removal failed/i)).toBeVisible();
     await userEvent.click(
@@ -412,7 +412,7 @@ describe("a background removal that failed", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     expect(await screen.findByText(/still pending/i)).toBeVisible();
     expect(
@@ -462,7 +462,7 @@ describe("a background removal that failed", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(
       await screen.findByRole("link", { name: /every photo that failed/i }),
@@ -501,7 +501,7 @@ describe("what background removal is doing", () => {
       abandoned: [],
     });
 
-    renderApp({ route: "/photos/processing" });
+    renderApp({ route: "/processing" });
 
     expect(await screen.findByText(/switched off/i)).toBeVisible();
     // A complete installation, so the pending photos are not a complaint.
@@ -515,7 +515,7 @@ describe("what background removal is doing", () => {
       abandoned: [],
     });
 
-    renderApp({ route: "/photos/processing" });
+    renderApp({ route: "/processing" });
 
     expect(await screen.findByText(/not answering/i)).toBeVisible();
     expect(screen.getByText(/rembg:7000/u)).toBeVisible();
@@ -536,7 +536,7 @@ describe("what background removal is doing", () => {
       ],
     });
 
-    renderApp({ route: "/photos/processing" });
+    renderApp({ route: "/processing" });
 
     expect(await screen.findByText(/415 cannot decode this image/i)).toBeVisible();
     expect(screen.getByText(/5 attempts/i)).toBeVisible();
@@ -557,7 +557,7 @@ describe("what background removal is doing", () => {
       }),
     );
 
-    renderApp({ route: "/photos/processing" });
+    renderApp({ route: "/processing" });
 
     await userEvent.click(
       await screen.findByRole("button", { name: /retry every failed photo/i }),
@@ -576,7 +576,7 @@ describe("what background removal is doing", () => {
       abandoned: [],
     });
 
-    renderApp({ route: "/photos/processing" });
+    renderApp({ route: "/processing" });
 
     expect(await screen.findByText(/nothing has failed/i)).toBeVisible();
     expect(
@@ -607,7 +607,7 @@ describe("what background removal is doing", () => {
       }),
     );
 
-    renderApp({ route: "/photos/processing" });
+    renderApp({ route: "/processing" });
 
     await userEvent.click(await screen.findByRole("button", { name: /try p1 again/i }));
 

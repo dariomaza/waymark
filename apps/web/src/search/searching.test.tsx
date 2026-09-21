@@ -60,7 +60,7 @@ describe("searching for where something is", () => {
       storageUnits: [],
     }));
 
-    renderApp({ route: "/search" });
+    renderApp({ route: "/find" });
     await userEvent.type(
       await screen.findByRole("searchbox", { name: /search/i }),
       "cab",
@@ -78,7 +78,7 @@ describe("searching for where something is", () => {
       storageUnits: [],
     }));
 
-    renderApp({ route: "/search" });
+    renderApp({ route: "/find" });
     await userEvent.type(
       await screen.findByRole("searchbox", { name: /search/i }),
       "cab",
@@ -96,7 +96,7 @@ describe("searching for where something is", () => {
       storageUnits: [aUnitHit(cableBox, [garage, cableBox])],
     }));
 
-    renderApp({ route: "/search" });
+    renderApp({ route: "/find" });
     await userEvent.type(
       await screen.findByRole("searchbox", { name: /search/i }),
       "cab",
@@ -109,7 +109,7 @@ describe("searching for where something is", () => {
   });
 
   it("asks the API nothing at all until something has been typed", async () => {
-    renderApp({ route: "/search" });
+    renderApp({ route: "/find" });
 
     expect(await screen.findByText(/type what you are looking for/i)).toBeVisible();
   });
@@ -122,7 +122,7 @@ describe("searching for where something is", () => {
       storageUnits: [],
     }));
 
-    renderApp({ route: "/search" });
+    renderApp({ route: "/find" });
     await userEvent.type(
       await screen.findByRole("searchbox", { name: /search/i }),
       "zzz",
@@ -139,7 +139,7 @@ describe("searching for where something is", () => {
       storageUnits: [],
     }));
 
-    renderApp({ route: "/search?q=cable" });
+    renderApp({ route: "/find?q=cable" });
 
     expect(await screen.findByRole("article", { name: /HDMI 2\.1/i })).toBeVisible();
     expect(screen.getByRole("searchbox", { name: /search/i })).toHaveValue("cable");
@@ -159,7 +159,7 @@ describe("searching for where something is", () => {
       storageUnits: [],
     }));
 
-    renderApp({ route: "/search?q=cable&within=garage" });
+    renderApp({ route: "/find?q=cable&within=garage" });
 
     expect(await screen.findByText(/inside garage/i)).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: /search everywhere/i }));

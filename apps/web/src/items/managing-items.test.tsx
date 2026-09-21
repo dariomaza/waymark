@@ -170,7 +170,7 @@ describe("looking after items", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /^move$/i }));
     await userEvent.selectOptions(
@@ -194,7 +194,7 @@ describe("looking after items", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.clear(screen.getByRole("textbox", { name: /^name/i }));
@@ -227,7 +227,7 @@ describe("looking after items", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
@@ -249,7 +249,7 @@ describe("looking after items", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
 
@@ -274,7 +274,7 @@ describe("looking after items", () => {
       ),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.clear(screen.getByRole("spinbutton", { name: /quantity/i }));
@@ -297,7 +297,7 @@ describe("looking after items", () => {
       }),
     );
 
-    renderApp({ route: "/items/drill" });
+    renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /^delete$/i }));
     await userEvent.click(await screen.findByRole("button", { name: /delete this item/i }));
@@ -320,7 +320,7 @@ describe("looking after items", () => {
       ),
     );
 
-    renderApp({ route: "/items" });
+    renderApp({ route: "/things" });
 
     const list = await screen.findByRole("list", { name: /every item/i });
     const drillRow = within(list).getByRole("link", { name: /cordless drill/i });
@@ -340,7 +340,7 @@ describe("looking after items", () => {
       }),
     );
 
-    renderApp({ route: "/items" });
+    renderApp({ route: "/things" });
 
     await screen.findByRole("list", { name: /every item/i });
     // The screen used to be assembled from one request per unit. It is one
@@ -353,7 +353,7 @@ describe("looking after items", () => {
       http.get(`${API_URL}/items`, () => HttpResponse.error()),
     );
 
-    renderApp({ route: "/items" });
+    renderApp({ route: "/things" });
 
     expect(
       await screen.findByRole("button", { name: /try again/i }, { timeout: 3000 }),
