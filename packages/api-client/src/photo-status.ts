@@ -10,9 +10,11 @@ import { PhotoProcessingStatus } from "@ariadna/domain";
  *
  * The two that ARE news are the ones where the picture may still change, or
  * where it was supposed to and did not. Neither is a problem the person has
- * to act on, which is why this is a sentence and not a button — the retry
- * path is `POST /photos/:id/reprocess`, and it belongs to whoever runs the
- * sidecar rather than to somebody standing in a garage.
+ * to act on — the original is on the screen and stays there — so this is a
+ * sentence, and where it needs one the button beside it is the screen's to
+ * add rather than this function's: `FAILED` gets the retry that ADR 4 asked
+ * for (`POST /photos/:id/reprocess`), and `PENDING` gets nothing, because
+ * offering to retry a photo nothing has tried yet would invent a problem.
  */
 export const photoStatusNote = (status: PhotoProcessingStatus): string | null => {
   switch (status) {

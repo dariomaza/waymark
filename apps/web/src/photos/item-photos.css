@@ -36,8 +36,3 @@
   padding: var(--space-1) var(--space-2);
 }
 
-.item-photos__pending {
-  margin: 0;
-  font-size: var(--text-s);
-  color: var(--color-ink-muted);
-}

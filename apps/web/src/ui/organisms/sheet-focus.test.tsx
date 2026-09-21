@@ -107,6 +107,16 @@ describe("a sheet that is open", () => {
     expect(sheet).toContainElement(document.activeElement as HTMLElement);
   });
 
+  it("still closes on Escape, which shares the same listener as the trap", async () => {
+    await openTheMoveSheet();
+
+    await userEvent.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: /move box 3/i })).toBeNull();
+    });
+  });
+
   it("hands the focus back to the button that opened it", async () => {
     const sheet = await openTheMoveSheet();
     const opener = screen.getByRole("button", { name: /^move$/i });

@@ -1,4 +1,9 @@
-import { flattenUnits, subtreeOf, type FlatUnit } from "@ariadna/api-client";
+import {
+  describeFailure,
+  flattenUnits,
+  subtreeOf,
+  type FlatUnit,
+} from "@ariadna/api-client";
 import { unitId, type UnitId } from "@ariadna/domain";
 import { useCallback, useMemo, useState, type JSX } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -152,7 +157,7 @@ export const LabelSheetScreen = (): JSX.Element => {
           {symbols.failure === null ? null : (
             <Callout tone="wrong">
               A symbol could not be fetched, so the sheet is incomplete and
-              printing is off. {describeQrFailure(symbols.failure)}
+              printing is off. {describeFailure(symbols.failure)}
             </Callout>
           )}
 
@@ -188,11 +193,3 @@ export const LabelSheetScreen = (): JSX.Element => {
 
 const plural = (count: number, noun: string): string =>
   `${String(count)} ${noun}${count === 1 ? "" : "s"}`;
-
-/**
- * Deliberately not `describeFailure`: that answers "what went wrong with the
- * thing you just asked for", and what went wrong here is one picture on a
- * page of pictures. The sentence above it already says what it costs.
- */
-const describeQrFailure = (error: Error): string =>
-  error.message.endsWith(".") ? error.message : `${error.message}.`;
