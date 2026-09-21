@@ -36,6 +36,11 @@ services:
       # Everything here is documented, with its reasoning, in
       # `apps/api/.env.example`. The defaults are the ones a fresh homelab needs
       # changed; the rest can be left alone.
+      # Loopback, and this line is load bearing. The image defaults to 0.0.0.0
+      # because that is what a PUBLISHED port needs; in the host namespace this
+      # file uses, the same value would put a private inventory on every device
+      # in the house. `cloudflared` shares this namespace and reaches it here.
+      HOST: 127.0.0.1
       # What a QR on a box encodes, and it is THIS container's address now
       # rather than a separate web server's: the client is served from here.
       # Set it to the tunnel's hostname before printing a single label — a
@@ -59,17 +64,30 @@ services:
       # ARIADNA_IMAGE_PROCESSOR_URL is deliberately absent. Unset means the
       # feature is off, which is what this file describes (ADR 4).
 
-    ports:
-      # Published on the HOST'S loopback only.
-      #
-      # `cloudflared` holds an outbound tunnel and forwards over loopback, so
-      # nothing else ever needs to reach this port. `3000:3000` would publish a
-      # private inventory to every device on the home network — the printer, the
-      # TV, the guest phone — as a side effect of installing a tunnel.
-      #
-      # This is the whole product's port now, the app as well as the API, so
-      # the tunnel needs exactly one hostname pointed at it.
-      - "127.0.0.1:3000:3000"
+    # The HOST's network namespace, with the process bound to its loopback.
+    #
+    # NOT `ports: "127.0.0.1:3000:3000"`, which looks equivalent and is not. A
+    # published port is forwarded by `docker-proxy`, and that REWRITES the
+    # source address: every request reaches the API from the bridge gateway
+    # (172.21.0.1 here), whatever machine it actually came from.
+    #
+    # That breaks exactly one thing, silently. The login rate limiter reads the
+    # caller from `CF-Connecting-IP`, but only when the peer is a trusted proxy
+    # (ADR 7) — anyone able to reach the process directly could otherwise forge
+    # that header. With the peer rewritten to a gateway that is not on the
+    # trusted list, the header is correctly ignored, and every caller on earth
+    # shares one bucket: ten failed logins from anywhere lock out everyone, and
+    # an attacker hides among them. Nothing logs a complaint. It was found by
+    # reading the observed peer address in the logs of a live deployment, not
+    # by any test, because the defect is in the topology and not in the code.
+    #
+    # `cloudflared` already runs in the host namespace, so sharing it makes the
+    # peer genuinely 127.0.0.1 — which is what the trusted default says and
+    # what the code was written against.
+    #
+    # This is the whole product's port now, the app as well as the API, so the
+    # tunnel needs exactly one hostname pointed at it.
+    network_mode: host
 
     volumes:
       # OUTSIDE the image, both of them, and this is the line that matters most
