@@ -1,0 +1,136 @@
+# Everything this repository already claims to verify, run by a machine.
+#
+# Fifty-nine commits and 1339 tests went in without this file, which means
+# every one of those tests was green exactly once, on one laptop, at the moment
+# somebody chose to run it. A suite nobody runs is not a safety net, it is a
+# document that claims to be executable — and the first time that claim is
+# tested is the worst possible time to find out it was stale.
+#
+# The whole job is `install`, `typecheck`, `test`. What takes explaining is not
+# the three commands; it is the several ways each of them can succeed while
+# proving nothing.
+
+name: CI
+
+on:
+  # Both triggers, deliberately.
+  #
+  # `pull_request` is what a review needs. `push` is what the work in this
+  # repository actually looks like: branches pushed and merged without a pull
+  # request ever existing. Keeping only `pull_request` would leave that
+  # entirely unverified, which is the exact hole this file was added to close.
+  #
+  # The cost is that a push to a branch with an open pull request runs the job
+  # twice. That is some wasted minutes; the alternative is a whole branch
+  # nobody checked.
+  push:
+  pull_request:
+
+# A superseded push has nothing left to prove, so it stops rather than queuing
+# behind the answer that replaced it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# This job reads the repository and writes nothing anywhere. It has no reason
+# to hold a token that could.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: typecheck and test
+    runs-on: ubuntu-latest
+    # The whole sequence is about a minute of real work. Twenty is not a
+    # budget, it is the point at which something has hung and should be killed
+    # rather than billed.
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # pnpm and Node in one step, and neither version is written here.
+      #
+      # The pnpm version is read from `packageManager` in the root
+      # package.json, which is the one place that already decides it. A second
+      # copy in this file is a second thing to forget on the day it moves, and
+      # a CI run on a different pnpm than the one everybody develops on is a CI
+      # run answering a question nobody asked.
+      #
+      # `node@22` is not arbitrary either: it is what `docker/api.Dockerfile`
+      # builds and runs (`ARG NODE_VERSION=22-bookworm-slim`). CI proving a
+      # different major than the container on the homelab box would be CI
+      # proving the wrong thing.
+      #
+      # `cache: true` caches the pnpm STORE — not `node_modules` — keyed on the
+      # hash of pnpm-lock.yaml. That is the shape of cache that cannot lie: the
+      # store is content addressed, and the install below is
+      # `--frozen-lockfile`, so the lockfile decides what is installed and the
+      # cache only ever decides how long it takes to put it there. A stale or
+      # missing cache costs seconds, never a different answer.
+      #
+      # `install: false` because the install is the interesting step and gets
+      # to be visible, with its flags, below.
+      - name: Set up pnpm and Node
+        uses: pnpm/setup@v3
+        with:
+          runtime: node@22
+          cache: true
+          install: false
+
+      # No `--ignore-scripts`, and that omission is the entire point of this
+      # step.
+      #
+      # Two things have to happen during this install, and both of them are
+      # install scripts:
+      #
+      # 1. `pnpm-workspace.yaml` lists six packages under `allowBuilds` whose
+      #    scripts must run — esbuild, prisma, `@prisma/client`,
+      #    `@prisma/engines`, `@parcel/watcher` and unrs-resolver. They are the
+      #    query engine the API talks to SQLite through, the transform Vite and
+      #    Metro compile with, and Metro's file watcher.
+      # 2. `apps/api` has a `postinstall` of its own that runs
+      #    `prisma generate`. It does fire here — verified, not assumed, by
+      #    running this exact command on a clean checkout.
+      #
+      # An install that holds any of that back still exits 0 and still prints a
+      # perfectly healthy summary. Nothing about it looks wrong. What breaks is
+      # everything after it, and `docker/api.Dockerfile` is the proof this is a
+      # real trap rather than a theoretical one: it passes `--ignore-scripts`
+      # on purpose, and has to run the generator by hand afterwards.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Already done by the `postinstall` above. Here anyway, because this is
+      # the ordering the next step depends on and a comment is a weaker way to
+      # say so than a line in the log.
+      #
+      # `apps/api` imports `PrismaClient`, `Prisma`, `Item` and friends from
+      # `@prisma/client`, and none of those exist on disk until the generator
+      # has read prisma/schema.prisma and written them. Skip it and `tsc`
+      # answers with twenty-odd `TS2305: has no exported member` errors that
+      # name every persistence file and explain nothing. It is idempotent and
+      # takes under a tenth of a second, which is a cheap price for never
+      # having to debug that message.
+      - name: Generate the Prisma client
+        run: pnpm --filter @ariadna/api exec prisma generate
+
+      # `tsc --noEmit` in all six workspace projects.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # `pnpm -r test`, which is two different test runners.
+      #
+      # vitest runs in packages/domain, packages/domain-contract-tests,
+      # packages/api-client, apps/api and apps/web. jest runs in apps/mobile,
+      # because Expo's transform pipeline is jest's and jest-expo is what knows
+      # how to compile React Native. Both are spawned by the same recursive
+      # script, and a failure in either exits non-zero — including jest, which
+      # is the one worth checking, being the odd runner out.
+      #
+      # That non-zero is the only property that makes this whole file worth
+      # having. A workflow that reports success on a failed step is worse than
+      # no workflow, because it converts "nobody checked" into "somebody
+      # checked and it was fine".
+      - name: Test
+        run: pnpm test
