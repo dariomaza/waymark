@@ -32,6 +32,7 @@ import { ingestPhoto } from "../../photos/photo-ingestion.js";
 import type { PhotoProcessingDependencies } from "../../photos/photo-processing.js";
 import type { PhotoRelease } from "../../photos/photo-release.js";
 import type { ItemViews } from "../item-views.js";
+import type { StorageUnitViews } from "../storage-unit-views.js";
 import {
   IMMUTABLE_CACHE_CONTROL,
   PENDING_PHOTO_CACHE_CONTROL,
@@ -43,7 +44,7 @@ import {
   itemPhotoParamsSchema,
   reorderItemPhotosBodySchema,
 } from "../validation.js";
-import { photoView, storageUnitView } from "../views.js";
+import { photoView } from "../views.js";
 
 export interface PhotoRouteOptions {
   readonly items: ItemRepository;
@@ -55,6 +56,7 @@ export interface PhotoRouteOptions {
   readonly maxUploadBytes: number;
   readonly processing: PhotoProcessingDependencies;
   readonly itemViews: ItemViews;
+  readonly storageUnitViews: StorageUnitViews;
   readonly attachItemPhoto: AttachItemPhoto;
   readonly detachItemPhoto: DetachItemPhoto;
   readonly reorderItemPhotos: ReorderItemPhotos;
@@ -351,7 +353,8 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
       .header("location", `/photos/${photo.id}`)
       .send({
         photo: photoView(photo),
-        unit: storageUnitView(result.unit),
+        // The photo is in hand, so there is nothing to read back for it.
+        unit: options.storageUnitViews.withPhoto(result.unit, photo),
         releasedPhotoIds: [...released],
       });
   });
@@ -366,9 +369,11 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
 
     const released = await releaseAndLog(result.releasedPhotoIds);
 
-    return reply
-      .code(200)
-      .send({ unit: storageUnitView(result.unit), releasedPhotoIds: [...released] });
+    return reply.code(200).send({
+      // Cleared, so there is no photo to read either.
+      unit: options.storageUnitViews.withPhoto(result.unit, null),
+      releasedPhotoIds: [...released],
+    });
   });
 
   /**

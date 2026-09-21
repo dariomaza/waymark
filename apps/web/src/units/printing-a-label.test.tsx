@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
@@ -27,7 +27,7 @@ describe("the label on a box", () => {
         HttpResponse.json({ tree: [aTree(garage, [aTree(box)])] }),
       ),
       http.get(`${API_URL}/storage-units/box3`, () =>
-        HttpResponse.json({ unit: box, path: [garage, box], children: [], items: [] }),
+        HttpResponse.json({ unit: withPhoto(box), path: [garage, box], children: [], items: [] }),
       ),
       http.get(`${API_URL}/storage-units/box3/qr.svg`, () =>
         HttpResponse.text(QR_SVG, { headers: { "content-type": "image/svg+xml" } }),

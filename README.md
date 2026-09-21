@@ -320,10 +320,19 @@ the one file you want small enough to copy anywhere into tens of gigabytes.
   `immutable`; the one exception is a photo still waiting for its background to
   be removed, where the same id is about to start serving a different file, so
   it revalidates instead (ADR 10).
-- **An item carries its photos, not their ids.** `ItemView.photos` is a list
-  of whole `PhotoView`s, ordered, first one is the cover — so a client never
-  builds a `/photos/:id` by hand, and can say which picture is still waiting
-  for a background removal that may never happen.
+- **A thing carries its photos, not their ids.** `ItemView.photos` is a list
+  of whole `PhotoView`s, ordered, first one is the cover, and a unit's own
+  screen answers with `unit.photo` — so no client builds a `/photos/:id` by
+  hand, and every screen can say which picture is still waiting for a
+  background removal that may never happen.
+
+  A photo appears only where a unit is the SUBJECT of the answer: its own
+  screen, a patch, a move, an upload. A breadcrumb step, a child row, a node
+  of the tree and a search hit are rows about somewhere else, and they carry
+  no photo — and no photo id either, because an id is not a picture. It
+  cannot be drawn without building a URL and it says nothing about whether
+  the bytes have settled, so the field could only ever be used wrongly. The
+  rows got smaller rather than larger.
 - **Deleting releases the files.** The rows go first, then the files, and a
   failed unlink is logged rather than thrown. A read-only volume must not make
   deleting an item impossible; a file with no row costs disk, a lost delete is a
@@ -617,11 +626,6 @@ runs on a phone: it typechecks, its tests pass, `expo prebuild` generates the
 native project from `app.json`, and `expo export` produces an Android Hermes
 bundle. It has never been run on a device or an emulator, and there is no
 signed APK — that needs a device, an emulator or EAS credentials.
-
-One asymmetry is left: a storage unit still hands out a bare `photoId` rather
-than a photo view, so both clients build that single URL by hand. Items no
-longer do, and the unit is the only thing left in `photos/photo-urls.ts` and
-in the mobile `unit-photo.tsx`.
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against

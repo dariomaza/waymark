@@ -1,4 +1,4 @@
-import { aSession, aStorageUnit } from "@ariadna/api-client/testing";
+import { aSession, aStorageUnit, withPhoto } from "@ariadna/api-client/testing";
 
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
 import { fireEvent, renderApp, screen, waitFor } from "../testing/render-app.js";
@@ -51,7 +51,7 @@ describe("looking after a storage unit", () => {
       http.patch(`${API_URL}/storage-units/box3`, async ({ request }) => {
         edits.push(await request.json());
 
-        return HttpResponse.json({ unit: aStorageUnit({ id: "box3", name: "Box 4" }) });
+        return HttpResponse.json({ unit: withPhoto(aStorageUnit({ id: "box3", name: "Box 4" })) });
       }),
     );
 
@@ -153,7 +153,7 @@ describe("looking after a storage unit", () => {
         created.push(await request.json());
 
         return HttpResponse.json(
-          { unit: aStorageUnit({ id: "new", parentId: "box3", name: "Little bag" }) },
+          { unit: withPhoto(aStorageUnit({ id: "new", parentId: "box3", name: "Little bag" })) },
           { status: 201 },
         );
       }),

@@ -1,4 +1,4 @@
-import { anItem, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { anItem, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
 
 import { API_URL, apiServer, http, HttpResponse } from "./api-server.js";
 
@@ -42,7 +42,7 @@ export const theApiKnowsTheHouse = (): void => {
     ),
     http.get(`${API_URL}/storage-units/garage`, () =>
       HttpResponse.json({
-        unit: garage,
+        unit: withPhoto(garage),
         path: [garage],
         children: [wardrobe],
         items: [],
@@ -50,7 +50,7 @@ export const theApiKnowsTheHouse = (): void => {
     ),
     http.get(`${API_URL}/storage-units/wardrobe`, () =>
       HttpResponse.json({
-        unit: wardrobe,
+        unit: withPhoto(wardrobe),
         path: [garage, wardrobe],
         children: [box],
         items: [],
@@ -58,7 +58,7 @@ export const theApiKnowsTheHouse = (): void => {
     ),
     http.get(`${API_URL}/storage-units/box3`, () =>
       HttpResponse.json({
-        unit: box,
+        unit: withPhoto(box),
         path: [garage, wardrobe, box],
         children: [],
         items: [drill],

@@ -54,6 +54,7 @@ import { bearerTokenOf } from "./bearer-token.js";
 import { resolveClientIp, type TrustedProxyPolicy } from "./client-ip.js";
 import { mapDomainError } from "./error-mapping.js";
 import { ItemViews } from "./item-views.js";
+import { StorageUnitViews } from "./storage-unit-views.js";
 import { errorBody, HttpError } from "./http-error.js";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
@@ -210,6 +211,9 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   // One projector, shared by every route that answers with an item, so the
   // photo rows behind `ItemView.photos` are loaded the same way everywhere.
   const itemViews = new ItemViews(deps.photos);
+  // And one for the unit a client asked ABOUT, which is the only projection of
+  // a unit that carries its photo. Rows stay rows.
+  const storageUnitViews = new StorageUnitViews(deps.photos);
 
   const photoFiles = new PhotoFileStore(deps.photoStorage.root);
   const photoRelease = new PhotoRelease({ photos: deps.photos, files: photoFiles });
@@ -285,6 +289,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       storageUnits: deps.storageUnits,
       items: deps.items,
       itemViews,
+      storageUnitViews,
       ...useCases,
     });
     void scope.register(itemRoutes, {
@@ -303,6 +308,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       maxUploadBytes: deps.photoStorage.maxUploadBytes,
       processing: deps.photoProcessing,
       itemViews,
+      storageUnitViews,
       ...useCases,
     });
     void scope.register(searchRoutes, {

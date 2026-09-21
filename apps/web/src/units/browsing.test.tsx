@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { anItem, aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { anItem, aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, within } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
@@ -64,7 +64,7 @@ describe("browsing the inventory", () => {
     apiServer.use(
       http.get(`${API_URL}/storage-units/box3`, () =>
         HttpResponse.json({
-          unit: box,
+          unit: withPhoto(box),
           path: [garage, wardrobe, box],
           children: [],
           items: [anItem({ id: "drill", storageUnitId: "box3", name: "Cordless drill" })],
@@ -85,7 +85,7 @@ describe("browsing the inventory", () => {
   it("says a box is empty instead of showing two empty lists", async () => {
     apiServer.use(
       http.get(`${API_URL}/storage-units/box3`, () =>
-        HttpResponse.json({ unit: box, path: [box], children: [], items: [] }),
+        HttpResponse.json({ unit: withPhoto(box), path: [box], children: [], items: [] }),
       ),
     );
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { anItem, aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { anItem, aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
@@ -24,7 +24,7 @@ const theApiKnowsTheHouse = (): void => {
     ),
     http.get(`${API_URL}/storage-units/box3`, () =>
       HttpResponse.json({
-        unit: box,
+        unit: withPhoto(box),
         path: [garage, box],
         children: [],
         items: [anItem({ id: "drill", storageUnitId: "box3", name: "Cordless drill" })],

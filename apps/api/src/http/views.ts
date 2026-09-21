@@ -21,16 +21,41 @@ import type { StorageUnitTreeNode } from "./storage-unit-tree.js";
  * Timestamps are ISO 8601 strings in UTC, so a client parses them the same way
  * on every platform.
  */
+/**
+ * A storage unit as a ROW: a breadcrumb step, a child, a node of the tree, a
+ * search hit, the unit an item happens to sit in.
+ *
+ * It carries no photo, and it carries no `photoId` either. An id is not a
+ * picture: a client holding one has to build `/photos/<id>` by hand, which is
+ * the one thing `PhotoView` exists to stop, and it cannot see whether the
+ * bytes have settled (ADR 4). Nothing ever drew a row's photo, so the id was
+ * a field that could only be used wrongly — see `StorageUnitWithPhotoView`
+ * for where a photo does belong.
+ */
 export interface StorageUnitView {
   readonly id: string;
   readonly parentId: string | null;
   readonly name: string;
   readonly kind: string;
   readonly description: string | null;
-  readonly photoId: string | null;
   readonly publicId: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+/**
+ * A storage unit as the SUBJECT of an answer: its own screen, the unit a
+ * patch or a move just changed, the unit a photo was just put on.
+ *
+ * Only here is a photo worth its bytes, and here it is the whole photo —
+ * `url`, `thumbnailUrl` and `processingStatus` — exactly as an item's photos
+ * are (ADR 9). Extending the row view rather than replacing it is what keeps
+ * the answer from splitting in two: `path`, `children` and `tree` stay the
+ * slim rows they were, and one extra photo row is read only when a unit is
+ * what the client asked about.
+ */
+export interface StorageUnitWithPhotoView extends StorageUnitView {
+  readonly photo: PhotoView | null;
 }
 
 export interface ItemView {
@@ -133,10 +158,24 @@ export const storageUnitView = (unit: StorageUnit): StorageUnitView => ({
   name: unit.name,
   kind: unit.kind,
   description: unit.description,
-  photoId: unit.photoId,
   publicId: unit.publicId,
   createdAt: unit.createdAt.toISOString(),
   updatedAt: unit.updatedAt.toISOString(),
+});
+
+/**
+ * The same row plus the photo it points at, resolved by the caller.
+ *
+ * `null` is spelled out rather than left off: a client checking `photo` has to
+ * be able to tell "this unit has no photo" from "this answer does not carry
+ * one", and an absent key says the second thing.
+ */
+export const storageUnitWithPhotoView = (
+  unit: StorageUnit,
+  photo: Photo | null,
+): StorageUnitWithPhotoView => ({
+  ...storageUnitView(unit),
+  photo: photo === null ? null : photoView(photo),
 });
 
 /**

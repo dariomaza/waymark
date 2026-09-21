@@ -40,9 +40,14 @@ interface ItemView {
 
 const photoIdsOf = (item: ItemView): string[] => item.photos.map((photo) => photo.id);
 
+/**
+ * A unit hands out the whole photo, exactly as an item does. There is no
+ * `photoId` on it any more: an id a client has to turn into a URL is the one
+ * thing `PhotoView` exists to remove.
+ */
 interface UnitView {
   readonly id: string;
-  readonly photoId: string | null;
+  readonly photo: PhotoView | null;
 }
 
 const errorCodeOf = (response: LightMyRequestResponse): string =>
@@ -710,7 +715,7 @@ describe("photos over HTTP", () => {
 
       expect(response.statusCode).toBe(201);
       const body = response.json() as { photo: PhotoView; unit: UnitView };
-      expect(body.unit.photoId).toBe(body.photo.id);
+      expect(body.unit.photo).toEqual(body.photo);
     });
 
     it("replaces the previous one and deletes its files", async () => {
@@ -744,7 +749,7 @@ describe("photos over HTTP", () => {
 
       expect(response.statusCode).toBe(200);
       const body = response.json() as { unit: UnitView; releasedPhotoIds: string[] };
-      expect(body.unit.photoId).toBeNull();
+      expect(body.unit.photo).toBeNull();
       expect(body.releasedPhotoIds).toEqual([photo.id]);
       expect(await countStoredFiles(api.photoRoot)).toBe(0);
     });
@@ -771,6 +776,127 @@ describe("photos over HTTP", () => {
 
       expect(response.statusCode).toBe(404);
       expect(errorCodeOf(response)).toBe("STORAGE_UNIT_NOT_FOUND");
+    });
+  });
+
+  /**
+   * # A unit's photo is a photo, and only where a unit is the subject
+   *
+   * An id forces a client to build `/photos/<id>` by hand, which is the one
+   * thing `PhotoView` exists to stop, and it hides `processingStatus` so a
+   * unit photo still waiting for a background removal that may never happen
+   * (ADR 4) looks identical to a settled one.
+   *
+   * The reason it stayed an id was that `storageUnitView` also projects every
+   * breadcrumb step, every child row, every tree node and every search hit,
+   * and none of those draws a photo. So the whole photo is added ONLY to the
+   * projections where a unit is what the answer is about, and the rows lost
+   * the id they could never use — which makes them smaller, not larger.
+   */
+  describe("where a unit's photo shows up, and where it does not", () => {
+    const unitOf = (response: LightMyRequestResponse): UnitView =>
+      (response.json() as { unit: UnitView }).unit;
+
+    it("carries the whole photo on the unit's own screen", async () => {
+      const unit = await createUnit();
+      const uploaded = photoOf(
+        await upload(`/storage-units/${unit.id}/photo`, await aPlainImage("jpeg")),
+      );
+
+      const response = await call({ method: "GET", url: `/storage-units/${unit.id}` });
+
+      expect(response.statusCode).toBe(200);
+      expect(unitOf(response).photo).toEqual({
+        id: uploaded.id,
+        processingStatus: "PENDING",
+        url: `/photos/${uploaded.id}`,
+        thumbnailUrl: `/photos/${uploaded.id}/thumbnail`,
+      });
+    });
+
+    it("hands out URLs that actually serve bytes, so nothing has to be built", async () => {
+      const unit = await createUnit();
+      await upload(`/storage-units/${unit.id}/photo`, await aPlainImage("jpeg"));
+
+      const photo = unitOf(
+        await call({ method: "GET", url: `/storage-units/${unit.id}` }),
+      ).photo;
+
+      expect(photo).not.toBeNull();
+      const [full, thumbnail] = await Promise.all([
+        call({ method: "GET", url: (photo as PhotoView).url }),
+        call({ method: "GET", url: (photo as PhotoView).thumbnailUrl }),
+      ]);
+      expect(full.statusCode).toBe(200);
+      expect(thumbnail.statusCode).toBe(200);
+    });
+
+    it("says null rather than nothing when a unit has no photo", async () => {
+      const unit = await createUnit();
+
+      const response = await call({ method: "GET", url: `/storage-units/${unit.id}` });
+
+      expect(unitOf(response).photo).toBeNull();
+    });
+
+    it("carries it on every answer whose subject is one unit", async () => {
+      const unit = await createUnit();
+      const uploaded = photoOf(
+        await upload(`/storage-units/${unit.id}/photo`, await aPlainImage("jpeg")),
+      );
+
+      const [patched, moved] = await Promise.all([
+        call({
+          method: "PATCH",
+          url: `/storage-units/${unit.id}`,
+          payload: { name: "Box 4" },
+        }),
+        call({
+          method: "POST",
+          url: `/storage-units/${unit.id}/move`,
+          payload: { parentId: null },
+        }),
+      ]);
+
+      expect(unitOf(patched).photo?.id).toBe(uploaded.id);
+      expect(unitOf(moved).photo?.id).toBe(uploaded.id);
+    });
+
+    it("leaves the rows alone: no photo and no photo id on a breadcrumb, a child or a tree node", async () => {
+      const parent = await createUnit("Garage");
+      const child = (
+        await call({
+          method: "POST",
+          url: "/storage-units",
+          payload: { name: "Box 3", parentId: parent.id, kind: StorageUnitKind.BOX },
+        })
+      ).json() as { unit: UnitView };
+      await upload(`/storage-units/${child.unit.id}/photo`, await aPlainImage("jpeg"));
+
+      const detail = (
+        await call({ method: "GET", url: `/storage-units/${child.unit.id}` })
+      ).json() as {
+        unit: Record<string, unknown>;
+        path: readonly Record<string, unknown>[];
+      };
+      const tree = (await call({ method: "GET", url: "/storage-units" })).json() as {
+        tree: readonly Record<string, unknown>[];
+      };
+      const children = (
+        await call({ method: "GET", url: `/storage-units/${parent.id}` })
+      ).json() as { children: readonly Record<string, unknown>[] };
+
+      // The unit itself is the subject of that answer, so it carries one.
+      expect(detail.unit).toHaveProperty("photo");
+      expect(detail.unit).not.toHaveProperty("photoId");
+
+      // Every one of these is a row about somewhere else.
+      for (const row of [...detail.path, ...tree.tree, ...children.children]) {
+        expect(row).not.toHaveProperty("photo");
+        expect(row).not.toHaveProperty("photoId");
+      }
+      // And the row in question really is the unit with the photo on it.
+      expect(detail.path.at(-1)?.["id"]).toBe(child.unit.id);
     });
   });
 });

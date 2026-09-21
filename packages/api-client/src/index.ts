@@ -97,6 +97,7 @@ export type {
   StorageUnitTreeResponse,
   StorageUnitTreeView,
   StorageUnitView,
+  StorageUnitWithPhotoView,
   UpdateItemInput,
   UpdateStorageUnitInput,
   UserView,

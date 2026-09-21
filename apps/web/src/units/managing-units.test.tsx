@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { anItem, aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { anItem, aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
@@ -25,18 +25,18 @@ const theHouse = (): void => {
       HttpResponse.json({ tree: [aTree(garage, [aTree(wardrobe, [aTree(box)])])] }),
     ),
     http.get(`${API_URL}/storage-units/box3`, () =>
-      HttpResponse.json({ unit: box, path: [garage, wardrobe, box], children: [], items: [drill] }),
+      HttpResponse.json({ unit: withPhoto(box), path: [garage, wardrobe, box], children: [], items: [drill] }),
     ),
     http.get(`${API_URL}/storage-units/wardrobe`, () =>
       HttpResponse.json({
-        unit: wardrobe,
+        unit: withPhoto(wardrobe),
         path: [garage, wardrobe],
         children: [box],
         items: [],
       }),
     ),
     http.get(`${API_URL}/storage-units/garage`, () =>
-      HttpResponse.json({ unit: garage, path: [garage], children: [wardrobe], items: [] }),
+      HttpResponse.json({ unit: withPhoto(garage), path: [garage], children: [wardrobe], items: [] }),
     ),
   );
 };
@@ -66,7 +66,7 @@ describe("looking after a storage unit", () => {
         created.push(await request.json());
 
         return HttpResponse.json(
-          { unit: aStorageUnit({ id: "new", parentId: "box3", name: "Little bag" }) },
+          { unit: withPhoto(aStorageUnit({ id: "new", parentId: "box3", name: "Little bag" })) },
           { status: 201 },
         );
       }),
@@ -119,7 +119,7 @@ describe("looking after a storage unit", () => {
       http.patch(`${API_URL}/storage-units/box3`, async ({ request }) => {
         edits.push(await request.json());
 
-        return HttpResponse.json({ unit: { ...box, name: "Box 4" } });
+        return HttpResponse.json({ unit: withPhoto({ ...box, name: "Box 4" }) });
       }),
     );
 
@@ -141,7 +141,7 @@ describe("looking after a storage unit", () => {
       http.patch(`${API_URL}/storage-units/box3`, async ({ request }) => {
         edits.push((await request.json()) as Record<string, unknown>);
 
-        return HttpResponse.json({ unit: box });
+        return HttpResponse.json({ unit: withPhoto(box) });
       }),
     );
 
@@ -162,7 +162,7 @@ describe("looking after a storage unit", () => {
     apiServer.use(
       http.get(`${API_URL}/storage-units/box3`, () =>
         HttpResponse.json({
-          unit: { ...box, description: "Cables, mostly" },
+          unit: withPhoto({ ...box, description: "Cables, mostly" }),
           path: [garage, wardrobe, box],
           children: [],
           items: [drill],
@@ -246,7 +246,7 @@ describe("looking after a storage unit", () => {
     const root = aStorageUnit({ id: "shed", name: "Shed", kind: "ROOM" });
     apiServer.use(
       http.get(`${API_URL}/storage-units/shed`, () =>
-        HttpResponse.json({ unit: root, path: [root], children: [], items: [drill] }),
+        HttpResponse.json({ unit: withPhoto(root), path: [root], children: [], items: [drill] }),
       ),
       http.post(`${API_URL}/storage-units/shed/empty`, async ({ request }) =>
         HttpResponse.json({
@@ -301,7 +301,7 @@ describe("looking after a storage unit", () => {
       http.post(`${API_URL}/storage-units/box3/move`, async ({ request }) => {
         moves.push(await request.json());
 
-        return HttpResponse.json({ unit: { ...box, parentId: "garage" } });
+        return HttpResponse.json({ unit: withPhoto({ ...box, parentId: garage.id }) });
       }),
     );
 
@@ -326,7 +326,7 @@ describe("looking after a storage unit", () => {
         created.push(await request.json());
 
         return HttpResponse.json(
-          { unit: aStorageUnit({ id: "shed", name: "Shed", kind: "ROOM" }) },
+          { unit: withPhoto(aStorageUnit({ id: "shed", name: "Shed", kind: "ROOM" })) },
           { status: 201 },
         );
       }),

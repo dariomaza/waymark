@@ -15,6 +15,7 @@ import type { FastifyPluginAsync } from "fastify";
 
 import type { ItemViews } from "../item-views.js";
 import { buildStorageUnitForest } from "../storage-unit-tree.js";
+import type { StorageUnitViews } from "../storage-unit-views.js";
 import {
   createStorageUnitBodySchema,
   emptyStorageUnitBodySchema,
@@ -34,6 +35,8 @@ export interface StorageUnitRouteOptions {
   readonly emptyStorageUnit: EmptyStorageUnit;
   readonly getStorageUnitPath: GetStorageUnitPath;
   readonly itemViews: ItemViews;
+  /** Only the unit an answer is ABOUT carries its photo; rows never do. */
+  readonly storageUnitViews: StorageUnitViews;
 }
 
 /** A total order, so two reads of an unchanged unit list the same way. */
@@ -102,7 +105,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     return reply
       .code(201)
       .header("location", `/storage-units/${unit.id}`)
-      .send({ unit: storageUnitView(unit) });
+      .send({ unit: await options.storageUnitViews.of(unit) });
   });
 
   app.get("/storage-units/:id", async (request, reply) => {
@@ -122,7 +125,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     ]);
 
     return reply.code(200).send({
-      unit: storageUnitView(unit),
+      unit: await options.storageUnitViews.of(unit),
       path: path.map(storageUnitView),
       children: [...children].sort(byName).map(storageUnitView),
       items: await options.itemViews.ofMany([...items].sort(byName)),
@@ -138,7 +141,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
       targetParentId: body.parentId === null ? null : unitId(body.parentId),
     });
 
-    return reply.code(200).send({ unit: storageUnitView(unit) });
+    return reply.code(200).send({ unit: await options.storageUnitViews.of(unit) });
   });
 
   app.patch("/storage-units/:id", async (request, reply) => {
@@ -154,7 +157,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
       ...(body.description === undefined ? {} : { description: body.description }),
     });
 
-    return reply.code(200).send({ unit: storageUnitView(unit) });
+    return reply.code(200).send({ unit: await options.storageUnitViews.of(unit) });
   });
 
   app.post("/storage-units/:id/empty", async (request, reply) => {

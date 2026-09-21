@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../../auth/session-store.js";
 import { apiServer, API_URL } from "../../testing/api-server.js";
-import { aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, waitFor, within } from "../../testing/render-app.js";
 
 /**
@@ -48,7 +48,7 @@ describe("a sheet that is open", () => {
         HttpResponse.json({ tree: [aTree(garage, [aTree(box)])] }),
       ),
       http.get(`${API_URL}/storage-units/box3`, () =>
-        HttpResponse.json({ unit: box, path: [garage, box], children: [], items: [] }),
+        HttpResponse.json({ unit: withPhoto(box), path: [garage, box], children: [], items: [] }),
       ),
     );
   });

@@ -1,10 +1,11 @@
+import type { PhotoView } from "@ariadna/api-client";
 import { PhotoProcessingStatus } from "@ariadna/domain";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { anItem, aPhoto, aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { anItem, aPhoto, aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, waitFor, within } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
@@ -281,32 +282,37 @@ describe("photos", () => {
   });
 
   it("puts a photo on a storage unit, and takes it off again", async () => {
-    let photoId: string | null = null;
+    // The unit carries the whole photo, not an id, so nothing in the app
+    // builds a photo URL from it.
+    let photo: PhotoView | null = null;
     apiServer.use(
       http.get(`${API_URL}/storage-units/box3`, () =>
         HttpResponse.json({
-          unit: { ...box, photoId },
+          unit: withPhoto(box, photo),
           path: [garage, box],
           children: [],
           items: [],
         }),
       ),
       http.post(`${API_URL}/storage-units/box3/photo`, () => {
-        photoId = "p9";
+        photo = aPhoto({ id: "p9" });
 
         return HttpResponse.json(
           {
-            photo: aPhoto({ id: "p9" }),
-            unit: { ...box, photoId },
+            photo,
+            unit: withPhoto(box, photo),
             releasedPhotoIds: [],
           },
           { status: 201 },
         );
       }),
       http.delete(`${API_URL}/storage-units/box3/photo`, () => {
-        photoId = null;
+        photo = null;
 
-        return HttpResponse.json({ unit: box, releasedPhotoIds: ["p9"] });
+        return HttpResponse.json({
+          unit: withPhoto(box, null),
+          releasedPhotoIds: ["p9"],
+        });
       }),
     );
 
@@ -323,7 +329,7 @@ describe("photos", () => {
     );
 
     await waitFor(() => {
-      expect(photoId).toBeNull();
+      expect(photo).toBeNull();
     });
   });
 });

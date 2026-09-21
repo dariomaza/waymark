@@ -31,17 +31,38 @@ import type {
  * that changes when nothing did.
  */
 
+/**
+ * A storage unit as a ROW: a step in a breadcrumb, a child, a node of the
+ * tree, a search hit, the unit an item sits in.
+ *
+ * No photo, and no photo id either. An id is not a picture — a client holding
+ * one has to build `/photos/<id>` by hand, which is what `PhotoView` exists
+ * to stop, and it says nothing about whether the bytes have settled (ADR 4).
+ * Nothing draws a row's photo, so carrying the id only ever invited somebody
+ * to construct a URL. See `StorageUnitWithPhotoView`.
+ */
 export interface StorageUnitView {
   readonly id: UnitId;
   readonly parentId: UnitId | null;
   readonly name: string;
   readonly kind: StorageUnitKind;
   readonly description: string | null;
-  readonly photoId: PhotoId | null;
   /** Ten characters of Crockford Base32; what a QR on a box encodes. */
   readonly publicId: PublicId;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+/**
+ * A storage unit as the SUBJECT of an answer: its own screen, and the unit a
+ * patch, a move or a photo upload just changed.
+ *
+ * Here the photo is worth its bytes, and it is the whole photo, exactly as an
+ * item's are. `null` means the unit has no photo; the key is always present,
+ * so a client can tell that from an answer that does not carry one.
+ */
+export interface StorageUnitWithPhotoView extends StorageUnitView {
+  readonly photo: PhotoView | null;
 }
 
 export interface StorageUnitTreeView extends StorageUnitView {
@@ -98,14 +119,14 @@ export interface StorageUnitTreeResponse {
 
 /** One screen in one response: the unit, its breadcrumb, and what it holds. */
 export interface StorageUnitDetailResponse {
-  readonly unit: StorageUnitView;
+  readonly unit: StorageUnitWithPhotoView;
   readonly path: readonly StorageUnitView[];
   readonly children: readonly StorageUnitView[];
   readonly items: readonly ItemView[];
 }
 
 export interface StorageUnitResponse {
-  readonly unit: StorageUnitView;
+  readonly unit: StorageUnitWithPhotoView;
 }
 
 export interface EmptyStorageUnitResponse {
@@ -159,7 +180,7 @@ export interface ItemPhotoResponse {
 
 export interface StorageUnitPhotoResponse {
   readonly photo: PhotoView;
-  readonly unit: StorageUnitView;
+  readonly unit: StorageUnitWithPhotoView;
   readonly releasedPhotoIds: readonly PhotoId[];
 }
 
@@ -169,7 +190,7 @@ export interface DetachedItemPhotoResponse {
 }
 
 export interface DetachedStorageUnitPhotoResponse {
-  readonly unit: StorageUnitView;
+  readonly unit: StorageUnitWithPhotoView;
   readonly releasedPhotoIds: readonly PhotoId[];
 }
 

@@ -17,6 +17,7 @@ export {
   aStorageUnit,
   aTree,
   aUnitHit,
+  withPhoto,
   type ItemOverrides,
   type PhotoOverrides,
   type SessionOverrides,

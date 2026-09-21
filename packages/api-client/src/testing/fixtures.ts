@@ -16,6 +16,7 @@ import type {
   StorageUnitSearchResultView,
   StorageUnitTreeView,
   StorageUnitView,
+  StorageUnitWithPhotoView,
 } from "../contract.js";
 
 /**
@@ -34,7 +35,6 @@ export interface StorageUnitOverrides {
   readonly name?: string;
   readonly kind?: StorageUnitKind;
   readonly description?: string | null;
-  readonly photoId?: string | null;
   readonly publicId?: string;
 }
 
@@ -47,12 +47,26 @@ export const aStorageUnit = (overrides: StorageUnitOverrides = {}): StorageUnitV
     name: overrides.name ?? "Box 3",
     kind: overrides.kind ?? StorageUnitKind.BOX,
     description: overrides.description ?? null,
-    photoId: overrides.photoId == null ? null : photoId(overrides.photoId),
     publicId: publicId(overrides.publicId ?? `PUB${id.toUpperCase()}`),
     createdAt: AT,
     updatedAt: AT,
   };
 };
+
+/**
+ * The same unit as the SUBJECT of an answer rather than as a row.
+ *
+ * Only those answers carry a photo, so this is spelled separately: a fixture
+ * that put `photo` on every tree node and every breadcrumb step would let a
+ * screen read one from a row the real API does not carry it on.
+ */
+export const withPhoto = (
+  unit: StorageUnitView,
+  photo: PhotoView | string | null = null,
+): StorageUnitWithPhotoView => ({
+  ...unit,
+  photo: typeof photo === "string" ? aPhoto({ id: photo }) : photo,
+});
 
 export const aTree = (
   unit: StorageUnitView,
