@@ -147,8 +147,19 @@ export class MissingWebClient extends Error {
  */
 export const createWebClient = (config: WebClientConfig): WebClient => {
   const root = resolve(config.root);
-  const files = new Map<string, ServableFile | null>();
+  const files = new Map<string, ServableFile>();
 
+  /**
+   * Only a HIT is remembered.
+   *
+   * Caching the misses too would be the obvious symmetry and it is a slow
+   * memory leak with a stranger's hand on the tap: the key is a path from the
+   * request, so a caller asking for `/a1.js`, `/a2.js`, `/a3.js` forever
+   * would grow this map forever. The set of hits, by contrast, is fixed by
+   * what the image contains.
+   *
+   * A miss costs one `stat` that answers ENOENT, which is what a 404 is worth.
+   */
   const read = (absolutePath: string): ServableFile | null => {
     const known = files.get(absolutePath);
     if (known !== undefined) {
@@ -156,7 +167,9 @@ export const createWebClient = (config: WebClientConfig): WebClient => {
     }
 
     const file = load(absolutePath);
-    files.set(absolutePath, file);
+    if (file !== null) {
+      files.set(absolutePath, file);
+    }
 
     return file;
   };
