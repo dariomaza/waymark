@@ -2,6 +2,8 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+import { workboxRuntimeCaching } from "./src/app/pwa-caching.js";
+
 /**
  * # The web client
  *
@@ -16,11 +18,13 @@ import { VitePWA } from "vite-plugin-pwa";
  *
  * The shell — the document, the bundle, the stylesheet, the icons — is
  * precached, so Ariadna opens in the corner of a garage with no signal
- * instead of showing the browser's offline page. Photos already looked at
- * are kept, because a stored file never changes once it has settled and a
- * thumbnail grid is the first screen anybody opens. The forest of storage
- * units is cached network-first, so a live answer always wins and the cached
- * one is only ever the fallback for a dead connection.
+ * instead of showing the browser's offline page.
+ *
+ * Which API reads are cached, and which are deliberately never cached, is
+ * `src/app/pwa-caching.ts` — data with a test on it rather than a literal in
+ * a build file that only a production build ever evaluates. A route quietly
+ * served from a cache is not an error anywhere: it is a screen that is
+ * confidently out of date, and nobody reports that as a bug.
  *
  * Nothing that writes is cached and no write is ever queued for later.
  * Replaying a delete or a move against an inventory that changed while the
@@ -62,28 +66,7 @@ export default defineConfig({
         // `/u/<publicId>` work as far as the login screen with no network.
         navigateFallback: "index.html",
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) =>
-              /^\/photos\/[^/]+(\/thumbnail)?$/u.test(url.pathname),
-            handler: "CacheFirst",
-            options: {
-              cacheName: "ariadna-photos",
-              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
-          {
-            urlPattern: ({ url }) => url.pathname === "/storage-units",
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "ariadna-tree",
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
-        ],
+        runtimeCaching: workboxRuntimeCaching,
       },
     }),
   ],

@@ -465,8 +465,12 @@ inventory lie about where something is (ADR 14).
 - **A scanned label works for somebody who is not signed in yet**: the gate
   carries the destination into the login screen and back out of it. The code
   is resolved against the forest the app already loads (ADR 12).
-- **Installable, and honest about offline** (ADR 13): the shell and the
-  photos already seen are cached, reads fall back to what was cached, and no
+- **Installable, and honest about offline** (ADR 13): the shell, the photos
+  already seen, the forest of units and every item are cached, so both
+  screens that answer "what do I own" draw with no signal. A search, one
+  unit, one item and the background-removal summary are deliberately never
+  cached — the reasons are in the ADR, and the list is data with a test on it
+  in `src/app/pwa-caching.ts` rather than a literal in the build file. No
   write is ever queued for later.
 
 Tests drive the real app through the DOM and stub the network at the HTTP
