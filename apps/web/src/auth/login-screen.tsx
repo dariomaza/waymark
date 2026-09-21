@@ -1,8 +1,9 @@
+import { loginFailureMessage } from "@ariadna/api-client";
 import type { JSX } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 import "./login-screen.css";
-import { loginFailureMessage } from "./login-failure.js";
+
 import { LoginForm } from "./login-form.js";
 import { useSession, useSignIn } from "./use-session.js";
 

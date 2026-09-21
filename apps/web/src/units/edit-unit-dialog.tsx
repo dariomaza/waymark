@@ -1,9 +1,9 @@
-import { describeFailure, failureTone, type StorageUnitView } from "@ariadna/api-client";
+import { describeFailure, failureTone, fieldComplaints, type StorageUnitView } from "@ariadna/api-client";
 import type { JSX } from "react";
 
 import { Sheet } from "../ui/organisms/sheet.js";
 import { useUpdateUnit } from "./unit-mutations.js";
-import { fieldComplaints } from "./unit-messages.js";
+
 import { UnitForm } from "./views/unit-form.js";
 
 export interface EditUnitDialogProps {

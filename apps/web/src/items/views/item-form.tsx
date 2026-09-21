@@ -1,10 +1,10 @@
+import type { FieldComplaint } from "@ariadna/api-client";
 import { useState, type FormEvent, type JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout, type CalloutTone } from "../../ui/atoms/callout.js";
 import { TextArea } from "../../ui/atoms/text-area.js";
 import { TextField } from "../../ui/atoms/text-field.js";
-import type { FieldComplaint } from "../../units/unit-messages.js";
 
 export interface ItemFormValues {
   readonly name: string;

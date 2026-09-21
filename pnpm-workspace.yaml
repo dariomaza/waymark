@@ -9,3 +9,5 @@ allowBuilds:
   prisma: true
   # Only copies the browser service worker, which the web tests never use.
   msw: false
+  '@parcel/watcher': set this to true or false
+  unrs-resolver: set this to true or false

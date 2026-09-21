@@ -1,4 +1,4 @@
-import { describeFailure, flattenUnits } from "@ariadna/api-client";
+import { describeFailure, flattenUnits, moveRefusedMessage } from "@ariadna/api-client";
 import { unitId, type ItemId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 
@@ -8,7 +8,7 @@ import { SelectField } from "../ui/atoms/select-field.js";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
 import { unitOptions } from "../units/views/unit-options.js";
-import { moveRefusedMessage } from "./item-messages.js";
+
 import { useMoveItems } from "./item-mutations.js";
 
 export interface MoveItemsDialogProps {

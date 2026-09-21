@@ -1,10 +1,10 @@
-import type { ItemView, StorageUnitView } from "@ariadna/api-client";
+import { type ItemView, kindLabel, type StorageUnitView } from "@ariadna/api-client";
 import type { JSX, ReactNode } from "react";
 
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
-import { kindLabel } from "../kind-label.js";
+
 import "./unit-detail.css";
 
 export interface UnitDetailProps {

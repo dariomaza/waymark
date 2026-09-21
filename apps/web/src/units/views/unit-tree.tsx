@@ -1,8 +1,8 @@
-import type { StorageUnitTreeView } from "@ariadna/api-client";
+import { kindLabel, type StorageUnitTreeView } from "@ariadna/api-client";
 import type { JSX } from "react";
 
 import { RowLink } from "../../ui/molecules/row-link.js";
-import { kindLabel } from "../kind-label.js";
+
 import "./unit-tree.css";
 
 export interface UnitTreeProps {

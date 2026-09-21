@@ -1,3 +1,4 @@
+import { type FieldComplaint, KIND_CHOICES } from "@ariadna/api-client";
 import { StorageUnitKind } from "@ariadna/domain";
 import { useState, type FormEvent, type JSX } from "react";
 
@@ -6,8 +7,6 @@ import { Callout, type CalloutTone } from "../../ui/atoms/callout.js";
 import { SelectField } from "../../ui/atoms/select-field.js";
 import { TextArea } from "../../ui/atoms/text-area.js";
 import { TextField } from "../../ui/atoms/text-field.js";
-import { KIND_CHOICES } from "../kind-label.js";
-import type { FieldComplaint } from "../unit-messages.js";
 
 export interface UnitFormValues {
   readonly name: string;

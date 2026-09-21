@@ -33,6 +33,27 @@ export {
   OFFLINE_STATUS,
 } from "./api-error.js";
 export { describeFailure, failureTone } from "./describe-failure.js";
+
+/**
+ * What a refusal MEANS, in words.
+ *
+ * These are pure functions of an `ApiError` and they are shared for the same
+ * reason the error kinds are: a 409 on a delete has to offer to empty the box
+ * on both clients, and a sentence written twice is a sentence that drifts.
+ * What each app then draws around them — a sheet, a callout, a toast — is its
+ * own.
+ */
+export { loginFailureMessage } from "./login-failure.js";
+export { moveRefusedMessage, tooManyPhotosMessage } from "./item-messages.js";
+export {
+  cyclicMoveMessage,
+  fieldComplaints,
+  missingTargetMessage,
+  notEmptyMessage,
+  type FieldComplaint,
+} from "./unit-messages.js";
+export { photoStatusNote } from "./photo-status.js";
+export { KIND_CHOICES, kindLabel } from "./kind-label.js";
 export {
   createAriadnaClient,
   PHOTO_FIELD_NAME,
