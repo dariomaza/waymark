@@ -28,6 +28,9 @@ packages/domain        Entities, use cases, ports. Zero dependencies.
 packages/domain-contract-tests  Shared contract suites every adapter of a port
                        must satisfy. Run against the in-memory repositories and
                        against the real ones.
+packages/api-client    What the API promises and the one module that speaks
+                       HTTP, shared by both clients. Zero dependencies, no
+                       React, no platform.
 apps/api               Fastify + Prisma. Adapters that implement the ports, the
                        HTTP layer, and authentication.
 apps/web               React + Vite PWA. The tree, search, photos, QR scanning.
@@ -95,6 +98,14 @@ to one that is not is search, which takes a limit.
 Android Studio in the build path. Native Kotlin would mean two independent
 implementations of the same domain.
 
+That sharing is `packages/api-client`, and it is a fact rather than a plan: the
+contract types, the error kinds and the 409/422 split, the module that speaks
+HTTP, the reader that turns a scanned code into a unit, and the sentences a
+refusal becomes are one copy, consumed by both. Three things are deliberately
+not in it — React, where the session token lives, and what a photo IS on its
+way up — because each of those is genuinely two behaviours, and an abstraction
+over two behaviours is a lie in one of them.
+
 **QR codes are generated on demand, not persisted.** A symbol is a pure function
 of the unit's `publicId` and the configured public base URL, so storing one only
 buys a picture of a dead URL the day the base URL moves — silently, until
@@ -119,7 +130,7 @@ field, so choosing one is spelled as a reorder.
 - Fastify, Prisma, SQLite (FTS5 for search)
 - sharp for image ingestion, qrcode for label symbols
 - React + Vite (PWA), `@zxing/browser` for scanning
-- Expo / React Native
+- Expo / React Native, React Navigation, `expo-camera` for scanning
 - Python + rembg (sidecar only)
 - Docker Compose
 
@@ -458,6 +469,85 @@ pnpm --filter @ariadna/web build
 defaults to `http://127.0.0.1:3000`, which is where `pnpm --filter
 @ariadna/api dev` listens.
 
+## Android app
+
+`apps/mobile`. Expo and React Native, sharing `@ariadna/api-client` and
+`@ariadna/domain` with the web PWA as TypeScript source — no build step
+between them, which is the whole reason Expo was chosen over Kotlin.
+
+```
+src/auth       Signing in, the session in the keystore, and the gate.
+src/units      The tree, one unit, create / edit / move / empty / delete, the label.
+src/items      One item, adding, editing, moving, deleting, everything you own.
+src/search     The screen the product is named after.
+src/scanning   The camera, and the `/u/<publicId>` a label encodes.
+src/photos     Taking one, choosing one, uploading, ordering.
+src/api        The mobile half of the shared client, and the React wiring.
+src/ui         atoms / molecules / organisms — the shared visual vocabulary.
+src/app        The composition root: ports, providers, the navigators.
+```
+
+The top level names what the app DOES, the same way `apps/web` does, and
+inside a feature the split is the same: containers fetch and orchestrate,
+views take props and draw. **No business rules live here.** The move picker
+offers targets that would make a cycle and the delete does not pre-check
+emptiness; those are the domain's (ADR 2, ADR 3) and this app renders the
+answer, including the refusal — a 409 with a button that changes the world, a
+422 against the field that caused it (ADR 8).
+
+**Scanning is the first tab and the app opens on it.** The product is a
+printed QR on a box and a phone pointed at it; a tab buried behind a menu
+would be burying the reason the app exists. A code read in the app and a label
+opened from the stock camera go through the same screen, which resolves it
+against the forest the app already loaded (ADR 12).
+
+**The token lives in the Android Keystore**, by way of `expo-secure-store`,
+because it grants full access to an inventory that is on the public internet.
+`AsyncStorage` is a plain file in the sandbox — right for a remembered tab,
+wrong for a credential.
+
+Three things are shaped for a phone rather than copied from the browser:
+
+- **A photo is a `file://` URI, not a `File`.** `expo-image-picker` hands back
+  `{ uri, name, type }` and React Native's `FormData` streams it off disk;
+  turning it into a `File` would mean holding a whole photo in the heap of the
+  device that just took it. It is the one thing the shared client leaves open.
+- **An image carries its own `Authorization` header.** The web client cannot
+  put one on an `<img>` and fetches bytes into an object URL; React Native's
+  `Image` takes headers, so the bytes go from the socket to the native decoder
+  and a gallery of twenty is not twenty photos resident at once.
+- **A unit picker is a list of rows, not a select.** Every option is a full
+  path, and Android's picker wheel truncates it — which is exactly what makes
+  a picker a coin toss between three boxes all called `Box 3`.
+
+Tests drive the real screens through their accessible roles and labels, and
+stub the network at the `fetch` boundary. Nothing in `src` is mocked. Three
+things are ports because all three are the operating system and none of them
+exists under a test runner: the keystore, the camera, and the photo library.
+
+```sh
+pnpm --filter @ariadna/mobile start           # Metro, then press `a`
+pnpm --filter @ariadna/mobile test
+pnpm --filter @ariadna/mobile typecheck
+pnpm --filter @ariadna/mobile prebuild        # generates android/ from app.json
+```
+
+`EXPO_PUBLIC_ARIADNA_API_URL` says where the API is, as a PHONE sees it. It
+defaults to `http://127.0.0.1:3000`, which is only ever right on an emulator:
+a real device on the same wifi needs the machine's LAN address, and a device
+anywhere else needs the tunnel's public hostname. Put it in
+`apps/mobile/.env`.
+
+Android 9 and up refuse plain HTTP by default, so a LAN address needs
+`usesCleartextTraffic` for development or the tunnel's HTTPS hostname for
+anything else.
+
+The `https` intent filter in `app.json` carries a placeholder host,
+`ariadna.example`. Set it to the host in `ARIADNA_PUBLIC_BASE_URL` to make the
+stock camera open labels in this app rather than in the browser; leaving it
+alone keeps the labels working exactly as they do today, through the web PWA.
+The `ariadna://u/<code>` scheme works either way.
+
 ## Deployment
 
 The API listens on loopback and is published through a Cloudflare Tunnel, so
@@ -497,12 +587,19 @@ reachable is precisely the dependency ADR 4 refuses.
 ## Status
 
 Domain, persistence, HTTP, authentication, search, editing, QR generation,
-photo storage, background removal, the Docker stack and the web PWA are
-implemented. The Expo app and multi-label print sheets are not built yet.
+photo storage, background removal, the Docker stack, the web PWA and the
+Android app are implemented. Multi-label print sheets are not built yet.
+
+The Android app is verified as far as this repository can verify anything that
+runs on a phone: it typechecks, its tests pass, `expo prebuild` generates the
+native project from `app.json`, and `expo export` produces an Android Hermes
+bundle. It has never been run on a device or an emulator, and there is no
+signed APK — that needs a device, an emulator or EAS credentials.
 
 One asymmetry is left: a storage unit still hands out a bare `photoId` rather
-than a photo view, so the web client builds that single URL by hand. Items no
-longer do, and the unit is the only thing left in `photos/photo-urls.ts`.
+than a photo view, so both clients build that single URL by hand. Items no
+longer do, and the unit is the only thing left in `photos/photo-urls.ts` and
+in the mobile `unit-photo.tsx`.
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against
@@ -528,7 +625,7 @@ mid-flight, and the sidecar switched off entirely.
 
 ```sh
 pnpm install
-pnpm test        # domain + contract suites + persistence + HTTP
+pnpm test        # domain + contract suites + persistence + HTTP + both clients
 pnpm typecheck
 
 pnpm --filter @ariadna/api prisma:migrate

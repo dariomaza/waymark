@@ -6,31 +6,43 @@
     "orientation": "portrait",
     "scheme": "ariadna",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#11150f",
     "newArchEnabled": true,
     "android": {
       "package": "es.inone.ariadna",
-      "edgeToEdgeEnabled": true,
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": false,
-          "data": [{ "scheme": "https", "pathPrefix": "/u" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "https",
+              "host": "ariadna.example",
+              "pathPrefix": "/u"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "plugins": [
+      "expo-system-ui",
       [
         "expo-camera",
         {
-          "cameraPermission": "Ariadna uses the camera to read the QR code on a storage unit's label."
+          "cameraPermission": "Ariadna uses the camera to read the QR code on a storage unit's label.",
+          "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
           "photosPermission": "Ariadna uses your photos so you can put a picture of a thing on it.",
-          "cameraPermission": "Ariadna uses the camera to photograph a thing or a box."
+          "cameraPermission": "Ariadna uses the camera to photograph a thing or a box.",
+          "microphonePermission": false
         }
       ]
     ]
