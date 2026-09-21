@@ -8,6 +8,7 @@ import { DeleteUnitDialog } from "./delete-unit-dialog.js";
 import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
+import { ROUTES, labelsWithinPath, searchWithinPath, unitLabelPath, unitPath } from "../app/routes.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
@@ -78,10 +79,10 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
       >
         Delete
       </Button>
-      <Link className="button button--secondary" to={`/search?within=${unit.id}`}>
+      <Link className="button button--secondary" to={searchWithinPath(unit.id)}>
         Search inside
       </Link>
-      <Link className="button button--secondary" to={`/units/${unit.id}/label`}>
+      <Link className="button button--secondary" to={unitLabelPath(unit.id)}>
         Label
       </Link>
       {/*
@@ -90,7 +91,7 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
         afternoon. `?within=` means the same as it does on a search — what is
         inside, not the unit itself (ADR 11).
       */}
-      <Link className="button button--secondary" to={`/labels?within=${unit.id}`}>
+      <Link className="button button--secondary" to={labelsWithinPath(unit.id)}>
         Label sheet
       </Link>
 
@@ -115,7 +116,9 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
             close();
             // Standing on the screen of a unit that no longer exists is how a
             // delete ends in a 404 the person thinks they caused.
-            navigate(parent === null ? "/" : `/units/${parent.id}`, { replace: true });
+            navigate(parent === null ? ROUTES.inventory : unitPath(parent.id), {
+              replace: true,
+            });
           }}
         />
       ) : null}

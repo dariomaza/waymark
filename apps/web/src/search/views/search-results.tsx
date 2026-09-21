@@ -3,6 +3,7 @@ import type { JSX } from "react";
 
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { SearchHit } from "./search-hit.js";
+import { thingPath, unitPath } from "../../app/routes.js";
 
 export interface SearchResultsProps {
   readonly results: SearchResponse;
@@ -38,7 +39,7 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
               <SearchHit
                 key={hit.item.id}
                 title={hit.item.name}
-                to={`/items/${hit.item.id}`}
+                to={thingPath(hit.item.id)}
                 location={hit.location}
                 matchedFields={hit.matchedFields}
                 {...(hit.item.quantity > 1
@@ -58,7 +59,7 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
               <SearchHit
                 key={hit.unit.id}
                 title={hit.unit.name}
-                to={`/units/${hit.unit.id}`}
+                to={unitPath(hit.unit.id)}
                 location={hit.location}
                 matchedFields={hit.matchedFields}
               />

@@ -3,6 +3,7 @@ import type { JSX, ReactNode } from "react";
 
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import "./item-detail.css";
+import { unitPath } from "../../app/routes.js";
 
 export interface ItemDetailProps {
   readonly item: ItemView;
@@ -20,7 +21,7 @@ export const ItemDetail = ({
   photos,
 }: ItemDetailProps): JSX.Element => (
   <>
-    <Breadcrumb steps={path.map((step) => ({ name: step.name, to: `/units/${step.id}` }))} />
+    <Breadcrumb steps={path.map((step) => ({ name: step.name, to: unitPath(step.id) }))} />
 
     <header className="item-detail__head">
       <h2>{item.name}</h2>

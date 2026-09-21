@@ -6,6 +6,7 @@ import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
 
 import "./unit-detail.css";
+import { thingPath, unitPath } from "../../app/routes.js";
 
 export interface UnitDetailProps {
   readonly unit: StorageUnitView;
@@ -47,7 +48,7 @@ export const UnitDetail = ({
       <Breadcrumb
         steps={path.map((step, index) => ({
           name: step.name,
-          ...(index === path.length - 1 ? {} : { to: `/units/${step.id}` }),
+          ...(index === path.length - 1 ? {} : { to: unitPath(step.id) }),
         }))}
       />
 
@@ -71,7 +72,7 @@ export const UnitDetail = ({
             {childUnits.map((child) => (
               <li key={child.id}>
                 <RowLink
-                  to={`/units/${child.id}`}
+                  to={unitPath(child.id)}
                   title={child.name}
                   meta={kindLabel(child.kind)}
                 />
@@ -88,7 +89,7 @@ export const UnitDetail = ({
             {items.map((item) => (
               <li key={item.id}>
                 <RowLink
-                  to={`/items/${item.id}`}
+                  to={thingPath(item.id)}
                   title={item.name}
                   meta={itemMeta(item)}
                   {...(itemTrailing === undefined ? {} : { trailing: itemTrailing(item) })}

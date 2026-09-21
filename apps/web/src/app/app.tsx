@@ -22,6 +22,7 @@ import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
 import { createDefaultClient } from "./create-client.js";
 import { NotFoundScreen } from "./not-found-screen.js";
+import { ROUTES } from "./routes.js";
 
 export interface AppProps {
   /**
@@ -60,31 +61,23 @@ export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
       <ApiProvider client={api}>
         <ScannerProvider scanner={camera}>
           <Routes>
-            <Route path="/login" element={<LoginScreen />} />
+            <Route path={ROUTES.login} element={<LoginScreen />} />
 
             <Route element={<RequireSession />}>
               <Route element={<AppShell />}>
-                <Route path="/" element={<InventoryScreen />} />
-                <Route path="/search" element={<SearchScreen />} />
-                <Route path="/scan" element={<ScanScreen />} />
-                <Route path="/units/:id" element={<UnitScreen />} />
-                <Route path="/units/:id/label" element={<LabelScreen />} />
-                {/*
-                  Not under `/units/:id`, because a sheet is about a SET of
-                  units rather than about one. `?within=` narrows it; nothing
-                  at all is the whole house.
-                */}
-                <Route path="/labels" element={<LabelSheetScreen />} />
-                <Route path="/items" element={<AllItemsScreen />} />
-                <Route path="/items/:id" element={<ItemScreen />} />
-                {/*
-                  Not in the bottom navigation on purpose: background removal
-                  is optional and secondary (ADR 4), and it is reached from
-                  the note under a photo whose removal failed.
-                */}
-                <Route path="/photos/processing" element={<PhotoProcessingScreen />} />
-                {/* The address printed on every box. See the screen. */}
-                <Route path="/u/:publicId" element={<ScannedLabelScreen />} />
+                <Route path={ROUTES.inventory} element={<InventoryScreen />} />
+                <Route path={ROUTES.search} element={<SearchScreen />} />
+                <Route path={ROUTES.scan} element={<ScanScreen />} />
+                <Route path={ROUTES.unit} element={<UnitScreen />} />
+                <Route path={ROUTES.unitLabel} element={<LabelScreen />} />
+                <Route path={ROUTES.labels} element={<LabelSheetScreen />} />
+                <Route path={ROUTES.everything} element={<AllItemsScreen />} />
+                <Route path={ROUTES.thing} element={<ItemScreen />} />
+                <Route
+                  path={ROUTES.backgroundRemoval}
+                  element={<PhotoProcessingScreen />}
+                />
+                <Route path={ROUTES.scannedLabel} element={<ScannedLabelScreen />} />
               </Route>
             </Route>
 

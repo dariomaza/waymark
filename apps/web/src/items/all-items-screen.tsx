@@ -5,6 +5,7 @@ import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { RowLink } from "../ui/molecules/row-link.js";
 import { useEveryItem } from "./item-queries.js";
+import { thingPath } from "../app/routes.js";
 
 /**
  * Every item in the house, each with where it is.
@@ -41,7 +42,7 @@ export const AllItemsScreen = (): JSX.Element => {
           {rows.map((row) => (
             <li key={row.item.id}>
               <RowLink
-                to={`/items/${row.item.id}`}
+                to={thingPath(row.item.id)}
                 title={row.item.name}
                 meta={row.location}
               />

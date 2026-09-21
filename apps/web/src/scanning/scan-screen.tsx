@@ -8,6 +8,7 @@ import { TextField } from "../ui/atoms/text-field.js";
 import { useScanner } from "./scanner-context.js";
 
 import "./scan-screen.css";
+import { scannedLabelPath } from "../app/routes.js";
 
 /**
  * # Scanning from inside the app
@@ -47,7 +48,7 @@ export const ScanScreen = (): JSX.Element => {
           return;
         }
 
-        navigate(`/u/${code}`, { replace: true });
+        navigate(scannedLabelPath(code), { replace: true });
       })
       .then((stopCamera) => {
         if (cancelled) {
@@ -76,7 +77,7 @@ export const ScanScreen = (): JSX.Element => {
       return;
     }
 
-    navigate(`/u/${code}`);
+    navigate(scannedLabelPath(code));
   };
 
   return (

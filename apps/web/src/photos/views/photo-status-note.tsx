@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
+import { ROUTES } from "../../app/routes.js";
 
 export interface PhotoStatusNoteProps {
   readonly photo: PhotoView;
@@ -60,7 +61,7 @@ export const PhotoStatusNote = ({
                 >
                   Try removing the background again
                 </Button>
-                <Link className="button button--quiet" to="/photos/processing">
+                <Link className="button button--quiet" to={ROUTES.backgroundRemoval}>
                   See every photo that failed
                 </Link>
               </>

@@ -7,6 +7,7 @@ import { AppBar } from "../ui/organisms/app-bar.js";
 import { BottomNav } from "../ui/organisms/bottom-nav.js";
 import { OfflineNote } from "./offline-note.js";
 import "./app-shell.css";
+import { ROUTES } from "./routes.js";
 
 /**
  * The frame every signed-in screen is drawn inside: a bar at the top and the
@@ -42,10 +43,10 @@ export const AppShell = (): JSX.Element => {
 
       <BottomNav
         items={[
-          { to: "/", label: "Inventory" },
-          { to: "/items", label: "Items" },
-          { to: "/search", label: "Search" },
-          { to: "/scan", label: "Scan" },
+          { to: ROUTES.inventory, label: "Inventory" },
+          { to: ROUTES.everything, label: "Items" },
+          { to: ROUTES.search, label: "Search" },
+          { to: ROUTES.scan, label: "Scan" },
         ]}
       />
     </div>

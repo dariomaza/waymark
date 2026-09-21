@@ -12,6 +12,7 @@ import { Sheet } from "../ui/organisms/sheet.js";
 import { EditItemDialog } from "./edit-item-dialog.js";
 import { useDeleteItem } from "./item-mutations.js";
 import { MoveItemsDialog } from "./move-items-dialog.js";
+import { ROUTES, unitPath } from "../app/routes.js";
 
 export interface ItemActionsProps {
   readonly item: ItemView;
@@ -91,7 +92,7 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
                 remove.mutate(undefined, {
                   onSuccess: () => {
                     close();
-                    navigate(holder === null ? "/" : `/units/${holder.id}`, {
+                    navigate(holder === null ? ROUTES.inventory : unitPath(holder.id), {
                       replace: true,
                     });
                   },

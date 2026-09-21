@@ -8,6 +8,7 @@ import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { useStorageUnit } from "./unit-queries.js";
 import "./label-screen.css";
+import { unitPath } from "../app/routes.js";
 
 /**
  * # The label that goes on the box
@@ -55,7 +56,7 @@ export const LabelScreen = (): JSX.Element => {
             >
               Print this label
             </Button>
-            <Link className="button button--secondary" to={`/units/${unit.data.unit.id}`}>
+            <Link className="button button--secondary" to={unitPath(unit.data.unit.id)}>
               Back to the unit
             </Link>
           </div>

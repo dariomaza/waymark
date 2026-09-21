@@ -7,6 +7,7 @@ import { Loading } from "../ui/atoms/loading.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
+import { ROUTES, unitPath } from "../app/routes.js";
 
 /**
  * # `/u/<publicId>` — the address on every box in the house
@@ -63,7 +64,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
   if (unit === null) {
     return (
       <main className="screen">
-        <EmptyNote action={<Link to="/">Go to your inventory</Link>}>
+        <EmptyNote action={<Link to={ROUTES.inventory}>Go to your inventory</Link>}>
           No unit in this inventory carries the code {code}. The label may
           belong to another house, or the unit may have been deleted.
         </EmptyNote>
@@ -71,5 +72,5 @@ export const ScannedLabelScreen = (): JSX.Element => {
     );
   }
 
-  return <Navigate to={`/units/${unit.id}`} replace />;
+  return <Navigate to={unitPath(unit.id)} replace />;
 };

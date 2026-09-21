@@ -8,6 +8,7 @@ import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { useSession, useSignOut } from "./use-session.js";
+import { ROUTES } from "../app/routes.js";
 
 /**
  * # The gate every screen but the login sits behind
@@ -37,7 +38,7 @@ export const RequireSession = (): JSX.Element => {
   if (session === null) {
     return (
       <Navigate
-        to="/login"
+        to={ROUTES.login}
         replace
         state={{ from: `${location.pathname}${location.search}` }}
       />

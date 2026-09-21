@@ -4,6 +4,7 @@ import type { JSX } from "react";
 import { RowLink } from "../../ui/molecules/row-link.js";
 
 import "./unit-tree.css";
+import { unitPath } from "../../app/routes.js";
 
 export interface UnitTreeProps {
   readonly nodes: readonly StorageUnitTreeView[];
@@ -26,7 +27,7 @@ export const UnitTree = ({ nodes }: UnitTreeProps): JSX.Element => (
 
 const UnitTreeBranch = ({ node }: { readonly node: StorageUnitTreeView }): JSX.Element => (
   <li className="unit-tree__branch">
-    <RowLink to={`/units/${node.id}`} title={node.name} meta={kindLabel(node.kind)} />
+    <RowLink to={unitPath(node.id)} title={node.name} meta={kindLabel(node.kind)} />
     {node.children.length === 0 ? null : (
       <ul className="unit-tree__children">
         {node.children.map((child) => (

@@ -9,6 +9,7 @@ import { CreateUnitDialog } from "./create-unit-dialog.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { UnitTree } from "./views/unit-tree.js";
 import "./label-sheet-screen.css";
+import { ROUTES } from "../app/routes.js";
 
 /**
  * The home screen: everything you own, as the tree it is stored in.
@@ -36,7 +37,7 @@ export const InventoryScreen = (): JSX.Element => {
         >
           Add a room
         </Button>
-        <Link className="button button--secondary" to="/labels">
+        <Link className="button button--secondary" to={ROUTES.labels}>
           Label sheet
         </Link>
       </div>
