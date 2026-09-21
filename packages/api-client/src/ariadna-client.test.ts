@@ -1,11 +1,11 @@
-import { itemId, unitId } from "@ariadna/domain";
+import { itemId, photoId, PhotoProcessingStatus, unitId } from "@ariadna/domain";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ApiError, FailureKind, failureKindOf } from "./api-error.js";
 import { createAriadnaClient, PHOTO_FIELD_NAME } from "./ariadna-client.js";
-import { anItem, aStorageUnit } from "./testing/fixtures.js";
+import { anItem, aPhoto, aStorageUnit } from "./testing/fixtures.js";
 
 /**
  * The network is stubbed at the HTTP boundary and nowhere else.
@@ -372,5 +372,86 @@ describe("the Ariadna API client", () => {
     const { tree } = await clientWith().tree();
 
     expect(tree.map((node) => node.name)).toEqual(["Garage"]);
+  });
+
+  /**
+   * # Putting a photo back in the queue
+   *
+   * ADR 4 named the gap and ADR 10 filled it on the API side: a `FAILED`
+   * photo stays unprocessed for ever unless something asks again. Both
+   * routes answer `202` — queued, not done — because waiting for a removal
+   * on a request is the one thing that whole design exists to prevent.
+   */
+  describe("asking for a background removal again", () => {
+    it("reprocesses one photo and hands back what it is now", async () => {
+      const asked: string[] = [];
+      apiServer.use(
+        http.post(`${API_URL}/photos/p1/reprocess`, ({ request }) => {
+          asked.push(request.url);
+
+          return HttpResponse.json(
+            { photo: aPhoto({ id: "p1", processingStatus: PhotoProcessingStatus.PENDING }) },
+            { status: 202 },
+          );
+        }),
+      );
+
+      const { photo } = await clientWith().reprocessPhoto(photoId("p1"));
+
+      expect(asked).toEqual([`${API_URL}/photos/p1/reprocess`]);
+      // Back to PENDING: the answer says it is queued, never that it worked.
+      expect(photo.processingStatus).toBe(PhotoProcessingStatus.PENDING);
+    });
+
+    it("escapes a photo id rather than pasting it into the path", async () => {
+      const asked: string[] = [];
+      apiServer.use(
+        http.post(`${API_URL}/photos/:id/reprocess`, ({ request }) => {
+          asked.push(new URL(request.url).pathname);
+
+          return HttpResponse.json({ photo: aPhoto({ id: "odd" }) }, { status: 202 });
+        }),
+      );
+
+      await clientWith().reprocessPhoto(photoId("a/b"));
+
+      expect(asked).toEqual(["/photos/a%2Fb/reprocess"]);
+    });
+
+    it("retries every failed photo and says how many were requeued", async () => {
+      apiServer.use(
+        http.post(`${API_URL}/photos/processing/retry`, () =>
+          HttpResponse.json({ requeued: 7 }, { status: 202 }),
+        ),
+      );
+
+      await expect(clientWith().retryFailedPhotos()).resolves.toEqual({ requeued: 7 });
+    });
+
+    it("reads what background removal is doing, including switched off", async () => {
+      apiServer.use(
+        http.get(`${API_URL}/photos/processing`, () =>
+          HttpResponse.json({
+            processor: { enabled: false, url: null, reachable: null },
+            counts: { PENDING: 0, DONE: 0, FAILED: 2, SKIPPED: 0 },
+            abandoned: [
+              {
+                photoId: "p1",
+                attempts: 5,
+                lastError: "415 cannot decode this image",
+                lastAttemptAt: "2026-09-21T10:00:00.000Z",
+                url: "/photos/p1",
+              },
+            ],
+          }),
+        ),
+      );
+
+      const status = await clientWith().photoProcessing();
+
+      expect(status.processor.enabled).toBe(false);
+      expect(status.counts.FAILED).toBe(2);
+      expect(status.abandoned[0]?.lastError).toMatch(/415/u);
+    });
   });
 });

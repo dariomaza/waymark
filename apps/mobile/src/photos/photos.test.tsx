@@ -190,4 +190,46 @@ describe("photographing a thing", () => {
       await screen.findByText(/already holds 10 photos\. delete one to make room/i),
     ).toBeOnTheScreen();
   });
+
+  /**
+   * ADR 4 left it open — "`FAILED` photos need a retry path, otherwise they
+   * stay unprocessed forever" — and ADR 10 built the route. A failed photo
+   * looks the same on a phone as in a browser, so the button is on both.
+   */
+  it("asks for a failed background removal again, from the photo it happened to", async () => {
+    const asked: string[] = [];
+    theDrillHolds([aPhoto({ id: "p1", processingStatus: PhotoProcessingStatus.FAILED })]);
+    apiServer.use(
+      http.post(`${API_URL}/photos/p1/reprocess`, ({ request }) => {
+        asked.push(new URL(request.url).pathname);
+
+        return HttpResponse.json(
+          { photo: aPhoto({ id: "p1", processingStatus: PhotoProcessingStatus.PENDING }) },
+          { status: 202 },
+        );
+      }),
+    );
+
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    expect(await screen.findByText(/background removal failed/i)).toBeOnTheScreen();
+    await fireEvent.press(
+      screen.getByRole("button", { name: "Try removing the background again" }),
+    );
+
+    await waitFor(() => {
+      expect(asked).toEqual(["/photos/p1/reprocess"]);
+    });
+  });
+
+  it("offers nothing to press on a photo that is merely still pending", async () => {
+    theDrillHolds([aPhoto({ id: "p1", processingStatus: PhotoProcessingStatus.PENDING })]);
+
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    expect(await screen.findByText(/still pending/i)).toBeOnTheScreen();
+    expect(
+      screen.queryByRole("button", { name: "Try removing the background again" }),
+    ).toBeNull();
+  });
 });

@@ -13,7 +13,10 @@ import type {
   ItemPhotoResponse,
   ItemResponse,
   MovedItemsResponse,
+  PhotoProcessingResponse,
   ReleasedPhotosResponse,
+  RequeuedPhotoResponse,
+  RequeuedPhotosResponse,
   SearchQuery,
   SearchResponse,
   SessionView,
@@ -115,6 +118,24 @@ export interface AriadnaClient<TFile> {
   deleteItemPhoto(id: ItemId, photoId: PhotoId): Promise<DetachedItemPhotoResponse>;
   uploadUnitPhoto(id: UnitId, file: TFile): Promise<StorageUnitPhotoResponse>;
   deleteUnitPhoto(id: UnitId): Promise<DetachedStorageUnitPhotoResponse>;
+
+  /**
+   * # Asking for a background removal again
+   *
+   * ADR 4 left one consequence open — "`FAILED` photos need a retry path,
+   * otherwise they stay unprocessed forever" — and ADR 10 built it. These
+   * are that path, shared by both clients because a `FAILED` photo looks the
+   * same on a phone as in a browser.
+   *
+   * Both answer `202`. The photo is back in the queue; whether a sidecar is
+   * running, reachable or installed at all is a separate question, and
+   * `photoProcessing` is where it is asked. Nothing here waits for `DONE`.
+   */
+  reprocessPhoto(id: PhotoId): Promise<RequeuedPhotoResponse>;
+  /** Every `FAILED` photo at once, up to the bound the API sets. */
+  retryFailedPhotos(): Promise<RequeuedPhotosResponse>;
+  /** Whether the sidecar is on and answering, and what is stuck. */
+  photoProcessing(): Promise<PhotoProcessingResponse>;
 
   /**
    * Photos and QR symbols are behind the session like everything else, so a
@@ -326,6 +347,20 @@ export const createAriadnaClient = <TFile>(
         `/storage-units/${encodeURIComponent(id)}/photo`,
         { method: "DELETE" },
       );
+    },
+
+    async reprocessPhoto(id) {
+      return post<RequeuedPhotoResponse>(
+        `/photos/${encodeURIComponent(id)}/reprocess`,
+      );
+    },
+
+    async retryFailedPhotos() {
+      return post<RequeuedPhotosResponse>("/photos/processing/retry");
+    },
+
+    async photoProcessing() {
+      return readJson<PhotoProcessingResponse>("/photos/processing");
     },
 
     async fetchImage(path) {

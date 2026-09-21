@@ -9,6 +9,7 @@ import { LoginScreen } from "../auth/login-screen.js";
 import { RequireSession } from "../auth/require-session.js";
 import { AllItemsScreen } from "../items/all-items-screen.js";
 import { ItemScreen } from "../items/item-screen.js";
+import { PhotoProcessingScreen } from "../photos/processing-screen.js";
 import type { QrScanner } from "../scanning/qr-scanner.js";
 import { ScanScreen } from "../scanning/scan-screen.js";
 import { ScannedLabelScreen } from "../scanning/scanned-label-screen.js";
@@ -69,6 +70,12 @@ export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
                 <Route path="/units/:id/label" element={<LabelScreen />} />
                 <Route path="/items" element={<AllItemsScreen />} />
                 <Route path="/items/:id" element={<ItemScreen />} />
+                {/*
+                  Not in the bottom navigation on purpose: background removal
+                  is optional and secondary (ADR 4), and it is reached from
+                  the note under a photo whose removal failed.
+                */}
+                <Route path="/photos/processing" element={<PhotoProcessingScreen />} />
                 {/* The address printed on every box. See the screen. */}
                 <Route path="/u/:publicId" element={<ScannedLabelScreen />} />
               </Route>

@@ -189,6 +189,51 @@ export interface DetachedItemPhotoResponse {
   readonly releasedPhotoIds: readonly PhotoId[];
 }
 
+/**
+ * # What background removal is doing
+ *
+ * Optional in every direction (ADR 4): with no sidecar configured there is
+ * no processor, no worker and no timer, every photo sits at `PENDING` for
+ * ever, and that is a complete installation. So `enabled` comes first, and
+ * `reachable` is `null` rather than `false` when there is nothing to reach —
+ * a misleading `false` would read as "it is broken".
+ */
+export interface ImageProcessorStatusView {
+  readonly enabled: boolean;
+  /** Where the sidecar is, so a wrong address is visible without a shell. */
+  readonly url: string | null;
+  readonly reachable: boolean | null;
+}
+
+/** One photo that was given up on, with the reason and what it cost. */
+export interface AbandonedPhotoView {
+  readonly photoId: PhotoId;
+  readonly attempts: number;
+  readonly lastError: string;
+  readonly lastAttemptAt: string;
+  /** Handed out rather than built, like every other photo URL. */
+  readonly url: string;
+}
+
+export interface PhotoProcessingResponse {
+  readonly processor: ImageProcessorStatusView;
+  readonly counts: Readonly<Record<PhotoProcessingStatus, number>>;
+  /**
+   * A bounded sample, not the whole list. `counts.FAILED` is the truth about
+   * how many there are.
+   */
+  readonly abandoned: readonly AbandonedPhotoView[];
+}
+
+/** `202`: the photo is queued. It says nothing about the removal happening. */
+export interface RequeuedPhotoResponse {
+  readonly photo: PhotoView;
+}
+
+export interface RequeuedPhotosResponse {
+  readonly requeued: number;
+}
+
 export interface DetachedStorageUnitPhotoResponse {
   readonly unit: StorageUnitWithPhotoView;
   readonly releasedPhotoIds: readonly PhotoId[];

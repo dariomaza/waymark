@@ -1,4 +1,4 @@
-import { describeFailure, detailNumber, type ItemView, movedEarlier, photoStatusNote, tooManyPhotosMessage, withCoverFirst } from "@ariadna/api-client";
+import { describeFailure, detailNumber, type ItemView, movedEarlier, tooManyPhotosMessage, withCoverFirst } from "@ariadna/api-client";
 import { MAX_ITEM_PHOTOS } from "@ariadna/domain";
 import type { JSX } from "react";
 
@@ -8,10 +8,12 @@ import { AuthenticatedImage } from "./authenticated-image.js";
 import {
   useDeleteItemPhoto,
   useReorderItemPhotos,
+  useReprocessPhoto,
   useUploadItemPhoto,
 } from "./photo-mutations.js";
 
 import { PhotoPicker } from "./views/photo-picker.js";
+import { PhotoStatusNote } from "./views/photo-status-note.js";
 import "./item-photos.css";
 
 export interface ItemPhotosProps {
@@ -39,6 +41,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
   const upload = useUploadItemPhoto(item.id);
   const reorder = useReorderItemPhotos(item.id);
   const remove = useDeleteItemPhoto(item.id);
+  const reprocess = useReprocessPhoto();
 
   const full = tooManyPhotosMessage(
     upload.error,
@@ -68,10 +71,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
 
       {item.photos.length === 0 ? null : (
         <ul className="item-photos__grid" aria-label="Photos">
-          {item.photos.map((photo, index) => {
-            const note = photoStatusNote(photo.processingStatus);
-
-            return (
+          {item.photos.map((photo, index) => (
               <li className="item-photos__cell" key={photo.id}>
                 <AuthenticatedImage
                   src={photo.thumbnailUrl}
@@ -81,9 +81,13 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                       : `Photo ${String(index + 1)} of ${item.name}`
                   }
                 />
-                {note === null ? null : (
-                  <p className="item-photos__pending">{note}</p>
-                )}
+                <PhotoStatusNote
+                  photo={photo}
+                  retrying={reprocess.isPending}
+                  onRetry={() => {
+                    reprocess.mutate(photo.id);
+                  }}
+                />
                 <div className="item-photos__controls">
                   {index === 0 ? (
                     <span className="item-photos__cover">Cover</span>
@@ -117,8 +121,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                   </Button>
                 </div>
               </li>
-            );
-          })}
+            ))}
         </ul>
       )}
 
@@ -127,6 +130,9 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
       ) : null}
       {remove.isError ? (
         <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+      ) : null}
+      {reprocess.isError ? (
+        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
       ) : null}
     </section>
   );

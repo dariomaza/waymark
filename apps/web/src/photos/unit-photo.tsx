@@ -1,15 +1,16 @@
-import {
-  describeFailure,
-  photoStatusNote,
-  type StorageUnitWithPhotoView,
-} from "@ariadna/api-client";
+import { describeFailure, type StorageUnitWithPhotoView } from "@ariadna/api-client";
 import type { JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { AuthenticatedImage } from "./authenticated-image.js";
-import { useDeleteUnitPhoto, useUploadUnitPhoto } from "./photo-mutations.js";
+import {
+  useDeleteUnitPhoto,
+  useReprocessPhoto,
+  useUploadUnitPhoto,
+} from "./photo-mutations.js";
 import { PhotoPicker } from "./views/photo-picker.js";
+import { PhotoStatusNote } from "./views/photo-status-note.js";
 import "./unit-photo.css";
 
 export interface UnitPhotoProps {
@@ -29,8 +30,8 @@ export interface UnitPhotoProps {
 export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
   const upload = useUploadUnitPhoto(unit.id);
   const remove = useDeleteUnitPhoto(unit.id);
+  const reprocess = useReprocessPhoto();
   const photo = unit.photo;
-  const note = photo === null ? null : photoStatusNote(photo.processingStatus);
 
   return (
     <section className="unit-photo">
@@ -38,7 +39,15 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
         <AuthenticatedImage src={photo.url} alt={`Photo of ${unit.name}`} />
       )}
 
-      {note === null ? null : <Callout tone="note">{note}</Callout>}
+      {photo === null ? null : (
+        <PhotoStatusNote
+          photo={photo}
+          retrying={reprocess.isPending}
+          onRetry={() => {
+            reprocess.mutate(photo.id);
+          }}
+        />
+      )}
 
       <div className="unit-photo__controls">
         <PhotoPicker
@@ -65,6 +74,9 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
       ) : null}
       {remove.isError ? (
         <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+      ) : null}
+      {reprocess.isError ? (
+        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
       ) : null}
     </section>
   );

@@ -1,8 +1,4 @@
-import {
-  describeFailure,
-  photoStatusNote,
-  type StorageUnitWithPhotoView,
-} from "@ariadna/api-client";
+import { describeFailure, type StorageUnitWithPhotoView } from "@ariadna/api-client";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -10,8 +6,13 @@ import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { space } from "../ui/styles/tokens.js";
 import { AuthenticatedImage } from "./authenticated-image.js";
-import { useDeleteUnitPhoto, useUploadUnitPhoto } from "./photo-mutations.js";
+import {
+  useDeleteUnitPhoto,
+  useReprocessPhoto,
+  useUploadUnitPhoto,
+} from "./photo-mutations.js";
 import { PhotoPicker } from "./views/photo-picker.js";
+import { PhotoStatusNote } from "./views/photo-status-note.js";
 
 /**
  * A unit holds exactly one photo, so uploading is always a replacement and the
@@ -29,8 +30,8 @@ export const UnitPhoto = ({
 }): JSX.Element => {
   const upload = useUploadUnitPhoto(unit.id);
   const remove = useDeleteUnitPhoto(unit.id);
+  const reprocess = useReprocessPhoto();
   const photo = unit.photo;
-  const note = photo === null ? null : photoStatusNote(photo.processingStatus);
 
   return (
     <View style={styles.wrap}>
@@ -38,7 +39,15 @@ export const UnitPhoto = ({
         <AuthenticatedImage src={photo.url} alt={`Photo of ${unit.name}`} size={160} />
       )}
 
-      {note === null ? null : <Callout tone="note">{note}</Callout>}
+      {photo === null ? null : (
+        <PhotoStatusNote
+          photo={photo}
+          retrying={reprocess.isPending}
+          onRetry={() => {
+            reprocess.mutate(photo.id);
+          }}
+        />
+      )}
 
       <PhotoPicker
         busy={upload.isPending}
@@ -64,6 +73,9 @@ export const UnitPhoto = ({
       ) : null}
       {remove.isError ? (
         <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+      ) : null}
+      {reprocess.isError ? (
+        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
       ) : null}
     </View>
   );

@@ -71,6 +71,7 @@ export {
   type FlatUnit,
 } from "./storage-unit-tree.js";
 export type {
+  AbandonedPhotoView,
   CreateItemInput,
   CreateStorageUnitInput,
   Credentials,
@@ -84,8 +85,12 @@ export type {
   ItemResponse,
   ItemSearchResultView,
   ItemView,
+  ImageProcessorStatusView,
   MovedItemsResponse,
+  PhotoProcessingResponse,
   PhotoView,
+  RequeuedPhotoResponse,
+  RequeuedPhotosResponse,
   ReleasedPhotosResponse,
   SearchQuery,
   SearchResponse,

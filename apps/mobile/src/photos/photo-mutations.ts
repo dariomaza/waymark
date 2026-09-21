@@ -3,6 +3,7 @@ import type {
   DetachedStorageUnitPhotoResponse,
   ItemPhotoResponse,
   ItemResponse,
+  RequeuedPhotoResponse,
   StorageUnitPhotoResponse,
 } from "@ariadna/api-client";
 import type { ItemId, PhotoId, UnitId } from "@ariadna/domain";
@@ -78,6 +79,28 @@ export const useDeleteUnitPhoto = (
 
   return useMutation({
     mutationFn: async () => await api.deleteUnitPhoto(id),
+    onSuccess: invalidate,
+  });
+};
+
+/**
+ * "Try that background removal again."
+ *
+ * ADR 4 left it as an open consequence and ADR 10 built the route: a `FAILED`
+ * photo stays unprocessed for ever unless something asks. The answer is a
+ * `202` — the photo is queued, and nothing here waits for `DONE`, which is
+ * the whole of ADR 4 expressed as a mutation.
+ */
+export const useReprocessPhoto = (): UseMutationResult<
+  RequeuedPhotoResponse,
+  Error,
+  PhotoId
+> => {
+  const api = useApi();
+  const invalidate = useInvalidateInventory();
+
+  return useMutation({
+    mutationFn: async (photoId: PhotoId) => await api.reprocessPhoto(photoId),
     onSuccess: invalidate,
   });
 };

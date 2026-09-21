@@ -20,6 +20,8 @@ export const queryKeys = {
   search: (query: string, within: UnitId | null, limit: number | undefined) =>
     ["search", query, within, limit] as const,
   photo: (url: string) => ["photo", url] as const,
+  /** What background removal is doing. Not part of the inventory graph. */
+  photoProcessing: () => ["photo-processing"] as const,
   qr: (id: UnitId) => ["qr", id] as const,
 } as const;
 

@@ -2,7 +2,6 @@ import {
   describeFailure,
   detailNumber,
   movedEarlier,
-  photoStatusNote,
   tooManyPhotosMessage,
   withCoverFirst,
   type ItemView,
@@ -18,9 +17,11 @@ import { AuthenticatedImage } from "./authenticated-image.js";
 import {
   useDeleteItemPhoto,
   useReorderItemPhotos,
+  useReprocessPhoto,
   useUploadItemPhoto,
 } from "./photo-mutations.js";
 import { PhotoPicker } from "./views/photo-picker.js";
+import { PhotoStatusNote } from "./views/photo-status-note.js";
 
 export interface ItemPhotosProps {
   readonly item: ItemView;
@@ -47,6 +48,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
   const upload = useUploadItemPhoto(item.id);
   const reorder = useReorderItemPhotos(item.id);
   const remove = useDeleteItemPhoto(item.id);
+  const reprocess = useReprocessPhoto();
 
   const full = tooManyPhotosMessage(
     upload.error,
@@ -75,10 +77,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
 
       {item.photos.length === 0 ? null : (
         <View style={styles.grid} accessibilityLabel="Photos">
-          {item.photos.map((photo, index) => {
-            const note = photoStatusNote(photo.processingStatus);
-
-            return (
+          {item.photos.map((photo, index) => (
               <View key={photo.id} style={styles.cell}>
                 <AuthenticatedImage
                   src={photo.thumbnailUrl}
@@ -88,7 +87,13 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                       : `Photo ${String(index + 1)} of ${item.name}`
                   }
                 />
-                {note === null ? null : <Text style={styles.note}>{note}</Text>}
+                <PhotoStatusNote
+                  photo={photo}
+                  retrying={reprocess.isPending}
+                  onRetry={() => {
+                    reprocess.mutate(photo.id);
+                  }}
+                />
                 <View style={styles.controls}>
                   {index === 0 ? (
                     <Text style={styles.cover}>Cover</Text>
@@ -125,8 +130,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                   </Button>
                 </View>
               </View>
-            );
-          })}
+            ))}
         </View>
       )}
 
@@ -135,6 +139,9 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
       ) : null}
       {remove.isError ? (
         <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+      ) : null}
+      {reprocess.isError ? (
+        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
       ) : null}
     </View>
   );
@@ -145,7 +152,6 @@ const styles = StyleSheet.create({
   heading: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
   grid: { gap: space.s3 },
   cell: { gap: space.s2 },
-  note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
   controls: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
   cover: { color: colors.accent, fontSize: text.s, fontWeight: "700" },
 });

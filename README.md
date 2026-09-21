@@ -372,7 +372,14 @@ is `SKIPPED` and never asked again.
 reachable, how many photos are in each state, and which were abandoned with the
 reason and the attempts spent — so neither question needs SSH and a SQL client.
 `POST /photos/:id/reprocess` and `POST /photos/processing/retry` put photos back
-in the queue and forget their attempts. `GET /health` is deliberately untouched
+in the queue and forget their attempts.
+
+All three have buttons. A photo whose removal failed says so under the picture,
+with a retry beside the sentence and a link to `/photos/processing` in the web
+client, which is where somebody who has just met one failure looks for the
+rest. That screen is deliberately not in the bottom navigation: a tab for an
+optional secondary feature would be this app disagreeing with ADR 4 in the
+place people look most. `GET /health` is deliberately untouched
 by all of this: it answers `ok` while background removal is broken, behind or
 switched off, which is exactly what "optional" has to mean.
 

@@ -1,12 +1,19 @@
+import { queryKeys } from "@ariadna/api-client";
 import type {
   DetachedItemPhotoResponse,
   DetachedStorageUnitPhotoResponse,
   ItemPhotoResponse,
   ItemResponse,
+  RequeuedPhotoResponse,
+  RequeuedPhotosResponse,
   StorageUnitPhotoResponse,
 } from "@ariadna/api-client";
 import type { ItemId, PhotoId, UnitId } from "@ariadna/domain";
-import { useMutation, type UseMutationResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  type UseMutationResult,
+} from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";
 import { useInvalidateInventory } from "../api/use-invalidate-inventory.js";
@@ -78,5 +85,54 @@ export const useDeleteUnitPhoto = (
   return useMutation({
     mutationFn: async () => await api.deleteUnitPhoto(id),
     onSuccess: invalidate,
+  });
+};
+
+/**
+ * # "Try that background removal again"
+ *
+ * ADR 4 left this as an open consequence and ADR 10 built the routes for it:
+ * a `FAILED` photo stays unprocessed for ever unless something asks again.
+ *
+ * The answer is a `202` — the photo is queued, and nothing here waits for
+ * `DONE`, which is the whole of ADR 4 expressed as a mutation. What changes
+ * on the screen is the photo's state going back to pending, so the inventory
+ * is re-read like it is after any other write, and so is the processing
+ * summary if a screen happens to be showing it.
+ */
+export const useReprocessPhoto = (): UseMutationResult<
+  RequeuedPhotoResponse,
+  Error,
+  PhotoId
+> => {
+  const api = useApi();
+  const invalidate = useInvalidateInventory();
+  const queries = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (photoId: PhotoId) => await api.reprocessPhoto(photoId),
+    onSuccess: () => {
+      invalidate();
+      void queries.invalidateQueries({ queryKey: queryKeys.photoProcessing() });
+    },
+  });
+};
+
+/** Every `FAILED` photo at once, which is the real ask after a dead sidecar. */
+export const useRetryFailedPhotos = (): UseMutationResult<
+  RequeuedPhotosResponse,
+  Error,
+  void
+> => {
+  const api = useApi();
+  const invalidate = useInvalidateInventory();
+  const queries = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => await api.retryFailedPhotos(),
+    onSuccess: () => {
+      invalidate();
+      void queries.invalidateQueries({ queryKey: queryKeys.photoProcessing() });
+    },
   });
 };
