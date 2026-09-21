@@ -2,17 +2,23 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+import { navigateFallbackDenylist } from "./src/app/api-namespace.js";
 import { workboxRuntimeCaching } from "./src/app/pwa-caching.js";
 
 /**
  * # The web client
  *
- * A single page app served from its own origin, talking to the API with a
- * bearer token (ADR 6). It is deliberately not served BY the API: that process
- * answers JSON under `default-src 'none'`, and the origin a browser loads a
- * document from is the thing CORS keys off. Whatever origin this app is served
- * from must appear in the API's `ARIADNA_ALLOWED_ORIGINS`, which is an
- * allowlist and never a reflection.
+ * A single page app served BY the API, from the API's own origin, talking to
+ * it with a bearer token (ADR 6). One container, one hostname on the tunnel,
+ * and no CORS for this client at all: a same-origin request is not a
+ * cross-origin one, so there is nothing for an allowlist to allow.
+ * `VITE_ARIADNA_API_URL` is therefore unset for a production build, and the
+ * bundle carries no hostname — see `src/app/create-client.ts`.
+ *
+ * The cost is that one origin now holds two namespaces, and a path belongs to
+ * exactly one of them. `src/app/api-namespace.ts` is that boundary on this
+ * side: which paths this app must not name a screen after, and which ones the
+ * service worker must not draw the app for.
  *
  * ## What is cached, and what is not
  *
@@ -65,6 +71,11 @@ export default defineConfig({
         // Every navigation falls back to the one document, which is what makes
         // `/u/<publicId>` work as far as the login screen with no network.
         navigateFallback: "index.html",
+        // Except the API's own paths, which now share this origin and this
+        // scope. Without the denylist an installed app would draw itself for
+        // `/items` typed into the address bar, which is the client telling
+        // the same lie the server's fallback is written to avoid.
+        navigateFallbackDenylist: [...navigateFallbackDenylist],
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
         runtimeCaching: workboxRuntimeCaching,
       },
