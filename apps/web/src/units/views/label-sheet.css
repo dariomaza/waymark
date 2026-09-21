@@ -74,11 +74,21 @@
   overflow: hidden;
 }
 
-.sheet-label__symbol {
+/*
+ * Scoped the way `.unit-photo .photo` and `.item-photos__cell .photo` are,
+ * and for a harder reason than tidiness: the shared `.photo` atom sets
+ * `width: 100%; height: 100%`, and at equal specificity whichever rule the
+ * bundler happens to emit last would win. A symbol that silently became
+ * 63mm wide would still LOOK like a label and would print four to a row.
+ */
+.sheet-label .sheet-label__symbol {
   width: 36mm;
   height: 36mm;
   flex: none;
   background: #ffffff;
+  /* The quiet zone is part of the symbol; nothing may be taken off a corner. */
+  border-radius: 0;
+  object-fit: contain;
 }
 
 .sheet-label__code {
@@ -102,13 +112,21 @@
 /** The picker, the counts and the hints are for the screen, not the paper. */
 @media print {
   /*
-   * The shell's gutter and its 48rem column exist so a screen reads well on a
-   * phone. On paper they would push a 190mm page off a 190mm margin box, so
-   * the sheet starts at the origin `@page` gave it and nothing else has an
-   * opinion about where that is.
+   * # Two classes, on purpose
+   *
+   * The shell's 48rem column and its gutter exist so a screen reads well on a
+   * phone. On paper they push a 190mm page 4mm right of a 190mm margin box,
+   * and the browser then shrinks the whole sheet to fit — which makes every
+   * symbol smaller than the size that was measured against a phone camera,
+   * silently, on a page that still looks like a page of labels.
+   *
+   * `.screen` and a print-only `.screen` have the same specificity, so which
+   * one wins is decided by whichever rule the bundler happens to emit last.
+   * Two classes takes the question away. It also narrows the reset to THIS
+   * screen, which is right: the single-label screen has its own layout and no
+   * business being reset by this file.
    */
-  .app-shell,
-  .screen {
+  .screen.label-sheet-screen {
     display: block;
     max-width: none;
     margin: 0;
@@ -123,7 +141,8 @@
   .label-sheet-screen__picker,
   .label-sheet-screen__heading,
   .label-sheet-screen__hint,
-  .callout {
+  .label-sheet-screen .callout,
+  .label-sheet-screen .empty-note {
     display: none !important;
   }
 
