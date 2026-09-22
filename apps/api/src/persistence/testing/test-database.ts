@@ -99,8 +99,30 @@ export const createTestDatabase = async (): Promise<TestDatabase> => {
   const file = join(directory, `${randomUUID()}.db`);
   const client = new PrismaClient({ datasourceUrl: `file:${file}` });
 
-  for (const statement of await loadMigrationStatements()) {
-    await client.$executeRawUnsafe(statement);
+  const statements = await loadMigrationStatements();
+  for (const [index, statement] of statements.entries()) {
+    try {
+      await client.$executeRawUnsafe(statement);
+    } catch (cause) {
+      /**
+       * Which statement, and what came before it.
+       *
+       * Replaying migrations by splitting their SQL is the one part of this
+       * file that can be wrong in a way the SQL itself is not, and the error
+       * SQLite gives back — "index X already exists" — names the symptom and
+       * not the statement that produced it. A failure here that only happens
+       * on another machine is unarguable without this.
+       */
+      const context = statements
+        .slice(Math.max(0, index - 3), index + 1)
+        .map((sql, offset) => `  [${String(index - Math.min(index, 3) + offset)}] ${sql.replace(/\s+/gu, " ").slice(0, 120)}`)
+        .join("\n");
+
+      throw new Error(
+        `migration statement ${String(index)} of ${String(statements.length)} failed:\n${context}`,
+        { cause },
+      );
+    }
   }
 
   return {
