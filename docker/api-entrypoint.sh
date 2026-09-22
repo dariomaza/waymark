@@ -11,7 +11,7 @@
 # that has to be ordered against this one to do what `&&` already does.
 set -eu
 
-echo "ariadna: applying migrations to ${DATABASE_URL}"
+echo "waymark: applying migrations to ${DATABASE_URL}"
 node_modules/.bin/prisma migrate deploy
 
 exec "$@"

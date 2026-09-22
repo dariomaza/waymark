@@ -14,7 +14,7 @@
 # one.
 #
 # Build it from the REPOSITORY ROOT, because a pnpm workspace is one unit:
-#   docker build -f docker/api.Dockerfile -t ariadna-api .
+#   docker build -f docker/api.Dockerfile -t waymark-api .
 
 ARG NODE_VERSION=22-bookworm-slim
 
@@ -117,7 +117,7 @@ ENV NODE_ENV=production \
     # file's job: it publishes the port on 127.0.0.1 only.
     HOST=0.0.0.0 \
     PORT=3000 \
-    DATABASE_URL=file:/data/db/ariadna.db \
+    DATABASE_URL=file:/data/db/waymark.db \
     WAYMARK_PHOTO_ROOT=/data/photos \
     # Where stage 1 left the built client. Baked in rather than left to the
     # compose file because it is a property of this image's layout, not of a
@@ -131,7 +131,7 @@ COPY --from=build --chown=node:node /repo /repo
 # Only `dist`. Everything else the web build needed — pnpm, Vite, esbuild, the
 # devDependencies — stays in the stage that is thrown away.
 COPY --from=web --chown=node:node /repo/apps/web/dist /repo/apps/web/dist
-COPY --chown=node:node docker/api-entrypoint.sh /usr/local/bin/ariadna-entrypoint
+COPY --chown=node:node docker/api-entrypoint.sh /usr/local/bin/waymark-entrypoint
 
 # Both of these are MOUNT POINTS, and they exist in the image only so that a
 # fresh named volume inherits the right ownership. Nothing durable may live
@@ -139,7 +139,7 @@ COPY --chown=node:node docker/api-entrypoint.sh /usr/local/bin/ariadna-entrypoin
 # it would be replaced with the photos still in it.
 RUN mkdir -p /data/photos /data/db \
     && chown -R node:node /data \
-    && chmod +x /usr/local/bin/ariadna-entrypoint
+    && chmod +x /usr/local/bin/waymark-entrypoint
 
 USER node
 WORKDIR /repo/apps/api
@@ -152,5 +152,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-ENTRYPOINT ["/usr/local/bin/ariadna-entrypoint"]
+ENTRYPOINT ["/usr/local/bin/waymark-entrypoint"]
 CMD ["node_modules/.bin/tsx", "src/server.ts"]

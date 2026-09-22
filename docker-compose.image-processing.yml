@@ -25,7 +25,7 @@ services:
   image-processor:
     build:
       context: ./services/image-processor
-    image: ariadna-image-processor:latest
+    image: waymark-image-processor:latest
     restart: unless-stopped
 
     environment:

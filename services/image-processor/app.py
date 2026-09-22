@@ -1,5 +1,5 @@
 """
-Ariadna's background removal sidecar.
+Waymark's background removal sidecar.
 
 # What this is, and what it deliberately is not
 
@@ -12,7 +12,7 @@ service that owns nothing.
 
 It also does NOT composite the cutout onto white. `remove()` answers a subject
 with an alpha channel, and turning that into "a photo on a white background" is
-a decision about what Ariadna stores, so it is made in the API, with the same
+a decision about what Waymark stores, so it is made in the API, with the same
 library that already re-encodes every upload. A sidecar that made that decision
 would be a sidecar with an opinion about the product, and the next change to how
 photos look would mean rebuilding a Python container.
@@ -56,7 +56,7 @@ from fastapi.responses import JSONResponse
 from PIL import Image, UnidentifiedImageError
 from rembg import new_session, remove
 
-LOG: Final = logging.getLogger("ariadna.image-processor")
+LOG: Final = logging.getLogger("waymark.image-processor")
 
 #: Which rembg model to use. `u2net` is the general purpose one; `u2netp` is a
 #: 4 MB version of it for a board that cannot spare the memory, at a visible
@@ -64,7 +64,7 @@ LOG: Final = logging.getLogger("ariadna.image-processor")
 MODEL_NAME: Final = os.environ.get("REMBG_MODEL", "u2net")
 
 #: The API caps uploads at 12 MB and stores at most 2048px on the longest edge,
-#: so anything approaching this is not a photo from Ariadna.
+#: so anything approaching this is not a photo from Waymark.
 MAX_REQUEST_BYTES: Final = int(os.environ.get("REMBG_MAX_REQUEST_MB", "32")) * 1024 * 1024
 
 #: How many removals may run at once INSIDE this container.
@@ -117,7 +117,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="Ariadna image processor",
+    title="Waymark image processor",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,

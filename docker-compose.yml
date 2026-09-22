@@ -1,4 +1,4 @@
-# The Ariadna stack: one container, two volumes, and nothing else.
+# The Waymark stack: one container, two volumes, and nothing else.
 #
 #   docker compose up -d --build
 #
@@ -20,7 +20,7 @@
 # an address configured with no container behind it, where every photo retries
 # five times and ends up FAILED. Here, turning it on is one flag.
 
-name: ariadna
+name: waymark
 
 services:
   api:
@@ -29,7 +29,7 @@ services:
       # `packages/domain` from source.
       context: .
       dockerfile: docker/api.Dockerfile
-    image: ariadna-api:latest
+    image: waymark-api:latest
     restart: unless-stopped
 
     environment:
@@ -51,7 +51,7 @@ services:
       # it does is a cross-origin request and there is no origin to allow.
       # This is now only for a browser client served from somewhere else — a
       # `vite dev` on :5173 pointed at this API — and it stays an allowlist,
-      # never a reflection. An Ariadna deployed as this file describes runs
+      # never a reflection. A Waymark deployed as this file describes runs
       # with no allowed origin at all, which is tighter than it used to be.
       WAYMARK_ALLOWED_ORIGINS: ${WAYMARK_ALLOWED_ORIGINS:-}
       # WAYMARK_WEB_ROOT is deliberately absent: the image bakes in where it
@@ -93,7 +93,7 @@ services:
       # OUTSIDE the image, both of them, and this is the line that matters most
       # in the file. An upgrade replaces the image; anything durable inside it
       # goes with the old one. A named volume survives `docker compose down`,
-      # survives a rebuild, and is what `docker run --rm -v ariadna_photos:/p`
+      # survives a rebuild, and is what `docker run --rm -v waymark_photos:/p`
       # backs up.
       - photos:/data/photos
       - database:/data/db
