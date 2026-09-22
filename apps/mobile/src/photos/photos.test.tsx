@@ -1,5 +1,5 @@
-import { anItem, aPhoto, aSession, type ItemOverrides } from "@ariadna/api-client/testing";
-import { PhotoProcessingStatus } from "@ariadna/domain";
+import { anItem, aPhoto, aSession, type ItemOverrides } from "@waymark/api-client/testing";
+import { PhotoProcessingStatus } from "@waymark/domain";
 
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
 import { fakePhotoSource } from "../testing/fake-photo-source.js";

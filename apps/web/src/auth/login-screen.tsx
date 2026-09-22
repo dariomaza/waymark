@@ -1,4 +1,4 @@
-import { loginFailureMessage } from "@ariadna/i18n";
+import { loginFailureMessage } from "@waymark/i18n";
 import type { JSX } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 

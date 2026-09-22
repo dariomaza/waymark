@@ -1,7 +1,7 @@
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 
-import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@ariadna/domain";
+import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@waymark/domain";
 import exifReader from "exif-reader";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
 import sharp from "sharp";

@@ -1,4 +1,4 @@
-import type { PublicId } from "@ariadna/domain";
+import type { PublicId } from "@waymark/domain";
 import QRCode, { type QRCodeErrorCorrectionLevel } from "qrcode";
 
 /**

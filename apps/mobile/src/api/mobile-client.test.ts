@@ -1,4 +1,4 @@
-import { PHOTO_FIELD_NAME } from "@ariadna/api-client";
+import { PHOTO_FIELD_NAME } from "@waymark/api-client";
 
 import { appendPhotoPart, type PhotoUpload } from "./mobile-client.js";
 

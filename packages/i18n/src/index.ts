@@ -1,7 +1,7 @@
 /**
  * # Everything a person reads
  *
- * There is one API and two clients (README). `@ariadna/api-client` is the
+ * There is one API and two clients (README). `@waymark/api-client` is the
  * contract with the API — the JSON it answers with, the refusals it makes, and
  * how to tell them apart. This package is the other half of that sentence: the
  * contract with the PERSON.

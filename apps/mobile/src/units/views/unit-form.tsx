@@ -1,5 +1,5 @@
-import { type FieldComplaint, kindChoices } from "@ariadna/i18n";
-import type { StorageUnitKind } from "@ariadna/domain";
+import { type FieldComplaint, kindChoices } from "@waymark/i18n";
+import type { StorageUnitKind } from "@waymark/domain";
 import { useState, type JSX } from "react";
 import { StyleSheet, View } from "react-native";
 

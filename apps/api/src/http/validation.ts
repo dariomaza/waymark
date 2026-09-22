@@ -1,4 +1,4 @@
-import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@ariadna/domain";
+import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@waymark/domain";
 import { z } from "zod";
 
 /**

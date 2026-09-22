@@ -1,5 +1,5 @@
-import { queryKeys, type ItemDetailResponse, type ItemListResponse } from "@ariadna/api-client";
-import type { ItemId } from "@ariadna/domain";
+import { queryKeys, type ItemDetailResponse, type ItemListResponse } from "@waymark/api-client";
+import type { ItemId } from "@waymark/domain";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";

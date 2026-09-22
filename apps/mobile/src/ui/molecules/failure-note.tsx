@@ -1,5 +1,5 @@
-import { failureTone } from "@ariadna/api-client";
-import { describeFailure } from "@ariadna/i18n";
+import { failureTone } from "@waymark/api-client";
+import { describeFailure } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { Button } from "../atoms/button.js";

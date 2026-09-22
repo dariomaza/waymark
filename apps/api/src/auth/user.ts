@@ -3,7 +3,7 @@
  *
  * There is no role, no permission and no owned inventory. Ariadna is one shared
  * inventory, so every authenticated user may do every inventory operation, and
- * `User` lives in `@ariadna/api` rather than in `@ariadna/domain` because
+ * `User` lives in `@waymark/api` rather than in `@waymark/domain` because
  * "who is allowed in" is not a statement about boxes.
  */
 export interface User {

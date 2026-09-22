@@ -1,4 +1,4 @@
-import type { StorageUnitView } from "@ariadna/api-client";
+import type { StorageUnitView } from "@waymark/api-client";
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 

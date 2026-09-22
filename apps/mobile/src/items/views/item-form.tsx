@@ -1,4 +1,4 @@
-import type { FieldComplaint } from "@ariadna/i18n";
+import type { FieldComplaint } from "@waymark/i18n";
 import { useState, type JSX } from "react";
 import { StyleSheet, View } from "react-native";
 

@@ -1,10 +1,10 @@
-import type { UnitId } from "@ariadna/domain";
+import type { UnitId } from "@waymark/domain";
 import {
   InMemoryItemRepository,
   InMemoryPhotoRepository,
   InMemorySearchRepository,
   InMemoryStorageUnitRepository,
-} from "@ariadna/domain/testing";
+} from "@waymark/domain/testing";
 
 import { domainUseCaseContract } from "./domain-use-case.contract.js";
 import type {

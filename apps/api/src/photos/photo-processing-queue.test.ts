@@ -7,7 +7,7 @@ import {
   PhotoProcessingStatus,
   type Photo,
   type PhotoId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { PrismaPhotoRepository } from "../persistence/prisma-photo-repository.js";

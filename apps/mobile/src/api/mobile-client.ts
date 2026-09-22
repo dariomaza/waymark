@@ -1,14 +1,14 @@
 import {
-  createAriadnaClient,
+  createWaymarkClient,
   type AppendPhoto,
-  type AriadnaClient,
-  type AriadnaClientOptions,
-} from "@ariadna/api-client";
+  type WaymarkClient,
+  type WaymarkClientOptions,
+} from "@waymark/api-client";
 
 /**
  * # The phone's half of the shared client
  *
- * `@ariadna/api-client` holds everything that is true of the API whoever is
+ * `@waymark/api-client` holds everything that is true of the API whoever is
  * asking. It leaves exactly one thing open, and this is it: what a photo IS on
  * its way up.
  *
@@ -29,7 +29,7 @@ export interface PhotoUpload {
   readonly type: string;
 }
 
-export type MobileApiClient = AriadnaClient<PhotoUpload>;
+export type MobileApiClient = WaymarkClient<PhotoUpload>;
 
 /**
  * Puts a photo into the multipart body the way React Native expects.
@@ -46,11 +46,11 @@ export const appendPhotoPart: AppendPhoto<PhotoUpload> = (form, field, photo) =>
 };
 
 export type MobileApiClientOptions = Omit<
-  AriadnaClientOptions<PhotoUpload>,
+  WaymarkClientOptions<PhotoUpload>,
   "appendPhoto"
 >;
 
 export const createMobileApiClient = (
   options: MobileApiClientOptions,
 ): MobileApiClient =>
-  createAriadnaClient<PhotoUpload>({ ...options, appendPhoto: appendPhotoPart });
+  createWaymarkClient<PhotoUpload>({ ...options, appendPhoto: appendPhotoPart });

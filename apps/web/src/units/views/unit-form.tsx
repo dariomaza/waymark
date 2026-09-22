@@ -1,5 +1,5 @@
-import { type FieldComplaint, kindChoices } from "@ariadna/i18n";
-import { StorageUnitKind } from "@ariadna/domain";
+import { type FieldComplaint, kindChoices } from "@waymark/i18n";
+import { StorageUnitKind } from "@waymark/domain";
 import { useState, type FormEvent, type JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";

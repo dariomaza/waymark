@@ -1,4 +1,4 @@
-import type { UserView } from "@ariadna/api-client";
+import type { UserView } from "@waymark/api-client";
 
 /**
  * The session as this client holds it: the opaque token the API issued, when

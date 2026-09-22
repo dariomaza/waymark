@@ -12,7 +12,7 @@ import { createPrismaClient } from "../persistence/prisma-client.js";
 import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
 
 /**
- * `pnpm --filter @ariadna/api create-user`
+ * `pnpm --filter @waymark/api create-user`
  *
  * The only way an account comes into existence. There is no registration
  * endpoint: the API is on the public internet through a Cloudflare Tunnel, and
@@ -30,7 +30,7 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
  *
  * 1. Interactive: the password is prompted for twice with the terminal echo
  *    switched off, and never appears on screen.
- * 2. Piped: `printf '%s' "$PASSWORD" | pnpm --filter @ariadna/api create-user
+ * 2. Piped: `printf '%s' "$PASSWORD" | pnpm --filter @waymark/api create-user
  *    --username dario`, for a provisioning script. The password travels through
  *    a pipe, which no history file and no process list ever sees.
  * 3. `ARIADNA_PASSWORD` in the environment. Convenient for automation and the
@@ -41,7 +41,7 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
 const MINIMUM_PASSWORD_LENGTH = 12;
 
 const usage = `
-Usage: pnpm --filter @ariadna/api create-user [--username <name>]
+Usage: pnpm --filter @waymark/api create-user [--username <name>]
 
 The password is NEVER taken as an argument. It is read, in this order, from:
   1. standard input, when it is piped

@@ -1,4 +1,4 @@
-import type { ItemView } from "@ariadna/api-client";
+import type { ItemView } from "@waymark/api-client";
 import type { JSX } from "react";
 
 import { LazyPhoto } from "./lazy-photo.js";

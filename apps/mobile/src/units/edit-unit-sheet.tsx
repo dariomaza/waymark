@@ -1,5 +1,5 @@
-import { type StorageUnitView } from "@ariadna/api-client";
-import { describeFailure, fieldComplaints } from "@ariadna/i18n";
+import { type StorageUnitView } from "@waymark/api-client";
+import { describeFailure, fieldComplaints } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { Callout } from "../ui/atoms/callout.js";

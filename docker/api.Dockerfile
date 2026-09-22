@@ -52,7 +52,7 @@ COPY apps/web apps/web
 # `VITE_ARIADNA_API_URL` is deliberately unset. The bundle then talks to the
 # origin it was downloaded from, which is this same container, so the image
 # does not have to be rebuilt when the tunnel's hostname changes.
-RUN pnpm --filter @ariadna/web build
+RUN pnpm --filter @waymark/web build
 
 # ---------------------------------------------------------------------------
 # Stage 2: install the API, with everything
@@ -95,7 +95,7 @@ COPY apps/api apps/api
 # The Prisma client is generated code and belongs to the image, not to the
 # repository: generating it here means the container can never run against a
 # client built from a different schema than the one it ships with.
-RUN pnpm --filter @ariadna/api exec prisma generate
+RUN pnpm --filter @waymark/api exec prisma generate
 
 # ---------------------------------------------------------------------------
 # Stage 3: what actually runs

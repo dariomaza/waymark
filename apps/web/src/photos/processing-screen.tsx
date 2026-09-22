@@ -1,5 +1,5 @@
-import { describeFailure } from "@ariadna/i18n";
-import { photoId as toPhotoId } from "@ariadna/domain";
+import { describeFailure } from "@waymark/i18n";
+import { photoId as toPhotoId } from "@waymark/domain";
 import type { JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";

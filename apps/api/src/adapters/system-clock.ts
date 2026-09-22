@@ -1,4 +1,4 @@
-import type { Clock } from "@ariadna/domain";
+import type { Clock } from "@waymark/domain";
 
 /**
  * The production `Clock`: the only place in the API allowed to read wall clock

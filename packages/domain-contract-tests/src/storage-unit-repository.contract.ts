@@ -3,7 +3,7 @@ import {
   StorageUnitKind,
   unitId,
   type StorageUnitRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {

@@ -16,7 +16,7 @@ export interface AuthRouteOptions {
  *
  * The API is reachable from the internet through a Cloudflare Tunnel on a real
  * domain. A public sign-up route on a household inventory is not a feature, it
- * is a door. Accounts are created with `pnpm --filter @ariadna/api create-user`
+ * is a door. Accounts are created with `pnpm --filter @waymark/api create-user`
  * by whoever has a shell on the server.
  */
 export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (

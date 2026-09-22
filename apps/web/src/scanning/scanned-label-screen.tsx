@@ -1,5 +1,5 @@
-import { findByPublicId } from "@ariadna/api-client";
-import { publicId } from "@ariadna/domain";
+import { findByPublicId } from "@waymark/api-client";
+import { publicId } from "@waymark/domain";
 import type { JSX } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 

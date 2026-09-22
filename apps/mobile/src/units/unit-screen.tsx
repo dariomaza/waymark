@@ -1,6 +1,6 @@
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { unitId } from "@ariadna/domain";
+import { unitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
 
 import type { RootStackParamList } from "../app/navigation.js";

@@ -1,4 +1,4 @@
-import type { ImageProcessor } from "@ariadna/domain";
+import type { ImageProcessor } from "@waymark/domain";
 
 import type { PhotoProcessingQueue } from "./photo-processing-queue.js";
 import type { PhotoProcessingWorker } from "./photo-processing-worker.js";

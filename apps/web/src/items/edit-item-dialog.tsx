@@ -1,5 +1,5 @@
-import { type ItemView, failureTone } from "@ariadna/api-client";
-import { describeFailure, fieldComplaints } from "@ariadna/i18n";
+import { type ItemView, failureTone } from "@waymark/api-client";
+import { describeFailure, fieldComplaints } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { Sheet } from "../ui/organisms/sheet.js";

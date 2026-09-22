@@ -1,4 +1,4 @@
-import { translator, type Language, type Translate } from "@ariadna/i18n";
+import { translator, type Language, type Translate } from "@waymark/i18n";
 import {
   createContext,
   useContext,

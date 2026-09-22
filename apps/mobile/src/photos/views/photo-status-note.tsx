@@ -1,6 +1,6 @@
-import { type PhotoView } from "@ariadna/api-client";
-import { photoStatusNote } from "@ariadna/i18n";
-import { PhotoProcessingStatus } from "@ariadna/domain";
+import { type PhotoView } from "@waymark/api-client";
+import { photoStatusNote } from "@waymark/i18n";
+import { PhotoProcessingStatus } from "@waymark/domain";
 import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 

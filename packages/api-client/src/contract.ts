@@ -6,7 +6,7 @@ import type {
   SearchMatchField,
   StorageUnitKind,
   UnitId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 
 /**
  * # What the API promises, written down once
@@ -21,7 +21,7 @@ import type {
  * The ids are the domain's branded ones. They serialise as plain strings, so
  * this costs nothing at runtime and buys the one thing a client of a tree of
  * units and items needs most: a unit id cannot be passed where an item id was
- * meant. Reusing `@ariadna/domain` for exactly this — ids, kinds, statuses,
+ * meant. Reusing `@waymark/domain` for exactly this — ids, kinds, statuses,
  * match fields — is the whole of what a client may borrow from the domain. No
  * rule ever crosses: the API decides whether a box can be deleted, and this
  * app renders the answer, including the refusal.

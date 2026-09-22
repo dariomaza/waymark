@@ -1,4 +1,4 @@
-import { anItem, aSession, aStorageUnit, withPhoto } from "@ariadna/api-client/testing";
+import { anItem, aSession, aStorageUnit, withPhoto } from "@waymark/api-client/testing";
 
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
 import { fireEvent, renderApp, screen, waitFor } from "../testing/render-app.js";

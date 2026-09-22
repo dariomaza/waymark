@@ -9,8 +9,8 @@
  * TypeScript source with the web client rather than a built package.
  *
  * `moduleNameMapper` drops the `.js` off a relative specifier, which is what
- * `moduleResolution: NodeNext` makes `@ariadna/domain` and
- * `@ariadna/api-client` write inside themselves. Metro is told the same thing
+ * `moduleResolution: NodeNext` makes `@waymark/domain` and
+ * `@waymark/api-client` write inside themselves. Metro is told the same thing
  * in `metro.config.js`; this is the same fact for the test runner.
  *
  * ## There is deliberately no `transformIgnorePatterns` here

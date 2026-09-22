@@ -1,6 +1,6 @@
-import type { SearchResponse } from "@ariadna/api-client";
-import { SearchMatchField } from "@ariadna/domain";
-import type { Translate } from "@ariadna/i18n";
+import type { SearchResponse } from "@waymark/api-client";
+import { SearchMatchField } from "@waymark/domain";
+import type { Translate } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { ItemCard } from "../../items/views/item-card.js";

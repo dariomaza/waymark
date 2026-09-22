@@ -463,7 +463,7 @@ column, no per-user scoping and no roles. Everybody who can log in sees and
 edits the same house.
 
 - **No sign-up, ever.** Accounts are created from a shell on the server with
-  `pnpm --filter @ariadna/api create-user`. The password is never an argument;
+  `pnpm --filter @waymark/api create-user`. The password is never an argument;
   it is prompted for with echo off, or piped on standard input.
 - **Opaque session tokens** in an `Authorization: Bearer` header — no JWT, no
   cookies. 256 random bits, stored as a SHA-256 hash, revoked by deleting the
@@ -566,9 +566,9 @@ about the contract with the API. The one exception is the camera, which is a
 port with a ZXing adapter, because jsdom has no pixels.
 
 ```sh
-pnpm --filter @ariadna/web dev      # http://localhost:5173
-pnpm --filter @ariadna/web test
-pnpm --filter @ariadna/web build
+pnpm --filter @waymark/web dev      # http://localhost:5173
+pnpm --filter @waymark/web test
+pnpm --filter @waymark/web build
 ```
 
 `VITE_ARIADNA_API_URL` says where the API is, as a browser sees it. It
@@ -578,16 +578,16 @@ is the host it was downloaded from. A deployed bundle carries no build-time
 hostname, so one image serves whatever the tunnel is called and moving the
 tunnel is not a rebuild.
 
-Set it for `pnpm --filter @ariadna/web dev`, which serves the app on
+Set it for `pnpm --filter @waymark/web dev`, which serves the app on
 `:5173` against an API on its own port — `http://127.0.0.1:3000` is where
-`pnpm --filter @ariadna/api dev` listens. That is a genuine cross-origin
+`pnpm --filter @waymark/api dev` listens. That is a genuine cross-origin
 browser client, and it is the one caller `ARIADNA_ALLOWED_ORIGINS` is still
 for: put `http://localhost:5173` in it while developing that way.
 
 ## Android app
 
-`apps/mobile`. Expo and React Native, sharing `@ariadna/api-client` and
-`@ariadna/domain` with the web PWA as TypeScript source — no build step
+`apps/mobile`. Expo and React Native, sharing `@waymark/api-client` and
+`@waymark/domain` with the web PWA as TypeScript source — no build step
 between them, which is the whole reason Expo was chosen over Kotlin.
 
 ```
@@ -641,10 +641,10 @@ things are ports because all three are the operating system and none of them
 exists under a test runner: the keystore, the camera, and the photo library.
 
 ```sh
-pnpm --filter @ariadna/mobile start           # Metro, then press `a`
-pnpm --filter @ariadna/mobile test
-pnpm --filter @ariadna/mobile typecheck
-pnpm --filter @ariadna/mobile prebuild        # generates android/ from app.json
+pnpm --filter @waymark/mobile start           # Metro, then press `a`
+pnpm --filter @waymark/mobile test
+pnpm --filter @waymark/mobile typecheck
+pnpm --filter @waymark/mobile prebuild        # generates android/ from app.json
 ```
 
 `EXPO_PUBLIC_ARIADNA_API_URL` says where the API is, as a PHONE sees it. It
@@ -826,7 +826,7 @@ pnpm install
 pnpm test        # domain + contract suites + persistence + HTTP + both clients
 pnpm typecheck
 
-pnpm --filter @ariadna/api prisma:migrate
-pnpm --filter @ariadna/api create-user
-pnpm --filter @ariadna/api dev
+pnpm --filter @waymark/api prisma:migrate
+pnpm --filter @waymark/api create-user
+pnpm --filter @waymark/api dev
 ```

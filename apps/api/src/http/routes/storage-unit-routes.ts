@@ -10,7 +10,7 @@ import {
   type MoveStorageUnit,
   type StorageUnitRepository,
   type UpdateStorageUnit,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
 
 import type { ItemViews } from "../item-views.js";

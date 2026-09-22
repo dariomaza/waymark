@@ -4,7 +4,7 @@ import {
   publicId,
   unitId,
   type StorageUnit,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { StorageUnit as StorageUnitRow } from "@prisma/client";
 
 import { UnknownStorageUnitKind } from "./persistence-errors.js";

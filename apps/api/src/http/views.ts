@@ -6,7 +6,7 @@ import {
   type PhotoId,
   type StorageUnit,
   type StorageUnitSearchResult,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 
 import type { StorageUnitTreeNode } from "./storage-unit-tree.js";
 

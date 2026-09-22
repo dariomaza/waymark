@@ -2,7 +2,7 @@ import type {
   StorageUnit,
   StorageUnitRepository,
   UnitId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { PrismaClient } from "@prisma/client";
 
 import { CorruptStorageUnitHierarchy } from "./persistence-errors.js";

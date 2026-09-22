@@ -1,4 +1,4 @@
-import { loginFailureMessage } from "@ariadna/i18n";
+import { loginFailureMessage } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { useTranslate } from "../app/language-context.js";

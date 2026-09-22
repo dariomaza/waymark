@@ -1,4 +1,4 @@
-import type { Photo, PhotoRepository, StorageUnit } from "@ariadna/domain";
+import type { Photo, PhotoRepository, StorageUnit } from "@waymark/domain";
 
 import { storageUnitWithPhotoView, type StorageUnitWithPhotoView } from "./views.js";
 

@@ -1,5 +1,5 @@
-import { anItem, anItemHit, aSession, aUnitHit } from "@ariadna/api-client/testing";
-import { SearchMatchField } from "@ariadna/domain";
+import { anItem, anItemHit, aSession, aUnitHit } from "@waymark/api-client/testing";
+import { SearchMatchField } from "@waymark/domain";
 
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
 import { fireEvent, renderApp, screen } from "../testing/render-app.js";

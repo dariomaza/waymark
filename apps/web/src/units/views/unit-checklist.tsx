@@ -1,5 +1,5 @@
-import type { FlatUnit } from "@ariadna/api-client";
-import type { UnitId } from "@ariadna/domain";
+import type { FlatUnit } from "@waymark/api-client";
+import type { UnitId } from "@waymark/domain";
 import type { JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";

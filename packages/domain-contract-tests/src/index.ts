@@ -1,9 +1,9 @@
 /**
- * Shared, reusable contract suites for the `@ariadna/domain` repository ports.
+ * Shared, reusable contract suites for the `@waymark/domain` repository ports.
  *
  * This package exists so the suites can be consumed BOTH by the in-memory
- * repositories that ship inside `@ariadna/domain` and by the Prisma adapters in
- * `@ariadna/api`, without `@ariadna/domain` ever gaining a dependency — runtime
+ * repositories that ship inside `@waymark/domain` and by the Prisma adapters in
+ * `@waymark/api`, without `@waymark/domain` ever gaining a dependency — runtime
  * or otherwise — on a test framework. The domain stays a leaf of the dependency
  * graph; the test harness is a consumer of it, like every other adapter.
  */

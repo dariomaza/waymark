@@ -2,7 +2,7 @@ import {
   photoId as toPhotoId,
   PhotoProcessingStatus,
   type PhotoId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { PrismaClient } from "@prisma/client";
 
 /**

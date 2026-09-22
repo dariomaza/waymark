@@ -1,5 +1,5 @@
-import { type ItemView } from "@ariadna/api-client";
-import { describeFailure } from "@ariadna/i18n";
+import { type ItemView } from "@waymark/api-client";
+import { describeFailure } from "@waymark/i18n";
 import type { JSX } from "react";
 import { StyleSheet, Text } from "react-native";
 

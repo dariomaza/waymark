@@ -4,14 +4,14 @@ import {
   detailNumber,
   FailureKind,
   failureKindOf,
-} from "@ariadna/api-client";
+} from "@waymark/api-client";
 
 import { message, type Message } from "./dictionary.js";
 
 /**
  * # What a refusal MEANS, as something that can still be said in two languages
  *
- * These lived in `@ariadna/api-client` and returned finished English
+ * These lived in `@waymark/api-client` and returned finished English
  * sentences. They return a `Message` now — a key and some numbers — and the
  * words are looked up wherever there is a person.
  *

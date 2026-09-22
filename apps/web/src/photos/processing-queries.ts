@@ -1,4 +1,4 @@
-import { queryKeys, type PhotoProcessingResponse } from "@ariadna/api-client";
+import { queryKeys, type PhotoProcessingResponse } from "@waymark/api-client";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";

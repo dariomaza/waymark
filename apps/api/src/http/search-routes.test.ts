@@ -1,4 +1,4 @@
-import { StorageUnitKind } from "@ariadna/domain";
+import { StorageUnitKind } from "@waymark/domain";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 

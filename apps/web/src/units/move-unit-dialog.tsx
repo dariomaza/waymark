@@ -1,6 +1,6 @@
-import { type StorageUnitView, flattenUnits } from "@ariadna/api-client";
-import { cyclicMoveMessage, describeFailure } from "@ariadna/i18n";
-import { unitId } from "@ariadna/domain";
+import { type StorageUnitView, flattenUnits } from "@waymark/api-client";
+import { cyclicMoveMessage, describeFailure } from "@waymark/i18n";
+import { unitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";

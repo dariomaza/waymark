@@ -1,6 +1,6 @@
-import { describeFailure, fieldComplaints } from "@ariadna/i18n";
-import type { StorageUnitKind, UnitId } from "@ariadna/domain";
-import { StorageUnitKind as Kinds } from "@ariadna/domain";
+import { describeFailure, fieldComplaints } from "@waymark/i18n";
+import type { StorageUnitKind, UnitId } from "@waymark/domain";
+import { StorageUnitKind as Kinds } from "@waymark/domain";
 import type { JSX } from "react";
 
 import { Callout } from "../ui/atoms/callout.js";

@@ -1,4 +1,4 @@
-import { unitId, type SearchInventory } from "@ariadna/domain";
+import { unitId, type SearchInventory } from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
 
 import type { ItemViews } from "../item-views.js";

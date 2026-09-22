@@ -1,4 +1,4 @@
-import { aSession } from "@ariadna/api-client/testing";
+import { aSession } from "@waymark/api-client/testing";
 
 import { fireEvent, renderApp, screen } from "../testing/render-app.js";
 import { theApiKnowsTheHouse } from "../testing/the-house.js";

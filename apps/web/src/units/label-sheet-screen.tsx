@@ -1,6 +1,6 @@
-import { type FlatUnit, flattenUnits, subtreeOf } from "@ariadna/api-client";
-import { describeFailure } from "@ariadna/i18n";
-import { unitId, type UnitId } from "@ariadna/domain";
+import { type FlatUnit, flattenUnits, subtreeOf } from "@waymark/api-client";
+import { describeFailure } from "@waymark/i18n";
+import { unitId, type UnitId } from "@waymark/domain";
 import { useCallback, useMemo, useState, type JSX } from "react";
 import { useSearchParams } from "react-router-dom";
 

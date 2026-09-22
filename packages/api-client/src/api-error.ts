@@ -118,7 +118,7 @@ export const detailNumber = (error: unknown, key: string): number | null => {
  * box.
  *
  * This stays here, beside the kinds, while the SENTENCES moved to
- * `@ariadna/i18n`. It is not copy: it is a fact about the failure, it is the
+ * `@waymark/i18n`. It is not copy: it is a fact about the failure, it is the
  * same fact in every language, and a screen uses it to choose a colour.
  */
 export const failureTone = (error: unknown): "blocked" | "wrong" =>

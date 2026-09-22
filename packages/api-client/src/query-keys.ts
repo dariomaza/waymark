@@ -1,4 +1,4 @@
-import type { ItemId, UnitId } from "@ariadna/domain";
+import type { ItemId, UnitId } from "@waymark/domain";
 
 /**
  * Every cache key in one place.

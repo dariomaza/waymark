@@ -1,4 +1,4 @@
-import type { Clock } from "@ariadna/domain";
+import type { Clock } from "@waymark/domain";
 
 export interface RateLimitDecision {
   readonly allowed: boolean;

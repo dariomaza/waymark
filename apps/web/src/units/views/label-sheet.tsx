@@ -1,5 +1,5 @@
-import { STORAGE_UNIT_PATH_SEPARATOR } from "@ariadna/domain";
-import type { FlatUnit } from "@ariadna/api-client";
+import { STORAGE_UNIT_PATH_SEPARATOR } from "@waymark/domain";
+import type { FlatUnit } from "@waymark/api-client";
 import type { JSX } from "react";
 
 import { AuthenticatedImage } from "../../photos/authenticated-image.js";

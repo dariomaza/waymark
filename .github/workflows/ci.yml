@@ -113,7 +113,7 @@ jobs:
       # takes under a tenth of a second, which is a cheap price for never
       # having to debug that message.
       - name: Generate the Prisma client
-        run: pnpm --filter @ariadna/api exec prisma generate
+        run: pnpm --filter @waymark/api exec prisma generate
 
       # `tsc --noEmit` in all six workspace projects.
       - name: Typecheck
@@ -155,7 +155,7 @@ jobs:
       # Which is exactly what happened: `packages/i18n` was written, the whole
       # suite stayed green, `pnpm typecheck` stayed green, `vite build` stayed
       # green on a developer machine — and the image failed to build, because
-      # inside it `@ariadna/i18n` did not exist. Nothing before this step could
+      # inside it `@waymark/i18n` did not exist. Nothing before this step could
       # see it, because every one of them runs against the complete workspace.
       # Running `vite build` in CI would NOT have caught it either.
       #

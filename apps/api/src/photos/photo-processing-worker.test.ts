@@ -10,8 +10,8 @@ import {
   PhotoProcessingStatus,
   type Photo,
   type PhotoId,
-} from "@ariadna/domain";
-import { FakeClock } from "@ariadna/domain/testing";
+} from "@waymark/domain";
+import { FakeClock } from "@waymark/domain/testing";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { PrismaPhotoRepository } from "../persistence/prisma-photo-repository.js";

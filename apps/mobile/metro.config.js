@@ -10,8 +10,8 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
  *
  * Two things are not Metro's defaults and both are load bearing.
  *
- * **It watches the whole workspace.** `@ariadna/api-client` and
- * `@ariadna/domain` are TypeScript SOURCE, not built artifacts — that is what
+ * **It watches the whole workspace.** `@waymark/api-client` and
+ * `@waymark/domain` are TypeScript SOURCE, not built artifacts — that is what
  * lets both clients share them with no build step between — so Metro has to be
  * allowed to read and transform files outside `apps/mobile`. pnpm links them
  * into `apps/mobile/node_modules`, and the roots below are where their real

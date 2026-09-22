@@ -7,7 +7,7 @@ import {
   type ImageProcessor,
   type Photo,
   type PhotoRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 
 import { PermanentProcessingFailure } from "./photo-processing-failures.js";
 import type { ClaimedPhoto, PhotoProcessingQueue } from "./photo-processing-queue.js";

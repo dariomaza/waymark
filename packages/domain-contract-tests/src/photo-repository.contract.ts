@@ -5,7 +5,7 @@ import {
   PhotoProcessingStatus,
   photoId,
   type Photo,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { aPhotoId } from "./builders.js";

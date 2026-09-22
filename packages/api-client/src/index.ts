@@ -25,7 +25,7 @@
  * - **The words.** A refusal's CODE is a contract between two machines and
  *   never changes language; the SENTENCE it becomes is read by a person and
  *   has to change. Those sentences used to live here, in English. They live in
- *   `@ariadna/i18n` now, which depends on this package — the api client knows
+ *   `@waymark/i18n` now, which depends on this package — the api client knows
  *   what the machine said, and that one knows what to tell the person.
  */
 export {
@@ -40,12 +40,12 @@ export {
 } from "./api-error.js";
 export { initialsOf } from "./initials.js";
 export {
-  createAriadnaClient,
+  createWaymarkClient,
   PHOTO_FIELD_NAME,
   type AppendPhoto,
-  type AriadnaClient,
-  type AriadnaClientOptions,
-} from "./ariadna-client.js";
+  type WaymarkClient,
+  type WaymarkClientOptions,
+} from "./waymark-client.js";
 export { movedEarlier, withCoverFirst } from "./photo-order.js";
 export { INVENTORY_ROOTS, queryKeys } from "./query-keys.js";
 export { publicIdFromScannedText } from "./scanned-label.js";

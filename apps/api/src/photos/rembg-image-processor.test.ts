@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { photoId } from "@ariadna/domain";
+import { photoId } from "@waymark/domain";
 import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 

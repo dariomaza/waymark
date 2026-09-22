@@ -23,7 +23,7 @@ import {
   type PublicIdGenerator,
   type SearchRepository,
   type StorageUnitRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import multipart from "@fastify/multipart";

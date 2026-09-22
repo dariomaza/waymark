@@ -1,4 +1,4 @@
-import { StorageUnitKind, createStorageUnit, publicId, unitId, type StorageUnit, type UnitId } from "@ariadna/domain";
+import { StorageUnitKind, createStorageUnit, publicId, unitId, type StorageUnit, type UnitId } from "@waymark/domain";
 import { describe, expect, it } from "vitest";
 
 import { CorruptStorageUnitHierarchy } from "../persistence/persistence-errors.js";

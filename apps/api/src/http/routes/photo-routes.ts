@@ -18,7 +18,7 @@ import {
   type ReorderItemPhotos,
   type SetStorageUnitPhoto,
   type StorageUnitRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
 import { contentTypeOf, formatOfExtension } from "../../photos/image-format.js";

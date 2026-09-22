@@ -1,6 +1,6 @@
-import { type StorageUnitView, flattenUnits } from "@ariadna/api-client";
-import { describeFailure, notEmptyMessage } from "@ariadna/i18n";
-import { unitId, type UnitId } from "@ariadna/domain";
+import { type StorageUnitView, flattenUnits } from "@waymark/api-client";
+import { describeFailure, notEmptyMessage } from "@waymark/i18n";
+import { unitId, type UnitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 

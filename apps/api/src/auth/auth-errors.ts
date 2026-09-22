@@ -1,6 +1,6 @@
 /**
  * Base class for every authentication failure raised on purpose, mirroring
- * `DomainError` in `@ariadna/domain`: one `instanceof` tells a refused request
+ * `DomainError` in `@waymark/domain`: one `instanceof` tells a refused request
  * from a crash.
  */
 export abstract class AuthError extends Error {

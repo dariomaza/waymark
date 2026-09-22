@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import { publicId, type PublicId, type PublicIdGenerator } from "@ariadna/domain";
+import { publicId, type PublicId, type PublicIdGenerator } from "@waymark/domain";
 
 /**
  * Crockford's Base32 alphabet: the digits plus the upper case letters, minus

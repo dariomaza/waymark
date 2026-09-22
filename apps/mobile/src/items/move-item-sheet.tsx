@@ -1,6 +1,6 @@
-import { type ItemView, flattenUnits } from "@ariadna/api-client";
-import { describeFailure, moveRefusedMessage } from "@ariadna/i18n";
-import { unitId } from "@ariadna/domain";
+import { type ItemView, flattenUnits } from "@waymark/api-client";
+import { describeFailure, moveRefusedMessage } from "@waymark/i18n";
+import { unitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";

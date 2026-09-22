@@ -6,7 +6,7 @@ import {
   unitId,
   type StorageUnit,
   type UnitId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { CorruptStorageUnitHierarchy } from "./persistence-errors.js";

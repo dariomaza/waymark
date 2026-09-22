@@ -1,5 +1,5 @@
-import { describeFailure, fieldComplaints } from "@ariadna/i18n";
-import type { UnitId } from "@ariadna/domain";
+import { describeFailure, fieldComplaints } from "@waymark/i18n";
+import type { UnitId } from "@waymark/domain";
 import type { JSX } from "react";
 
 import { Sheet } from "../ui/organisms/sheet.js";

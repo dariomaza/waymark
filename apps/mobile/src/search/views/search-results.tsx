@@ -1,6 +1,6 @@
-import type { ItemSearchResultView, SearchResponse } from "@ariadna/api-client";
-import { SearchMatchField } from "@ariadna/domain";
-import type { Translate } from "@ariadna/i18n";
+import type { ItemSearchResultView, SearchResponse } from "@waymark/api-client";
+import { SearchMatchField } from "@waymark/domain";
+import type { Translate } from "@waymark/i18n";
 import type { JSX, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 

@@ -1,5 +1,5 @@
-import { SearchMatchField } from "@ariadna/domain";
-import type { MessageKey, Translate } from "@ariadna/i18n";
+import { SearchMatchField } from "@waymark/domain";
+import type { MessageKey, Translate } from "@waymark/i18n";
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 

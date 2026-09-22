@@ -1,13 +1,13 @@
 import {
-  createAriadnaClient,
-  type AriadnaClient,
-  type AriadnaClientOptions,
-} from "@ariadna/api-client";
+  createWaymarkClient,
+  type WaymarkClient,
+  type WaymarkClientOptions,
+} from "@waymark/api-client";
 
 /**
  * # The browser's half of the shared client
  *
- * `@ariadna/api-client` holds everything that is true of the API whoever is
+ * `@waymark/api-client` holds everything that is true of the API whoever is
  * asking. It leaves exactly one thing open, and this is it: what a photo IS on
  * its way up.
  *
@@ -20,12 +20,12 @@ import {
  * Those are not the same call, so the shared client does not pretend they are.
  * Four lines here, four lines there, and one HTTP layer.
  */
-export type WebApiClient = AriadnaClient<File>;
+export type WebApiClient = WaymarkClient<File>;
 
-export type WebApiClientOptions = Omit<AriadnaClientOptions<File>, "appendPhoto">;
+export type WebApiClientOptions = Omit<WaymarkClientOptions<File>, "appendPhoto">;
 
 export const createWebApiClient = (options: WebApiClientOptions): WebApiClient =>
-  createAriadnaClient<File>({
+  createWaymarkClient<File>({
     ...options,
     appendPhoto: (form, field, file) => {
       form.append(field, file, file.name);

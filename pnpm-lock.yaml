@@ -10,7 +10,7 @@ importers:
 
   apps/api:
     dependencies:
-      '@ariadna/domain':
+      '@waymark/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@fastify/cors':
@@ -44,7 +44,7 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
     devDependencies:
-      '@ariadna/domain-contract-tests':
+      '@waymark/domain-contract-tests':
         specifier: workspace:*
         version: link:../../packages/domain-contract-tests
       '@types/node':
@@ -68,13 +68,13 @@ importers:
 
   apps/mobile:
     dependencies:
-      '@ariadna/api-client':
+      '@waymark/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
-      '@ariadna/domain':
+      '@waymark/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@ariadna/i18n':
+      '@waymark/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
       '@react-navigation/bottom-tabs':
@@ -150,13 +150,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@ariadna/api-client':
+      '@waymark/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
-      '@ariadna/domain':
+      '@waymark/domain':
         specifier: workspace:*
         version: link:../../packages/domain
-      '@ariadna/i18n':
+      '@waymark/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
       '@tanstack/react-query':
@@ -226,7 +226,7 @@ importers:
 
   packages/api-client:
     dependencies:
-      '@ariadna/domain':
+      '@waymark/domain':
         specifier: workspace:*
         version: link:../domain
     devDependencies:
@@ -257,7 +257,7 @@ importers:
 
   packages/domain-contract-tests:
     dependencies:
-      '@ariadna/domain':
+      '@waymark/domain':
         specifier: workspace:*
         version: link:../domain
     devDependencies:
@@ -273,10 +273,10 @@ importers:
 
   packages/i18n:
     dependencies:
-      '@ariadna/api-client':
+      '@waymark/api-client':
         specifier: workspace:*
         version: link:../api-client
-      '@ariadna/domain':
+      '@waymark/domain':
         specifier: workspace:*
         version: link:../domain
     devDependencies:

@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
+import { aSession, aStorageUnit, aTree } from "@waymark/api-client/testing";
 
 import { sessionStore } from "../auth/session-store.js";
 import { languageStore } from "./language.js";

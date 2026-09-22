@@ -1,4 +1,4 @@
-import type { PhotoId } from "@ariadna/domain";
+import type { PhotoId } from "@waymark/domain";
 
 /**
  * ADR 9's cover rule, as the only two edits either client makes to an order.

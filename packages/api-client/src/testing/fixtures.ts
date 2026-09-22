@@ -6,7 +6,7 @@ import {
   SearchMatchField,
   StorageUnitKind,
   unitId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 
 import type {
   ItemSearchResultView,

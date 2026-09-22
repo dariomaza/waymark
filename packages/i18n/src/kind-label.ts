@@ -1,4 +1,4 @@
-import { StorageUnitKind } from "@ariadna/domain";
+import { StorageUnitKind } from "@waymark/domain";
 
 import type { MessageKey } from "./dictionary.js";
 import type { Translate } from "./translate.js";

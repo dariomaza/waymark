@@ -1,4 +1,4 @@
-import type { ItemId } from "@ariadna/domain";
+import type { ItemId } from "@waymark/domain";
 import { useCallback, useState } from "react";
 
 export interface ItemSelection {

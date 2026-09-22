@@ -1,4 +1,4 @@
-import type { FlatUnit } from "@ariadna/api-client";
+import type { FlatUnit } from "@waymark/api-client";
 
 import type { SelectOption } from "../../ui/atoms/select-field.js";
 

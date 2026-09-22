@@ -1,4 +1,4 @@
-import type { PublicId, UnitId } from "@ariadna/domain";
+import type { PublicId, UnitId } from "@waymark/domain";
 
 import type { StorageUnitTreeView, StorageUnitView } from "./contract.js";
 

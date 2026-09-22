@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { PhotoProcessingStatus, StorageUnitKind } from "@ariadna/domain";
+import { PhotoProcessingStatus, StorageUnitKind } from "@waymark/domain";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
 import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

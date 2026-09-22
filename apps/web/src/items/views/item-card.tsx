@@ -1,7 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-import { initialsOf } from "@ariadna/api-client";
+import { initialsOf } from "@waymark/api-client";
 
 import "./item-card.css";
 

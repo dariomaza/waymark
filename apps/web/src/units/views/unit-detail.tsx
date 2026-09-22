@@ -1,5 +1,5 @@
-import { type ItemView, type StorageUnitView } from "@ariadna/api-client";
-import { kindLabel } from "@ariadna/i18n";
+import { type ItemView, type StorageUnitView } from "@waymark/api-client";
+import { kindLabel } from "@waymark/i18n";
 import type { JSX, ReactNode } from "react";
 
 import { ItemCard } from "../../items/views/item-card.js";

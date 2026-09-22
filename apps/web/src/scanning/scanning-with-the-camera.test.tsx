@@ -1,11 +1,11 @@
-import { publicId } from "@ariadna/domain";
+import { publicId } from "@waymark/domain";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
-import { publicIdFromScannedText } from "@ariadna/api-client";
+import { aSession, aStorageUnit, aTree, withPhoto } from "@waymark/api-client/testing";
+import { publicIdFromScannedText } from "@waymark/api-client";
 
 import { renderApp, screen, userEvent } from "../testing/render-app.js";
 import { CameraUnavailable, type QrScanner } from "./qr-scanner.js";

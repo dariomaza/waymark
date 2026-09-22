@@ -1,4 +1,4 @@
-import { DomainError, type UnitId } from "@ariadna/domain";
+import { DomainError, type UnitId } from "@waymark/domain";
 
 /**
  * Raised when the stored storage unit tree is not a tree.

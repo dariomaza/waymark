@@ -8,7 +8,7 @@ import type { SessionStore } from "../auth/session-store.js";
  * real device: a phone on the same wifi needs the machine's LAN address, and a
  * phone anywhere else needs the tunnel's public hostname. It is read from the
  * environment at build time rather than guessed, and the default is the one
- * that works with `pnpm --filter @ariadna/api dev` under an emulator.
+ * that works with `pnpm --filter @waymark/api dev` under an emulator.
  *
  * `EXPO_PUBLIC_` is not a secret prefix: everything under it is baked into the
  * bundle. That is correct here — the address of the API is not a credential,

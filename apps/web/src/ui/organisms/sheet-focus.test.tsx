@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../../auth/session-store.js";
 import { apiServer, API_URL } from "../../testing/api-server.js";
-import { aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
+import { aSession, aStorageUnit, aTree, withPhoto } from "@waymark/api-client/testing";
 import { renderApp, screen, userEvent, waitFor, within } from "../../testing/render-app.js";
 
 /**

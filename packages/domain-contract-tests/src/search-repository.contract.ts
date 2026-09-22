@@ -3,7 +3,7 @@ import {
   type ItemRepository,
   type SearchRepository,
   type StorageUnitRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { A_LATER_MOMENT, aStorageUnit, anItem } from "./builders.js";

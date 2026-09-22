@@ -1,5 +1,5 @@
-import { queryKeys, type SearchResponse } from "@ariadna/api-client";
-import type { UnitId } from "@ariadna/domain";
+import { queryKeys, type SearchResponse } from "@waymark/api-client";
+import type { UnitId } from "@waymark/domain";
 import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";

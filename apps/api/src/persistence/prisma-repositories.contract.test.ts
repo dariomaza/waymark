@@ -1,4 +1,4 @@
-import type { UnitId } from "@ariadna/domain";
+import type { UnitId } from "@waymark/domain";
 import {
   domainUseCaseContract,
   itemRepositoryContract,
@@ -10,7 +10,7 @@ import {
   type PhotoRepositoryContext,
   type SearchRepositoryContext,
   type StorageUnitRepositoryContext,
-} from "@ariadna/domain-contract-tests";
+} from "@waymark/domain-contract-tests";
 import { afterAll, beforeAll } from "vitest";
 
 import { PrismaItemRepository } from "./prisma-item-repository.js";

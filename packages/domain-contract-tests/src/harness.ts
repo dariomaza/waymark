@@ -4,7 +4,7 @@ import type {
   SearchRepository,
   StorageUnitRepository,
   UnitId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 
 /**
  * Everything a `StorageUnitRepository` contract run needs.

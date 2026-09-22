@@ -1,4 +1,4 @@
-import { publicIdFromScannedText } from "@ariadna/api-client";
+import { publicIdFromScannedText } from "@waymark/api-client";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState, type JSX } from "react";

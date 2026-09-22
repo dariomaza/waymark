@@ -1,4 +1,4 @@
-import { unitId } from "@ariadna/domain";
+import { unitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
 import { useParams } from "react-router-dom";
 

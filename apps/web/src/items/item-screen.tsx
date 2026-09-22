@@ -1,4 +1,4 @@
-import { itemId } from "@ariadna/domain";
+import { itemId } from "@waymark/domain";
 import type { JSX } from "react";
 import { useParams } from "react-router-dom";
 

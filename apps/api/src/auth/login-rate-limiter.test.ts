@@ -1,4 +1,4 @@
-import { FakeClock } from "@ariadna/domain/testing";
+import { FakeClock } from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { FixedWindowRateLimiter } from "./login-rate-limiter.js";

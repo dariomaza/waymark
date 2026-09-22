@@ -1,4 +1,4 @@
-import type { Item, SearchRepository, StorageUnit } from "@ariadna/domain";
+import type { Item, SearchRepository, StorageUnit } from "@waymark/domain";
 import type { PrismaClient } from "@prisma/client";
 
 import { ITEM_RELATIONS, toDomainItem } from "./item-mapper.js";

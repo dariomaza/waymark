@@ -8,7 +8,7 @@ import {
   StorageUnitNotFound,
   TooManyItemPhotos,
   type DomainError,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 
 import {
   CorruptStorageUnitHierarchy,

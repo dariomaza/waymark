@@ -1,5 +1,5 @@
-import { aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
-import type { StorageUnitTreeView, StorageUnitView } from "@ariadna/api-client";
+import { aSession, aStorageUnit, aTree } from "@waymark/api-client/testing";
+import type { StorageUnitTreeView, StorageUnitView } from "@waymark/api-client";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

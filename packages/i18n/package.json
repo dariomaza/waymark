@@ -1,5 +1,5 @@
 {
-  "name": "@ariadna/i18n",
+  "name": "@waymark/i18n",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,8 +14,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ariadna/api-client": "workspace:*",
-    "@ariadna/domain": "workspace:*"
+    "@waymark/api-client": "workspace:*",
+    "@waymark/domain": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

@@ -2,10 +2,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { FakeClock } from "@ariadna/domain/testing";
+import { FakeClock } from "@waymark/domain/testing";
 import type { FastifyInstance } from "fastify";
 
-import type { PhotoId } from "@ariadna/domain";
+import type { PhotoId } from "@waymark/domain";
 
 import { UuidIdGenerator } from "../../adapters/uuid-id-generator.js";
 import { Base32PublicIdGenerator } from "../../adapters/public-id-generator.js";

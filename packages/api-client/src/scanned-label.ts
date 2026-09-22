@@ -1,4 +1,4 @@
-import { publicId, type PublicId } from "@ariadna/domain";
+import { publicId, type PublicId } from "@waymark/domain";
 
 /**
  * # Reading the address printed on a box

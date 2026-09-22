@@ -10,7 +10,7 @@ import {
   type ListItems,
   type MoveItems,
   type UpdateItem,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
 
 import type { PhotoRelease } from "../../photos/photo-release.js";

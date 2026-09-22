@@ -1,4 +1,4 @@
-import type { Clock } from "@ariadna/domain";
+import type { Clock } from "@waymark/domain";
 import type { PrismaClient } from "@prisma/client";
 
 import { Base32PublicIdGenerator } from "./adapters/public-id-generator.js";

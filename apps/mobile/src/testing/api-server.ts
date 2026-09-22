@@ -4,7 +4,7 @@ import { FetchInterceptor } from "@mswjs/interceptors/fetch";
  * # The network is stubbed at the HTTP boundary and nowhere else
  *
  * Nothing in `src` is ever mocked. The tests run the real screens, the real
- * query cache and the real `@ariadna/api-client` — the same module the web app
+ * query cache and the real `@waymark/api-client` — the same module the web app
  * runs — and this answers the requests the way `apps/api` would. A test that
  * replaced the app's own client would prove the replacement was called and say
  * nothing about the contract with the API.

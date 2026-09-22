@@ -1,4 +1,4 @@
-import type { ItemId, PhotoId, UnitId } from "@ariadna/domain";
+import type { ItemId, PhotoId, UnitId } from "@waymark/domain";
 
 import { ApiError, OFFLINE_STATUS } from "./api-error.js";
 import type {
@@ -55,7 +55,7 @@ export type AppendPhoto<TFile> = (
   file: TFile,
 ) => void;
 
-export interface AriadnaClientOptions<TFile> {
+export interface WaymarkClientOptions<TFile> {
   /** Absolute; a client and the API never live on the same origin. */
   readonly baseUrl: string;
   /** Read per request, so a refreshed session takes effect immediately. */
@@ -85,7 +85,7 @@ export interface AriadnaClientOptions<TFile> {
  * `TFile` is what the platform calls a photo on its way up. It is the only
  * thing in this contract that is not the same on both.
  */
-export interface AriadnaClient<TFile> {
+export interface WaymarkClient<TFile> {
   login(credentials: Credentials): Promise<SessionView>;
   me(): Promise<{ readonly user: UserView }>;
   logout(): Promise<void>;
@@ -161,9 +161,9 @@ export interface AriadnaClient<TFile> {
 
 const JSON_HEADERS = { "content-type": "application/json" } as const;
 
-export const createAriadnaClient = <TFile>(
-  options: AriadnaClientOptions<TFile>,
-): AriadnaClient<TFile> => {
+export const createWaymarkClient = <TFile>(
+  options: WaymarkClientOptions<TFile>,
+): WaymarkClient<TFile> => {
   const url = (path: string): string => `${options.baseUrl}${path}`;
 
   const send = async (path: string, init: RequestInit = {}): Promise<Response> => {

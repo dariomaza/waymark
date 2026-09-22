@@ -1,6 +1,6 @@
-import { type ItemView, detailNumber, movedEarlier, withCoverFirst } from "@ariadna/api-client";
-import { describeFailure, tooManyPhotosMessage } from "@ariadna/i18n";
-import { MAX_ITEM_PHOTOS } from "@ariadna/domain";
+import { type ItemView, detailNumber, movedEarlier, withCoverFirst } from "@waymark/api-client";
+import { describeFailure, tooManyPhotosMessage } from "@waymark/i18n";
+import { MAX_ITEM_PHOTOS } from "@waymark/domain";
 import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 

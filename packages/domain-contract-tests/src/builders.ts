@@ -11,7 +11,7 @@ import {
   type PublicId,
   type StorageUnit,
   type UnitId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 
 /** A fixed instant with a non-zero millisecond part, so truncation shows up. */
 export const A_MOMENT = new Date("2026-03-14T09:26:53.589Z");

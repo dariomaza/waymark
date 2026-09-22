@@ -1,4 +1,4 @@
-import type { Credentials } from "@ariadna/api-client";
+import type { Credentials } from "@waymark/api-client";
 import { useState, type FormEvent, type JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";

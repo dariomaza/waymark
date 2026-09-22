@@ -1,4 +1,4 @@
-import * as domain from "@ariadna/domain";
+import * as domain from "@waymark/domain";
 import {
   CyclicStorageUnitMove,
   DomainError,
@@ -12,7 +12,7 @@ import {
   itemId,
   photoId,
   unitId,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import { describe, expect, it } from "vitest";
 
 import * as persistenceErrors from "../persistence/persistence-errors.js";

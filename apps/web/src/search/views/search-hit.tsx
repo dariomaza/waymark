@@ -1,9 +1,9 @@
-import { SearchMatchField } from "@ariadna/domain";
+import { SearchMatchField } from "@waymark/domain";
 import { useId, type JSX } from "react";
 import { Link } from "react-router-dom";
 
 import "./search-hit.css";
-import type { MessageKey } from "@ariadna/i18n";
+import type { MessageKey } from "@waymark/i18n";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface SearchHitProps {

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import type { IdGenerator } from "@ariadna/domain";
+import type { IdGenerator } from "@waymark/domain";
 
 /**
  * Internal identifiers, from the platform's own CSPRNG.

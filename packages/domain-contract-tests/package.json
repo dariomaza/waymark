@@ -1,5 +1,5 @@
 {
-  "name": "@ariadna/domain-contract-tests",
+  "name": "@waymark/domain-contract-tests",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ariadna/domain": "workspace:*"
+    "@waymark/domain": "workspace:*"
   },
   "peerDependencies": {
     "vitest": "^3.2.4"

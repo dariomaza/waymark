@@ -1,4 +1,4 @@
-import type { SessionView } from "@ariadna/api-client";
+import type { SessionView } from "@waymark/api-client";
 
 import type { SecureStorage } from "./secure-storage.js";
 

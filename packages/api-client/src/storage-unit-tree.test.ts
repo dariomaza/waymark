@@ -1,4 +1,4 @@
-import { publicId, unitId } from "@ariadna/domain";
+import { publicId, unitId } from "@waymark/domain";
 import { describe, expect, it } from "vitest";
 
 import {

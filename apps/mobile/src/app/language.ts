@@ -1,4 +1,4 @@
-import { DEFAULT_LANGUAGE, isLanguage, preferredLanguage, type Language } from "@ariadna/i18n";
+import { DEFAULT_LANGUAGE, isLanguage, preferredLanguage, type Language } from "@waymark/i18n";
 
 import type { SecureStorage } from "../auth/secure-storage.js";
 
@@ -6,7 +6,7 @@ import type { SecureStorage } from "../auth/secure-storage.js";
  * # Where the phone keeps the one preference this app has
  *
  * The language list, the names and the translations themselves live in
- * `@ariadna/i18n`, shared with the web client. What stays here is the only
+ * `@waymark/i18n`, shared with the web client. What stays here is the only
  * part that is genuinely the phone's: the keystore, and the phone's own idea
  * of what language its owner reads.
  */

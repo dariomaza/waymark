@@ -1,4 +1,4 @@
-import { INVENTORY_ROOTS } from "@ariadna/api-client";
+import { INVENTORY_ROOTS } from "@waymark/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 

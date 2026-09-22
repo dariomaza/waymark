@@ -1,4 +1,4 @@
-import { PhotoProcessingStatus } from "@ariadna/domain";
+import { PhotoProcessingStatus } from "@waymark/domain";
 
 import { message, type Message } from "./dictionary.js";
 

@@ -1,4 +1,4 @@
-import { unitId, STORAGE_UNIT_PATH_SEPARATOR } from "@ariadna/domain";
+import { unitId, STORAGE_UNIT_PATH_SEPARATOR } from "@waymark/domain";
 import type { JSX } from "react";
 import { Link, useParams } from "react-router-dom";
 

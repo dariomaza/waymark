@@ -1,10 +1,10 @@
-import { itemId, photoId, PhotoProcessingStatus, unitId } from "@ariadna/domain";
+import { itemId, photoId, PhotoProcessingStatus, unitId } from "@waymark/domain";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ApiError, FailureKind, failureKindOf } from "./api-error.js";
-import { createAriadnaClient, PHOTO_FIELD_NAME } from "./ariadna-client.js";
+import { createWaymarkClient, PHOTO_FIELD_NAME } from "./waymark-client.js";
 import { anItem, aPhoto, aStorageUnit } from "./testing/fixtures.js";
 
 /**
@@ -31,9 +31,9 @@ afterAll(() => {
 
 /** What a browser hands over: a `File`, appended with its own name. */
 const clientWith = (
-  overrides: Partial<Parameters<typeof createAriadnaClient<File>>[0]> = {},
+  overrides: Partial<Parameters<typeof createWaymarkClient<File>>[0]> = {},
 ) =>
-  createAriadnaClient<File>({
+  createWaymarkClient<File>({
     baseUrl: API_URL,
     token: () => "a-live-token",
     appendPhoto: (form, field, file) => {
@@ -319,7 +319,7 @@ describe("the Ariadna API client", () => {
     );
 
     const nativeAsset = { uri: "file:///tmp/box.jpg", name: "box.jpg", type: "image/jpeg" };
-    const client = createAriadnaClient<typeof nativeAsset>({
+    const client = createWaymarkClient<typeof nativeAsset>({
       baseUrl: API_URL,
       token: () => "a-live-token",
       appendPhoto: (form, field, asset) => {

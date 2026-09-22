@@ -1,4 +1,4 @@
-import { anItem, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
+import { anItem, aStorageUnit, aTree, withPhoto } from "@waymark/api-client/testing";
 
 import { API_URL, apiServer, http, HttpResponse } from "./api-server.js";
 

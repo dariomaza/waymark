@@ -1,4 +1,4 @@
-import type { Clock, IdGenerator } from "@ariadna/domain";
+import type { Clock, IdGenerator } from "@waymark/domain";
 
 import { UsernameAlreadyTaken } from "./auth-errors.js";
 import type { PasswordHasher } from "./password-hasher.js";

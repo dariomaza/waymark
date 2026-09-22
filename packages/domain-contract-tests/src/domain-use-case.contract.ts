@@ -22,12 +22,12 @@ import {
   type ItemRepository,
   type StorageUnit,
   type StorageUnitRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import {
   FakeClock,
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
-} from "@ariadna/domain/testing";
+} from "@waymark/domain/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { A_MOMENT, aPhotoId, sortedIds } from "./builders.js";

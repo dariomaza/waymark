@@ -1,10 +1,10 @@
-import { DEFAULT_LANGUAGE, isLanguage, preferredLanguage, type Language } from "@ariadna/i18n";
+import { DEFAULT_LANGUAGE, isLanguage, preferredLanguage, type Language } from "@waymark/i18n";
 
 /**
  * # Where the browser keeps the one preference this app has
  *
  * The language list, the names and the translations themselves live in
- * `@ariadna/i18n`, shared with the phone. What stays here is the only part
+ * `@waymark/i18n`, shared with the phone. What stays here is the only part
  * that is genuinely the browser's: `localStorage`, and what to do when there
  * is nothing in it.
  */

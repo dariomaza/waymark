@@ -1,5 +1,5 @@
 /**
- * Test-only surface of `@ariadna/domain`, reachable as `@ariadna/domain/testing`.
+ * Test-only surface of `@waymark/domain`, reachable as `@waymark/domain/testing`.
  *
  * The in-memory repositories and the deterministic clock/id generators are real,
  * working implementations of the ports. They are the reference against which

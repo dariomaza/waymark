@@ -2,7 +2,7 @@ import {
   StorageUnitNotFound,
   unitId,
   type StorageUnitRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
 
 import {

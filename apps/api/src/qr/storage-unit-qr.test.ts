@@ -1,4 +1,4 @@
-import { publicId } from "@ariadna/domain";
+import { publicId } from "@waymark/domain";
 import QRCode from "qrcode";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";

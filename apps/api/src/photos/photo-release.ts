@@ -1,4 +1,4 @@
-import type { PhotoId, PhotoRepository } from "@ariadna/domain";
+import type { PhotoId, PhotoRepository } from "@waymark/domain";
 
 import type { PhotoFileStore } from "./photo-file-store.js";
 

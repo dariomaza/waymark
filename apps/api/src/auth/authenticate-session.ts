@@ -1,4 +1,4 @@
-import type { Clock } from "@ariadna/domain";
+import type { Clock } from "@waymark/domain";
 
 import { InvalidSession } from "./auth-errors.js";
 import {

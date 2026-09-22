@@ -1,5 +1,5 @@
 /**
- * `@ariadna/api` — the adapters that implement the `@ariadna/domain` ports,
+ * `@waymark/api` — the adapters that implement the `@waymark/domain` ports,
  * and the HTTP layer that exposes the use cases.
  *
  * Background removal lives here too, behind the `ImageProcessor` port: the

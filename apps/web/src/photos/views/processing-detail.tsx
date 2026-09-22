@@ -1,6 +1,6 @@
-import type { PhotoProcessingResponse } from "@ariadna/api-client";
-import { PhotoProcessingStatus } from "@ariadna/domain";
-import type { Translate } from "@ariadna/i18n";
+import type { PhotoProcessingResponse } from "@waymark/api-client";
+import { PhotoProcessingStatus } from "@waymark/domain";
+import type { Translate } from "@waymark/i18n";
 import type { JSX, ReactNode } from "react";
 
 import { Callout } from "../../ui/atoms/callout.js";

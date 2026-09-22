@@ -1,4 +1,4 @@
-import type { StorageUnitView } from "@ariadna/api-client";
+import type { StorageUnitView } from "@waymark/api-client";
 import { useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router-dom";
 

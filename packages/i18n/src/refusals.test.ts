@@ -1,4 +1,4 @@
-import { ApiError, OFFLINE_STATUS } from "@ariadna/api-client";
+import { ApiError, OFFLINE_STATUS } from "@waymark/api-client";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -26,7 +26,7 @@ const notEmpty = (items: number, units: number): ApiError =>
  * # A refusal decided once, said in two languages
  *
  * These functions used to return finished English sentences from
- * `@ariadna/api-client`. They return a `Message` now — the key and the
+ * `@waymark/api-client`. They return a `Message` now — the key and the
  * numbers — because WHICH refusal happened is a fact about the API and has
  * nothing to do with what is on screen, while the words are the opposite.
  *

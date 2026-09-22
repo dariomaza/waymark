@@ -1,4 +1,4 @@
-import { unitId, type StorageUnit, type UnitId } from "@ariadna/domain";
+import { unitId, type StorageUnit, type UnitId } from "@waymark/domain";
 
 import { CorruptStorageUnitHierarchy } from "../persistence/persistence-errors.js";
 

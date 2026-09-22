@@ -1,4 +1,4 @@
-import { initialsOf } from "@ariadna/api-client";
+import { initialsOf } from "@waymark/api-client";
 import type { JSX, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 

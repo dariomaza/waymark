@@ -1,5 +1,5 @@
-import { queryKeys } from "@ariadna/api-client";
-import { unitId } from "@ariadna/domain";
+import { queryKeys } from "@waymark/api-client";
+import { unitId } from "@waymark/domain";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";

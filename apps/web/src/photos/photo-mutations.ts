@@ -1,4 +1,4 @@
-import { queryKeys } from "@ariadna/api-client";
+import { queryKeys } from "@waymark/api-client";
 import type {
   DetachedItemPhotoResponse,
   DetachedStorageUnitPhotoResponse,
@@ -7,8 +7,8 @@ import type {
   RequeuedPhotoResponse,
   RequeuedPhotosResponse,
   StorageUnitPhotoResponse,
-} from "@ariadna/api-client";
-import type { ItemId, PhotoId, UnitId } from "@ariadna/domain";
+} from "@waymark/api-client";
+import type { ItemId, PhotoId, UnitId } from "@waymark/domain";
 import {
   useMutation,
   useQueryClient,

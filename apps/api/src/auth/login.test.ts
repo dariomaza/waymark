@@ -1,4 +1,4 @@
-import { FakeClock } from "@ariadna/domain/testing";
+import { FakeClock } from "@waymark/domain/testing";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { UuidIdGenerator } from "../adapters/uuid-id-generator.js";

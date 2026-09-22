@@ -1,4 +1,4 @@
-import type { ImageProcessor, PhotoId } from "@ariadna/domain";
+import type { ImageProcessor, PhotoId } from "@waymark/domain";
 import sharp from "sharp";
 
 import {

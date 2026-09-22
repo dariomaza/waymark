@@ -2,8 +2,8 @@ import { chmod, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createPhoto, markPhotoProcessed, photoId, type Photo } from "@ariadna/domain";
-import { InMemoryPhotoRepository } from "@ariadna/domain/testing";
+import { createPhoto, markPhotoProcessed, photoId, type Photo } from "@waymark/domain";
+import { InMemoryPhotoRepository } from "@waymark/domain/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { PhotoFileStore } from "./photo-file-store.js";

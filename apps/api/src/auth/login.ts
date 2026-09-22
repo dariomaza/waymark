@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import type { Clock, IdGenerator } from "@ariadna/domain";
+import type { Clock, IdGenerator } from "@waymark/domain";
 
 import { InvalidCredentials, TooManyLoginAttempts } from "./auth-errors.js";
 import type { RateLimiter } from "./login-rate-limiter.js";

@@ -1,12 +1,12 @@
-import { SearchMatchField } from "@ariadna/domain";
+import { SearchMatchField } from "@waymark/domain";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { languageStore } from "../app/language.js";
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { anItem, anItemHit, aSession, aStorageUnit, aUnitHit } from "@ariadna/api-client/testing";
-import type { SearchResponse } from "@ariadna/api-client";
+import { anItem, anItemHit, aSession, aStorageUnit, aUnitHit } from "@waymark/api-client/testing";
+import type { SearchResponse } from "@waymark/api-client";
 
 import { renderApp, screen, userEvent, within } from "../testing/render-app.js";
 

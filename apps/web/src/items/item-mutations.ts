@@ -4,8 +4,8 @@ import type {
   MovedItemsResponse,
   ReleasedPhotosResponse,
   UpdateItemInput,
-} from "@ariadna/api-client";
-import type { ItemId, UnitId } from "@ariadna/domain";
+} from "@waymark/api-client";
+import type { ItemId, UnitId } from "@waymark/domain";
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";

@@ -1,4 +1,4 @@
-import { FailureKind, failureKindOf, queryKeys } from "@ariadna/api-client";
+import { FailureKind, failureKindOf, queryKeys } from "@waymark/api-client";
 import {
   NavigationContainer,
   type NavigationState,

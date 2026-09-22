@@ -1,4 +1,4 @@
-import { photoId } from "@ariadna/domain";
+import { photoId } from "@waymark/domain";
 import { describe, expect, it } from "vitest";
 
 import { movedEarlier, withCoverFirst } from "./photo-order.js";

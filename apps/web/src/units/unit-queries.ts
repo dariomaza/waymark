@@ -2,8 +2,8 @@ import {
   queryKeys,
   type StorageUnitDetailResponse,
   type StorageUnitTreeResponse,
-} from "@ariadna/api-client";
-import type { UnitId } from "@ariadna/domain";
+} from "@waymark/api-client";
+import type { UnitId } from "@waymark/domain";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";

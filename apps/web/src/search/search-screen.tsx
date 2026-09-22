@@ -1,5 +1,5 @@
-import { findById } from "@ariadna/api-client";
-import { unitId } from "@ariadna/domain";
+import { findById } from "@waymark/api-client";
+import { unitId } from "@waymark/domain";
 import { useEffect, useState, type JSX } from "react";
 import { useSearchParams } from "react-router-dom";
 

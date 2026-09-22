@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import * as domain from "./index.js";
 
-describe("@ariadna/domain public surface", () => {
+describe("@waymark/domain public surface", () => {
   it("exposes every use case", () => {
     expect(Object.keys(domain)).toEqual(
       expect.arrayContaining([

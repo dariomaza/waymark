@@ -1,4 +1,4 @@
-import { LANGUAGE_NAMES, LANGUAGES } from "@ariadna/i18n";
+import { LANGUAGE_NAMES, LANGUAGES } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { useLanguageChoice, useTranslate } from "./language-context.js";

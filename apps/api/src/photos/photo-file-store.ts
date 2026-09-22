@@ -3,7 +3,7 @@ import { createReadStream } from "node:fs";
 import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 
-import type { PhotoId } from "@ariadna/domain";
+import type { PhotoId } from "@waymark/domain";
 
 import { extensionOf, type SupportedImageFormat } from "./image-format.js";
 

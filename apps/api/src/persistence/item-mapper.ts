@@ -1,4 +1,4 @@
-import { itemId, photoId, unitId, type Item } from "@ariadna/domain";
+import { itemId, photoId, unitId, type Item } from "@waymark/domain";
 import type {
   Item as ItemRow,
   ItemPhoto as ItemPhotoRow,

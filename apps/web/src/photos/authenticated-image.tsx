@@ -1,4 +1,4 @@
-import { queryKeys } from "@ariadna/api-client";
+import { queryKeys } from "@waymark/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type JSX } from "react";
 

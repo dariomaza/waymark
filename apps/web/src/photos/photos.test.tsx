@@ -1,11 +1,11 @@
-import type { PhotoView } from "@ariadna/api-client";
-import { PhotoProcessingStatus } from "@ariadna/domain";
+import type { PhotoView } from "@waymark/api-client";
+import { PhotoProcessingStatus } from "@waymark/domain";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { anItem, aPhoto, aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
+import { anItem, aPhoto, aSession, aStorageUnit, aTree, withPhoto } from "@waymark/api-client/testing";
 import { renderApp, screen, userEvent, waitFor, within } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });

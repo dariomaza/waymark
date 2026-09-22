@@ -1,4 +1,4 @@
-import { publicIdFromScannedText } from "@ariadna/api-client";
+import { publicIdFromScannedText } from "@waymark/api-client";
 import { useEffect, useRef, useState, type FormEvent, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 

@@ -1,5 +1,5 @@
-import { type StorageUnitWithPhotoView } from "@ariadna/api-client";
-import { describeFailure } from "@ariadna/i18n";
+import { type StorageUnitWithPhotoView } from "@waymark/api-client";
+import { describeFailure } from "@waymark/i18n";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 

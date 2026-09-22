@@ -8,7 +8,7 @@ import {
   type Photo,
   type PhotoId,
   type PhotoRepository,
-} from "@ariadna/domain";
+} from "@waymark/domain";
 import type { Photo as PhotoRow, PrismaClient } from "@prisma/client";
 
 import { UnknownPhotoProcessingStatus } from "./persistence-errors.js";

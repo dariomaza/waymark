@@ -1,5 +1,5 @@
-import { type ItemView, type StorageUnitView } from "@ariadna/api-client";
-import { describeFailure } from "@ariadna/i18n";
+import { type ItemView, type StorageUnitView } from "@waymark/api-client";
+import { describeFailure } from "@waymark/i18n";
 import { useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 

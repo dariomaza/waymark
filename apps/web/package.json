@@ -1,5 +1,5 @@
 {
-  "name": "@ariadna/web",
+  "name": "@waymark/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ariadna/api-client": "workspace:*",
-    "@ariadna/domain": "workspace:*",
-    "@ariadna/i18n": "workspace:*",
+    "@waymark/api-client": "workspace:*",
+    "@waymark/domain": "workspace:*",
+    "@waymark/i18n": "workspace:*",
     "@tanstack/react-query": "^5.90.2",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",

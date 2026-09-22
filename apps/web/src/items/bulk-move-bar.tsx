@@ -1,4 +1,4 @@
-import type { ItemId } from "@ariadna/domain";
+import type { ItemId } from "@waymark/domain";
 import { useState, type JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";

@@ -1,5 +1,5 @@
-import { findByPublicId } from "@ariadna/api-client";
-import { publicId } from "@ariadna/domain";
+import { findByPublicId } from "@waymark/api-client";
+import { publicId } from "@waymark/domain";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, type JSX } from "react";

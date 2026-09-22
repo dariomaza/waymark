@@ -1,5 +1,5 @@
-import { type StorageUnitTreeView } from "@ariadna/api-client";
-import { kindLabel } from "@ariadna/i18n";
+import { type StorageUnitTreeView } from "@waymark/api-client";
+import { kindLabel } from "@waymark/i18n";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 

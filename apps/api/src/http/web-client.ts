@@ -129,7 +129,7 @@ export interface WebClient {
 export class MissingWebClient extends Error {
   constructor(root: string) {
     super(
-      `ARIADNA_WEB_ROOT is ${root}, which holds no ${SHELL}. Build the client with \`pnpm --filter @ariadna/web build\`, or leave the variable unset to run the API on its own.`,
+      `ARIADNA_WEB_ROOT is ${root}, which holds no ${SHELL}. Build the client with \`pnpm --filter @waymark/web build\`, or leave the variable unset to run the API on its own.`,
     );
     this.name = "MissingWebClient";
   }

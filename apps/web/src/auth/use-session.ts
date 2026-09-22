@@ -1,4 +1,4 @@
-import type { Credentials } from "@ariadna/api-client";
+import type { Credentials } from "@waymark/api-client";
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 

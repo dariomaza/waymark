@@ -1,4 +1,4 @@
-import type { Item, ItemId, ItemRepository, UnitId } from "@ariadna/domain";
+import type { Item, ItemId, ItemRepository, UnitId } from "@waymark/domain";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 import {

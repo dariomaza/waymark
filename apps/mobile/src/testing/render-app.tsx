@@ -1,4 +1,4 @@
-import type { Language } from "@ariadna/i18n";
+import type { Language } from "@waymark/i18n";
 import { render, type RenderResult } from "@testing-library/react-native";
 import type { QueryClient } from "@tanstack/react-query";
 import type { NavigationState, PartialState } from "@react-navigation/native";
@@ -79,7 +79,7 @@ export const discardQueryCaches = (): void => {
  * Renders the WHOLE app, at a screen, the way a phone would.
  *
  * Not a screen in isolation: the navigators, the session gate, the query cache
- * and the real `@ariadna/api-client` are all in play, and the only things
+ * and the real `@waymark/api-client` are all in play, and the only things
  * standing in for the outside world are the HTTP stub and the three ports that
  * are genuinely hardware — the keystore, the camera and the photo library.
  *
