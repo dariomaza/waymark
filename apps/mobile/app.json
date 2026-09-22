@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "waymark",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#11150f",
+    "backgroundColor": "#101011",
     "newArchEnabled": true,
     "android": {
       "package": "es.inone.waymark",
