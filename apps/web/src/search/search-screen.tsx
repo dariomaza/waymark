@@ -20,9 +20,9 @@ import { useTranslate } from "../app/language-context.js";
  * # The screen the product is named after
  *
  * Things get stored and then lost — not lost as in gone, lost as in "it is
- * somewhere in one of forty boxes". This is the thread out of that labyrinth,
- * so it is a screen of its own reachable from every other one, and not a
- * filter box bolted onto a list.
+ * somewhere in one of forty boxes". This is the way back to it — the product's
+ * whole promise in one screen — so it is a screen of its own reachable from
+ * every other one, and not a filter box bolted onto a list.
  *
  * The query lives in the URL. That makes a search a link somebody can send
  * across a house — "it is one of these" — and it is what the API chose `GET`

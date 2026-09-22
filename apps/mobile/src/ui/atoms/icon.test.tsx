@@ -11,7 +11,7 @@ import { ICON_NAMES, Icon } from "./icon.js";
 describe("the icon set both clients draw", () => {
   it("carries every symbol this product has, and no library", () => {
     expect([...ICON_NAMES]).toEqual([
-      "thread",
+      "waypoints",
       "scan",
       "search",
       "tree",
@@ -57,8 +57,8 @@ describe("the icon set both clients draw", () => {
 
   /** And when it is alone, it says what it MEANS, not what it is drawn as. */
   it("says what it means when it stands on its own", async () => {
-    await render(<Icon name="thread" label="Ariadna" />);
+    await render(<Icon name="waypoints" label="Waymark" />);
 
-    expect(screen.getByLabelText("Ariadna")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Waymark")).toBeOnTheScreen();
   });
 });

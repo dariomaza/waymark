@@ -28,7 +28,7 @@ export const AppShell = (): JSX.Element => {
     <div className="app-shell">
       <AppBar
         title="Waymark"
-        leading={<Icon name="thread" size={24} />}
+        leading={<Icon name="waypoints" size={24} />}
         actions={
           <>
             <LanguageSwitcher />

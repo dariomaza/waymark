@@ -14,8 +14,8 @@ export interface AppBarProps {
  * The top bar. Presentational to the bone: it is handed a title and some
  * controls and knows nothing about what any of them do.
  *
- * The mark is the thread out of the labyrinth, which is what the product is
- * named after — and it is decorative here on purpose, because the name is
+ * The mark is three waypoints on a descending path, which is what the product
+ * is named after — and it is decorative here on purpose, because the name is
  * written beside it. An icon that repeats the word next to it makes a screen
  * reader say the same thing twice.
  *
@@ -32,7 +32,7 @@ export const AppBar = ({ title, actions }: AppBarProps): JSX.Element => {
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top + space.s2 }]}>
-      <Icon name="thread" size={24} color={colors.accent} />
+      <Icon name="waypoints" size={24} color={colors.accent} />
       <Text accessibilityRole="header" style={styles.title}>
         {title}
       </Text>

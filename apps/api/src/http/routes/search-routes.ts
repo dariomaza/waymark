@@ -14,9 +14,9 @@ export interface SearchRouteOptions {
  * # The route the product is named after
  *
  * Waymark exists because things get stored and then lost — not lost as in
- * gone, lost as in "it is somewhere in one of forty boxes". This is the thread
- * out of that labyrinth, so it is a resource of its own rather than a `?q=` on
- * the item collection: what it answers is not a filtered list of items, it is
+ * gone, lost as in "it is somewhere in one of forty boxes". This is the way
+ * back to it, so it is a resource of its own rather than a `?q=` on the item
+ * collection: what it answers is not a filtered list of items, it is
  * items AND storage units, each with the path that says where it is.
  *
  * `GET`, because it reads. That makes a search a link somebody can bookmark,

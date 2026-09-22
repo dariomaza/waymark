@@ -12,8 +12,15 @@ import type { JSX } from "react";
  * stops a set drawn over time from looking like a set collected over time.
  */
 export type IconName =
-  /** The thread out of the labyrinth: the product's mark, and its name. */
-  | "thread"
+  /**
+   * Three waypoints on a descending path: the product's mark.
+   *
+   * Named for what is drawn and not for the product, the way every other
+   * name in this list is. The one before it was called `thread` — the thread
+   * out of a labyrinth — which named a story rather than a shape, and when
+   * the story changed the name was left pointing at nothing.
+   */
+  | "waypoints"
   | "scan"
   | "search"
   | "tree"
@@ -24,10 +31,18 @@ export type IconName =
   | "plus";
 
 const PATHS: Record<IconName, JSX.Element> = {
-  thread: (
+  /**
+   * Rings and not dots, because a filled shape at this stroke weight reads as
+   * a bullet point rather than as a marker — and the joining strokes stop at
+   * each ring's edge rather than running under it, so the path is a route
+   * BETWEEN the markers instead of a line with beads threaded on it.
+   */
+  waypoints: (
     <>
-      <path d="M4 3v7a5 5 0 0 0 10 0V6a3 3 0 0 1 6 0v5" />
-      <circle cx="20" cy="17" r="2.6" />
+      <circle cx="5" cy="5.6" r="2.4" />
+      <circle cx="12" cy="11.6" r="2.4" />
+      <circle cx="19" cy="18.4" r="2.4" />
+      <path d="M6.8 7.2l3.4 2.8M13.7 13.3l3.6 3.4" />
     </>
   ),
   scan: (

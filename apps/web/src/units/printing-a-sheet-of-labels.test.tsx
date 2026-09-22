@@ -14,8 +14,9 @@ import { renderApp, screen, userEvent, waitFor, within } from "../testing/render
  *
  * The product is a printed QR on a box, and until now it was printed one at a
  * time: open the box's screen, open its label, print, go back, repeat sixty
- * times. Which means it never happened, and a room of unlabelled boxes is the
- * labyrinth this app is named after failing to have a thread.
+ * times. Which means it never happened, and a room of unlabelled boxes is a
+ * trail with no waymarks on it — which is this app named after a thing it
+ * failed to do.
  *
  * The sheet is therefore tested as the workflow: pick the units, get a page,
  * cut, stick. The two things that would waste an afternoon and a sheet of

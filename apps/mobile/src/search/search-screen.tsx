@@ -25,8 +25,9 @@ import { useTranslate } from "../app/language-context.js";
  * # The screen the product is named after
  *
  * Things get stored and then lost — not lost as in gone, lost as in "it is
- * somewhere in one of forty boxes". This is the thread out of that labyrinth,
- * so it is a tab of its own rather than a filter box bolted onto a list.
+ * somewhere in one of forty boxes". This is the way back to it — the product's
+ * whole promise in one screen — so it is a tab of its own rather than a filter
+ * box bolted onto a list.
  *
  * `within` is a subtree at any depth: a location IS a storage unit (ADR 1), so
  * "search the garage" means everything under it.

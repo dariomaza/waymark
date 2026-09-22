@@ -1,11 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ariadna">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Waymark">
   <rect width="64" height="64" rx="14" fill="#11150f" />
-  <path
-    d="M12 46c0-8 6-12 12-12s12 3 12-3-6-8-11-8-9 3-9 7"
+  <g
     fill="none"
     stroke="#c8f04a"
-    stroke-width="4"
+    stroke-width="4.5"
     stroke-linecap="round"
-  />
-  <circle cx="44" cy="22" r="6" fill="#c8f04a" />
+    stroke-linejoin="round"
+  >
+    <circle cx="13.3" cy="14.9" r="6.4" />
+    <circle cx="32" cy="30.9" r="6.4" />
+    <circle cx="50.7" cy="49.1" r="6.4" />
+    <path d="M18.1 19.2l9.1 7.5M36.5 35.5l9.6 9" />
+  </g>
 </svg>
