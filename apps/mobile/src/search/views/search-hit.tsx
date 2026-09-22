@@ -13,7 +13,7 @@ export interface SearchHitProps {
   readonly onPress: () => void;
 }
 
-const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
+export const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
   [SearchMatchField.NAME]: "name",
   [SearchMatchField.TAG]: "tag",
   [SearchMatchField.DESCRIPTION]: "description",

@@ -47,8 +47,8 @@ export const AllItemsScreen = (): JSX.Element => {
 
       {items.isSuccess ? (
         items.data.items.length === 0 ? (
-          <EmptyNote explains="Open a box and add what is in it.">
-            Nothing is registered yet
+          <EmptyNote explains="Open a place and add the first one; it will show up here and when you scan that place’s label.">
+            You have not put anything in yet
           </EmptyNote>
         ) : (
           <ItemGrid

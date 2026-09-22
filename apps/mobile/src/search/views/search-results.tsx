@@ -1,11 +1,12 @@
 import type { ItemSearchResultView, SearchResponse } from "@ariadna/api-client";
+import { SearchMatchField } from "@ariadna/domain";
 import type { JSX, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ItemGrid } from "../../items/views/item-grid.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { colors, space, text } from "../../ui/styles/tokens.js";
-import { SearchHit, whyItMatched } from "./search-hit.js";
+import { FIELD_WORDS, SearchHit, whyItMatched } from "./search-hit.js";
 
 export interface SearchResultsProps {
   readonly results: SearchResponse;
@@ -25,15 +26,18 @@ export interface SearchResultsProps {
  *
  * # What a card can carry, and what it says out loud
  *
- * A result card is a third of a phone wide, so its one spare line is the BOX
- * the thing is in — the place somebody is about to walk to. The rest of the
- * answer is not dropped: the whole breadcrumb and WHY the result matched are
- * what the card is NAMED, so a screen reader still hears "Cordless drill,
- * Garage > Metal wardrobe > Box 3, matched name".
+ * A result card is a third of a phone wide, so its one line carries the box
+ * to walk to first — that is the answer — and the reason second, because an
+ * item called `HDMI 2.1` answering a search for `cables` looks like a bug
+ * until the card says "tag", and then it looks like the feature working. A
+ * match on the NAME needs no explaining and is left out. The web client's
+ * cards say exactly this, in this order.
  *
- * That "why" is not decoration. An item called `HDMI 2.1` answering a search
- * for `cables` looks like a mistake until something says "matched tag", and
- * then it looks like the feature working.
+ * The whole breadcrumb is not dropped, it moves: it is what the card is
+ * NAMED, so a screen reader still hears "Cordless drill, Garage > Metal
+ * wardrobe > Box 3". A card has one accessible name and the path is the
+ * answer to the question this screen asks (ADR 15), so that is what it spends
+ * it on.
  *
  * Storage units stay rows with their whole breadcrumb visible: a box is
  * recognised by its name and the label stuck on it, not by a photograph of a
@@ -47,7 +51,7 @@ export const SearchResults = ({
 }: SearchResultsProps): JSX.Element => {
   if (results.items.length === 0 && results.storageUnits.length === 0) {
     return (
-      <EmptyNote explains="Try fewer words — every one of them has to match.">
+      <EmptyNote explains="Every word has to match, so fewer of them finds more.">
         {`Nothing matches “${results.query}”`}
       </EmptyNote>
     );
@@ -88,9 +92,9 @@ export const SearchResults = ({
       cells={results.items.map((hit) => ({
         key: hit.item.id,
         name: hit.item.name,
-        secondary: hit.path.at(-1)?.name,
+        secondary: whereAndWhy(hit.path.at(-1)?.name, hit.matchedFields),
         quantity: hit.item.quantity,
-        label: `${hit.item.name}, ${hit.location}, ${whyItMatched(hit.matchedFields)}`,
+        label: spokenName(hit),
         photo: itemPhoto?.(hit),
         onPress: () => {
           onOpenItem(hit.item.id);
@@ -105,6 +109,34 @@ export const SearchResults = ({
     />
   );
 };
+
+/**
+ * The one line a card has, carrying two things a search result cannot do
+ * without: where to walk, and why this is here at all.
+ *
+ * A row had space for the whole path and its own badge; a square does not,
+ * and this is the cost of the grid.
+ */
+const whereAndWhy = (
+  where: string | undefined,
+  matched: readonly SearchMatchField[],
+): string | undefined =>
+  [where, ...explainable(matched).map((field) => FIELD_WORDS[field])]
+    .filter((part) => part !== undefined && part !== "")
+    .join(" \u00b7 ") || undefined;
+
+/** What a screen reader hears: the whole path, and the reason when there is one. */
+const spokenName = (hit: ItemSearchResultView): string => {
+  const why = explainable(hit.matchedFields);
+
+  return why.length === 0
+    ? `${hit.item.name}, ${hit.location}`
+    : `${hit.item.name}, ${hit.location}, ${whyItMatched(why)}`;
+};
+
+/** Every reason but the obvious one. A match on the name explains itself. */
+const explainable = (matched: readonly SearchMatchField[]): readonly SearchMatchField[] =>
+  matched.filter((field) => field !== SearchMatchField.NAME);
 
 const styles = StyleSheet.create({
   wrap: { flex: 1 },
