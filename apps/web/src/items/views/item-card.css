@@ -1,0 +1,113 @@
+/**
+ * Three across, at every width this app is used at.
+ *
+ * Two would show the photo bigger and fit four things on a phone screen;
+ * three fits nine and the photo is still recognisable, and with forty things
+ * in a box the difference is how far you scroll to find the one you came for.
+ */
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item-card {
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-m);
+  background: var(--color-surface-raised);
+  overflow: hidden;
+}
+
+.item-card__target {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.item-card__target:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+
+/**
+ * The square is declared, not inherited from whatever arrives.
+ *
+ * Thumbnails are authenticated requests that land one at a time, and a grid
+ * whose cells take their height from a loaded image reflows under the thumb
+ * that is already reaching for something. Reserving the box means the layout
+ * is final before the first byte.
+ */
+.item-card__image {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  background: var(--color-surface-sunken);
+  overflow: hidden;
+}
+
+.item-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.item-card__initials {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  /* Muted on the sunken surface: a gap with information in it, not content. */
+  color: var(--color-ink-muted);
+}
+
+.item-card__quantity {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  /**
+   * Its own dark plate rather than a palette colour, because it sits on a
+   * photograph and a photograph can be any colour. The accent would vanish
+   * against a lime toolbox exactly once, and that is once too often.
+   */
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+}
+
+.item-card__text {
+  display: block;
+  padding: var(--space-2);
+}
+
+.item-card__name,
+.item-card__secondary {
+  display: block;
+  /* One line each. A card is a fixed shape; a name that wraps changes it. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-card__name {
+  font-weight: 550;
+  font-size: var(--text-s);
+}
+
+.item-card__secondary {
+  color: var(--color-ink-muted);
+  font-size: 0.72rem;
+}
+
+.item-card__trailing {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+}

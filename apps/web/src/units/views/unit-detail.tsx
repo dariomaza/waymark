@@ -1,6 +1,7 @@
 import { type ItemView, kindLabel, type StorageUnitView } from "@ariadna/api-client";
 import type { JSX, ReactNode } from "react";
 
+import { ItemCard } from "../../items/views/item-card.js";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
@@ -20,6 +21,14 @@ export interface UnitDetailProps {
   readonly photo?: ReactNode;
   /** Rendered next to each item row; a checkbox during a bulk move. */
   readonly itemTrailing?: (item: ItemView) => ReactNode;
+  /**
+   * The cover photo for one item, when it has one.
+   *
+   * Injected rather than fetched here, because a thumbnail is an
+   * authenticated request and this file is a view. Returning nothing is what
+   * makes a card fall back to its initials.
+   */
+  readonly itemPhoto?: (item: ItemView) => ReactNode;
   /** Sits under the item list; the bulk move bar, when anything is ticked. */
   readonly belowItems?: ReactNode;
 }
@@ -39,6 +48,7 @@ export const UnitDetail = ({
   actions,
   photo,
   itemTrailing,
+  itemPhoto,
   belowItems,
 }: UnitDetailProps): JSX.Element => {
   const isEmpty = childUnits.length === 0 && items.length === 0;
@@ -63,7 +73,11 @@ export const UnitDetail = ({
       {photo}
       {actions === undefined ? null : <div className="unit-detail__actions">{actions}</div>}
 
-      {isEmpty ? <EmptyNote>This one is empty.</EmptyNote> : null}
+      {isEmpty ? (
+        <EmptyNote explains="Whatever you put in here will show up when you scan its label.">
+          This one is empty
+        </EmptyNote>
+      ) : null}
 
       {childUnits.length === 0 ? null : (
         <section>
@@ -85,13 +99,20 @@ export const UnitDetail = ({
       {items.length === 0 ? null : (
         <section>
           <h3>Items</h3>
-          <ul aria-label="Items">
+          {/**
+           * A grid, because a thing is recognised by its picture. Its second
+           * line is the tags: inside a unit the location is the same string
+           * on every card, which is noise rather than an answer.
+           */}
+          <ul className="item-grid" aria-label="Items">
             {items.map((item) => (
               <li key={item.id}>
-                <RowLink
+                <ItemCard
                   to={thingPath(item.id)}
-                  title={item.name}
-                  meta={itemMeta(item)}
+                  name={item.name}
+                  secondary={item.tags.join(", ")}
+                  quantity={item.quantity}
+                  photo={itemPhoto?.(item)}
                   {...(itemTrailing === undefined ? {} : { trailing: itemTrailing(item) })}
                 />
               </li>

@@ -53,6 +53,7 @@ export {
   type FieldComplaint,
 } from "./unit-messages.js";
 export { photoStatusNote } from "./photo-status.js";
+export { initialsOf } from "./initials.js";
 export { KIND_CHOICES, kindLabel } from "./kind-label.js";
 export {
   createAriadnaClient,
