@@ -4,16 +4,58 @@
  * Dark by default: this is opened in a storage room at night as often as
  * anywhere else, and a white screen at arm's length in the dark is the
  * difference between reading a label and turning the phone away.
+ *
+ * # Why the surfaces are neutral and only the accent has colour
+ *
+ * They were not. Every token used to sit between hue 74 and hue 111 — the
+ * surfaces, the lines, the muted text and the accent were all olive — and an
+ * accent only means "look here" when it is the one saturated thing on screen.
+ * Against a world made of itself it means nothing. So the greys are grey now,
+ * and the lime is the only colour in the file.
+ *
+ * # Why the accent is four tokens and not one
+ *
+ * An accent does two jobs with opposite requirements: it fills a button, and
+ * it is a foreground on the page. One value cannot do both across two colour
+ * schemes, and trying is what made the old palette look like two different
+ * products — the accent was 62% lightness in the dark and 25% in the light.
+ *
+ * Split by job, the FILL can be the same lime in both schemes, which is where
+ * the brand is actually perceived: the button is the largest accent surface on
+ * any screen. Only `--color-accent-text` differs, and nobody reads a thin
+ * foreground as "a different colour".
+ *
+ * Contrast, measured, all above AA for their use:
+ *
+ *   dark   ink/surface 17.30   ink/raised 15.86   muted/surface 7.98
+ *          muted/raised 7.31   accent/surface 14.51   accent-ink/accent 13.85
+ *   light  ink/surface 17.67   ink/raised 18.44   muted/surface 6.15
+ *          muted/raised 6.42   accent-text/surface 7.32  accent-ink/accent 13.85
+ *
+ * The mobile client carries the same dark values in `ui/styles/tokens.ts`. It
+ * has no light scheme on purpose: a phone held over a box does not get that
+ * choice, because the camera screen is black either way.
  */
 :root {
-  --color-surface: #11150f;
-  --color-surface-raised: #1b211a;
-  --color-surface-sunken: #0b0e0a;
-  --color-ink: #f2f5ee;
-  --color-ink-muted: #a8b3a0;
-  --color-line: #2f382c;
+  --color-surface: #101011;
+  --color-surface-raised: #191a1b;
+  --color-surface-sunken: #0a0a0b;
+  --color-ink: #f4f4f5;
+  --color-ink-muted: #a6a8ab;
+  --color-line: #2e3032;
+
+  /* The fill, and the ink that goes on it. Identical in both schemes. */
   --color-accent: #c8f04a;
-  --color-accent-ink: #11150f;
+  --color-accent-ink: #14170a;
+  /**
+   * The fill's edge. None is needed here: the lime sits at 14.51 against this
+   * surface, so its silhouette is unmistakable. See the light scheme, where it
+   * is not.
+   */
+  --color-accent-border: transparent;
+  /** The accent as a foreground: a link, the active tab, an outline button. */
+  --color-accent-text: #c8f04a;
+
   --color-danger: #ff8a7a;
   --color-danger-ink: #2a0d08;
   --color-warning: #ffc34d;
@@ -40,14 +82,27 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --color-surface: #fbfcf8;
+    --color-surface: #fafafa;
     --color-surface-raised: #ffffff;
-    --color-surface-sunken: #eef1e8;
-    --color-ink: #161a13;
-    --color-ink-muted: #56604f;
-    --color-line: #d7ddd0;
-    --color-accent: #4f7a08;
-    --color-accent-ink: #ffffff;
+    --color-surface-sunken: #f0f0f2;
+    --color-ink: #131415;
+    --color-ink-muted: #5c5f63;
+    --color-line: #dcdde0;
+
+    /* The same lime, deliberately, and the same ink on it: 13.85 either way. */
+    --color-accent: #c8f04a;
+    --color-accent-ink: #14170a;
+    /**
+     * Here the edge is load bearing. The lime fill has only 1.26 contrast
+     * against this surface — it LOOKS visible, because the hue is loud, but
+     * its silhouette is not, and a component boundary needs 3. This border is
+     * 3.24, so the button has a shape as well as a colour. Without it the
+     * button reads fine on a desk and disappears on a phone in daylight.
+     */
+    --color-accent-border: #7a9620;
+    /** A lime foreground on near-white is unreadable, so this one must move. */
+    --color-accent-text: #3f5c0c;
+
     --color-danger: #a92c14;
     --color-danger-ink: #ffffff;
     --color-warning: #8a5a00;

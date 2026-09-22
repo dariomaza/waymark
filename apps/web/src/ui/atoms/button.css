@@ -26,9 +26,19 @@
   outline-offset: 2px;
 }
 
+/**
+ * The border is not decoration. In the light scheme the lime fill has 1.26
+ * contrast against the page: it LOOKS visible, because the hue is loud, but
+ * its silhouette is not, and a component boundary needs 3. The token is 3.24
+ * there and `transparent` in the dark, where the fill is already at 14.51.
+ *
+ * Kept on the same 1px border every variant declares, so turning it on adds
+ * an edge and never moves the button by a pixel.
+ */
 .button--primary {
   background: var(--color-accent);
   color: var(--color-accent-ink);
+  border-color: var(--color-accent-border);
 }
 
 .button--secondary {
