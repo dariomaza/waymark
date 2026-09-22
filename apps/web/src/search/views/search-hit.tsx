@@ -15,7 +15,7 @@ export interface SearchHitProps {
   readonly detail?: string | undefined;
 }
 
-const FIELD_KEYS = {
+export const FIELD_KEYS = {
   [SearchMatchField.NAME]: "search.field.name",
   [SearchMatchField.TAG]: "search.field.tag",
   [SearchMatchField.DESCRIPTION]: "search.field.description",

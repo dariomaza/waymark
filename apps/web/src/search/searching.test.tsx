@@ -2,6 +2,7 @@ import { SearchMatchField } from "@ariadna/domain";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { languageStore } from "../app/language.js";
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { anItem, anItemHit, aSession, aStorageUnit, aUnitHit } from "@ariadna/api-client/testing";
@@ -171,5 +172,86 @@ describe("searching for where something is", () => {
 
     await screen.findByRole("link", { name: /HDMI 2\.1/i });
     expect(asked.map((params) => params.get("within"))).toEqual(["garage", null]);
+  });
+});
+
+describe("searching for where something is, in Spanish", () => {
+  beforeEach(() => {
+    sessionStore.save(aSession());
+    languageStore.save("es");
+    apiServer.use(
+      http.get(`${API_URL}/auth/me`, () =>
+        HttpResponse.json({ user: { id: "u1", username: "dario" } }),
+      ),
+    );
+  });
+
+  /**
+   * What somebody typed goes into the sentence as TEXT. Spanish sets it in
+   * angular quotation marks, which is the convention rather than a copy of
+   * the English curly ones.
+   */
+  it("quotes what was typed the way Spanish quotes it", async () => {
+    answersSearchWith(() => ({
+      query: "destornillador",
+      terms: ["destornillador"],
+      items: [],
+      storageUnits: [],
+    }));
+
+    renderApp({ route: "/find" });
+    await userEvent.type(
+      await screen.findByRole("searchbox", { name: "Busque una cosa o una caja" }),
+      "destornillador",
+    );
+
+    expect(
+      await screen.findByText("No hay nada que coincida con «destornillador»"),
+    ).toBeVisible();
+  });
+
+  /** The two lists answer two questions, and a screen reader hears their names. */
+  it("names both lists in Spanish", async () => {
+    answersSearchWith(() => ({
+      query: "cables",
+      terms: ["cables"],
+      items: [anItemHit(hdmi, [garage, wardrobe, box], [SearchMatchField.TAG])],
+      storageUnits: [aUnitHit(cableBox, [garage, cableBox], [SearchMatchField.NAME])],
+    }));
+
+    renderApp({ route: "/find" });
+    await userEvent.type(
+      await screen.findByRole("searchbox", { name: "Busque una cosa o una caja" }),
+      "cables",
+    );
+
+    expect(await screen.findByRole("list", { name: "Cosas encontradas" })).toBeVisible();
+    expect(screen.getByRole("list", { name: "Unidades de almacenaje encontradas" })).toBeVisible();
+  });
+
+  /**
+   * Why a result is there at all — an HDMI 2.1 answering a search for cables.
+   *
+   * A card has room for the terse reason and a row has room for the sentence,
+   * and both used to be built from their own private list of English words.
+   * They come from one pair of keys now, which is what stops one list saying
+   * "tag" while the other says "una etiqueta".
+   */
+  it("says why a result is there, in Spanish", async () => {
+    answersSearchWith(() => ({
+      query: "cables",
+      terms: ["cables"],
+      items: [anItemHit(hdmi, [garage, wardrobe, box], [SearchMatchField.TAG])],
+      storageUnits: [],
+    }));
+
+    renderApp({ route: "/find" });
+    await userEvent.type(
+      await screen.findByRole("searchbox", { name: "Busque una cosa o una caja" }),
+      "cables",
+    );
+
+    const card = await screen.findByRole("link", { name: /HDMI 2\.1/i });
+    expect(within(card).getByText(/una etiqueta/)).toBeVisible();
   });
 });

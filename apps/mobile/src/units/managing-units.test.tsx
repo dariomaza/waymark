@@ -267,3 +267,99 @@ describe("looking after a storage unit", () => {
     expect(screen.getByRole("button", { name: "Try again" })).toBeOnTheScreen();
   });
 });
+
+/**
+ * # The same screens, on a phone, in Spanish
+ *
+ * Asserted through the rendered Spanish rather than through keys. A test that
+ * asks for `t("units.notEmpty")` proves the test and the screen agree on a
+ * name nobody reads; it cannot catch a key wired to the wrong sentence, which
+ * is the failure this layer actually makes possible.
+ */
+describe("looking after a storage unit, in Spanish", () => {
+  beforeEach(() => {
+    theApiKnowsTheHouse();
+  });
+
+  /**
+   * Two counts in one refusal, each agreeing with its own noun, joined by a
+   * word that is not "and" — and still in the API's own numbers.
+   */
+  it("counts what is still in the box, agreeing with each noun", async () => {
+    apiServer.use(
+      http.delete(`${API_URL}/storage-units/box3`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "STORAGE_UNIT_NOT_EMPTY",
+              message: "storage unit box3 is not empty",
+              details: { storageUnitId: "box3", itemCount: 2, childUnitCount: 1 },
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    await renderApp({ session: aSession(), screen: atBox3, language: "es" });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Borrar" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Borrar esta unidad" }));
+
+    expect(
+      await screen.findByText(
+        "Box 3 todavía contiene 2 cosas y 1 unidad. No se borra una caja que sigue llena.",
+      ),
+    ).toBeOnTheScreen();
+  });
+
+  it("says one of each in the singular", async () => {
+    apiServer.use(http.delete(`${API_URL}/storage-units/box3`, refusedBecauseNotEmpty));
+
+    await renderApp({ session: aSession(), screen: atBox3, language: "es" });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Borrar" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Borrar esta unidad" }));
+
+    expect(await screen.findByText(/contiene 1 cosa\./)).toBeOnTheScreen();
+  });
+
+  /** The way out names where the contents will go, in Spanish. */
+  it("offers to empty the box into its parent", async () => {
+    apiServer.use(http.delete(`${API_URL}/storage-units/box3`, refusedBecauseNotEmpty));
+
+    await renderApp({ session: aSession(), screen: atBox3, language: "es" });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Borrar" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Borrar esta unidad" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Vaciarla en Metal wardrobe y borrarla" }),
+    ).toBeOnTheScreen();
+  });
+
+  /** The rule is the domain's and the refusal is the API's; only the words change. */
+  it("explains a move the tree cannot take", async () => {
+    apiServer.use(
+      http.post(`${API_URL}/storage-units/wardrobe/move`, () => refusedBecauseCyclic()),
+    );
+
+    await renderApp({
+      session: aSession(),
+      screen: { name: "Unit", params: { id: "wardrobe" } },
+      language: "es",
+    });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Mover" }));
+
+    // The breadcrumb is made of names somebody typed, so it stays as typed.
+    await fireEvent.press(
+      await screen.findByRole("radio", { name: "Garage > Metal wardrobe > Box 3" }),
+    );
+    await fireEvent.press(screen.getByRole("button", { name: "Moverla" }));
+
+    expect(
+      await screen.findByText(/no puede ir dentro de sí mismo/),
+    ).toBeOnTheScreen();
+  });
+});

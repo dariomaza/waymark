@@ -1,9 +1,10 @@
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { aSession } from "@ariadna/api-client/testing";
 import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
+import { languageStore } from "../app/language.js";
 import { sessionStore } from "./session-store.js";
 
 const respondsToLoginWith = (token: string): void => {
@@ -148,5 +149,42 @@ describe("a session that is over", () => {
     await waitFor(() => {
       expect(sessionStore.read()).toBeNull();
     });
+  });
+});
+
+/**
+ * The sign-in screen is the one screen somebody sees before they have any
+ * chance to change the language, which makes it the screen where the browser's
+ * own preference has to be honoured rather than merely offered.
+ */
+describe("signing in, in Spanish", () => {
+  beforeEach(() => {
+    languageStore.save("es");
+  });
+
+  it("asks for a username and a password in Spanish", async () => {
+    renderApp({ route: "/" });
+
+    expect(await screen.findByRole("textbox", { name: "Usuario" })).toBeVisible();
+    expect(screen.getByLabelText("Contraseña")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeVisible();
+  });
+
+  /**
+   * "Wrong password" and "cannot reach the server" must stay two different
+   * sentences in every language: the first makes you try again more
+   * carefully, the second makes you walk towards the router.
+   */
+  it("tells a refused password apart from an unreachable server", async () => {
+    respondsToLoginWith("never-issued");
+
+    renderApp({ route: "/" });
+    await userEvent.type(await screen.findByRole("textbox", { name: "Usuario" }), "dario");
+    await userEvent.type(screen.getByLabelText("Contraseña"), "guess");
+    await userEvent.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "El usuario o la contraseña no son correctos.",
+    );
   });
 });

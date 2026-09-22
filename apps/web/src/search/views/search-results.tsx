@@ -1,11 +1,12 @@
 import type { SearchResponse } from "@ariadna/api-client";
 import { SearchMatchField } from "@ariadna/domain";
+import type { Translate } from "@ariadna/i18n";
 import type { JSX } from "react";
 
 import { ItemCard } from "../../items/views/item-card.js";
 import { ItemCover } from "../../photos/item-cover.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
-import { SearchHit } from "./search-hit.js";
+import { FIELD_KEYS, SearchHit } from "./search-hit.js";
 import { thingPath, unitPath } from "../../app/routes.js";
 import { useTranslate } from "../../app/language-context.js";
 
@@ -54,7 +55,7 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
                 <ItemCard
                   to={thingPath(hit.item.id)}
                   name={hit.item.name}
-                  secondary={whereAndWhy(hit.path.at(-1)?.name, hit.matchedFields)}
+                  secondary={whereAndWhy(t, hit.path.at(-1)?.name, hit.matchedFields)}
                   quantity={hit.item.quantity}
                   photo={<ItemCover item={hit.item} />}
                 />
@@ -84,12 +85,6 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
   );
 };
 
-const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
-  [SearchMatchField.NAME]: "name",
-  [SearchMatchField.TAG]: "tag",
-  [SearchMatchField.DESCRIPTION]: "description",
-};
-
 /**
  * The one line a card has, carrying two things a search result cannot do
  * without.
@@ -103,12 +98,16 @@ const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
  * path and its own badge, and a square does not.
  */
 const whereAndWhy = (
+  t: Translate,
   where: string | undefined,
   matched: readonly SearchMatchField[],
 ): string | undefined => {
+  // The same words the row below uses, from the same keys. This file used to
+  // keep its own copy of them, which is how one list came to say "tag" while
+  // the other was translated.
   const why = matched
     .filter((field) => field !== SearchMatchField.NAME)
-    .map((field) => FIELD_WORDS[field]);
+    .map((field) => t(FIELD_KEYS[field]));
 
   return [where, ...why].filter((part) => part !== undefined && part !== "").join(" \u00b7 ") || undefined;
 };

@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { languageStore } from "../app/language.js";
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { anItem, aSession, aStorageUnit, aTree, withPhoto } from "@ariadna/api-client/testing";
@@ -343,5 +344,107 @@ describe("looking after a storage unit", () => {
         { parentId: null, name: "Shed", kind: "ROOM", description: null },
       ]);
     });
+  });
+});
+
+/**
+ * # The same screens, in Spanish
+ *
+ * The rest of this file drives the app in English and asserts the words a
+ * person reads. These do the same in Spanish rather than asserting keys,
+ * deliberately: `getByText(t("units.notEmpty"))` would pass against a key
+ * wired to the wrong sentence, and proves only that the test and the screen
+ * agree on a name nobody reads.
+ */
+describe("looking after a storage unit, in Spanish", () => {
+  beforeEach(() => {
+    sessionStore.save(aSession());
+    languageStore.save("es");
+    theHouse();
+  });
+
+  /**
+   * The sentence the whole translation layer was designed around: two counts
+   * in one refusal, each agreeing with its own noun, joined by a word that is
+   * not "and" — and the numbers still the API's own.
+   */
+  it("counts what is still in the box, agreeing with each noun", async () => {
+    apiServer.use(
+      http.delete(`${API_URL}/storage-units/box3`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "STORAGE_UNIT_NOT_EMPTY",
+              message: "storage unit box3 is not empty",
+              details: { storageUnitId: "box3", itemCount: 2, childUnitCount: 1 },
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^borrar$/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /borrar esta unidad/i }));
+
+    expect(
+      await screen.findByText(
+        "Box 3 todavía contiene 2 cosas y 1 unidad. No se borra una caja que sigue llena.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("says one of each in the singular", async () => {
+    apiServer.use(
+      http.delete(`${API_URL}/storage-units/box3`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "STORAGE_UNIT_NOT_EMPTY",
+              message: "storage unit box3 is not empty",
+              details: { storageUnitId: "box3", itemCount: 1, childUnitCount: 1 },
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^borrar$/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /borrar esta unidad/i }));
+
+    expect(await screen.findByText(/contiene 1 cosa y 1 unidad/)).toBeVisible();
+  });
+
+  /** A kind is a word a person reads, while `BOX` is what the machines agree on. */
+  it("says what kind of thing a unit is, in Spanish", async () => {
+    renderApp({ route: "/units/wardrobe" });
+
+    expect(await screen.findByRole("heading", { name: "Metal wardrobe" })).toBeVisible();
+    expect(screen.getByText("Mueble")).toBeVisible();
+  });
+
+  /** Only a screen reader ever hears these, which is exactly why they matter. */
+  it("names the lists a screen reader reads out", async () => {
+    renderApp({ route: "/units/wardrobe" });
+
+    expect(await screen.findByRole("list", { name: "Unidades dentro" })).toBeVisible();
+  });
+
+  it("offers the way out of a full box in Spanish, naming where things will go", async () => {
+    apiServer.use(http.delete(`${API_URL}/storage-units/box3`, refusedBecauseNotEmpty));
+
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^borrar$/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /borrar esta unidad/i }));
+
+    expect(
+      await screen.findByRole("button", { name: "Vaciarla en Metal wardrobe y borrarla" }),
+    ).toBeVisible();
   });
 });
