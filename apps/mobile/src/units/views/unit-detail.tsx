@@ -1,4 +1,5 @@
-import { kindLabel, type ItemView, type StorageUnitView } from "@ariadna/api-client";
+import { type ItemView, type StorageUnitView } from "@ariadna/api-client";
+import { kindLabel } from "@ariadna/i18n";
 import type { JSX, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -9,6 +10,7 @@ import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
 import { colors, space, text } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface UnitDetailProps {
   readonly unit: StorageUnitView;
@@ -54,77 +56,81 @@ export const UnitDetail = ({
   itemPhoto,
   onOpenUnit,
   onOpenItem,
-}: UnitDetailProps): JSX.Element => (
-  <ItemGrid
-    label="Items"
-    cells={items.map((item) => ({
-      key: item.id,
-      name: item.name,
-      /**
-       * The tags. Inside a unit the location is the same string on every
-       * card, which is noise rather than an answer.
-       */
-      secondary: item.tags.join(", "),
-      quantity: item.quantity,
-      photo: itemPhoto?.(item),
-      onPress: () => {
-        onOpenItem(item.id);
-      },
-    }))}
-    header={
-      <View style={styles.head}>
-        <Breadcrumb
-          path={path.slice(0, -1)}
-          onOpen={(step) => {
-            onOpenUnit(step.id);
-          }}
-        />
-        <ScreenTitle>{unit.name}</ScreenTitle>
-        <Text style={styles.kind}>{kindLabel(unit.kind)}</Text>
-        {unit.description === null ? null : (
-          <Text style={styles.description}>{unit.description}</Text>
-        )}
+}: UnitDetailProps): JSX.Element => {
+  const t = useTranslate();
 
-        {photo}
+  return (
+    <ItemGrid
+      label="Items"
+      cells={items.map((item) => ({
+        key: item.id,
+        name: item.name,
+        /**
+         * The tags. Inside a unit the location is the same string on every
+         * card, which is noise rather than an answer.
+         */
+        secondary: item.tags.join(", "),
+        quantity: item.quantity,
+        photo: itemPhoto?.(item),
+        onPress: () => {
+          onOpenItem(item.id);
+        },
+      }))}
+      header={
+        <View style={styles.head}>
+          <Breadcrumb
+            path={path.slice(0, -1)}
+            onOpen={(step) => {
+              onOpenUnit(step.id);
+            }}
+          />
+          <ScreenTitle>{unit.name}</ScreenTitle>
+          <Text style={styles.kind}>{kindLabel(t, unit.kind)}</Text>
+          {unit.description === null ? null : (
+            <Text style={styles.description}>{unit.description}</Text>
+          )}
 
-        <View style={styles.actions}>{actions}</View>
+          {photo}
 
-        {childUnits.length === 0 && items.length === 0 ? (
-          <EmptyNote explains="Whatever you put in here will show up when you scan its label.">
-            This one is empty
-          </EmptyNote>
-        ) : null}
+          <View style={styles.actions}>{actions}</View>
 
-        {childUnits.length === 0 ? null : (
-          <>
+          {childUnits.length === 0 && items.length === 0 ? (
+            <EmptyNote explains="Whatever you put in here will show up when you scan its label.">
+              This one is empty
+            </EmptyNote>
+          ) : null}
+
+          {childUnits.length === 0 ? null : (
+            <>
+              <Text accessibilityRole="header" style={styles.heading}>
+                Units inside
+              </Text>
+              <View style={styles.list} accessibilityLabel="Units inside">
+                {childUnits.map((child) => (
+                  <RowLink
+                    key={child.id}
+                    title={child.name}
+                    detail={kindLabel(t, child.kind)}
+                    leading={<Icon name="box" size={20} color={colors.inkMuted} />}
+                    onPress={() => {
+                      onOpenUnit(child.id);
+                    }}
+                  />
+                ))}
+              </View>
+            </>
+          )}
+
+          {items.length === 0 ? null : (
             <Text accessibilityRole="header" style={styles.heading}>
-              Units inside
+              Items
             </Text>
-            <View style={styles.list} accessibilityLabel="Units inside">
-              {childUnits.map((child) => (
-                <RowLink
-                  key={child.id}
-                  title={child.name}
-                  detail={kindLabel(child.kind)}
-                  leading={<Icon name="box" size={20} color={colors.inkMuted} />}
-                  onPress={() => {
-                    onOpenUnit(child.id);
-                  }}
-                />
-              ))}
-            </View>
-          </>
-        )}
-
-        {items.length === 0 ? null : (
-          <Text accessibilityRole="header" style={styles.heading}>
-            Items
-          </Text>
-        )}
-      </View>
-    }
-  />
+          )}
+        </View>
+      }
+    />
 );
+};
 
 const styles = StyleSheet.create({
   head: { gap: space.s3 },

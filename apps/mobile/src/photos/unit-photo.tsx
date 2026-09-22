@@ -1,4 +1,5 @@
-import { describeFailure, type StorageUnitWithPhotoView } from "@ariadna/api-client";
+import { type StorageUnitWithPhotoView } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -13,6 +14,7 @@ import {
 } from "./photo-mutations.js";
 import { PhotoPicker } from "./views/photo-picker.js";
 import { PhotoStatusNote } from "./views/photo-status-note.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * A unit holds exactly one photo, so uploading is always a replacement and the
@@ -28,6 +30,8 @@ export const UnitPhoto = ({
 }: {
   readonly unit: StorageUnitWithPhotoView;
 }): JSX.Element => {
+  const t = useTranslate();
+
   const upload = useUploadUnitPhoto(unit.id);
   const remove = useDeleteUnitPhoto(unit.id);
   const reprocess = useReprocessPhoto();
@@ -69,13 +73,13 @@ export const UnitPhoto = ({
       )}
 
       {upload.isError ? (
-        <Callout tone="wrong">{describeFailure(upload.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(upload.error))}</Callout>
       ) : null}
       {remove.isError ? (
-        <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
       ) : null}
       {reprocess.isError ? (
-        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(reprocess.error))}</Callout>
       ) : null}
     </View>
   );

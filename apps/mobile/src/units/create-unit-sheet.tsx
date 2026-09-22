@@ -1,4 +1,4 @@
-import { fieldComplaints, describeFailure } from "@ariadna/api-client";
+import { describeFailure, fieldComplaints } from "@ariadna/i18n";
 import type { StorageUnitKind, UnitId } from "@ariadna/domain";
 import { StorageUnitKind as Kinds } from "@ariadna/domain";
 import type { JSX } from "react";
@@ -7,6 +7,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { useCreateUnit } from "./unit-mutations.js";
 import { UnitForm } from "./views/unit-form.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface CreateUnitSheetProps {
   /** `null` makes a root: the house, the garage, the storage room (ADR 1). */
@@ -26,6 +27,8 @@ export const CreateUnitSheet = ({
   parentName,
   onClose,
 }: CreateUnitSheetProps): JSX.Element => {
+  const t = useTranslate();
+
   const create = useCreateUnit();
   const complaints = fieldComplaints(create.error);
 
@@ -35,7 +38,7 @@ export const CreateUnitSheet = ({
       onClose={onClose}
     >
       {create.isError && complaints.length === 0 ? (
-        <Callout tone="wrong">{describeFailure(create.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(create.error))}</Callout>
       ) : null}
 
       <UnitForm

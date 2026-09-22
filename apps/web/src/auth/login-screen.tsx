@@ -1,4 +1,4 @@
-import { loginFailureMessage } from "@ariadna/api-client";
+import { loginFailureMessage } from "@ariadna/i18n";
 import type { JSX } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
@@ -6,6 +6,7 @@ import "./login-screen.css";
 
 import { LoginForm } from "./login-form.js";
 import { useSession, useSignIn } from "./use-session.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * Container. It owns the session, the navigation and the failure, and hands
@@ -17,6 +18,8 @@ import { useSession, useSignIn } from "./use-session.js";
  * product is the difference between working and feeling broken.
  */
 export const LoginScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const session = useSession();
   const location = useLocation();
   const signIn = useSignIn();
@@ -34,7 +37,7 @@ export const LoginScreen = (): JSX.Element => {
           signIn.mutate(credentials);
         }}
         busy={signIn.isPending}
-        failure={loginFailureMessage(signIn.error)}
+        failure={t(loginFailureMessage(signIn.error))}
       />
     </main>
   );

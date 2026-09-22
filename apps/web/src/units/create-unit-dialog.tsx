@@ -1,4 +1,4 @@
-import { describeFailure, fieldComplaints } from "@ariadna/api-client";
+import { describeFailure, fieldComplaints } from "@ariadna/i18n";
 import { StorageUnitKind, type UnitId } from "@ariadna/domain";
 import type { JSX } from "react";
 
@@ -6,6 +6,7 @@ import { Sheet } from "../ui/organisms/sheet.js";
 import { useCreateUnit } from "./unit-mutations.js";
 
 import { UnitForm } from "./views/unit-form.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface CreateUnitDialogProps {
   /** `null` starts a new root: a room, a shed, a house. */
@@ -18,6 +19,8 @@ export const CreateUnitDialog = ({
   parentId,
   onClose,
 }: CreateUnitDialogProps): JSX.Element => {
+  const t = useTranslate();
+
   const create = useCreateUnit();
   const problems = fieldComplaints(create.error);
 
@@ -37,7 +40,7 @@ export const CreateUnitDialog = ({
         }}
         busy={create.isPending}
         failure={
-          create.isError && problems.length === 0 ? describeFailure(create.error) : null
+          create.isError && problems.length === 0 ? t(describeFailure(create.error)) : null
         }
         fieldProblems={problems}
         onCancel={onClose}

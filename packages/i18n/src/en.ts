@@ -54,6 +54,59 @@ export const EN = {
   // ---------------------------------------------------------------------
   // Counting what is inside a storage unit
   // ---------------------------------------------------------------------
+  "units.treeLabel": "Storage units",
   "units.itemCount": { one: "{count} item", other: "{count} items" },
   "units.unitCount": { one: "{count} unit", other: "{count} units" },
+
+  // ---------------------------------------------------------------------
+  // Refusals a person reads, shared by both clients
+  // ---------------------------------------------------------------------
+
+  /** Composed from two counts, each agreeing with its own noun. See `refusals.ts`. */
+  "units.contentsBoth": "{items} and {units}",
+  "units.notEmpty":
+    "{name} still holds {contents}. Nothing is deleted with a box still full.",
+  "units.cyclicMove":
+    "{name} cannot go inside itself, or inside anything already inside it. Pick somewhere outside it.",
+  "units.missingTarget":
+    "This unit has no parent to empty into. Choose where its contents should go.",
+
+  "items.moveRefused":
+    "Nothing was moved. {reason} A move is all or nothing, so the rest stayed where they were.",
+
+  "photos.tooMany": "This item already holds {limit} photos. Delete one to make room.",
+  "photos.removalPending":
+    "Background removal is still pending. The original is shown, and it stays shown whether or not the background is ever removed.",
+  "photos.removalFailed":
+    "Background removal failed for this photo. The original is shown instead.",
+
+  "login.wrongCredentials": "That username or password is wrong.",
+  "login.tooManyAttempts":
+    "Too many attempts from this connection. Wait a few minutes and try again.",
+  "login.missingCredentials": "Fill in both a username and a password.",
+  "login.unavailable": "Ariadna could not sign you in. Try again in a moment.",
+
+  "failure.offline": "The app could not reach Ariadna. Check the connection and try again.",
+  "failure.notFound": "That is not here any more. It may have been deleted or moved.",
+  "failure.sessionEnded": "Your session has ended. Sign in again.",
+  "failure.rateLimited": "Too many requests. Wait a moment and try again.",
+  "failure.refused": "Ariadna refused that request.",
+  "failure.server": "Ariadna had a problem answering. Try again in a moment.",
+  /**
+   * The API's own sentence about the exact situation, passed through. It
+   * arrives in English and stays that way — see `describeFailure`.
+   */
+  "failure.asTheApiPutIt": "{reason}",
+
+  // ---------------------------------------------------------------------
+  // What a storage unit is, as a word rather than as a rule (ADR 1)
+  // ---------------------------------------------------------------------
+  "units.kind.room": "Room",
+  "units.kind.furniture": "Furniture",
+  "units.kind.shelf": "Shelf",
+  "units.kind.drawer": "Drawer",
+  "units.kind.box": "Box",
+  "units.kind.bag": "Bag",
+  "units.kind.other": "Other",
+
 } as const;

@@ -69,12 +69,20 @@ type HolesOf<P extends Phrase> = P extends string
 /**
  * A count is a number, so this layer can print it the way the language does
  * rather than receive it already glued into a string. Everything else may be
- * either: a name is a string, and a number that is not being counted (a
- * photo limit, a position in a list) should not have to be stringified at
- * every call site.
+ * a string, a number, or ANOTHER message.
+ *
+ * That last one is what makes a sentence with two counts in it possible.
+ * "Garage still holds 2 items and 1 unit" has two nouns, each picking its own
+ * plural form, and the word joining them is `and` in one language and `y` in
+ * the other. Flattening that into one phrase would need nested plural
+ * selection inside a single string; letting a value BE a message instead keeps
+ * every phrase a sentence a translator can read, and keeps the code that
+ * decides the refusal from having to know a language in order to compose one.
  */
 export type ValuesFor<K extends MessageKey> = {
-  readonly [Hole in HolesOf<Source[K]>]: Hole extends "count" ? number : string | number;
+  readonly [Hole in HolesOf<Source[K]>]: Hole extends "count"
+    ? number
+    : string | number | Message;
 };
 
 /**

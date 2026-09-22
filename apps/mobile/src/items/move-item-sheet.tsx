@@ -1,9 +1,5 @@
-import {
-  describeFailure,
-  flattenUnits,
-  moveRefusedMessage,
-  type ItemView,
-} from "@ariadna/api-client";
+import { type ItemView, flattenUnits } from "@ariadna/api-client";
+import { describeFailure, moveRefusedMessage } from "@ariadna/i18n";
 import { unitId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 
@@ -14,6 +10,7 @@ import { Sheet } from "../ui/organisms/sheet.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
 import { unitOptions } from "../units/views/unit-options.js";
 import { useMoveItems } from "./item-mutations.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * Moving one item is a batch of one.
@@ -29,11 +26,13 @@ export const MoveItemSheet = ({
   readonly item: ItemView;
   readonly onClose: () => void;
 }): JSX.Element => {
+  const t = useTranslate();
+
   const tree = useStorageUnitTree();
   const move = useMoveItems();
   const [target, setTarget] = useState<string>(item.storageUnitId);
 
-  const refused = moveRefusedMessage(move.error);
+  const refused = t(moveRefusedMessage(move.error));
 
   return (
     <Sheet title={`Move ${item.name}`} onClose={onClose}>
@@ -45,7 +44,7 @@ export const MoveItemSheet = ({
       />
 
       {move.isError ? (
-        <Callout tone="wrong">{refused ?? describeFailure(move.error)}</Callout>
+        <Callout tone="wrong">{refused ?? t(describeFailure(move.error))}</Callout>
       ) : null}
 
       <Button

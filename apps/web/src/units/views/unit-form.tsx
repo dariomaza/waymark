@@ -1,4 +1,4 @@
-import { type FieldComplaint, KIND_CHOICES } from "@ariadna/api-client";
+import { type FieldComplaint, kindChoices } from "@ariadna/i18n";
 import { StorageUnitKind } from "@ariadna/domain";
 import { useState, type FormEvent, type JSX } from "react";
 
@@ -7,6 +7,7 @@ import { Callout, type CalloutTone } from "../../ui/atoms/callout.js";
 import { SelectField } from "../../ui/atoms/select-field.js";
 import { TextArea } from "../../ui/atoms/text-area.js";
 import { TextField } from "../../ui/atoms/text-field.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface UnitFormValues {
   readonly name: string;
@@ -50,6 +51,8 @@ export const UnitForm = ({
   onSubmit,
   onCancel,
 }: UnitFormProps): JSX.Element => {
+  const t = useTranslate();
+
   const [name, setName] = useState(initial.name);
   const [kind, setKind] = useState<StorageUnitKind>(initial.kind);
   const [description, setDescription] = useState(initial.description);
@@ -84,7 +87,7 @@ export const UnitForm = ({
           label="Kind"
           hint="A label, never a rule: anything can go inside anything."
           value={kind}
-          options={KIND_CHOICES.map((choice) => ({
+          options={kindChoices(t).map((choice) => ({
             value: choice.kind,
             label: choice.label,
           }))}

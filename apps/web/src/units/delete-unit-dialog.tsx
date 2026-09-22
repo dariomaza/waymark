@@ -1,4 +1,5 @@
-import { describeFailure, flattenUnits, notEmptyMessage, type StorageUnitView } from "@ariadna/api-client";
+import { type StorageUnitView, flattenUnits } from "@ariadna/api-client";
+import { describeFailure, notEmptyMessage } from "@ariadna/i18n";
 import { unitId, type UnitId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 
@@ -10,6 +11,7 @@ import { useStorageUnitTree } from "./unit-queries.js";
 
 import { useDeleteUnit, useEmptyAndDeleteUnit } from "./unit-mutations.js";
 import { unitOptions } from "./views/unit-options.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface DeleteUnitDialogProps {
   readonly unit: StorageUnitView;
@@ -38,12 +40,14 @@ export const DeleteUnitDialog = ({
   onClose,
   onDeleted,
 }: DeleteUnitDialogProps): JSX.Element => {
+  const t = useTranslate();
+
   const tree = useStorageUnitTree();
   const remove = useDeleteUnit(unit.id);
   const emptyAndRemove = useEmptyAndDeleteUnit(unit.id);
   const [target, setTarget] = useState<string>("");
 
-  const stillFull = notEmptyMessage(remove.error, unit.name);
+  const stillFull = t(notEmptyMessage(remove.error, unit.name));
   const needsTarget = parent === null;
   const chosen: UnitId | undefined =
     needsTarget && target !== "" ? unitId(target) : undefined;
@@ -54,7 +58,7 @@ export const DeleteUnitDialog = ({
         <>
           <p>Deleting {unit.name} cannot be undone.</p>
           {remove.isError ? (
-            <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+            <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}
           <div className="sheet__buttons">
             <Button onClick={onClose}>Cancel</Button>
@@ -93,7 +97,7 @@ export const DeleteUnitDialog = ({
           ) : null}
 
           {emptyAndRemove.isError ? (
-            <Callout tone="wrong">{describeFailure(emptyAndRemove.error)}</Callout>
+            <Callout tone="wrong">{t(describeFailure(emptyAndRemove.error))}</Callout>
           ) : null}
 
           <div className="sheet__buttons">

@@ -1,5 +1,7 @@
 import { PhotoProcessingStatus } from "@ariadna/domain";
 
+import { message, type Message } from "./dictionary.js";
+
 /**
  * What a photo's processing state is worth saying out loud, and what is not.
  *
@@ -16,12 +18,12 @@ import { PhotoProcessingStatus } from "@ariadna/domain";
  * for (`POST /photos/:id/reprocess`), and `PENDING` gets nothing, because
  * offering to retry a photo nothing has tried yet would invent a problem.
  */
-export const photoStatusNote = (status: PhotoProcessingStatus): string | null => {
+export const photoStatusNote = (status: PhotoProcessingStatus): Message | null => {
   switch (status) {
     case PhotoProcessingStatus.PENDING:
-      return "Background removal is still pending. The original is shown, and it stays shown whether or not the background is ever removed.";
+      return message("photos.removalPending");
     case PhotoProcessingStatus.FAILED:
-      return "Background removal failed for this photo. The original is shown instead.";
+      return message("photos.removalFailed");
     default:
       return null;
   }

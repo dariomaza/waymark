@@ -1,4 +1,5 @@
-import { describeFailure, detailNumber, type ItemView, movedEarlier, tooManyPhotosMessage, withCoverFirst } from "@ariadna/api-client";
+import { type ItemView, detailNumber, movedEarlier, withCoverFirst } from "@ariadna/api-client";
+import { describeFailure, tooManyPhotosMessage } from "@ariadna/i18n";
 import { MAX_ITEM_PHOTOS } from "@ariadna/domain";
 import type { JSX } from "react";
 
@@ -15,6 +16,7 @@ import {
 import { PhotoPicker } from "./views/photo-picker.js";
 import { PhotoStatusNote } from "./views/photo-status-note.js";
 import "./item-photos.css";
+import { useTranslate } from "../app/language-context.js";
 
 export interface ItemPhotosProps {
   readonly item: ItemView;
@@ -38,15 +40,17 @@ export interface ItemPhotosProps {
  * moved.
  */
 export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
+  const t = useTranslate();
+
   const upload = useUploadItemPhoto(item.id);
   const reorder = useReorderItemPhotos(item.id);
   const remove = useDeleteItemPhoto(item.id);
   const reprocess = useReprocessPhoto();
 
-  const full = tooManyPhotosMessage(
+  const full = t(tooManyPhotosMessage(
     upload.error,
     detailNumber(upload.error, "limit") ?? MAX_ITEM_PHOTOS,
-  );
+  ));
   // The order is what the API is asked to store; the photos themselves are
   // what it hands back (ADR 9).
   const order = item.photos.map((photo) => photo.id);
@@ -65,7 +69,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
 
       {upload.isError ? (
         <Callout tone={full === null ? "wrong" : "blocked"}>
-          {full ?? describeFailure(upload.error)}
+          {full ?? t(describeFailure(upload.error))}
         </Callout>
       ) : null}
 
@@ -126,13 +130,13 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
       )}
 
       {reorder.isError ? (
-        <Callout tone="wrong">{describeFailure(reorder.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(reorder.error))}</Callout>
       ) : null}
       {remove.isError ? (
-        <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
       ) : null}
       {reprocess.isError ? (
-        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(reprocess.error))}</Callout>
       ) : null}
     </section>
   );

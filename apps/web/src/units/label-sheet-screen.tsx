@@ -1,9 +1,5 @@
-import {
-  describeFailure,
-  flattenUnits,
-  subtreeOf,
-  type FlatUnit,
-} from "@ariadna/api-client";
+import { type FlatUnit, flattenUnits, subtreeOf } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import { unitId, type UnitId } from "@ariadna/domain";
 import { useCallback, useMemo, useState, type JSX } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -19,6 +15,7 @@ import { LabelSheet, LABELS_PER_PAGE } from "./views/label-sheet.js";
 import { UnitChecklist } from "./views/unit-checklist.js";
 
 import "./label-sheet-screen.css";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # Labelling a whole storage room in one afternoon
@@ -46,6 +43,8 @@ import "./label-sheet-screen.css";
  * the symbols have arrived. Everything it draws is presentational.
  */
 export const LabelSheetScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const [params] = useSearchParams();
   const within = params.get("within");
   const tree = useStorageUnitTree();
@@ -157,7 +156,7 @@ export const LabelSheetScreen = (): JSX.Element => {
           {symbols.failure === null ? null : (
             <Callout tone="wrong">
               A symbol could not be fetched, so the sheet is incomplete and
-              printing is off. {describeFailure(symbols.failure)}
+              printing is off. {t(describeFailure(symbols.failure))}
             </Callout>
           )}
 

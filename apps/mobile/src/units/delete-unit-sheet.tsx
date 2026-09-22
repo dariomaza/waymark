@@ -1,9 +1,5 @@
-import {
-  describeFailure,
-  flattenUnits,
-  notEmptyMessage,
-  type StorageUnitView,
-} from "@ariadna/api-client";
+import { type StorageUnitView, flattenUnits } from "@ariadna/api-client";
+import { describeFailure, notEmptyMessage } from "@ariadna/i18n";
 import { unitId, type UnitId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -16,6 +12,7 @@ import { colors, space, text } from "../ui/styles/tokens.js";
 import { useDeleteUnit, useEmptyAndDeleteUnit } from "./unit-mutations.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { unitOptions } from "./views/unit-options.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface DeleteUnitSheetProps {
   readonly unit: StorageUnitView;
@@ -44,12 +41,14 @@ export const DeleteUnitSheet = ({
   onClose,
   onDeleted,
 }: DeleteUnitSheetProps): JSX.Element => {
+  const t = useTranslate();
+
   const tree = useStorageUnitTree();
   const remove = useDeleteUnit(unit.id);
   const emptyAndRemove = useEmptyAndDeleteUnit(unit.id);
   const [target, setTarget] = useState<string>("");
 
-  const stillFull = notEmptyMessage(remove.error, unit.name);
+  const stillFull = t(notEmptyMessage(remove.error, unit.name));
   const needsTarget = parent === null;
   const chosen: UnitId | undefined =
     needsTarget && target !== "" ? unitId(target) : undefined;
@@ -60,7 +59,7 @@ export const DeleteUnitSheet = ({
         <View style={styles.block}>
           <Text style={styles.text}>Deleting {unit.name} cannot be undone.</Text>
           {remove.isError ? (
-            <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+            <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}
           <Button
             tone="danger"
@@ -93,7 +92,7 @@ export const DeleteUnitSheet = ({
             ) : null}
 
             {emptyAndRemove.isError ? (
-              <Callout tone="wrong">{describeFailure(emptyAndRemove.error)}</Callout>
+              <Callout tone="wrong">{t(describeFailure(emptyAndRemove.error))}</Callout>
             ) : null}
 
             <Button

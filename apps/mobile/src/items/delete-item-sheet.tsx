@@ -1,4 +1,5 @@
-import { describeFailure, type ItemView } from "@ariadna/api-client";
+import { type ItemView } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import type { JSX } from "react";
 import { StyleSheet, Text } from "react-native";
 
@@ -7,6 +8,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { colors, text } from "../ui/styles/tokens.js";
 import { useDeleteItem } from "./item-mutations.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * Deleting an item is unconditional — unlike a unit, an item holds nothing
@@ -21,6 +23,8 @@ export const DeleteItemSheet = ({
   readonly onClose: () => void;
   readonly onDeleted: () => void;
 }): JSX.Element => {
+  const t = useTranslate();
+
   const remove = useDeleteItem(item.id);
 
   return (
@@ -32,7 +36,7 @@ export const DeleteItemSheet = ({
       </Text>
 
       {remove.isError ? (
-        <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
       ) : null}
 
       <Button

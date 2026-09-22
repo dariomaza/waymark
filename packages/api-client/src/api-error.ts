@@ -106,3 +106,20 @@ export const detailNumber = (error: unknown, key: string): number | null => {
 
   return typeof value === "number" ? value : null;
 };
+
+/**
+ * ADR 8, as the tone of the box a sentence goes in.
+ *
+ * A 409 is about the WORLD and the same request works once somebody changes
+ * it, so it reads as something blocking rather than something wrong.
+ * Everything else — a 422, a 400, a dead connection — is about this request
+ * or this app, and reads as wrong. Deciding it from the KIND rather than from
+ * a list of codes means a refusal nobody has met yet still lands in the right
+ * box.
+ *
+ * This stays here, beside the kinds, while the SENTENCES moved to
+ * `@ariadna/i18n`. It is not copy: it is a fact about the failure, it is the
+ * same fact in every language, and a screen uses it to choose a colour.
+ */
+export const failureTone = (error: unknown): "blocked" | "wrong" =>
+  failureKindOf(error) === FailureKind.CONFLICT ? "blocked" : "wrong";

@@ -1,4 +1,4 @@
-import { describeFailure, fieldComplaints } from "@ariadna/api-client";
+import { describeFailure, fieldComplaints } from "@ariadna/i18n";
 import type { UnitId } from "@ariadna/domain";
 import type { JSX } from "react";
 
@@ -6,6 +6,7 @@ import { Sheet } from "../ui/organisms/sheet.js";
 
 import { useCreateItem } from "./item-mutations.js";
 import { ItemForm } from "./views/item-form.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface CreateItemDialogProps {
   readonly storageUnitId: UnitId;
@@ -18,6 +19,8 @@ export const CreateItemDialog = ({
   unitName,
   onClose,
 }: CreateItemDialogProps): JSX.Element => {
+  const t = useTranslate();
+
   const create = useCreateItem();
   const problems = fieldComplaints(create.error);
 
@@ -28,7 +31,7 @@ export const CreateItemDialog = ({
         initial={{ name: "", description: "", quantity: 1, tags: [] }}
         busy={create.isPending}
         failure={
-          create.isError && problems.length === 0 ? describeFailure(create.error) : null
+          create.isError && problems.length === 0 ? t(describeFailure(create.error)) : null
         }
         fieldProblems={problems}
         onCancel={onClose}

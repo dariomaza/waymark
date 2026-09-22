@@ -48,6 +48,57 @@ export const ES: Dictionary = {
   // ---------------------------------------------------------------------
   // Counting what is inside a storage unit
   // ---------------------------------------------------------------------
+  "units.treeLabel": "Unidades de almacenaje",
   "units.itemCount": { one: "{count} cosa", other: "{count} cosas" },
   "units.unitCount": { one: "{count} unidad", other: "{count} unidades" },
+
+  // ---------------------------------------------------------------------
+  // Refusals a person reads, shared by both clients
+  // ---------------------------------------------------------------------
+
+  // "y" and not "e": the rule that changes it applies before an [i] sound,
+  // and neither noun this ever joins begins with one.
+  "units.contentsBoth": "{items} y {units}",
+  "units.notEmpty":
+    "{name} todavía contiene {contents}. No se borra una caja que sigue llena.",
+  "units.cyclicMove":
+    "{name} no puede ir dentro de sí mismo, ni dentro de nada que ya esté dentro de él. Elija un destino fuera.",
+  "units.missingTarget":
+    "Esta unidad no tiene una unidad superior donde vaciarse. Elija dónde deben ir sus contenidos.",
+
+  "items.moveRefused":
+    "No se ha movido nada. {reason} Un movimiento es todo o nada, así que el resto se ha quedado donde estaba.",
+
+  "photos.tooMany": "Esta cosa ya tiene {limit} fotos. Borre una para hacer sitio.",
+  "photos.removalPending":
+    "El recorte del fondo sigue pendiente. Se muestra la original, y se seguirá mostrando tanto si se recorta el fondo como si no.",
+  "photos.removalFailed":
+    "No se ha podido recortar el fondo de esta foto. Se muestra la original.",
+
+  "login.wrongCredentials": "El usuario o la contraseña no son correctos.",
+  "login.tooManyAttempts":
+    "Demasiados intentos desde esta conexión. Espere unos minutos e inténtelo de nuevo.",
+  "login.missingCredentials": "Escriba el usuario y la contraseña.",
+  "login.unavailable": "Ariadna no ha podido iniciar la sesión. Inténtelo de nuevo en un momento.",
+
+  "failure.offline":
+    "La aplicación no ha podido conectar con Ariadna. Compruebe la conexión e inténtelo de nuevo.",
+  "failure.notFound": "Esto ya no está aquí. Puede que se haya borrado o movido.",
+  "failure.sessionEnded": "La sesión ha terminado. Inicie sesión de nuevo.",
+  "failure.rateLimited": "Demasiadas peticiones. Espere un momento e inténtelo de nuevo.",
+  "failure.refused": "Ariadna ha rechazado esa petición.",
+  "failure.server": "Ariadna ha tenido un problema al responder. Inténtelo de nuevo en un momento.",
+  "failure.asTheApiPutIt": "{reason}",
+
+  // ---------------------------------------------------------------------
+  // What a storage unit is, as a word rather than as a rule (ADR 1)
+  // ---------------------------------------------------------------------
+  "units.kind.room": "Habitación",
+  "units.kind.furniture": "Mueble",
+  "units.kind.shelf": "Estante",
+  "units.kind.drawer": "Cajón",
+  "units.kind.box": "Caja",
+  "units.kind.bag": "Bolsa",
+  "units.kind.other": "Otro",
+
 };

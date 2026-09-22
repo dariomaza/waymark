@@ -1,8 +1,5 @@
-import {
-  describeFailure,
-  type ItemView,
-  type StorageUnitView,
-} from "@ariadna/api-client";
+import { type ItemView, type StorageUnitView } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import { useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +10,7 @@ import { EditItemDialog } from "./edit-item-dialog.js";
 import { useDeleteItem } from "./item-mutations.js";
 import { MoveItemsDialog } from "./move-items-dialog.js";
 import { ROUTES, unitPath } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface ItemActionsProps {
   readonly item: ItemView;
@@ -29,6 +27,8 @@ export interface ItemActionsProps {
  * lie about where something is.
  */
 export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => {
+  const t = useTranslate();
+
   const [open, setOpen] = useState<"edit" | "move" | "delete" | null>(null);
   const navigate = useNavigate();
   const remove = useDeleteItem(item.id);
@@ -81,7 +81,7 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
             it.
           </p>
           {remove.isError ? (
-            <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+            <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}
           <div className="sheet__buttons">
             <Button onClick={close}>Cancel</Button>

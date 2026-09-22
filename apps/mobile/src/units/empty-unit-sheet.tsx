@@ -1,4 +1,5 @@
-import { describeFailure, flattenUnits, type StorageUnitView } from "@ariadna/api-client";
+import { type StorageUnitView, flattenUnits } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import { unitId, type UnitId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 import { Text } from "react-native";
@@ -11,6 +12,7 @@ import { colors, text } from "../ui/styles/tokens.js";
 import { useEmptyUnit } from "./unit-mutations.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { unitOptions } from "./views/unit-options.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface EmptyUnitSheetProps {
   readonly unit: StorageUnitView;
@@ -30,6 +32,8 @@ export const EmptyUnitSheet = ({
   parent,
   onClose,
 }: EmptyUnitSheetProps): JSX.Element => {
+  const t = useTranslate();
+
   const tree = useStorageUnitTree();
   const empty = useEmptyUnit(unit.id);
   const [target, setTarget] = useState<string>("");
@@ -64,7 +68,7 @@ export const EmptyUnitSheet = ({
       )}
 
       {empty.isError ? (
-        <Callout tone="wrong">{describeFailure(empty.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(empty.error))}</Callout>
       ) : null}
 
       <Button

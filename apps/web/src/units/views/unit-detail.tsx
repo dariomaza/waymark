@@ -1,4 +1,5 @@
-import { type ItemView, kindLabel, type StorageUnitView } from "@ariadna/api-client";
+import { type ItemView, type StorageUnitView } from "@ariadna/api-client";
+import { kindLabel } from "@ariadna/i18n";
 import type { JSX, ReactNode } from "react";
 
 import { ItemCard } from "../../items/views/item-card.js";
@@ -8,6 +9,7 @@ import { RowLink } from "../../ui/molecules/row-link.js";
 
 import "./unit-detail.css";
 import { thingPath, unitPath } from "../../app/routes.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface UnitDetailProps {
   readonly unit: StorageUnitView;
@@ -51,6 +53,8 @@ export const UnitDetail = ({
   itemPhoto,
   belowItems,
 }: UnitDetailProps): JSX.Element => {
+  const t = useTranslate();
+
   const isEmpty = childUnits.length === 0 && items.length === 0;
 
   return (
@@ -64,7 +68,7 @@ export const UnitDetail = ({
 
       <header className="unit-detail__head">
         <h2>{unit.name}</h2>
-        <p className="unit-detail__kind">{kindLabel(unit.kind)}</p>
+        <p className="unit-detail__kind">{kindLabel(t, unit.kind)}</p>
         {unit.description === null ? null : (
           <p className="unit-detail__description">{unit.description}</p>
         )}
@@ -88,7 +92,7 @@ export const UnitDetail = ({
                 <RowLink
                   to={unitPath(child.id)}
                   title={child.name}
-                  meta={kindLabel(child.kind)}
+                  meta={kindLabel(t, child.kind)}
                 />
               </li>
             ))}

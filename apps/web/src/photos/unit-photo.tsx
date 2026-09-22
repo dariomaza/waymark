@@ -1,4 +1,5 @@
-import { describeFailure, type StorageUnitWithPhotoView } from "@ariadna/api-client";
+import { type StorageUnitWithPhotoView } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import type { JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";
@@ -12,6 +13,7 @@ import {
 import { PhotoPicker } from "./views/photo-picker.js";
 import { PhotoStatusNote } from "./views/photo-status-note.js";
 import "./unit-photo.css";
+import { useTranslate } from "../app/language-context.js";
 
 export interface UnitPhotoProps {
   readonly unit: StorageUnitWithPhotoView;
@@ -28,6 +30,8 @@ export interface UnitPhotoProps {
  * id could never have told it.
  */
 export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
+  const t = useTranslate();
+
   const upload = useUploadUnitPhoto(unit.id);
   const remove = useDeleteUnitPhoto(unit.id);
   const reprocess = useReprocessPhoto();
@@ -70,13 +74,13 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
       </div>
 
       {upload.isError ? (
-        <Callout tone="wrong">{describeFailure(upload.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(upload.error))}</Callout>
       ) : null}
       {remove.isError ? (
-        <Callout tone="wrong">{describeFailure(remove.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
       ) : null}
       {reprocess.isError ? (
-        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(reprocess.error))}</Callout>
       ) : null}
     </section>
   );

@@ -38,11 +38,11 @@ export interface Translate {
 export const translator = (language: Language): Translate => {
   const dictionary = DICTIONARIES[language];
 
-  const say = (key: MessageKey, values: Readonly<Record<string, string | number>>): string => {
+  const say = (key: MessageKey, values: PhraseParts): string => {
     const phrase = dictionary[key];
 
     if (typeof phrase === "string") {
-      return fill(phrase, printable(language, values));
+      return fill(phrase, printable(values));
     }
 
     // `count` is required by the types for any phrase with plural forms, so
@@ -50,13 +50,10 @@ export const translator = (language: Language): Translate => {
     // throwing keeps a broken call a wrong sentence instead of a blank screen.
     const count = typeof values["count"] === "number" ? values["count"] : 0;
 
-    return fill(phrase[pluralFormOf(language, count)], printable(language, values));
+    return fill(phrase[pluralFormOf(language, count)], printable(values));
   };
 
-  function translate(
-    first: MessageKey | Message | null,
-    values?: Readonly<Record<string, string | number>>,
-  ): string | null {
+  function translate(first: MessageKey | Message | null, values?: PhraseParts): string | null {
     if (first === null) {
       return null;
     }
@@ -68,21 +65,33 @@ export const translator = (language: Language): Translate => {
     return say(first.key, "values" in first ? first.values : {});
   }
 
+  /**
+   * Numbers become digits HERE, where the language is known, rather than at
+   * the call site. A screen counting things should not have to remember that
+   * Spanish writes `12.345` — it hands over the number and gets a sentence
+   * back.
+   *
+   * A value that is itself a message is said first, in this same language, and
+   * its words go into the hole. That is what lets `{items} and {units}` hold
+   * two counts that each picked their own plural form. It cannot run away:
+   * the dictionary is a fixed table written in this repository, so the nesting
+   * is only ever as deep as somebody wrote it.
+   */
+  function printable(values: PhraseParts): PhraseValues {
+    return Object.fromEntries(
+      Object.entries(values).map(([name, value]) => [
+        name,
+        typeof value === "number"
+          ? formatCount(language, value)
+          : typeof value === "string"
+            ? value
+            : say(value.key, "values" in value ? value.values : {}),
+      ]),
+    );
+  }
+
   return translate as Translate;
 };
 
-/**
- * Numbers become digits HERE, where the language is known, rather than at the
- * call site. A screen counting things should not have to remember that Spanish
- * writes `12.345` — it hands over the number and gets a sentence back.
- */
-const printable = (
-  language: Language,
-  values: Readonly<Record<string, string | number>>,
-): PhraseValues =>
-  Object.fromEntries(
-    Object.entries(values).map(([name, value]) => [
-      name,
-      typeof value === "number" ? formatCount(language, value) : value,
-    ]),
-  );
+/** What a call site hands over, before any of it has been turned into words. */
+type PhraseParts = Readonly<Record<string, string | number | Message>>;

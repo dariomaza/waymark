@@ -1,8 +1,10 @@
-import { describeFailure, FailureKind, failureKindOf } from "@ariadna/api-client";
+import { FailureKind, failureKindOf } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import type { JSX } from "react";
 
 import { Button } from "../atoms/button.js";
 import { Callout } from "../atoms/callout.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface FailureNoteProps {
   readonly error: unknown;
@@ -18,6 +20,8 @@ export interface FailureNoteProps {
  * cannot work is worse than no button.
  */
 export const FailureNote = ({ error, onRetry, title }: FailureNoteProps): JSX.Element => {
+  const t = useTranslate();
+
   const worthRetrying = failureKindOf(error) !== FailureKind.NOT_FOUND;
 
   return (
@@ -34,7 +38,7 @@ export const FailureNote = ({ error, onRetry, title }: FailureNoteProps): JSX.El
           }
         : {})}
     >
-      <p>{describeFailure(error)}</p>
+      <p>{t(describeFailure(error))}</p>
     </Callout>
   );
 };

@@ -1,4 +1,4 @@
-import type { FieldComplaint } from "@ariadna/api-client";
+import type { FieldComplaint } from "@ariadna/i18n";
 import { useState, type FormEvent, type JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";

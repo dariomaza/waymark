@@ -1,4 +1,4 @@
-import { describeFailure } from "@ariadna/api-client";
+import { describeFailure } from "@ariadna/i18n";
 import { photoId as toPhotoId } from "@ariadna/domain";
 import type { JSX } from "react";
 
@@ -9,6 +9,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { useReprocessPhoto, useRetryFailedPhotos } from "./photo-mutations.js";
 import { usePhotoProcessing } from "./processing-queries.js";
 import { ProcessingDetail } from "./views/processing-detail.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # The screen for whoever runs the sidecar
@@ -29,6 +30,8 @@ import { ProcessingDetail } from "./views/processing-detail.js";
  * is one presentational component away.
  */
 export const PhotoProcessingScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const processing = usePhotoProcessing();
   const retryAll = useRetryFailedPhotos();
   const reprocess = useReprocessPhoto();
@@ -89,10 +92,10 @@ export const PhotoProcessingScreen = (): JSX.Element => {
       ) : null}
 
       {retryAll.isError ? (
-        <Callout tone="wrong">{describeFailure(retryAll.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(retryAll.error))}</Callout>
       ) : null}
       {reprocess.isError ? (
-        <Callout tone="wrong">{describeFailure(reprocess.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(reprocess.error))}</Callout>
       ) : null}
     </main>
   );

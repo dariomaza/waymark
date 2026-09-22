@@ -37,3 +37,27 @@ export {
 
 export { message, type Dictionary, type Message, type MessageKey } from "./dictionary.js";
 export { translator, type Translate } from "./translate.js";
+
+/**
+ * What a refusal MEANS, as something that can still be said in two languages.
+ *
+ * These are pure functions of an `ApiError` and they are shared for the same
+ * reason the error kinds are: a 409 on a delete has to offer to empty the box
+ * on both clients, and a sentence written twice is a sentence that drifts.
+ * What each app then draws around them — a sheet, a callout, a toast — is its
+ * own.
+ */
+export {
+  cyclicMoveMessage,
+  describeFailure,
+  fieldComplaints,
+  loginFailureMessage,
+  missingTargetMessage,
+  moveRefusedMessage,
+  notEmptyMessage,
+  tooManyPhotosMessage,
+  type FieldComplaint,
+} from "./refusals.js";
+
+export { kindChoices, kindLabel } from "./kind-label.js";
+export { photoStatusNote } from "./photo-status.js";

@@ -1,4 +1,4 @@
-import { KIND_CHOICES, type FieldComplaint } from "@ariadna/api-client";
+import { type FieldComplaint, kindChoices } from "@ariadna/i18n";
 import type { StorageUnitKind } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 import { StyleSheet, View } from "react-native";
@@ -7,6 +7,7 @@ import { Button } from "../../ui/atoms/button.js";
 import { OptionList } from "../../ui/atoms/option-list.js";
 import { TextField } from "../../ui/atoms/text-field.js";
 import { space } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface UnitFormValues {
   readonly name: string;
@@ -39,6 +40,8 @@ export const UnitForm = ({
   complaints,
   onSubmit,
 }: UnitFormProps): JSX.Element => {
+  const t = useTranslate();
+
   const [name, setName] = useState(initial.name);
   const [kind, setKind] = useState<StorageUnitKind>(initial.kind);
   const [description, setDescription] = useState(initial.description ?? "");
@@ -59,7 +62,7 @@ export const UnitForm = ({
       <OptionList
         label="Kind"
         value={kind}
-        options={KIND_CHOICES.map((choice) => ({
+        options={kindChoices(t).map((choice) => ({
           value: choice.kind,
           label: choice.label,
         }))}

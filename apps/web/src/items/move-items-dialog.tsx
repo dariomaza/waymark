@@ -1,4 +1,5 @@
-import { describeFailure, flattenUnits, moveRefusedMessage } from "@ariadna/api-client";
+import { flattenUnits } from "@ariadna/api-client";
+import { describeFailure, moveRefusedMessage } from "@ariadna/i18n";
 import { unitId, type ItemId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 
@@ -10,6 +11,7 @@ import { useStorageUnitTree } from "../units/unit-queries.js";
 import { unitOptions } from "../units/views/unit-options.js";
 
 import { useMoveItems } from "./item-mutations.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface MoveItemsDialogProps {
   readonly itemIds: readonly ItemId[];
@@ -33,11 +35,13 @@ export const MoveItemsDialog = ({
   onClose,
   onMoved,
 }: MoveItemsDialogProps): JSX.Element => {
+  const t = useTranslate();
+
   const tree = useStorageUnitTree();
   const move = useMoveItems();
   const [target, setTarget] = useState("");
 
-  const refused = moveRefusedMessage(move.error);
+  const refused = t(moveRefusedMessage(move.error));
 
   return (
     <Sheet title={title} onClose={onClose}>
@@ -55,7 +59,7 @@ export const MoveItemsDialog = ({
       />
 
       {move.isError ? (
-        <Callout tone="wrong">{refused ?? describeFailure(move.error)}</Callout>
+        <Callout tone="wrong">{refused ?? t(describeFailure(move.error))}</Callout>
       ) : null}
 
       <div className="sheet__buttons">

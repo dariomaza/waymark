@@ -1,7 +1,8 @@
+import { loginFailureMessage } from "@ariadna/i18n";
 import type { JSX } from "react";
 
+import { useTranslate } from "../app/language-context.js";
 import { Screen } from "../ui/organisms/screen.js";
-import { loginFailureMessage } from "./login-failure.js";
 import { useSignIn } from "./use-session.js";
 import { LoginForm } from "./views/login-form.js";
 
@@ -17,6 +18,7 @@ import { LoginForm } from "./views/login-form.js";
  */
 export const LoginScreen = (): JSX.Element => {
   const signIn = useSignIn();
+  const t = useTranslate();
 
   return (
     <Screen>
@@ -25,7 +27,7 @@ export const LoginScreen = (): JSX.Element => {
           signIn.mutate(credentials);
         }}
         busy={signIn.isPending}
-        failure={loginFailureMessage(signIn.error)}
+        failure={t(loginFailureMessage(signIn.error))}
       />
     </Screen>
   );

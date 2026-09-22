@@ -1,9 +1,5 @@
-import {
-  cyclicMoveMessage,
-  describeFailure,
-  flattenUnits,
-  type StorageUnitView,
-} from "@ariadna/api-client";
+import { type StorageUnitView, flattenUnits } from "@ariadna/api-client";
+import { cyclicMoveMessage, describeFailure } from "@ariadna/i18n";
 import { unitId } from "@ariadna/domain";
 import { useState, type JSX } from "react";
 import { View } from "react-native";
@@ -15,6 +11,7 @@ import { Sheet } from "../ui/organisms/sheet.js";
 import { useMoveUnit } from "./unit-mutations.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { unitOptions } from "./views/unit-options.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface MoveUnitSheetProps {
   readonly unit: StorageUnitView;
@@ -33,11 +30,13 @@ const MAKE_IT_A_ROOT = "";
  * and the refusal is the sentence the person reads.
  */
 export const MoveUnitSheet = ({ unit, onClose }: MoveUnitSheetProps): JSX.Element => {
+  const t = useTranslate();
+
   const tree = useStorageUnitTree();
   const move = useMoveUnit(unit.id);
   const [target, setTarget] = useState<string>(unit.parentId ?? MAKE_IT_A_ROOT);
 
-  const cyclic = cyclicMoveMessage(move.error, unit.name);
+  const cyclic = t(cyclicMoveMessage(move.error, unit.name));
 
   return (
     <Sheet title={`Move ${unit.name}`} onClose={onClose}>
@@ -53,7 +52,7 @@ export const MoveUnitSheet = ({ unit, onClose }: MoveUnitSheetProps): JSX.Elemen
 
       {move.isError ? (
         <Callout tone={cyclic === null ? "wrong" : "blocked"}>
-          {cyclic ?? describeFailure(move.error)}
+          {cyclic ?? t(describeFailure(move.error))}
         </Callout>
       ) : null}
 

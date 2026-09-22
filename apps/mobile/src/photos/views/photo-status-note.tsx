@@ -1,10 +1,12 @@
-import { photoStatusNote, type PhotoView } from "@ariadna/api-client";
+import { type PhotoView } from "@ariadna/api-client";
+import { photoStatusNote } from "@ariadna/i18n";
 import { PhotoProcessingStatus } from "@ariadna/domain";
 import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
 import { colors, space, text } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface PhotoStatusNoteProps {
   readonly photo: PhotoView;
@@ -31,7 +33,9 @@ export const PhotoStatusNote = ({
   onRetry,
   retrying,
 }: PhotoStatusNoteProps): JSX.Element | null => {
-  const note = photoStatusNote(photo.processingStatus);
+  const t = useTranslate();
+
+  const note = t(photoStatusNote(photo.processingStatus));
   if (note === null) {
     return null;
   }

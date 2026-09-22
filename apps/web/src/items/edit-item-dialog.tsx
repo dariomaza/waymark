@@ -1,10 +1,12 @@
-import { describeFailure, failureTone, fieldComplaints, type ItemView } from "@ariadna/api-client";
+import { type ItemView, failureTone } from "@ariadna/api-client";
+import { describeFailure, fieldComplaints } from "@ariadna/i18n";
 import type { JSX } from "react";
 
 import { Sheet } from "../ui/organisms/sheet.js";
 
 import { useUpdateItem } from "./item-mutations.js";
 import { ItemForm } from "./views/item-form.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface EditItemDialogProps {
   readonly item: ItemView;
@@ -23,6 +25,8 @@ export interface EditItemDialogProps {
  * a batch (ADR 3), and it has a screen of its own.
  */
 export const EditItemDialog = ({ item, onClose }: EditItemDialogProps): JSX.Element => {
+  const t = useTranslate();
+
   const edit = useUpdateItem(item.id);
   const problems = fieldComplaints(edit.error);
 
@@ -37,7 +41,7 @@ export const EditItemDialog = ({ item, onClose }: EditItemDialogProps): JSX.Elem
           tags: item.tags,
         }}
         busy={edit.isPending}
-        failure={edit.isError && problems.length === 0 ? describeFailure(edit.error) : null}
+        failure={edit.isError && problems.length === 0 ? t(describeFailure(edit.error)) : null}
         failureTone={failureTone(edit.error)}
         fieldProblems={problems}
         onCancel={onClose}

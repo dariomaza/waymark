@@ -1,4 +1,4 @@
-import { describeFailure, fieldComplaints } from "@ariadna/api-client";
+import { describeFailure, fieldComplaints } from "@ariadna/i18n";
 import type { UnitId } from "@ariadna/domain";
 import type { JSX } from "react";
 
@@ -6,6 +6,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { useCreateItem } from "./item-mutations.js";
 import { ItemForm } from "./views/item-form.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface CreateItemSheetProps {
   readonly storageUnitId: UnitId;
@@ -20,13 +21,15 @@ export const CreateItemSheet = ({
   unitName,
   onClose,
 }: CreateItemSheetProps): JSX.Element => {
+  const t = useTranslate();
+
   const create = useCreateItem();
   const complaints = fieldComplaints(create.error);
 
   return (
     <Sheet title={`Add an item to ${unitName}`} onClose={onClose}>
       {create.isError && complaints.length === 0 ? (
-        <Callout tone="wrong">{describeFailure(create.error)}</Callout>
+        <Callout tone="wrong">{t(describeFailure(create.error))}</Callout>
       ) : null}
 
       <ItemForm

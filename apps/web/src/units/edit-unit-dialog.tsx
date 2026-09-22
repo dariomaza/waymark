@@ -1,10 +1,12 @@
-import { describeFailure, failureTone, fieldComplaints, type StorageUnitView } from "@ariadna/api-client";
+import { type StorageUnitView, failureTone } from "@ariadna/api-client";
+import { describeFailure, fieldComplaints } from "@ariadna/i18n";
 import type { JSX } from "react";
 
 import { Sheet } from "../ui/organisms/sheet.js";
 import { useUpdateUnit } from "./unit-mutations.js";
 
 import { UnitForm } from "./views/unit-form.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface EditUnitDialogProps {
   readonly unit: StorageUnitView;
@@ -24,6 +26,8 @@ export interface EditUnitDialogProps {
  * because the rule behind it is (ADR 2).
  */
 export const EditUnitDialog = ({ unit, onClose }: EditUnitDialogProps): JSX.Element => {
+  const t = useTranslate();
+
   const edit = useUpdateUnit(unit.id);
   const problems = fieldComplaints(edit.error);
 
@@ -37,7 +41,7 @@ export const EditUnitDialog = ({ unit, onClose }: EditUnitDialogProps): JSX.Elem
           description: unit.description ?? "",
         }}
         busy={edit.isPending}
-        failure={edit.isError && problems.length === 0 ? describeFailure(edit.error) : null}
+        failure={edit.isError && problems.length === 0 ? t(describeFailure(edit.error)) : null}
         failureTone={failureTone(edit.error)}
         fieldProblems={problems}
         onCancel={onClose}
