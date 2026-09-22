@@ -124,12 +124,3 @@ export const UnitDetail = ({
     </>
   );
 };
-
-const itemMeta = (item: ItemView): string | undefined => {
-  const parts = [
-    item.quantity > 1 ? `Quantity ${String(item.quantity)}` : "",
-    item.tags.join(", "),
-  ].filter((part) => part !== "");
-
-  return parts.length === 0 ? undefined : parts.join(" · ");
-};

@@ -14,11 +14,16 @@
 /**
  * Anything that separates words when somebody types a name one-handed.
  *
- * Deliberately not "not a letter": a name can begin with a digit or an emoji,
- * and both are perfectly good first characters to show. Only the connectors
- * are dropped.
+ * Whitespace and punctuation, and deliberately NOT "everything that is not a
+ * letter": a name can begin with a digit or an emoji, and both are perfectly
+ * good first characters to show. Symbols are left alone, which is what keeps
+ * the wrench in "* llave".
+ *
+ * Written with `u` and no set difference rather than with `v`, because `v`
+ * needs an ES2024 target and this package is also compiled for Hermes on the
+ * phone.
  */
-const SEPARATORS = /[[\s\p{P}\p{S}]--[\p{Emoji_Presentation}]]+/gv;
+const SEPARATORS = /[\s\p{P}]+/gu;
 
 const MAX = 2;
 
