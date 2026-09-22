@@ -66,8 +66,13 @@ describe("searching for where something is", () => {
       "cab",
     );
 
-    const hit = await screen.findByRole("article", { name: /HDMI 2\.1/i });
-    expect(within(hit).getByText("Garage > Metal wardrobe > Box 3")).toBeVisible();
+    /**
+     * A card cannot hold `Garage > Metal wardrobe > Box 3`, so it holds the
+     * last step of it — the box to walk to, which is most of the answer. The
+     * whole path is one tap away, in the thing\u2019s own screen.
+     */
+    const hit = await screen.findByRole("link", { name: /HDMI 2\.1/i });
+    expect(within(hit).getByText(/Box 3/)).toBeVisible();
   });
 
   it("says WHY a result is there, since the name may not say it", async () => {
@@ -84,7 +89,7 @@ describe("searching for where something is", () => {
       "cab",
     );
 
-    const hit = await screen.findByRole("article", { name: /HDMI 2\.1/i });
+    const hit = await screen.findByRole("link", { name: /HDMI 2\.1/i });
     expect(within(hit).getByText(/tag/i)).toBeVisible();
   });
 
@@ -141,7 +146,7 @@ describe("searching for where something is", () => {
 
     renderApp({ route: "/find?q=cable" });
 
-    expect(await screen.findByRole("article", { name: /HDMI 2\.1/i })).toBeVisible();
+    expect(await screen.findByRole("link", { name: /HDMI 2\.1/i })).toBeVisible();
     expect(screen.getByRole("searchbox", { name: /search/i })).toHaveValue("cable");
     expect(asked.map((params) => params.get("q"))).toEqual(["cable"]);
   });
@@ -164,7 +169,7 @@ describe("searching for where something is", () => {
     expect(await screen.findByText(/inside garage/i)).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: /search everywhere/i }));
 
-    await screen.findByRole("article", { name: /HDMI 2\.1/i });
+    await screen.findByRole("link", { name: /HDMI 2\.1/i });
     expect(asked.map((params) => params.get("within"))).toEqual(["garage", null]);
   });
 });

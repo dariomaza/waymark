@@ -3,16 +3,17 @@ import type { JSX } from "react";
 import { Loading } from "../ui/atoms/loading.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
-import { RowLink } from "../ui/molecules/row-link.js";
+import { ItemCover } from "../photos/item-cover.js";
 import { useEveryItem } from "./item-queries.js";
+import { ItemCard } from "./views/item-card.js";
 import { thingPath } from "../app/routes.js";
 
 /**
  * Every item in the house, each with where it is.
  *
- * One request, one answer, in the order the API sent it. The location is not
- * decoration on the row — it is the point of the screen, which is why it is
- * never a list of bare names.
+ * One request, one answer, in the order the API sent it. A card cannot hold
+ * the whole path, so it holds the last step of it — the box to walk to —
+ * and the full breadcrumb waits one tap away, in the thing's own screen.
  */
 export const AllItemsScreen = (): JSX.Element => {
   const everything = useEveryItem();
@@ -34,17 +35,21 @@ export const AllItemsScreen = (): JSX.Element => {
       ) : null}
 
       {everything.isSuccess && rows.length === 0 ? (
-        <EmptyNote>No items yet. Open a unit and add one.</EmptyNote>
+        <EmptyNote explains="Open a place and add the first one; it will show up here and when you scan that place’s label.">
+          You have not put anything in yet
+        </EmptyNote>
       ) : null}
 
       {rows.length === 0 ? null : (
-        <ul aria-label="Every item">
+        <ul className="item-grid" aria-label="Every item">
           {rows.map((row) => (
             <li key={row.item.id}>
-              <RowLink
+              <ItemCard
                 to={thingPath(row.item.id)}
-                title={row.item.name}
-                meta={row.location}
+                name={row.item.name}
+                secondary={row.path.at(-1)?.name}
+                quantity={row.item.quantity}
+                photo={<ItemCover item={row.item} />}
               />
             </li>
           ))}

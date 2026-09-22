@@ -1,6 +1,9 @@
 import type { SearchResponse } from "@ariadna/api-client";
+import { SearchMatchField } from "@ariadna/domain";
 import type { JSX } from "react";
 
+import { ItemCard } from "../../items/views/item-card.js";
+import { ItemCover } from "../../photos/item-cover.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { SearchHit } from "./search-hit.js";
 import { thingPath, unitPath } from "../../app/routes.js";
@@ -22,9 +25,8 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
 
   if (nothing) {
     return (
-      <EmptyNote>
-        Nothing matches “{results.query}”. Try fewer words — every one of them has
-        to match.
+      <EmptyNote explains="Every word has to match, so fewer of them finds more.">
+        Nothing matches “{results.query}”
       </EmptyNote>
     );
   }
@@ -34,18 +36,26 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
       {results.items.length === 0 ? null : (
         <section>
           <h3>Items</h3>
-          <ul aria-label="Items found">
+          {/**
+           * A grid here too, at the user's choice and against my advice: a
+           * card has no room for `Garage › Wardrobe › Box 3`, and in this
+           * screen the location is the answer to the question being asked.
+           *
+           * What a card DOES hold is the last step of that path, which is
+           * most of the answer — the box to walk to. The full breadcrumb is
+           * one tap away in the thing's own screen.
+           */}
+          <ul className="item-grid" aria-label="Items found">
             {results.items.map((hit) => (
-              <SearchHit
-                key={hit.item.id}
-                title={hit.item.name}
-                to={thingPath(hit.item.id)}
-                location={hit.location}
-                matchedFields={hit.matchedFields}
-                {...(hit.item.quantity > 1
-                  ? { detail: `Quantity ${String(hit.item.quantity)}` }
-                  : {})}
-              />
+              <li key={hit.item.id}>
+                <ItemCard
+                  to={thingPath(hit.item.id)}
+                  name={hit.item.name}
+                  secondary={whereAndWhy(hit.path.at(-1)?.name, hit.matchedFields)}
+                  quantity={hit.item.quantity}
+                  photo={<ItemCover item={hit.item} />}
+                />
+              </li>
             ))}
           </ul>
         </section>
@@ -69,4 +79,33 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
       )}
     </>
   );
+};
+
+const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
+  [SearchMatchField.NAME]: "name",
+  [SearchMatchField.TAG]: "tag",
+  [SearchMatchField.DESCRIPTION]: "description",
+};
+
+/**
+ * The one line a card has, carrying two things a search result cannot do
+ * without.
+ *
+ * The box to walk to comes first, because it is the answer. The reason comes
+ * second, because an item called `HDMI 2.1` answering a search for `cables`
+ * looks like a bug until the card says "tag", and then it looks like the
+ * feature working. A match on the name needs no explaining and is left out.
+ *
+ * Both in one line is the cost of the grid: a row had space for the whole
+ * path and its own badge, and a square does not.
+ */
+const whereAndWhy = (
+  where: string | undefined,
+  matched: readonly SearchMatchField[],
+): string | undefined => {
+  const why = matched
+    .filter((field) => field !== SearchMatchField.NAME)
+    .map((field) => FIELD_WORDS[field]);
+
+  return [where, ...why].filter((part) => part !== undefined && part !== "").join(" \u00b7 ") || undefined;
 };

@@ -325,7 +325,8 @@ describe("looking after items", () => {
     const list = await screen.findByRole("list", { name: /every item/i });
     const drillRow = within(list).getByRole("link", { name: /cordless drill/i });
     expect(drillRow).toBeVisible();
-    expect(within(list).getAllByText("Garage > Box 3").length).toBeGreaterThan(0);
+    // The card holds the box to walk to; the whole path lives in the thing.
+    expect(within(list).getAllByText("Box 3").length).toBeGreaterThan(0);
   });
 
   it("asks once for everything you own, not once per box", async () => {
