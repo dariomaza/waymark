@@ -52,8 +52,8 @@ export const InventoryScreen = (): JSX.Element => {
           </Button>
 
           {tree.data.tree.length === 0 ? (
-            <EmptyNote>
-              Nothing is registered yet. Start with a room, then the furniture in it.
+            <EmptyNote explains="Start with a room, then the furniture in it.">
+              Nothing is registered yet
             </EmptyNote>
           ) : (
             <UnitTree

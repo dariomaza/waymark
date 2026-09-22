@@ -73,9 +73,8 @@ export const SearchScreen = (): JSX.Element => {
       )}
 
       {query.trim() === "" ? (
-        <EmptyNote>
-          Type what you are looking for. A word from its name, a tag, or the box it might
-          be in.
+        <EmptyNote explains="A word from its name, a tag, or the box it might be in.">
+          Type what you are looking for
         </EmptyNote>
       ) : null}
 

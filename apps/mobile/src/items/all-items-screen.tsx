@@ -43,7 +43,9 @@ export const AllItemsScreen = (): JSX.Element => {
 
       {items.isSuccess ? (
         items.data.items.length === 0 ? (
-          <EmptyNote>Nothing is registered yet. Open a box and add what is in it.</EmptyNote>
+          <EmptyNote explains="Open a box and add what is in it.">
+            Nothing is registered yet
+          </EmptyNote>
         ) : (
           <View style={styles.list} accessibilityLabel="Everything you own">
             {items.data.items.map((row) => (
