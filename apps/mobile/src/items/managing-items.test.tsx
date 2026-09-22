@@ -192,7 +192,8 @@ describe("looking after items", () => {
     await renderApp({ session: aSession() });
 
     await screen.findByText(/scan a label/i);
-    await fireEvent.press(screen.getByRole("button", { name: "Everything you own" }));
+    // The tab is "Things" now: the word somebody standing in a garage uses.
+    await fireEvent.press(screen.getByRole("button", { name: "Things" }));
 
     expect(
       await screen.findByRole("link", {

@@ -30,6 +30,7 @@ import { ScannerProvider } from "../scanning/scanner-context.js";
 import { SearchScreen } from "../search/search-screen.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
+import { Icon, type IconName } from "../ui/atoms/icon.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { colors } from "../ui/styles/tokens.js";
@@ -255,29 +256,55 @@ const Tabs = (): JSX.Element => (
       * inferred from the label under the icon. A bar of four one-word buttons
       * is exactly where an inferred name goes missing, and the name is what a
       * screen reader announces and what a test asks for.
+      *
+      * The name is the WORD, never a description of the drawing: "cube icon"
+      * describes the shape and withholds the destination.
       */}
     <Tab.Screen
       name="Scan"
       component={ScanScreen}
-      options={{ title: "Scan", tabBarAccessibilityLabel: "Scan" }}
+      options={{ title: "Scan", tabBarAccessibilityLabel: "Scan", tabBarIcon: tabIcon("scan") }}
     />
     <Tab.Screen
       name="Inventory"
       component={InventoryScreen}
-      options={{ title: "Inventory", tabBarAccessibilityLabel: "Inventory" }}
+      options={{ title: "Places", tabBarAccessibilityLabel: "Places", tabBarIcon: tabIcon("tree") }}
     />
     <Tab.Screen
       name="Search"
       component={SearchScreen}
-      options={{ title: "Search", tabBarAccessibilityLabel: "Search" }}
+      options={{
+        title: "Search",
+        tabBarAccessibilityLabel: "Search",
+        tabBarIcon: tabIcon("search"),
+      }}
     />
     <Tab.Screen
       name="Items"
       component={AllItemsScreen}
-      options={{ title: "Items", tabBarAccessibilityLabel: "Everything you own" }}
+      options={{
+        title: "Things",
+        tabBarAccessibilityLabel: "Things",
+        tabBarIcon: tabIcon("things"),
+      }}
     />
   </Tab.Navigator>
 );
+
+/**
+ * A destination's drawing, in the colour the bar says it is.
+ *
+ * Hidden from assistive technology on purpose — the word is right underneath
+ * in the same button, and announcing the picture and the word would say the
+ * same thing twice. The ROUTE names stay `Inventory` and `Items`: they are
+ * this app's internal addresses, the way the web client's paths are, and
+ * renaming an address to rename a label is how deep links break.
+ */
+const tabIcon =
+  (name: IconName) =>
+  ({ color }: { readonly color: string }): JSX.Element => (
+    <Icon name={name} color={color} size={22} />
+  );
 
 /**
  * What a phone reports before it has been asked. Only ever used where there is
