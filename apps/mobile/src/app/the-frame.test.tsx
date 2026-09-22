@@ -1,6 +1,6 @@
 import { aSession } from "@ariadna/api-client/testing";
 
-import { renderApp, screen } from "../testing/render-app.js";
+import { fireEvent, renderApp, screen } from "../testing/render-app.js";
 import { theApiKnowsTheHouse } from "../testing/the-house.js";
 
 /**
@@ -50,6 +50,36 @@ describe("the frame every signed-in screen sits in", () => {
 
       expect(screen.queryByText("Inventory")).toBeNull();
       expect(screen.queryByText("Items")).toBeNull();
+    });
+  });
+
+  describe("the top bar", () => {
+    it("carries the product's name wherever you are", async () => {
+      await renderApp({ session: aSession() });
+
+      expect(await screen.findByRole("header", { name: "Ariadna" })).toBeOnTheScreen();
+    });
+
+    /**
+     * The switcher is a real control from the start: it stores a choice and
+     * reflects it, and it translates nothing yet. A decoration that looks like
+     * a setting is worse than an absent one, because it invites somebody to
+     * change something and then ignores them.
+     *
+     * The code is what fits in a bar; the language's own name is what makes it
+     * a label somebody can act on, because "ES" read aloud is two letters.
+     */
+    it("offers a language, and reflects the one chosen", async () => {
+      await renderApp({ session: aSession() });
+
+      const spanish = await screen.findByRole("radio", { name: "Español" });
+      const english = screen.getByRole("radio", { name: "English" });
+      expect(english).toBeSelected();
+
+      await fireEvent.press(spanish);
+
+      expect(spanish).toBeSelected();
+      expect(english).not.toBeSelected();
     });
   });
 });

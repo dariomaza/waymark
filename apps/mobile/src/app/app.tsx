@@ -32,12 +32,15 @@ import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Icon, type IconName } from "../ui/atoms/icon.js";
 import { Loading } from "../ui/atoms/loading.js";
+import { AppBar } from "../ui/organisms/app-bar.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { colors } from "../ui/styles/tokens.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { createDefaultClient } from "./create-client.js";
+import { createLanguageStore, type LanguageStore } from "./language.js";
+import { LanguageSwitcher } from "./language-switcher.js";
 import { linking, type RootStackParamList, type TabParamList } from "./navigation.js";
 
 export interface AppProps {
@@ -84,7 +87,11 @@ export const App = ({
   queries: given,
 }: AppProps = {}): JSX.Element => {
   const [queries] = useState(() => given ?? createQueryClient());
-  const [sessions] = useState(() => createSessionStore(storage ?? expoSecureStorage()));
+  // One store for the whole phone: the session, and the one preference there
+  // is. See `language.ts` for why a language code lives in the keystore.
+  const [store] = useState(() => storage ?? expoSecureStorage());
+  const [sessions] = useState(() => createSessionStore(store));
+  const [languages] = useState(() => createLanguageStore(store));
   const [api] = useState(() => createDefaultClient(sessions, baseUrl));
   const [camera] = useState(() => scanner ?? expoCameraScanner());
   const [photoSource] = useState(() => photos ?? expoPhotoSource());
@@ -100,7 +107,7 @@ export const App = ({
           <ApiProvider client={api}>
             <ScannerProvider scanner={camera}>
               <PhotoSourceProvider source={photoSource}>
-                <SessionGate initialState={initialState} />
+                <SessionGate initialState={initialState} languages={languages} />
               </PhotoSourceProvider>
             </ScannerProvider>
           </ApiProvider>
@@ -132,8 +139,10 @@ export const App = ({
  */
 const SessionGate = ({
   initialState,
+  languages,
 }: {
   readonly initialState: PartialState<NavigationState> | undefined;
+  readonly languages: LanguageStore;
 }): JSX.Element => {
   const state = useSessionState();
 
@@ -149,7 +158,13 @@ const SessionGate = ({
     return <LoginScreen />;
   }
 
-  return <ConfirmedSession token={state.session.token} initialState={initialState} />;
+  return (
+    <ConfirmedSession
+      token={state.session.token}
+      initialState={initialState}
+      languages={languages}
+    />
+  );
 };
 
 /**
@@ -169,9 +184,11 @@ const SessionGate = ({
 const ConfirmedSession = ({
   token,
   initialState,
+  languages,
 }: {
   readonly token: string;
   readonly initialState: PartialState<NavigationState> | undefined;
+  readonly languages: LanguageStore;
 }): JSX.Element => {
   const api = useApi();
   const signOut = useSignOut();
@@ -222,6 +239,14 @@ const ConfirmedSession = ({
       theme={NAVIGATION_THEME}
       {...(initialState === undefined ? {} : { initialState })}
     >
+      {/*
+        * The bar sits OUTSIDE the navigator rather than as a screen header,
+        * so it is one bar that never redraws between screens — the same frame
+        * the web client's shell puts around every signed-in route. Each
+        * screen keeps drawing its own title; this one says which product you
+        * are in and carries the one setting there is.
+        */}
+      <AppBar title="Ariadna" actions={<LanguageSwitcher store={languages} />} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={Tabs} />
         <Stack.Screen name="Unit" component={UnitScreen} />
