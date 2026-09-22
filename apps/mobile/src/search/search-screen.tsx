@@ -6,6 +6,7 @@ import { useState, type JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import type { RootStackParamList, TabParamList } from "../app/navigation.js";
+import { ItemCover } from "../photos/item-cover.js";
 import { Button } from "../ui/atoms/button.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { ScreenTitle } from "../ui/atoms/screen-title.js";
@@ -44,7 +45,9 @@ export const SearchScreen = (): JSX.Element => {
     within === null || tree.data === undefined ? null : findById(tree.data.tree, within);
 
   return (
-    <Screen>
+    // The results grid is the scroller; the field stays put above it, which
+    // is what a search screen wants anyway. See `ItemGrid`.
+    <Screen scroll={false}>
       <ScreenTitle>Search</ScreenTitle>
 
       <TextField
@@ -92,6 +95,7 @@ export const SearchScreen = (): JSX.Element => {
       {results.data === undefined ? null : (
         <SearchResults
           results={results.data}
+          itemPhoto={(hit) => <ItemCover item={hit.item} />}
           onOpenItem={(id) => {
             navigation.navigate("Item", { id });
           }}

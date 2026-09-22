@@ -2,6 +2,8 @@ import { kindLabel, type ItemView, type StorageUnitView } from "@ariadna/api-cli
 import type { JSX, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { ItemGrid } from "../../items/views/item-grid.js";
+import { Icon } from "../../ui/atoms/icon.js";
 import { ScreenTitle } from "../../ui/atoms/screen-title.js";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
@@ -16,6 +18,14 @@ export interface UnitDetailProps {
   readonly items: readonly ItemView[];
   readonly photo: ReactNode;
   readonly actions: ReactNode;
+  /**
+   * The cover photo for one item, when it has one.
+   *
+   * Injected rather than fetched here, because a thumbnail is an
+   * authenticated request and this file is a view. Returning nothing is what
+   * makes a card fall back to its initials.
+   */
+  readonly itemPhoto?: (item: ItemView) => ReactNode;
   readonly onOpenUnit: (id: string) => void;
   readonly onOpenItem: (id: string) => void;
 }
@@ -23,6 +33,16 @@ export interface UnitDetailProps {
 /**
  * Presentational. One unit: where it is, what is inside it, what it says about
  * itself. It takes props and draws; it has never heard of a request.
+ *
+ * The things inside are a GRID and the units inside stay a LIST. A thing is
+ * recognised by its picture — a drawn box is the same drawing for a drill and
+ * for a bag of screws — while a box is recognised by its name and the label
+ * stuck on it, so squares of photograph would cost three times the height to
+ * say less. The icon on those rows is what says which of the two kinds of
+ * thing on this screen a row is.
+ *
+ * Everything above the grid is its header, so the whole screen scrolls as one
+ * and the grid is still the virtualised list it needs to be. See `ItemGrid`.
  */
 export const UnitDetail = ({
   unit,
@@ -31,70 +51,83 @@ export const UnitDetail = ({
   items,
   photo,
   actions,
+  itemPhoto,
   onOpenUnit,
   onOpenItem,
 }: UnitDetailProps): JSX.Element => (
-  <View style={styles.wrap}>
-    <Breadcrumb
-      path={path.slice(0, -1)}
-      onOpen={(step) => {
-        onOpenUnit(step.id);
-      }}
-    />
-    <ScreenTitle>{unit.name}</ScreenTitle>
-    <Text style={styles.kind}>{kindLabel(unit.kind)}</Text>
-    {unit.description === null ? null : (
-      <Text style={styles.description}>{unit.description}</Text>
-    )}
+  <ItemGrid
+    label="Items"
+    cells={items.map((item) => ({
+      key: item.id,
+      name: item.name,
+      /**
+       * The tags. Inside a unit the location is the same string on every
+       * card, which is noise rather than an answer.
+       */
+      secondary: item.tags.join(", "),
+      quantity: item.quantity,
+      photo: itemPhoto?.(item),
+      onPress: () => {
+        onOpenItem(item.id);
+      },
+    }))}
+    header={
+      <View style={styles.head}>
+        <Breadcrumb
+          path={path.slice(0, -1)}
+          onOpen={(step) => {
+            onOpenUnit(step.id);
+          }}
+        />
+        <ScreenTitle>{unit.name}</ScreenTitle>
+        <Text style={styles.kind}>{kindLabel(unit.kind)}</Text>
+        {unit.description === null ? null : (
+          <Text style={styles.description}>{unit.description}</Text>
+        )}
 
-    {photo}
+        {photo}
 
-    <View style={styles.actions}>{actions}</View>
+        <View style={styles.actions}>{actions}</View>
 
-    <Text accessibilityRole="header" style={styles.heading}>
-      Units inside
-    </Text>
-    {childUnits.length === 0 ? (
-      <EmptyNote>Nothing is stored inside this one.</EmptyNote>
-    ) : (
-      <View style={styles.list} accessibilityLabel="Units inside">
-        {childUnits.map((child) => (
-          <RowLink
-            key={child.id}
-            title={child.name}
-            detail={kindLabel(child.kind)}
-            onPress={() => {
-              onOpenUnit(child.id);
-            }}
-          />
-        ))}
+        {childUnits.length === 0 && items.length === 0 ? (
+          <EmptyNote explains="Whatever you put in here will show up when you scan its label.">
+            This one is empty
+          </EmptyNote>
+        ) : null}
+
+        {childUnits.length === 0 ? null : (
+          <>
+            <Text accessibilityRole="header" style={styles.heading}>
+              Units inside
+            </Text>
+            <View style={styles.list} accessibilityLabel="Units inside">
+              {childUnits.map((child) => (
+                <RowLink
+                  key={child.id}
+                  title={child.name}
+                  detail={kindLabel(child.kind)}
+                  leading={<Icon name="box" size={20} color={colors.inkMuted} />}
+                  onPress={() => {
+                    onOpenUnit(child.id);
+                  }}
+                />
+              ))}
+            </View>
+          </>
+        )}
+
+        {items.length === 0 ? null : (
+          <Text accessibilityRole="header" style={styles.heading}>
+            Items
+          </Text>
+        )}
       </View>
-    )}
-
-    <Text accessibilityRole="header" style={styles.heading}>
-      Items
-    </Text>
-    {items.length === 0 ? (
-      <EmptyNote>No items in here yet.</EmptyNote>
-    ) : (
-      <View style={styles.list} accessibilityLabel="Items">
-        {items.map((item) => (
-          <RowLink
-            key={item.id}
-            title={item.name}
-            {...(item.quantity > 1 ? { detail: `Quantity ${String(item.quantity)}` } : {})}
-            onPress={() => {
-              onOpenItem(item.id);
-            }}
-          />
-        ))}
-      </View>
-    )}
-  </View>
+    }
+  />
 );
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.s3 },
+  head: { gap: space.s3 },
   kind: { color: colors.inkMuted, fontSize: text.s },
   description: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },

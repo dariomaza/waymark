@@ -195,10 +195,14 @@ describe("looking after items", () => {
     // The tab is "Things" now: the word somebody standing in a garage uses.
     await fireEvent.press(screen.getByRole("button", { name: "Things" }));
 
+    // The card's one spare line is the box it is in — the whole breadcrumb
+    // does not fit in a third of a phone. It is still what a screen reader
+    // hears, because the path IS the answer (ADR 15).
     expect(
       await screen.findByRole("link", {
         name: "Cordless drill, Garage > Metal wardrobe > Box 3",
       }),
     ).toBeOnTheScreen();
+    expect(screen.getByText("Box 3")).toBeOnTheScreen();
   });
 });

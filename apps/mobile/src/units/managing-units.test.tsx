@@ -1,8 +1,8 @@
-import { aSession, aStorageUnit, withPhoto } from "@ariadna/api-client/testing";
+import { anItem, aSession, aStorageUnit, withPhoto } from "@ariadna/api-client/testing";
 
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
 import { fireEvent, renderApp, screen, waitFor } from "../testing/render-app.js";
-import { theApiKnowsTheHouse } from "../testing/the-house.js";
+import { box, garage, theApiKnowsTheHouse, wardrobe } from "../testing/the-house.js";
 
 const atBox3 = { name: "Unit", params: { id: "box3" } } as const;
 
@@ -43,6 +43,54 @@ describe("looking after a storage unit", () => {
     expect(screen.getByRole("link", { name: "Open Garage" })).toBeOnTheScreen();
     expect(screen.getByRole("link", { name: "Open Metal wardrobe" })).toBeOnTheScreen();
     expect(screen.getByText("Cordless drill")).toBeOnTheScreen();
+  });
+
+  /**
+   * The contents are a grid of cards: a thing is recognised by its picture,
+   * and its one spare line is the TAGS — inside a unit the location would be
+   * the same string on every card, which is noise rather than an answer.
+   */
+  it("shows what is in a box as cards, tagged rather than located", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/storage-units/box3`, () =>
+        HttpResponse.json({
+          unit: withPhoto(box),
+          path: [garage, wardrobe, box],
+          children: [],
+          items: [
+            anItem({
+              id: "drill",
+              storageUnitId: "box3",
+              name: "Cordless drill",
+              tags: ["tools", "power"],
+            }),
+          ],
+        }),
+      ),
+    );
+
+    await renderApp({ session: aSession(), screen: atBox3 });
+
+    expect(
+      await screen.findByRole("link", { name: "Cordless drill, tools, power" }),
+    ).toBeOnTheScreen();
+    expect(screen.getByText("tools, power")).toBeOnTheScreen();
+  });
+
+  /**
+   * Units inside stay a LIST. A box is not recognised by a photograph of a
+   * box, so a grid of squares would cost the same height to say less; the
+   * icon is there because a row of names alone does not say which of the two
+   * kinds of thing on this screen you are looking at.
+   */
+  it("keeps the units inside as a list under their own heading", async () => {
+    await renderApp({
+      session: aSession(),
+      screen: { name: "Unit", params: { id: "garage" } },
+    });
+
+    expect(await screen.findByRole("header", { name: "Units inside" })).toBeOnTheScreen();
+    expect(screen.getByRole("link", { name: "Metal wardrobe, Furniture" })).toBeOnTheScreen();
   });
 
   it("renames a box from its own screen", async () => {

@@ -47,8 +47,15 @@ describe("searching for where something is", () => {
 
     expect(await screen.findByText("Cordless drill")).toBeOnTheScreen();
     // The breadcrumb IS the answer: "you own a cordless drill" is something
-    // the person already knew.
-    expect(screen.getByText("Garage > Metal wardrobe > Box 3")).toBeOnTheScreen();
+    // the person already knew. A card a third of a phone wide can show the
+    // box it is in; the whole path is what the card is NAMED, so nothing of
+    // the answer is lost to somebody who cannot see it.
+    expect(screen.getByText("Box 3")).toBeOnTheScreen();
+    expect(
+      screen.getByRole("link", {
+        name: "Cordless drill, Garage > Metal wardrobe > Box 3, matched name",
+      }),
+    ).toBeOnTheScreen();
     expect(asked).toEqual(["?q=drill"]);
   });
 
@@ -85,7 +92,10 @@ describe("searching for where something is", () => {
     );
 
     expect(await screen.findByText("HDMI 2.1")).toBeOnTheScreen();
-    expect(screen.getByText(/matched tag/i)).toBeOnTheScreen();
+    // Why it is here rides in the card's name rather than on a third line: a
+    // card has room for one, and the box a thing is in is what somebody
+    // standing in the garage is about to walk to.
+    expect(screen.getByRole("link", { name: /matched tag/i })).toBeOnTheScreen();
   });
 
   /**

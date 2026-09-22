@@ -8,8 +8,21 @@ import { colors, radius } from "../ui/styles/tokens.js";
 export interface AuthenticatedImageProps {
   /** The path the API gave out, e.g. `/photos/abc/thumbnail`. */
   readonly src: string;
+  /**
+   * What the picture SAYS. Empty means it says nothing the surrounding text
+   * does not — a cover photo inside a card named after the thing — and the
+   * image is then hidden from assistive technology rather than announced as
+   * an unlabelled one.
+   */
   readonly alt: string;
   readonly size?: number;
+  /**
+   * Fills whatever box it is given instead of being a square of `size`.
+   *
+   * For a grid cell, whose width is a third of the phone rather than a number
+   * this component could know.
+   */
+  readonly fill?: boolean;
 }
 
 /**
@@ -31,19 +44,22 @@ export const AuthenticatedImage = ({
   src,
   alt,
   size = 96,
+  fill = false,
 }: AuthenticatedImageProps): JSX.Element => {
   const api = useApi();
   const token = useSessionStore().token();
 
   return (
     <Image
-      accessibilityLabel={alt}
-      accessibilityRole="image"
+      accessible={alt !== ""}
+      importantForAccessibility={alt === "" ? "no-hide-descendants" : "yes"}
+      {...(alt === "" ? {} : { accessibilityLabel: alt, accessibilityRole: "image" as const })}
+      resizeMode="cover"
       source={{
         uri: api.absoluteUrl(src),
         ...(token === null ? {} : { headers: { Authorization: `Bearer ${token}` } }),
       }}
-      style={[styles.photo, { width: size, height: size }]}
+      style={fill ? styles.filling : [styles.photo, { width: size, height: size }]}
     />
   );
 };
@@ -53,4 +69,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.m,
     backgroundColor: colors.surfaceSunken,
   },
+  // No corner of its own: the box it fills already has one and clips to it.
+  filling: { width: "100%", height: "100%", backgroundColor: colors.surfaceSunken },
 });

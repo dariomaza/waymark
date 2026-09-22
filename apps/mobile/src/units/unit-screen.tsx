@@ -5,6 +5,7 @@ import { useState, type JSX } from "react";
 
 import type { RootStackParamList } from "../app/navigation.js";
 import { CreateItemSheet } from "../items/create-item-sheet.js";
+import { ItemCover } from "../photos/item-cover.js";
 import { UnitPhoto } from "../photos/unit-photo.js";
 import { Button } from "../ui/atoms/button.js";
 import { Loading } from "../ui/atoms/loading.js";
@@ -30,7 +31,10 @@ export const UnitScreen = (): JSX.Element => {
   const [addingItem, setAddingItem] = useState(false);
 
   return (
-    <Screen>
+    // Not a scroll view: the item grid below is the scroller, because a
+    // virtualised list inside a scroll view is given infinite height and
+    // quietly stops virtualising. See `ItemGrid`.
+    <Screen scroll={false}>
       {unit.isPending ? <Loading label="Loading this unit" /> : null}
 
       {unit.isError ? (
@@ -51,6 +55,7 @@ export const UnitScreen = (): JSX.Element => {
             childUnits={unit.data.children}
             items={unit.data.items}
             photo={<UnitPhoto unit={unit.data.unit} />}
+            itemPhoto={(item) => <ItemCover item={item} />}
             onOpenUnit={(openId) => {
               navigation.push("Unit", { id: openId });
             }}

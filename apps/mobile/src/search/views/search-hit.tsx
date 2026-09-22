@@ -20,6 +20,20 @@ const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
 };
 
 /**
+ * Why a result is here at all, in words.
+ *
+ * Lives here and is shared with the grid of item cards, which says the same
+ * thing in its accessible name — two spellings of "matched tag" would be two
+ * chances for one of them to stop matching the field it names.
+ */
+export const whyItMatched = (fields: readonly SearchMatchField[]): string =>
+  `matched ${fields.map((field) => FIELD_WORDS[field]).join(", ")}`;
+
+/** Sentence case, for the line that starts one rather than ending a label. */
+const capitalised = (sentence: string): string =>
+  `${sentence.slice(0, 1).toLocaleUpperCase()}${sentence.slice(1)}`;
+
+/**
  * One answer to "where is my stuff".
  *
  * The breadcrumb is the result, not a decoration on it: "you own a cordless
@@ -47,7 +61,7 @@ export const SearchHit = ({
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.where}>{location}</Text>
       <Text style={styles.why}>
-        {`Matched ${matchedFields.map((field) => FIELD_WORDS[field]).join(", ")}`}
+        {capitalised(whyItMatched(matchedFields))}
         {detail === undefined ? "" : ` · ${detail}`}
       </Text>
     </View>
