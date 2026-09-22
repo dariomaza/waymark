@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { registerSW } from "virtual:pwa-register";
 
 import { App } from "./app/app.js";
+import { printConsoleSignature } from "./app/console-signature.js";
 import "./ui/styles/tokens.css";
 import "./ui/styles/base.css";
 
@@ -16,6 +17,8 @@ const container = document.querySelector("#root");
 if (container === null) {
   throw new Error("index.html is missing its #root element");
 }
+
+printConsoleSignature();
 
 createRoot(container).render(
   <StrictMode>
