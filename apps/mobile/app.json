@@ -9,7 +9,7 @@
     "backgroundColor": "#101011",
     "newArchEnabled": true,
     "android": {
-      "package": "es.inone.waymark",
+      "package": "dev.dariomaza.waymark",
       "intentFilters": [
         {
           "action": "VIEW",
