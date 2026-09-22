@@ -34,6 +34,7 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
   return (
     <View style={styles.form}>
       <ScreenTitle>{t("login.title")}</ScreenTitle>
+      <Text style={styles.tagline}>{t("login.tagline")}</Text>
       <Text style={styles.lede}>
         {t("login.note")}
       </Text>
@@ -69,5 +70,8 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
 
 const styles = StyleSheet.create({
   form: { gap: space.s4 },
+  // The tagline sits under the title and above the practical note, so it
+  // reads as part of the heading rather than as the first instruction.
+  tagline: { color: colors.accentText, fontSize: text.m, marginTop: -space.s3 },
   lede: { color: colors.inkMuted, fontSize: text.s },
 });

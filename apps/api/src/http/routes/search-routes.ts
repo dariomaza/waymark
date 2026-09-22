@@ -13,7 +13,7 @@ export interface SearchRouteOptions {
 /**
  * # The route the product is named after
  *
- * Ariadna exists because things get stored and then lost — not lost as in
+ * Waymark exists because things get stored and then lost — not lost as in
  * gone, lost as in "it is somewhere in one of forty boxes". This is the thread
  * out of that labyrinth, so it is a resource of its own rather than a `?q=` on
  * the item collection: what it answers is not a filtered list of items, it is

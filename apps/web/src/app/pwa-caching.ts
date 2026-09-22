@@ -60,7 +60,7 @@ export const RUNTIME_CACHING: readonly RuntimeCacheRule[] = [
     pattern: /^\/photos\/(?!processing$)[^/]+(\/thumbnail)?$/u,
     handler: "CacheFirst",
     options: {
-      cacheName: "ariadna-photos",
+      cacheName: "waymark-photos",
       expiration: { maxEntries: 400, maxAgeSeconds: A_DAY * 30 },
       cacheableResponse: { statuses: [200] },
     },
@@ -71,7 +71,7 @@ export const RUNTIME_CACHING: readonly RuntimeCacheRule[] = [
     pattern: /^\/(storage-units|items)$/u,
     handler: "NetworkFirst",
     options: {
-      cacheName: "ariadna-inventory",
+      cacheName: "waymark-inventory",
       networkTimeoutSeconds: 5,
       expiration: { maxEntries: 8, maxAgeSeconds: A_DAY },
       cacheableResponse: { statuses: [200] },

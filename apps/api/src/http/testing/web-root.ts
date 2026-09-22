@@ -45,7 +45,7 @@ export const SHELL_MARKER = '<div id="root"></div>';
 export const SHELL = `<!doctype html>
 <html lang="en">
   <head>
-    <title>Ariadna</title>
+    <title>Waymark</title>
     <script type="module" src="/${HASHED_SCRIPT}"></script>
     <link rel="stylesheet" href="/${HASHED_STYLESHEET}" />
     <link rel="manifest" href="/${MANIFEST}" />
@@ -60,7 +60,7 @@ const FILES: ReadonlyArray<readonly [string, string]> = [
   [HASHED_STYLESHEET, ":root { color-scheme: dark; }\n"],
   [HASHED_WORKBOX, "self.workbox = true;\n"],
   [SERVICE_WORKER, "self.addEventListener('install', () => {});\n"],
-  [MANIFEST, '{ "name": "Ariadna" }\n'],
+  [MANIFEST, '{ "name": "Waymark" }\n'],
   [UNHASHED_ICON, "not really a png\n"],
   [UNHASHED_TOUCH_ICON, "not really a png either\n"],
   ["favicon.svg", "<svg xmlns='http://www.w3.org/2000/svg' />\n"],
@@ -68,7 +68,7 @@ const FILES: ReadonlyArray<readonly [string, string]> = [
 
 /** Writes the fixture and answers its root. */
 export const createWebRootFixture = async (): Promise<string> => {
-  const root = await mkdtemp(join(tmpdir(), "ariadna-web-root-"));
+  const root = await mkdtemp(join(tmpdir(), "waymark-web-root-"));
   await mkdir(join(root, "assets"), { recursive: true });
 
   for (const [path, contents] of FILES) {
@@ -85,7 +85,7 @@ export const createWebRootFixture = async (): Promise<string> => {
 export const createSecretBesideWebRoot = async (
   root: string,
 ): Promise<string> => {
-  const secret = join(root, "..", "ariadna-secret.txt");
+  const secret = join(root, "..", "waymark-secret.txt");
   await writeFile(secret, "the session table\n", "utf8");
 
   return secret;

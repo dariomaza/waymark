@@ -29,11 +29,11 @@ describe("loadConfig", () => {
 
   it("reads the PWA origins from the environment", () => {
     const config = loadConfig({
-      WAYMARK_ALLOWED_ORIGINS: "https://ariadna.example, https://pwa.example",
+      WAYMARK_ALLOWED_ORIGINS: "https://waymark.example, https://pwa.example",
     });
 
     expect(config.security.allowedOrigins).toEqual([
-      "https://ariadna.example",
+      "https://waymark.example",
       "https://pwa.example",
     ]);
   });
@@ -75,26 +75,26 @@ describe("loadConfig", () => {
 
   it("reads the public base URL the QR codes encode", () => {
     const config = loadConfig({
-      WAYMARK_PUBLIC_BASE_URL: "https://ariadna.example",
+      WAYMARK_PUBLIC_BASE_URL: "https://waymark.example",
     });
 
-    expect(config.publicBaseUrl).toBe("https://ariadna.example");
+    expect(config.publicBaseUrl).toBe("https://waymark.example");
   });
 
   it("drops a trailing slash so the URL is built the same way every time", () => {
     const config = loadConfig({
-      WAYMARK_PUBLIC_BASE_URL: "https://ariadna.example/",
+      WAYMARK_PUBLIC_BASE_URL: "https://waymark.example/",
     });
 
-    expect(config.publicBaseUrl).toBe("https://ariadna.example");
+    expect(config.publicBaseUrl).toBe("https://waymark.example");
   });
 
   it("keeps a path prefix, for an app served under a subpath", () => {
     const config = loadConfig({
-      WAYMARK_PUBLIC_BASE_URL: "https://home.example/ariadna",
+      WAYMARK_PUBLIC_BASE_URL: "https://home.example/waymark",
     });
 
-    expect(config.publicBaseUrl).toBe("https://home.example/ariadna");
+    expect(config.publicBaseUrl).toBe("https://home.example/waymark");
   });
 
   it("stores photos on a plain directory next to the process by default", () => {
@@ -122,9 +122,9 @@ describe("loadConfig", () => {
   });
 
   it("passes the database url straight through", () => {
-    const config = loadConfig({ DATABASE_URL: "file:/data/ariadna.db" });
+    const config = loadConfig({ DATABASE_URL: "file:/data/waymark.db" });
 
-    expect(config.databaseUrl).toBe("file:/data/ariadna.db");
+    expect(config.databaseUrl).toBe("file:/data/waymark.db");
   });
 
   describe("background removal", () => {
@@ -229,10 +229,10 @@ describe("loadConfig", () => {
       ["a port outside the valid range", { PORT: "70000" }],
       ["a login limit of zero", { WAYMARK_LOGIN_ATTEMPT_LIMIT: "0" }],
       ["a negative login window", { WAYMARK_LOGIN_WINDOW_MINUTES: "-5" }],
-      ["an origin that is not an origin", { WAYMARK_ALLOWED_ORIGINS: "ariadna.example" }],
+      ["an origin that is not an origin", { WAYMARK_ALLOWED_ORIGINS: "waymark.example" }],
       ["an origin with a path", { WAYMARK_ALLOWED_ORIGINS: "https://a.example/app" }],
       ["a trusted proxy that is not an IP", { WAYMARK_TRUSTED_PROXIES: "cloudflared" }],
-      ["a base URL that is not absolute", { WAYMARK_PUBLIC_BASE_URL: "ariadna.example" }],
+      ["a base URL that is not absolute", { WAYMARK_PUBLIC_BASE_URL: "waymark.example" }],
       ["a base URL with a query", { WAYMARK_PUBLIC_BASE_URL: "https://a.example/?x=1" }],
       ["a base URL that is not http", { WAYMARK_PUBLIC_BASE_URL: "ftp://a.example" }],
       ["an empty photo root", { WAYMARK_PHOTO_ROOT: "   " }],

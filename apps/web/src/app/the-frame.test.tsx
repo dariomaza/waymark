@@ -58,7 +58,7 @@ describe("the frame every signed-in screen sits in", () => {
     it("carries the product's name wherever you are", async () => {
       renderApp({ route: "/" });
 
-      expect(await screen.findByRole("heading", { name: "Ariadna" })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: "Waymark" })).toBeVisible();
     });
 
     it("offers a language, and remembers which one was chosen", async () => {
@@ -139,7 +139,7 @@ describe("the frame every signed-in screen sits in", () => {
     });
 
     /**
-     * The product is called Ariadna in both languages. A name is not a word
+     * The product is called Waymark in both languages. A name is not a word
      * to be translated, and "Hilo" would be a different product.
      */
     it("leaves the product's own name alone", async () => {
@@ -147,7 +147,7 @@ describe("the frame every signed-in screen sits in", () => {
 
       renderApp({ route: "/" });
 
-      expect(await screen.findByRole("heading", { name: "Ariadna" })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: "Waymark" })).toBeVisible();
     });
   });
 });

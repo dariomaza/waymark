@@ -44,13 +44,13 @@ describe("which language the interface is asked for", () => {
 
     // Reading straight out of the store is what the NEXT page load does: a
     // fresh module, a fresh provider, and only what the browser kept.
-    expect(storage.getItem("ariadna.language")).toBe("es");
+    expect(storage.getItem("waymark.language")).toBe("es");
     expect(languageStore.read()).toBe("es");
   });
 
   it("ignores anything stored that is not a language it has", () => {
     const storage = withStorage();
-    storage.setItem("ariadna.language", "klingon");
+    storage.setItem("waymark.language", "klingon");
 
     expect(languageStore.read()).toBe("en");
   });
@@ -68,7 +68,7 @@ describe("which language the interface is asked for", () => {
       expect(languageStore.read()).toBe("es");
     });
 
-    /** Region is not language: Ariadna's Spanish is neutral, so `es-419` is `es`. */
+    /** Region is not language: Waymark's Spanish is neutral, so `es-419` is `es`. */
     it("ignores the region", () => {
       withStorage();
       vi.stubGlobal("navigator", { languages: ["es-419"] });

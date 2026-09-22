@@ -72,7 +72,7 @@ describe("PhotoProcessingWorker", () => {
 
   beforeEach(async () => {
     await database.reset();
-    root = await mkdtemp(join(tmpdir(), "ariadna-worker-"));
+    root = await mkdtemp(join(tmpdir(), "waymark-worker-"));
     files = new PhotoFileStore(root);
     sidecar = await startStubSidecar(respondsWithCutout(cutout));
     clock = new FakeClock(NOW);

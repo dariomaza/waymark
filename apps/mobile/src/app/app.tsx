@@ -241,7 +241,7 @@ const ConfirmedSession = ({
         * screen keeps drawing its own title; this one says which product you
         * are in and carries the one setting there is.
         */}
-      <AppBar title="Ariadna" actions={<LanguageSwitcher />} />
+      <AppBar title="Waymark" actions={<LanguageSwitcher />} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={Tabs} />
         <Stack.Screen name="Unit" component={UnitScreen} />

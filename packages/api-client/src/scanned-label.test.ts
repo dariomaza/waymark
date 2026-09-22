@@ -4,7 +4,7 @@ import { publicIdFromScannedText } from "./scanned-label.js";
 
 describe("reading a scanned label", () => {
   it("takes the code out of the URL a label encodes", () => {
-    expect(publicIdFromScannedText("https://ariadna.example/u/7ZK3QWERTY")).toBe(
+    expect(publicIdFromScannedText("https://waymark.example/u/7ZK3QWERTY")).toBe(
       "7ZK3QWERTY",
     );
   });
@@ -24,10 +24,10 @@ describe("reading a scanned label", () => {
     expect(publicIdFromScannedText(" 7zk3qwerty ")).toBe("7ZK3QWERTY");
   });
 
-  it("refuses anything that is not an Ariadna label", () => {
+  it("refuses anything that is not an Waymark label", () => {
     expect(publicIdFromScannedText("https://example.com/")).toBeNull();
-    expect(publicIdFromScannedText("https://ariadna.example/units/abc")).toBeNull();
-    expect(publicIdFromScannedText("https://ariadna.example/u/short")).toBeNull();
+    expect(publicIdFromScannedText("https://waymark.example/units/abc")).toBeNull();
+    expect(publicIdFromScannedText("https://waymark.example/u/short")).toBeNull();
     // I, L, O and U are not in Crockford Base32.
     expect(publicIdFromScannedText("7ZK3QWERTI")).toBeNull();
     expect(publicIdFromScannedText("")).toBeNull();

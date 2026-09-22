@@ -1,5 +1,5 @@
 /**
- * # Which languages Ariadna speaks
+ * # Which languages Waymark speaks
  *
  * This used to be written twice — once in the web client and once on the
  * phone — because the switcher landed before the translations did and each
@@ -40,7 +40,7 @@ export const isLanguage = (value: unknown): value is Language =>
  *
  * Both clients can ask their platform what a person reads — the browser has
  * `navigator.languages`, the phone has its own locale list — and both get back
- * tags like `es-ES` or `en-GB`. Region is not a language here: Ariadna's
+ * tags like `es-ES` or `en-GB`. Region is not a language here: Waymark's
  * Spanish is neutral and professional rather than peninsular, so `es-419` and
  * `es-ES` are the same answer. Order is honoured, because the platform already
  * sorted it by preference.

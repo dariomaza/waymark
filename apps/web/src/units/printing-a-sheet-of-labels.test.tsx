@@ -25,7 +25,7 @@ import { renderApp, screen, userEvent, waitFor, within } from "../testing/render
  */
 
 /** What the API's `WAYMARK_PUBLIC_BASE_URL` is in these tests. */
-const PUBLIC_BASE_URL = "https://ariadna.example";
+const PUBLIC_BASE_URL = "https://waymark.example";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
 const wardrobe = aStorageUnit({
@@ -73,7 +73,7 @@ const signedInWithTheForest = (units: readonly StorageUnitView[]): void => {
 
   let objectUrls = 0;
   vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
-    const url = `blob:ariadna/recorded/${String((objectUrls += 1))}`;
+    const url = `blob:waymark/recorded/${String((objectUrls += 1))}`;
     drawnBytes.set(url, blob as Blob);
 
     return url;

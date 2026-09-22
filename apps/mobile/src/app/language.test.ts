@@ -60,7 +60,7 @@ describe("which language the interface is asked for", () => {
       expect(await createLanguageStore(inMemorySecureStorage()).read()).toBe("es");
     });
 
-    /** Region is not language: Ariadna's Spanish is neutral, so `es-419` is `es`. */
+    /** Region is not language: Waymark's Spanish is neutral, so `es-419` is `es`. */
     it("ignores the region", async () => {
       phoneSetTo("es-419");
 

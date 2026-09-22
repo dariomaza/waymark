@@ -56,7 +56,7 @@ describe("reading a label with the camera", () => {
   it("opens the box whose sticker was in front of the lens", async () => {
     renderApp({
       route: "/scan",
-      scanner: aCameraThatReads("https://ariadna.example/u/7ZK3QWERTY"),
+      scanner: aCameraThatReads("https://waymark.example/u/7ZK3QWERTY"),
     });
 
     expect(await screen.findByRole("heading", { name: "Box 3" })).toBeVisible();
@@ -68,7 +68,7 @@ describe("reading a label with the camera", () => {
       scanner: aCameraThatReads("https://example.com/something-else"),
     });
 
-    expect(await screen.findByText(/not an ariadna label/i)).toBeVisible();
+    expect(await screen.findByText(/not an waymark label/i)).toBeVisible();
   });
 
   it("offers the code by hand when the camera cannot be used", async () => {
@@ -88,13 +88,13 @@ describe("reading a label with the camera", () => {
 
 describe("what a scanned code says", () => {
   it("reads the public id out of the URL a label encodes", () => {
-    expect(publicIdFromScannedText("https://ariadna.example/u/7ZK3QWERTY")).toBe(
+    expect(publicIdFromScannedText("https://waymark.example/u/7ZK3QWERTY")).toBe(
       publicId("7ZK3QWERTY"),
     );
   });
 
   it("does not care about a trailing slash or a query string", () => {
-    expect(publicIdFromScannedText("https://ariadna.example/u/7ZK3QWERTY/?x=1")).toBe(
+    expect(publicIdFromScannedText("https://waymark.example/u/7ZK3QWERTY/?x=1")).toBe(
       publicId("7ZK3QWERTY"),
     );
   });
@@ -105,7 +105,7 @@ describe("what a scanned code says", () => {
 
   it("refuses anything else, whatever host it came from", () => {
     expect(publicIdFromScannedText("https://example.com/")).toBeNull();
-    expect(publicIdFromScannedText("https://ariadna.example/units/box3")).toBeNull();
+    expect(publicIdFromScannedText("https://waymark.example/units/box3")).toBeNull();
     expect(publicIdFromScannedText("")).toBeNull();
   });
 });

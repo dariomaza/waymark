@@ -22,7 +22,7 @@ import { useTranslate } from "../app/language-context.js";
  * URL, exactly like a photo — the QR routes are behind the session too. That
  * also means the SVG is never inlined into this document: an `<img>` cannot
  * run script from the file it draws, and while this particular SVG comes from
- * Ariadna's own renderer, inlining remote markup is a habit worth not having.
+ * Waymark's own renderer, inlining remote markup is a habit worth not having.
  *
  * The code is printed under the symbol in text. A scuffed label still has a
  * ten character code somebody can read out loud across a garage, and that is
@@ -78,7 +78,7 @@ export const LabelScreen = (): JSX.Element => {
           </article>
 
           <p className="label-screen__hint">
-            Scanning this with any camera opens the box in Ariadna. Nobody has to
+            Scanning this with any camera opens the box in Waymark. Nobody has to
             install anything first.
           </p>
         </>

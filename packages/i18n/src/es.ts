@@ -31,9 +31,9 @@ export const ES: Dictionary = {
   "shell.signedInAs": "Sesión iniciada como {username}",
   "shell.signOut": "Cerrar sesión",
 
-  "shell.opening": "Abriendo Ariadna",
+  "shell.opening": "Abriendo Waymark",
   "shell.checkingSession": "Comprobando la sesión",
-  "session.unconfirmed": "Ariadna no ha podido confirmar la sesión",
+  "session.unconfirmed": "Waymark no ha podido confirmar la sesión",
   "session.signInAgain": "Iniciar sesión de nuevo",
 
   // "Lugares" and "Cosas" for the same reason the English says "Places" and
@@ -79,15 +79,15 @@ export const ES: Dictionary = {
   "login.tooManyAttempts":
     "Demasiados intentos desde esta conexión. Espere unos minutos e inténtelo de nuevo.",
   "login.missingCredentials": "Escriba el usuario y la contraseña.",
-  "login.unavailable": "Ariadna no ha podido iniciar la sesión. Inténtelo de nuevo en un momento.",
+  "login.unavailable": "Waymark no ha podido iniciar la sesión. Inténtelo de nuevo en un momento.",
 
   "failure.offline":
-    "La aplicación no ha podido conectar con Ariadna. Compruebe la conexión e inténtelo de nuevo.",
+    "La aplicación no ha podido conectar con Waymark. Compruebe la conexión e inténtelo de nuevo.",
   "failure.notFound": "Esto ya no está aquí. Puede que se haya borrado o movido.",
   "failure.sessionEnded": "La sesión ha terminado. Inicie sesión de nuevo.",
   "failure.rateLimited": "Demasiadas peticiones. Espere un momento e inténtelo de nuevo.",
-  "failure.refused": "Ariadna ha rechazado esa petición.",
-  "failure.server": "Ariadna ha tenido un problema al responder. Inténtelo de nuevo en un momento.",
+  "failure.refused": "Waymark ha rechazado esa petición.",
+  "failure.server": "Waymark ha tenido un problema al responder. Inténtelo de nuevo en un momento.",
   "failure.asTheApiPutIt": "{reason}",
 
   // ---------------------------------------------------------------------
@@ -123,7 +123,8 @@ export const ES: Dictionary = {
   // ---------------------------------------------------------------------
   // Signing in
   // ---------------------------------------------------------------------
-  "login.title": "Iniciar sesión en Ariadna",
+  "login.title": "Iniciar sesión en Waymark",
+  "login.tagline": "Encuentre el camino de vuelta.",
   "login.note": "Las cuentas se crean en el servidor. No hay registro.",
   "login.username": "Usuario",
   "login.password": "Contraseña",
@@ -319,7 +320,7 @@ export const ES: Dictionary = {
   "photos.moveEarlier": "Mover la foto {index} hacia delante",
   "photos.deleteNumbered": "Borrar la foto {index}",
   "photos.cameraPermission":
-    "Ariadna necesita permiso para usar la cámara antes de poder hacer una foto.",
+    "Waymark necesita permiso para usar la cámara antes de poder hacer una foto.",
 
   "scan.noSuchCode":
     "Ninguna unidad de este inventario lleva el código {code}. La etiqueta puede ser de otra casa, o la unidad puede haberse borrado.",

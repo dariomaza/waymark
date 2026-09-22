@@ -98,7 +98,7 @@ afterAll(() => {
 let objectUrls = 0;
 
 if (typeof URL.createObjectURL !== "function") {
-  URL.createObjectURL = (): string => `blob:ariadna/${(objectUrls += 1)}`;
+  URL.createObjectURL = (): string => `blob:waymark/${(objectUrls += 1)}`;
   URL.revokeObjectURL = (): void => {
     // Nothing to release; the point is that the app calls it.
   };

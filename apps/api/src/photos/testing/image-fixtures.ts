@@ -48,7 +48,7 @@ export const aPhotoWithGps = async (
 ): Promise<Buffer> =>
   solidImage(width, height)
     .withExif({
-      IFD0: { Make: "Ariadna", Model: "Test Phone" },
+      IFD0: { Make: "Waymark", Model: "Test Phone" },
       IFD3: {
         GPSLatitudeRef: gps.latitudeRef,
         GPSLatitude: gps.latitude,

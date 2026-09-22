@@ -42,7 +42,7 @@ const clientWith = (
     ...overrides,
   });
 
-describe("the Ariadna API client", () => {
+describe("the Waymark API client", () => {
   it("presents the session as a bearer token", async () => {
     const seen: (string | null)[] = [];
     apiServer.use(

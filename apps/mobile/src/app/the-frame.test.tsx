@@ -57,7 +57,7 @@ describe("the frame every signed-in screen sits in", () => {
     it("carries the product's name wherever you are", async () => {
       await renderApp({ session: aSession() });
 
-      expect(await screen.findByRole("header", { name: "Ariadna" })).toBeOnTheScreen();
+      expect(await screen.findByRole("header", { name: "Waymark" })).toBeOnTheScreen();
     });
 
     /**
@@ -127,11 +127,11 @@ describe("the language the interface is in", () => {
     expect(screen.getByRole("radio", { name: "English" })).not.toBeSelected();
   });
 
-  /** The product is called Ariadna in both languages. A name is not a word to be translated. */
+  /** The product is called Waymark in both languages. A name is not a word to be translated. */
   it("leaves the product's own name alone", async () => {
     await renderApp({ session: aSession(), language: "es" });
 
-    expect(await screen.findByRole("header", { name: "Ariadna" })).toBeOnTheScreen();
+    expect(await screen.findByRole("header", { name: "Waymark" })).toBeOnTheScreen();
   });
 
   /** The group a screen reader announces before the two options inside it. */

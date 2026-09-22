@@ -154,10 +154,10 @@ describe("a sign-in that did not work", () => {
     const offline = loginFailureMessage(new ApiError(OFFLINE_STATUS, "OFFLINE", "no"));
 
     expect(en(wrong)).toBe("That username or password is wrong.");
-    expect(en(offline)).toBe("The app could not reach Ariadna. Check the connection and try again.");
+    expect(en(offline)).toBe("The app could not reach Waymark. Check the connection and try again.");
     expect(es(wrong)).toBe("El usuario o la contraseña no son correctos.");
     expect(es(offline)).toBe(
-      "La aplicación no ha podido conectar con Ariadna. Compruebe la conexión e inténtelo de nuevo.",
+      "La aplicación no ha podido conectar con Waymark. Compruebe la conexión e inténtelo de nuevo.",
     );
   });
 
@@ -196,7 +196,7 @@ describe("a failure no screen expected", () => {
 
   it("falls back to a sentence of its own for anything that is not an ApiError", () => {
     expect(es(describeFailure(new TypeError("undefined is not a function")))).toBe(
-      "Ariadna ha tenido un problema al responder. Inténtelo de nuevo en un momento.",
+      "Waymark ha tenido un problema al responder. Inténtelo de nuevo en un momento.",
     );
   });
 });

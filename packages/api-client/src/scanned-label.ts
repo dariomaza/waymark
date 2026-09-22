@@ -15,7 +15,7 @@ import { publicId, type PublicId } from "@waymark/domain";
  * setting that can change, labels already printed keep the old one, and a
  * client that only accepted its own origin would stop reading the stickers
  * already glued to the boxes. The shape of the path is what identifies an
- * Ariadna label; the id inside it is the stable thing (README).
+ * Waymark label; the id inside it is the stable thing (README).
  *
  * A bare code is accepted too, because the code is printed under the symbol
  * precisely so it can be read out and typed in when a label is scuffed.

@@ -32,7 +32,7 @@ export interface SessionStore {
   subscribe(listener: () => void): () => void;
 }
 
-const STORAGE_KEY = "ariadna.session";
+const STORAGE_KEY = "waymark.session";
 
 export const createSessionStore = (storage: SecureStorage): SessionStore => {
   const listeners = new Set<() => void>();

@@ -55,7 +55,7 @@ describe("browsing the inventory", () => {
 
     renderApp({ route: "/" });
 
-    expect(await screen.findByText(/could not reach ariadna/i)).toBeVisible();
+    expect(await screen.findByText(/could not reach waymark/i)).toBeVisible();
     expect(screen.getByRole("button", { name: /try again/i })).toBeVisible();
   });
 

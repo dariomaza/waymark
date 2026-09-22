@@ -32,6 +32,7 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
   return (
     <form className="login" onSubmit={submit} noValidate>
       <h1>{t("login.title")}</h1>
+      <p className="login__tagline">{t("login.tagline")}</p>
       <p className="login__lede">
         {t("login.note")}
       </p>

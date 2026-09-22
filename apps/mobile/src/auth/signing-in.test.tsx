@@ -77,7 +77,7 @@ describe("signing in", () => {
     await fireEvent.changeText(screen.getByLabelText("Password"), "correct horse");
     await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByText(/could not reach ariadna/i)).toBeOnTheScreen();
+    expect(await screen.findByText(/could not reach waymark/i)).toBeOnTheScreen();
   });
 
   it("opens straight into the app when the keystore already holds a session", async () => {

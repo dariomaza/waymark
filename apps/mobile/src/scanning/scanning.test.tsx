@@ -27,7 +27,7 @@ describe("scanning a label", () => {
     expect(await screen.findByText(/scan a label/i)).toBeOnTheScreen();
 
     await act(async () => {
-      camera.scan("https://ariadna.example/u/7ZK3QWERTY");
+      camera.scan("https://waymark.example/u/7ZK3QWERTY");
     });
 
     expect(await screen.findByRole("header", { name: "Box 3" })).toBeOnTheScreen();
@@ -61,7 +61,7 @@ describe("scanning a label", () => {
     await screen.findByText(/scan a label/i);
 
     await act(async () => {
-      camera.scan("https://ariadna.example/u/9ZZ9ZZ9ZZ9");
+      camera.scan("https://waymark.example/u/9ZZ9ZZ9ZZ9");
     });
 
     // A clear sentence, not a 404 that reads like a bug in the app (ADR 12).
@@ -69,7 +69,7 @@ describe("scanning a label", () => {
     expect(screen.getByRole("button", { name: "Go to your inventory" })).toBeOnTheScreen();
   });
 
-  it("refuses a QR that is not an Ariadna label at all", async () => {
+  it("refuses a QR that is not an Waymark label at all", async () => {
     theApiKnowsTheHouse();
     const camera = fakeScanner();
 
@@ -80,7 +80,7 @@ describe("scanning a label", () => {
       camera.scan("https://example.com/something-else");
     });
 
-    expect(await screen.findByText(/not an ariadna label/i)).toBeOnTheScreen();
+    expect(await screen.findByText(/not an waymark label/i)).toBeOnTheScreen();
   });
 
   /**

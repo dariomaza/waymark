@@ -1,5 +1,5 @@
 /**
- * # The contract with Ariadna's API, shared by both clients
+ * # The contract with Waymark's API, shared by both clients
  *
  * There is one API and two clients (README), and the reason Expo was chosen
  * over native Kotlin was that the Android app would SHARE this rather than be

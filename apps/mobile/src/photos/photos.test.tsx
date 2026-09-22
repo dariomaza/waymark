@@ -126,7 +126,7 @@ describe("photographing a thing", () => {
   it("says so when the camera permission was refused", async () => {
     theDrillHolds([]);
     const camera = fakePhotoSource();
-    camera.refuses("Ariadna needs permission to use the camera before it can take a photo.");
+    camera.refuses("Waymark needs permission to use the camera before it can take a photo.");
 
     await renderApp({ session: aSession(), screen: atTheDrill, photos: camera });
 

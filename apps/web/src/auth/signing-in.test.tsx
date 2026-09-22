@@ -46,7 +46,7 @@ describe("signing in", () => {
     renderApp({ route: "/" });
 
     expect(
-      await screen.findByRole("heading", { name: /sign in to ariadna/i }),
+      await screen.findByRole("heading", { name: /sign in to waymark/i }),
     ).toBeVisible();
     expect(screen.getByRole("textbox", { name: /username/i })).toBeVisible();
   });
@@ -101,7 +101,7 @@ describe("signing in", () => {
     renderApp({ route: "/" });
     await signIn("correct horse");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/could not reach ariadna/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/could not reach waymark/i);
   });
 });
 
@@ -126,7 +126,7 @@ describe("a session that is over", () => {
     renderApp({ route: "/" });
 
     expect(
-      await screen.findByRole("heading", { name: /sign in to ariadna/i }),
+      await screen.findByRole("heading", { name: /sign in to waymark/i }),
     ).toBeVisible();
     expect(sessionStore.read()).toBeNull();
   });
@@ -144,7 +144,7 @@ describe("a session that is over", () => {
     await userEvent.click(await screen.findByRole("button", { name: /sign out/i }));
 
     expect(
-      await screen.findByRole("heading", { name: /sign in to ariadna/i }),
+      await screen.findByRole("heading", { name: /sign in to waymark/i }),
     ).toBeVisible();
     await waitFor(() => {
       expect(sessionStore.read()).toBeNull();

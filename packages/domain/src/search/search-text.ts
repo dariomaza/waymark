@@ -1,7 +1,7 @@
 /**
  * # How text is compared when somebody searches
  *
- * The person using Ariadna writes Spanish, on a phone, one-handed, in a cold
+ * The person using Waymark writes Spanish, on a phone, one-handed, in a cold
  * garage. `camara` has to find `cámara` and `cámara` has to find `camara`,
  * because they are the same word and only one of them is convenient to type.
  * The way to make that true in BOTH directions is to fold the query and the

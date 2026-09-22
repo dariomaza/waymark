@@ -8,7 +8,7 @@ import { DEFAULT_LANGUAGE, isLanguage, preferredLanguage, type Language } from "
  * that is genuinely the browser's: `localStorage`, and what to do when there
  * is nothing in it.
  */
-const KEY = "ariadna.language";
+const KEY = "waymark.language";
 
 /**
  * What to show somebody who has never touched the switcher.

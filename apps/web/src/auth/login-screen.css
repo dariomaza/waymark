@@ -15,6 +15,18 @@
   max-width: 24rem;
 }
 
+/*
+ * The tagline sits under the title and above the practical note, so it reads
+ * as part of the heading rather than as the first instruction. The negative
+ * margin pulls it out of the form's own gap and against the title it belongs
+ * to.
+ */
+.login__tagline {
+  margin: calc(var(--space-4) * -1) 0 0;
+  color: var(--color-accent-text);
+  font-size: var(--text-m);
+}
+
 .login__lede {
   margin: 0;
   color: var(--color-ink-muted);

@@ -7,7 +7,7 @@ import { useTranslate } from "../app/language-context.js";
 /**
  * # What this app promises offline, and what it does not
  *
- * The shell is precached, so Ariadna opens in the corner of a garage with no
+ * The shell is precached, so Waymark opens in the corner of a garage with no
  * signal: the screen draws, the navigation works, and whatever was loaded
  * before is still there. Photos already looked at are cached too.
  *

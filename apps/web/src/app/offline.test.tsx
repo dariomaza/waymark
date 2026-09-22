@@ -66,7 +66,7 @@ describe("signing out on a shared phone", () => {
   it("throws away the cached photos and pages, not just the token", async () => {
     const deleted: string[] = [];
     vi.stubGlobal("caches", {
-      keys: async () => ["ariadna-photos", "workbox-precache-v2"],
+      keys: async () => ["waymark-photos", "workbox-precache-v2"],
       delete: async (name: string) => {
         deleted.push(name);
 
@@ -82,7 +82,7 @@ describe("signing out on a shared phone", () => {
     await userEvent.click(await screen.findByRole("button", { name: /sign out/i }));
 
     await waitFor(() => {
-      expect(deleted).toContain("ariadna-photos");
+      expect(deleted).toContain("waymark-photos");
     });
     vi.unstubAllGlobals();
   });

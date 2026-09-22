@@ -92,7 +92,7 @@ export const ScanScreen = (): JSX.Element => {
       ) : (
         <Callout tone="blocked" title={t("scan.cameraFailed")}>
           <p>
-            Ariadna needs permission to use the camera, and the page has to be
+            Waymark needs permission to use the camera, and the page has to be
             served over HTTPS. Either way, the code printed under the symbol works
             just as well.
           </p>
@@ -101,7 +101,7 @@ export const ScanScreen = (): JSX.Element => {
 
       {unknownCode === null ? null : (
         <Callout tone="wrong">
-          That is not an Ariadna label. A label points at this app and ends in a
+          That is not an Waymark label. A label points at this app and ends in a
           ten character code.
         </Callout>
       )}

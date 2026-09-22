@@ -42,7 +42,7 @@ describe("RembgImageProcessor", () => {
   let processor: RembgImageProcessor;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "ariadna-rembg-"));
+    root = await mkdtemp(join(tmpdir(), "waymark-rembg-"));
     files = new PhotoFileStore(root);
     sidecar = await startStubSidecar();
     processor = processorFor(sidecar.url);

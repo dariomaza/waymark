@@ -98,7 +98,7 @@ describe("a label scanned with the phone's own camera", () => {
 
     renderApp({ route: SCANNED });
 
-    expect(await screen.findByText(/could not reach ariadna/i)).toBeVisible();
+    expect(await screen.findByText(/could not reach waymark/i)).toBeVisible();
     expect(screen.getByRole("button", { name: /try again/i })).toBeVisible();
   });
 });

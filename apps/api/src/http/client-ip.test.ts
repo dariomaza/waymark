@@ -8,7 +8,7 @@ import {
 } from "./client-ip.js";
 
 /**
- * Ariadna is reached through a Cloudflare Tunnel, so `cloudflared` is always
+ * Waymark is reached through a Cloudflare Tunnel, so `cloudflared` is always
  * the socket peer and the real caller only exists in `CF-Connecting-IP`.
  * Getting this wrong does not degrade the rate limiter, it disables it: every
  * request in the world would share one bucket.

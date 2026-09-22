@@ -37,7 +37,7 @@ interface Window {
 /**
  * A fixed window counter, in memory, for failed logins.
  *
- * In memory is the right scope here and not a compromise: Ariadna is a single
+ * In memory is the right scope here and not a compromise: Waymark is a single
  * process on a single homelab box, so a shared store would add a dependency to
  * synchronise state that has exactly one writer. Restarting the API forgets the
  * counters, which is the known cost — and the one an attacker cannot trigger.

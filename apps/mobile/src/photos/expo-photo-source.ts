@@ -39,7 +39,7 @@ export const expoPhotoSource = (): PhotoSource => ({
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       throw new PhotoPermissionRefused(
-        "Ariadna needs permission to use the camera before it can take a photo.",
+        "Waymark needs permission to use the camera before it can take a photo.",
       );
     }
 

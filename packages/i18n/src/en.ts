@@ -18,8 +18,8 @@
  * The API's error codes and the domain's vocabulary. `STORAGE_UNIT_NOT_EMPTY`
  * is a contract between two machines and means the same thing in Madrid as in
  * Manchester; what a person reads WHEN it happens is the sentence in this file
- * that the code is turned into. The same goes for the product's name: Ariadna
- * is called Ariadna in both languages.
+ * that the code is turned into. The same goes for the product's name: Waymark
+ * is called Waymark in both languages.
  */
 export const EN = {
   // ---------------------------------------------------------------------
@@ -30,9 +30,9 @@ export const EN = {
   "shell.signOut": "Sign out",
 
   /** What the app is doing while the keystore is being read on a cold start. */
-  "shell.opening": "Opening Ariadna",
+  "shell.opening": "Opening Waymark",
   "shell.checkingSession": "Checking your session",
-  "session.unconfirmed": "Ariadna could not confirm your session",
+  "session.unconfirmed": "Waymark could not confirm your session",
   "session.signInAgain": "Sign in again",
 
   /** The name of the landmark itself, announced before the links inside it. */
@@ -84,14 +84,14 @@ export const EN = {
   "login.tooManyAttempts":
     "Too many attempts from this connection. Wait a few minutes and try again.",
   "login.missingCredentials": "Fill in both a username and a password.",
-  "login.unavailable": "Ariadna could not sign you in. Try again in a moment.",
+  "login.unavailable": "Waymark could not sign you in. Try again in a moment.",
 
-  "failure.offline": "The app could not reach Ariadna. Check the connection and try again.",
+  "failure.offline": "The app could not reach Waymark. Check the connection and try again.",
   "failure.notFound": "That is not here any more. It may have been deleted or moved.",
   "failure.sessionEnded": "Your session has ended. Sign in again.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
-  "failure.refused": "Ariadna refused that request.",
-  "failure.server": "Ariadna had a problem answering. Try again in a moment.",
+  "failure.refused": "Waymark refused that request.",
+  "failure.server": "Waymark had a problem answering. Try again in a moment.",
   /**
    * The API's own sentence about the exact situation, passed through. It
    * arrives in English and stays that way — see `describeFailure`.
@@ -131,7 +131,14 @@ export const EN = {
   // ---------------------------------------------------------------------
   // Signing in
   // ---------------------------------------------------------------------
-  "login.title": "Sign in to Ariadna",
+  "login.title": "Sign in to Waymark",
+  /**
+   * The tagline, and the only place it is written down. A waymark is the thing
+   * somebody leaves on a trail so they can find the way again, which is what a
+   * label on a box is — so this is a description of the product and not a
+   * slogan around it, and it is translated like any other sentence.
+   */
+  "login.tagline": "Find your way back.",
   "login.note": "Accounts are created on the server. There is no sign-up.",
   "login.username": "Username",
   "login.password": "Password",
@@ -330,7 +337,7 @@ export const EN = {
   "photos.moveEarlier": "Move photo {index} earlier",
   "photos.deleteNumbered": "Delete photo {index}",
   "photos.cameraPermission":
-    "Ariadna needs permission to use the camera before it can take a photo.",
+    "Waymark needs permission to use the camera before it can take a photo.",
 
   "scan.noSuchCode":
     "No unit in this inventory carries the code {code}. The label may belong to another house, or the unit may have been deleted.",

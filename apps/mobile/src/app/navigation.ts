@@ -38,7 +38,7 @@ export interface RootStackParamList extends Record<string, object | undefined> {
  * the day that setting moved.
  */
 export const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ["ariadna://", "https://"],
+  prefixes: ["waymark://", "https://"],
   config: {
     screens: {
       ScannedLabel: "u/:publicId",

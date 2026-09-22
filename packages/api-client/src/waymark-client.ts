@@ -182,7 +182,7 @@ export const createWaymarkClient = <TFile>(
       throw new ApiError(
         OFFLINE_STATUS,
         "OFFLINE",
-        "The app could not reach Ariadna",
+        "The app could not reach Waymark",
         { cause: String(cause) },
       );
     }
@@ -389,7 +389,7 @@ const toApiError = async (response: Response): Promise<ApiError> => {
   const fallback = new ApiError(
     response.status,
     "UNREADABLE_ERROR",
-    `Ariadna answered ${response.status} with something this app cannot read`,
+    `Waymark answered ${response.status} with something this app cannot read`,
   );
 
   let body: unknown;

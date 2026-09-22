@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "Ariadna",
-    "slug": "ariadna",
+    "name": "Waymark",
+    "slug": "waymark",
     "version": "0.0.0",
     "orientation": "portrait",
-    "scheme": "ariadna",
+    "scheme": "waymark",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#11150f",
     "newArchEnabled": true,
     "android": {
-      "package": "es.inone.ariadna",
+      "package": "es.inone.waymark",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -17,7 +17,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "ariadna.example",
+              "host": "waymark.example",
               "pathPrefix": "/u"
             }
           ],
@@ -33,15 +33,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Ariadna uses the camera to read the QR code on a storage unit's label.",
+          "cameraPermission": "Waymark uses the camera to read the QR code on a storage unit's label.",
           "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Ariadna uses your photos so you can put a picture of a thing on it.",
-          "cameraPermission": "Ariadna uses the camera to photograph a thing or a box.",
+          "photosPermission": "Waymark uses your photos so you can put a picture of a thing on it.",
+          "cameraPermission": "Waymark uses the camera to photograph a thing or a box.",
           "microphonePermission": false
         }
       ]

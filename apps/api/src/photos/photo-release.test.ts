@@ -16,7 +16,7 @@ describe("PhotoRelease", () => {
   let release: PhotoRelease;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "ariadna-release-"));
+    root = await mkdtemp(join(tmpdir(), "waymark-release-"));
     files = new PhotoFileStore(root);
     photos = new InMemoryPhotoRepository();
     release = new PhotoRelease({ photos, files });

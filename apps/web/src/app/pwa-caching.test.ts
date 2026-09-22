@@ -19,12 +19,12 @@ import { cacheNameFor, RUNTIME_CACHING } from "./pwa-caching.js";
  */
 describe("what the service worker holds", () => {
   it("caches a photo, because a stored file never changes once it settles", () => {
-    expect(cacheNameFor("/photos/p1")).toBe("ariadna-photos");
-    expect(cacheNameFor("/photos/p1/thumbnail")).toBe("ariadna-photos");
+    expect(cacheNameFor("/photos/p1")).toBe("waymark-photos");
+    expect(cacheNameFor("/photos/p1/thumbnail")).toBe("waymark-photos");
   });
 
   it("caches the forest, so the home screen draws with no signal", () => {
-    expect(cacheNameFor("/storage-units")).toBe("ariadna-inventory");
+    expect(cacheNameFor("/storage-units")).toBe("waymark-inventory");
   });
 
   /**
@@ -34,12 +34,12 @@ describe("what the service worker holds", () => {
    * which is the exact failure the forest is cached to avoid.
    */
   it("caches every item, for the same reason it caches the forest", () => {
-    expect(cacheNameFor("/items")).toBe("ariadna-inventory");
+    expect(cacheNameFor("/items")).toBe("waymark-inventory");
   });
 
   it("holds the two of them together, under one bounded cache", () => {
     const inventory = RUNTIME_CACHING.filter(
-      (entry) => entry.options.cacheName === "ariadna-inventory",
+      (entry) => entry.options.cacheName === "waymark-inventory",
     );
 
     expect(inventory).toHaveLength(1);

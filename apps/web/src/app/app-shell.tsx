@@ -27,7 +27,7 @@ export const AppShell = (): JSX.Element => {
   return (
     <div className="app-shell">
       <AppBar
-        title="Ariadna"
+        title="Waymark"
         leading={<Icon name="thread" size={24} />}
         actions={
           <>

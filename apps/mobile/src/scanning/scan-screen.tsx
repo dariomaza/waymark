@@ -55,7 +55,7 @@ export const ScanScreen = (): JSX.Element => {
 
       {unknownCode === null ? null : (
         <Callout tone="wrong">
-          That is not an Ariadna label. A label points at this app and ends in a ten
+          That is not an Waymark label. A label points at this app and ends in a ten
           character code.
         </Callout>
       )}

@@ -29,7 +29,7 @@ const ExpoCameraView = ({ onCode }: CodeScannerViewProps): JSX.Element => {
     return (
       <View style={styles.frame}>
         <Text style={styles.message}>
-          Ariadna needs permission to use the camera to read a label. The code printed
+          Waymark needs permission to use the camera to read a label. The code printed
           under the symbol works just as well.
         </Text>
         <Button

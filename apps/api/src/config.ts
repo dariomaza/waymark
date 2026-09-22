@@ -321,7 +321,7 @@ const readAllowedOrigins = (raw: string | undefined): readonly string[] => {
  * URL that parses but is wrong produces stickers that get glued to boxes and
  * only reveal themselves months later, when somebody scans one and gets a
  * connection error in a garage. A path prefix is allowed (an app served under
- * `/ariadna`); a query, a fragment or a non-HTTP scheme is not, because none of
+ * `/waymark`); a query, a fragment or a non-HTTP scheme is not, because none of
  * them survives having `/u/<publicId>` appended.
  */
 const readPublicBaseUrl = (raw: string | undefined): string => {

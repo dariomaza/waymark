@@ -23,7 +23,7 @@ export interface MultipartRequestBody {
 }
 
 export const multipartBody = (part: MultipartFilePart): MultipartRequestBody => {
-  const boundary = `----ariadna${randomUUID().replace(/-/gu, "")}`;
+  const boundary = `----waymark${randomUUID().replace(/-/gu, "")}`;
 
   const head = Buffer.from(
     `--${boundary}\r\n` +

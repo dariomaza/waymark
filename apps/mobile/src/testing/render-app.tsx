@@ -47,8 +47,8 @@ export interface RenderAppOptions {
   readonly language?: Language;
 }
 
-const SESSION_KEY = "ariadna.session";
-const LANGUAGE_KEY = "ariadna.language";
+const SESSION_KEY = "waymark.session";
+const LANGUAGE_KEY = "waymark.language";
 
 /**
  * Every query cache a test built, so the setup can throw them away.

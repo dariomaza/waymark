@@ -20,7 +20,7 @@ export interface SessionStore {
   subscribe(listener: () => void): () => void;
 }
 
-const STORAGE_KEY = "ariadna.session";
+const STORAGE_KEY = "waymark.session";
 
 /**
  * # Where the token lives, and why it lives there

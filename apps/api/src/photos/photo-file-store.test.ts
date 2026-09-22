@@ -23,7 +23,7 @@ describe("PhotoFileStore", () => {
   let store: PhotoFileStore;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "ariadna-photos-"));
+    root = await mkdtemp(join(tmpdir(), "waymark-photos-"));
     store = new PhotoFileStore(root);
   });
 

@@ -95,7 +95,7 @@ const splitStatements = (sql: string): string[] => {
 };
 
 export const createTestDatabase = async (): Promise<TestDatabase> => {
-  const directory = await mkdtemp(join(tmpdir(), "ariadna-sqlite-"));
+  const directory = await mkdtemp(join(tmpdir(), "waymark-sqlite-"));
   const file = join(directory, `${randomUUID()}.db`);
   const client = new PrismaClient({ datasourceUrl: `file:${file}` });
 

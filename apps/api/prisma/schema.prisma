@@ -1,4 +1,4 @@
-// Ariadna persistence schema.
+// Waymark persistence schema.
 //
 // The domain in `packages/domain` knows nothing about this file. Everything
 // here is a faithful projection of the domain entities onto SQLite, and the
@@ -197,7 +197,7 @@ model PhotoProcessingAttempt {
 
 /// An account. Credentials and nothing else.
 ///
-/// Ariadna is ONE SHARED INVENTORY: a user is a way to get in, not a tenant.
+/// Waymark is ONE SHARED INVENTORY: a user is a way to get in, not a tenant.
 /// There is deliberately no owner column on `StorageUnit`, `Item` or `Photo`,
 /// no per-user scoping of any query, and no role. Everyone who can log in sees
 /// and edits the same house. Adding a tenant id "just in case" would put a

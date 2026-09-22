@@ -23,7 +23,7 @@ import { workboxRuntimeCaching } from "./src/app/pwa-caching.js";
  * ## What is cached, and what is not
  *
  * The shell — the document, the bundle, the stylesheet, the icons — is
- * precached, so Ariadna opens in the corner of a garage with no signal
+ * precached, so Waymark opens in the corner of a garage with no signal
  * instead of showing the browser's offline page.
  *
  * Which API reads are cached, and which are deliberately never cached, is
@@ -48,8 +48,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "Ariadna",
-        short_name: "Ariadna",
+        name: "Waymark",
+        short_name: "Waymark",
         description: "Find anything in the house again.",
         start_url: "/",
         scope: "/",

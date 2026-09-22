@@ -15,32 +15,32 @@ const A_PUBLIC_ID = publicId("7ZQ4KM2XPT");
 
 describe("the URL a storage unit QR carries", () => {
   it("is an absolute page URL, not a bare id", () => {
-    expect(storageUnitUrl("https://ariadna.example", A_PUBLIC_ID)).toBe(
-      "https://ariadna.example/u/7ZQ4KM2XPT",
+    expect(storageUnitUrl("https://waymark.example", A_PUBLIC_ID)).toBe(
+      "https://waymark.example/u/7ZQ4KM2XPT",
     );
   });
 
   it("does not double the slash when the base already ends in one", () => {
-    expect(storageUnitUrl("https://ariadna.example/", A_PUBLIC_ID)).toBe(
-      "https://ariadna.example/u/7ZQ4KM2XPT",
+    expect(storageUnitUrl("https://waymark.example/", A_PUBLIC_ID)).toBe(
+      "https://waymark.example/u/7ZQ4KM2XPT",
     );
   });
 
   it("keeps a path prefix the base URL already has", () => {
-    expect(storageUnitUrl("https://home.example/ariadna", A_PUBLIC_ID)).toBe(
-      "https://home.example/ariadna/u/7ZQ4KM2XPT",
+    expect(storageUnitUrl("https://home.example/waymark", A_PUBLIC_ID)).toBe(
+      "https://home.example/waymark/u/7ZQ4KM2XPT",
     );
   });
 
   it("needs no percent encoding, because the alphabet is URL safe", () => {
-    const url = storageUnitUrl("https://ariadna.example", A_PUBLIC_ID);
+    const url = storageUnitUrl("https://waymark.example", A_PUBLIC_ID);
 
     expect(encodeURI(url)).toBe(url);
   });
 });
 
 describe("storage unit QR rendering", () => {
-  const url = storageUnitUrl("https://ariadna.example", A_PUBLIC_ID);
+  const url = storageUnitUrl("https://waymark.example", A_PUBLIC_ID);
 
   it("corrects a quarter of the symbol, for labels that live in a garage", () => {
     expect(QR_ERROR_CORRECTION_LEVEL).toBe("Q");
@@ -72,7 +72,7 @@ describe("storage unit QR rendering", () => {
   });
 
   it("gives different symbols to different units", async () => {
-    const other = storageUnitUrl("https://ariadna.example", publicId("0123456789"));
+    const other = storageUnitUrl("https://waymark.example", publicId("0123456789"));
 
     await expect(decodeQrPng(await renderStorageUnitQrPng(other))).resolves.toBe(other);
     expect((await renderStorageUnitQrPng(other)).equals(await renderStorageUnitQrPng(url))).toBe(

@@ -256,14 +256,14 @@ describe("looking after a storage unit", () => {
     expect(await screen.findByText(/<=200 characters/i)).toBeOnTheScreen();
   });
 
-  it("says the app could not reach Ariadna, rather than that the box is gone", async () => {
+  it("says the app could not reach Waymark, rather than that the box is gone", async () => {
     apiServer.use(
       http.get(`${API_URL}/storage-units/box3`, () => HttpResponse.error()),
     );
 
     await renderApp({ session: aSession(), screen: atBox3 });
 
-    expect(await screen.findByText(/could not reach ariadna/i)).toBeOnTheScreen();
+    expect(await screen.findByText(/could not reach waymark/i)).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Try again" })).toBeOnTheScreen();
   });
 });

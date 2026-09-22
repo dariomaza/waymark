@@ -38,7 +38,7 @@ export interface ScryptParameters {
  * Argon2id is the better algorithm on paper and the usual first choice. Both
  * Node bindings for it (`argon2`, `@node-rs/argon2`) are native modules: the
  * first compiles C++ at install time, the second ships per-platform prebuilt
- * binaries. Ariadna deploys to a zimaos homelab box and later to multi-arch
+ * binaries. Waymark deploys to a zimaos homelab box and later to multi-arch
  * Docker images, so a native dependency means either a compiler in the runtime
  * image or one optional package per `os`/`cpu`/`libc` triple, both of which are
  * a build problem for a feature that must simply never break.

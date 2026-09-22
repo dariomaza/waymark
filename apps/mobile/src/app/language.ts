@@ -10,7 +10,7 @@ import type { SecureStorage } from "../auth/secure-storage.js";
  * part that is genuinely the phone's: the keystore, and the phone's own idea
  * of what language its owner reads.
  */
-export const LANGUAGE_KEY = "ariadna.language";
+export const LANGUAGE_KEY = "waymark.language";
 
 export interface LanguageStore {
   read(): Promise<Language>;

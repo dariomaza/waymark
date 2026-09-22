@@ -252,7 +252,7 @@ describe("the web client served from the API", () => {
         url: "/storage-units",
         headers: {
           ...api.authHeaders(token),
-          origin: "https://ariadna.invalid",
+          origin: "https://waymark.invalid",
         },
         payload: { name: "Box 3", parentId: null, kind: "BOX" },
       });
@@ -366,9 +366,9 @@ describe("the web client served from the API", () => {
 
   describe("nothing outside the built client is reachable", () => {
     it.each([
-      ["a traversal", "/../ariadna-secret.txt"],
-      ["an encoded traversal", "/%2e%2e/ariadna-secret.txt"],
-      ["a deep encoded traversal", "/assets/%2e%2e/%2e%2e/ariadna-secret.txt"],
+      ["a traversal", "/../waymark-secret.txt"],
+      ["an encoded traversal", "/%2e%2e/waymark-secret.txt"],
+      ["a deep encoded traversal", "/assets/%2e%2e/%2e%2e/waymark-secret.txt"],
     ])("refuses %s with JSON, and never the file", async (_what, url) => {
       const secret = await createSecretBesideWebRoot(webRoot);
 
@@ -398,7 +398,7 @@ describe("the web client served from the API", () => {
 
 describe("a web root with no build in it", () => {
   it("refuses to start, and says how to fix it", async () => {
-    const empty = await mkdtemp(join(tmpdir(), "ariadna-empty-web-root-"));
+    const empty = await mkdtemp(join(tmpdir(), "waymark-empty-web-root-"));
 
     try {
       // At boot rather than on the first request. A container built without
