@@ -11,7 +11,7 @@ import { publicId, type PublicId } from "@waymark/domain";
  *
  * What a label encodes: `<public base>/u/<publicId>`.
  *
- * The host is deliberately ignored. `ARIADNA_PUBLIC_BASE_URL` is a server
+ * The host is deliberately ignored. `WAYMARK_PUBLIC_BASE_URL` is a server
  * setting that can change, labels already printed keep the old one, and a
  * client that only accepted its own origin would stop reading the stickers
  * already glued to the boxes. The shape of the path is what identifies an

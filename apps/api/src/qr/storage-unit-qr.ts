@@ -12,7 +12,7 @@ import QRCode, { type QRCodeErrorCorrectionLevel } from "qrcode";
  * Encoding `7ZQ4KM2XPT` would mean "install the app first, then open it, then
  * use the in-app scanner" — which is the workflow the QR exists to avoid.
  *
- * The URL is built from a configurable base (`ARIADNA_PUBLIC_BASE_URL`) so the
+ * The URL is built from a configurable base (`WAYMARK_PUBLIC_BASE_URL`) so the
  * same code serves a tunnel hostname in production and localhost in
  * development. `/u/` is deliberately short: the shorter the payload, the fewer
  * modules in the symbol, and the bigger each module prints on a small label.

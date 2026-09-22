@@ -53,7 +53,7 @@ export const qrRoutes: FastifyPluginAsync<QrRouteOptions> = async (app, options)
 
   /**
    * The tag covers everything the bytes depend on: the URL and the correction
-   * level. Change `ARIADNA_PUBLIC_BASE_URL` and every tag changes with it, so a
+   * level. Change `WAYMARK_PUBLIC_BASE_URL` and every tag changes with it, so a
    * phone holding a cached picture of the old hostname revalidates into the new
    * one instead of keeping a dead label.
    */

@@ -57,7 +57,7 @@ poll interval (15s) is the floor for when that wake-up is lost.
 
 ### One photo at a time, and that is the point
 
-`ARIADNA_IMAGE_PROCESSOR_CONCURRENCY` defaults to **1**. A batch is claimed,
+`WAYMARK_IMAGE_PROCESSOR_CONCURRENCY` defaults to **1**. A batch is claimed,
 awaited in full, and only then is the next one claimed.
 
 onnxruntime already uses every core for a single forward pass, so a second
@@ -79,7 +79,7 @@ everything working.
 - **Transient** — nothing answered, the answer took too long, a 5xx, a 429, or
   bytes that are not an image. All of those are statements about the SIDECAR,
   which can be restarted, so the photo is retried: 1, 2, 4, 8 minutes, doubling,
-  capped at 30, up to `ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS` (5). The photo stays
+  capped at 30, up to `WAYMARK_IMAGE_PROCESSOR_MAX_ATTEMPTS` (5). The photo stays
   `PENDING` throughout, because that is what it is.
 - **Permanent** — a 4xx, or an original that is not on the volume. The sidecar
   read these bytes and refused them, and it will refuse them identically for

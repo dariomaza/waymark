@@ -310,7 +310,7 @@ the most important half of this feature outside the contract suite.
 
 Every storage unit has a `publicId`: ten characters of Crockford Base32, printed
 under the symbol so it can be read aloud across a garage. The QR itself encodes
-`<ARIADNA_PUBLIC_BASE_URL>/u/<publicId>` — a URL, never a bare id, because
+`<WAYMARK_PUBLIC_BASE_URL>/u/<publicId>` — a URL, never a bare id, because
 Android's stock camera offers to OPEN a URL and offers to copy a string, and
 "install the app, open it, then scan" is the workflow the label exists to avoid.
 
@@ -365,7 +365,7 @@ in flight puts blank squares on paper that somebody then cuts up.
 ## Photos
 
 A storage unit holds at most one photo; an item holds up to ten, ordered, first
-one is the cover. Files live on `ARIADNA_PHOTO_ROOT`, a plain directory mounted
+one is the cover. Files live on `WAYMARK_PHOTO_ROOT`, a plain directory mounted
 as a Docker volume — no S3, no MinIO, and no blobs in SQLite, which would turn
 the one file you want small enough to copy anywhere into tens of gigabytes.
 
@@ -406,7 +406,7 @@ the one file you want small enough to copy anywhere into tens of gigabytes.
 ## Background removal
 
 Optional, out of process, and unable to break anything (ADR 4, ADR 10). With
-`ARIADNA_IMAGE_PROCESSOR_URL` unset there is no processor, no worker and no
+`WAYMARK_IMAGE_PROCESSOR_URL` unset there is no processor, no worker and no
 timer: photos are uploaded, stored and served from their originals, and every
 one of them sits at `PENDING` until a sidecar appears. That is a complete
 installation.
@@ -450,11 +450,11 @@ switched off, which is exactly what "optional" has to mean.
 
 | Variable                                  | Default  | What it decides                                    |
 | ----------------------------------------- | -------- | -------------------------------------------------- |
-| `ARIADNA_IMAGE_PROCESSOR_URL`             | _unset_  | The sidecar's address. Unset switches the feature off. |
-| `ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS` | `120`    | When one removal is abandoned as hung.              |
-| `ARIADNA_IMAGE_PROCESSOR_CONCURRENCY`     | `1`      | Photos in flight at once. rembg already uses every core. |
-| `ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS`    | `5`      | Attempts before a photo is left `FAILED`.           |
-| `ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS`    | `15`     | How often work is looked for when no upload woke it. |
+| `WAYMARK_IMAGE_PROCESSOR_URL`             | _unset_  | The sidecar's address. Unset switches the feature off. |
+| `WAYMARK_IMAGE_PROCESSOR_TIMEOUT_SECONDS` | `120`    | When one removal is abandoned as hung.              |
+| `WAYMARK_IMAGE_PROCESSOR_CONCURRENCY`     | `1`      | Photos in flight at once. rembg already uses every core. |
+| `WAYMARK_IMAGE_PROCESSOR_MAX_ATTEMPTS`    | `5`      | Attempts before a photo is left `FAILED`.           |
+| `WAYMARK_IMAGE_PROCESSOR_POLL_SECONDS`    | `15`     | How often work is looked for when no upload woke it. |
 
 ## Authentication
 
@@ -483,7 +483,7 @@ edits the same house.
 `apps/web`. React, Vite, TypeScript, installed as a workspace package and
 served **by the API, from the API's own origin** (ADR 16). One container, one
 hostname, and no CORS for this client at all — a same-origin request is not a
-cross-origin one, so `ARIADNA_ALLOWED_ORIGINS` is empty in a normal
+cross-origin one, so `WAYMARK_ALLOWED_ORIGINS` is empty in a normal
 deployment and exists only for a browser client served from somewhere else.
 
 ```
@@ -571,7 +571,7 @@ pnpm --filter @waymark/web test
 pnpm --filter @waymark/web build
 ```
 
-`VITE_ARIADNA_API_URL` says where the API is, as a browser sees it. It
+`VITE_WAYMARK_API_URL` says where the API is, as a browser sees it. It
 defaults to **nothing at all**, which makes every request relative and
 therefore same-origin: the API serves this bundle, so the host to call it on
 is the host it was downloaded from. A deployed bundle carries no build-time
@@ -581,7 +581,7 @@ tunnel is not a rebuild.
 Set it for `pnpm --filter @waymark/web dev`, which serves the app on
 `:5173` against an API on its own port — `http://127.0.0.1:3000` is where
 `pnpm --filter @waymark/api dev` listens. That is a genuine cross-origin
-browser client, and it is the one caller `ARIADNA_ALLOWED_ORIGINS` is still
+browser client, and it is the one caller `WAYMARK_ALLOWED_ORIGINS` is still
 for: put `http://localhost:5173` in it while developing that way.
 
 ## Android app
@@ -647,7 +647,7 @@ pnpm --filter @waymark/mobile typecheck
 pnpm --filter @waymark/mobile prebuild        # generates android/ from app.json
 ```
 
-`EXPO_PUBLIC_ARIADNA_API_URL` says where the API is, as a PHONE sees it. It
+`EXPO_PUBLIC_WAYMARK_API_URL` says where the API is, as a PHONE sees it. It
 defaults to `http://127.0.0.1:3000`, which is only ever right on an emulator:
 a real device on the same wifi needs the machine's LAN address, and a device
 anywhere else needs the tunnel's public hostname. Put it in
@@ -658,7 +658,7 @@ Android 9 and up refuse plain HTTP by default, so a LAN address needs
 anything else.
 
 The `https` intent filter in `app.json` carries a placeholder host,
-`ariadna.example`. Set it to the host in `ARIADNA_PUBLIC_BASE_URL` to make the
+`ariadna.example`. Set it to the host in `WAYMARK_PUBLIC_BASE_URL` to make the
 stock camera open labels in this app rather than in the browser; leaving it
 alone keeps the labels working exactly as they do today, through the web PWA.
 The `ariadna://u/<code>` scheme works either way.
@@ -674,10 +674,10 @@ why the hardening above is not optional. See `apps/api/.env.example` for every
 setting.
 
 Two settings are the ones a fresh deployment has to get right.
-`ARIADNA_PUBLIC_BASE_URL` is the tunnel's hostname, and it is what every
+`WAYMARK_PUBLIC_BASE_URL` is the tunnel's hostname, and it is what every
 printed label encodes — set it before printing one, because a sticker is glued
 to a box and only reveals a wrong base months later, in a garage.
-`ARIADNA_ALLOWED_ORIGINS` is **empty**, and correct: the browser client is on
+`WAYMARK_ALLOWED_ORIGINS` is **empty**, and correct: the browser client is on
 this origin now, so nothing it does is a cross-origin request and there is no
 origin to allow.
 

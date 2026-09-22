@@ -41,7 +41,7 @@ export const PENDING_PHOTO_CACHE_CONTROL = "private, max-age=60, must-revalidate
 
 /**
  * A QR symbol is derived, not stored: it is a function of the public id AND of
- * `ARIADNA_PUBLIC_BASE_URL`, which a redeploy can change. An hour of freshness
+ * `WAYMARK_PUBLIC_BASE_URL`, which a redeploy can change. An hour of freshness
  * plus a revalidation keeps the label cheap to fetch without pinning a picture
  * of a dead URL into a phone's cache for a year.
  */

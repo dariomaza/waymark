@@ -24,7 +24,7 @@ import { renderApp, screen, userEvent, waitFor, within } from "../testing/render
  * pinned, and the symbols are decoded rather than counted.
  */
 
-/** What the API's `ARIADNA_PUBLIC_BASE_URL` is in these tests. */
+/** What the API's `WAYMARK_PUBLIC_BASE_URL` is in these tests. */
 const PUBLIC_BASE_URL = "https://ariadna.example";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });

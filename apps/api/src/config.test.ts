@@ -29,7 +29,7 @@ describe("loadConfig", () => {
 
   it("reads the PWA origins from the environment", () => {
     const config = loadConfig({
-      ARIADNA_ALLOWED_ORIGINS: "https://ariadna.example, https://pwa.example",
+      WAYMARK_ALLOWED_ORIGINS: "https://ariadna.example, https://pwa.example",
     });
 
     expect(config.security.allowedOrigins).toEqual([
@@ -39,13 +39,13 @@ describe("loadConfig", () => {
   });
 
   it("reads a proxy on a container network", () => {
-    const config = loadConfig({ ARIADNA_TRUSTED_PROXIES: "172.18.0.2" });
+    const config = loadConfig({ WAYMARK_TRUSTED_PROXIES: "172.18.0.2" });
 
     expect([...config.security.trustedProxies]).toEqual(["172.18.0.2"]);
   });
 
   it("can trust nothing at all, which disables the CF-Connecting-IP header", () => {
-    const config = loadConfig({ ARIADNA_TRUSTED_PROXIES: "" });
+    const config = loadConfig({ WAYMARK_TRUSTED_PROXIES: "" });
 
     expect([...config.security.trustedProxies]).toEqual([]);
   });
@@ -59,8 +59,8 @@ describe("loadConfig", () => {
 
   it("reads the limit from the environment", () => {
     const config = loadConfig({
-      ARIADNA_LOGIN_ATTEMPT_LIMIT: "3",
-      ARIADNA_LOGIN_WINDOW_MINUTES: "60",
+      WAYMARK_LOGIN_ATTEMPT_LIMIT: "3",
+      WAYMARK_LOGIN_WINDOW_MINUTES: "60",
     });
 
     expect(config.login.limit).toBe(3);
@@ -75,7 +75,7 @@ describe("loadConfig", () => {
 
   it("reads the public base URL the QR codes encode", () => {
     const config = loadConfig({
-      ARIADNA_PUBLIC_BASE_URL: "https://ariadna.example",
+      WAYMARK_PUBLIC_BASE_URL: "https://ariadna.example",
     });
 
     expect(config.publicBaseUrl).toBe("https://ariadna.example");
@@ -83,7 +83,7 @@ describe("loadConfig", () => {
 
   it("drops a trailing slash so the URL is built the same way every time", () => {
     const config = loadConfig({
-      ARIADNA_PUBLIC_BASE_URL: "https://ariadna.example/",
+      WAYMARK_PUBLIC_BASE_URL: "https://ariadna.example/",
     });
 
     expect(config.publicBaseUrl).toBe("https://ariadna.example");
@@ -91,7 +91,7 @@ describe("loadConfig", () => {
 
   it("keeps a path prefix, for an app served under a subpath", () => {
     const config = loadConfig({
-      ARIADNA_PUBLIC_BASE_URL: "https://home.example/ariadna",
+      WAYMARK_PUBLIC_BASE_URL: "https://home.example/ariadna",
     });
 
     expect(config.publicBaseUrl).toBe("https://home.example/ariadna");
@@ -104,7 +104,7 @@ describe("loadConfig", () => {
   });
 
   it("reads the photo root, which is a docker volume in production", () => {
-    const config = loadConfig({ ARIADNA_PHOTO_ROOT: "/data/photos" });
+    const config = loadConfig({ WAYMARK_PHOTO_ROOT: "/data/photos" });
 
     expect(config.photos.root).toBe("/data/photos");
   });
@@ -116,7 +116,7 @@ describe("loadConfig", () => {
   });
 
   it("reads the upload limit in megabytes", () => {
-    const config = loadConfig({ ARIADNA_MAX_PHOTO_MB: "25" });
+    const config = loadConfig({ WAYMARK_MAX_PHOTO_MB: "25" });
 
     expect(config.photos.maxBytes).toBe(25 * 1024 * 1024);
   });
@@ -140,14 +140,14 @@ describe("loadConfig", () => {
     });
 
     it("is switched off by an empty value, not left half-configured", () => {
-      const config = loadConfig({ ARIADNA_IMAGE_PROCESSOR_URL: "   " });
+      const config = loadConfig({ WAYMARK_IMAGE_PROCESSOR_URL: "   " });
 
       expect(config.imageProcessing.url).toBeNull();
     });
 
     it("reads the sidecar address and trims the trailing slash", () => {
       const config = loadConfig({
-        ARIADNA_IMAGE_PROCESSOR_URL: "http://image-processor:8000/",
+        WAYMARK_IMAGE_PROCESSOR_URL: "http://image-processor:8000/",
       });
 
       expect(config.imageProcessing.url).toBe("http://image-processor:8000");
@@ -184,11 +184,11 @@ describe("loadConfig", () => {
 
     it("reads every knob from the environment", () => {
       const config = loadConfig({
-        ARIADNA_IMAGE_PROCESSOR_URL: "http://sidecar:8000",
-        ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS: "30",
-        ARIADNA_IMAGE_PROCESSOR_CONCURRENCY: "2",
-        ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS: "3",
-        ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS: "5",
+        WAYMARK_IMAGE_PROCESSOR_URL: "http://sidecar:8000",
+        WAYMARK_IMAGE_PROCESSOR_TIMEOUT_SECONDS: "30",
+        WAYMARK_IMAGE_PROCESSOR_CONCURRENCY: "2",
+        WAYMARK_IMAGE_PROCESSOR_MAX_ATTEMPTS: "3",
+        WAYMARK_IMAGE_PROCESSOR_POLL_SECONDS: "5",
       });
 
       expect(config.imageProcessing).toEqual({
@@ -211,13 +211,13 @@ describe("loadConfig", () => {
     });
 
     it("reads the directory the image bakes the client into", () => {
-      const config = loadConfig({ ARIADNA_WEB_ROOT: "/repo/apps/web/dist" });
+      const config = loadConfig({ WAYMARK_WEB_ROOT: "/repo/apps/web/dist" });
 
       expect(config.webRoot).toBe("/repo/apps/web/dist");
     });
 
     it("treats a blank value as no client, so an unset variable in compose is not a crash", () => {
-      const config = loadConfig({ ARIADNA_WEB_ROOT: "   " });
+      const config = loadConfig({ WAYMARK_WEB_ROOT: "   " });
 
       expect(config.webRoot).toBeNull();
     });
@@ -227,33 +227,33 @@ describe("loadConfig", () => {
     it.each([
       ["a port that is not a number", { PORT: "http" }],
       ["a port outside the valid range", { PORT: "70000" }],
-      ["a login limit of zero", { ARIADNA_LOGIN_ATTEMPT_LIMIT: "0" }],
-      ["a negative login window", { ARIADNA_LOGIN_WINDOW_MINUTES: "-5" }],
-      ["an origin that is not an origin", { ARIADNA_ALLOWED_ORIGINS: "ariadna.example" }],
-      ["an origin with a path", { ARIADNA_ALLOWED_ORIGINS: "https://a.example/app" }],
-      ["a trusted proxy that is not an IP", { ARIADNA_TRUSTED_PROXIES: "cloudflared" }],
-      ["a base URL that is not absolute", { ARIADNA_PUBLIC_BASE_URL: "ariadna.example" }],
-      ["a base URL with a query", { ARIADNA_PUBLIC_BASE_URL: "https://a.example/?x=1" }],
-      ["a base URL that is not http", { ARIADNA_PUBLIC_BASE_URL: "ftp://a.example" }],
-      ["an empty photo root", { ARIADNA_PHOTO_ROOT: "   " }],
-      ["a photo limit of zero", { ARIADNA_MAX_PHOTO_MB: "0" }],
-      ["a photo limit that is not a number", { ARIADNA_MAX_PHOTO_MB: "big" }],
+      ["a login limit of zero", { WAYMARK_LOGIN_ATTEMPT_LIMIT: "0" }],
+      ["a negative login window", { WAYMARK_LOGIN_WINDOW_MINUTES: "-5" }],
+      ["an origin that is not an origin", { WAYMARK_ALLOWED_ORIGINS: "ariadna.example" }],
+      ["an origin with a path", { WAYMARK_ALLOWED_ORIGINS: "https://a.example/app" }],
+      ["a trusted proxy that is not an IP", { WAYMARK_TRUSTED_PROXIES: "cloudflared" }],
+      ["a base URL that is not absolute", { WAYMARK_PUBLIC_BASE_URL: "ariadna.example" }],
+      ["a base URL with a query", { WAYMARK_PUBLIC_BASE_URL: "https://a.example/?x=1" }],
+      ["a base URL that is not http", { WAYMARK_PUBLIC_BASE_URL: "ftp://a.example" }],
+      ["an empty photo root", { WAYMARK_PHOTO_ROOT: "   " }],
+      ["a photo limit of zero", { WAYMARK_MAX_PHOTO_MB: "0" }],
+      ["a photo limit that is not a number", { WAYMARK_MAX_PHOTO_MB: "big" }],
       [
         "a sidecar address that is not absolute",
-        { ARIADNA_IMAGE_PROCESSOR_URL: "image-processor:8000" },
+        { WAYMARK_IMAGE_PROCESSOR_URL: "image-processor:8000" },
       ],
       [
         "a sidecar address that is not http",
-        { ARIADNA_IMAGE_PROCESSOR_URL: "tcp://image-processor:8000" },
+        { WAYMARK_IMAGE_PROCESSOR_URL: "tcp://image-processor:8000" },
       ],
       [
         "a sidecar address carrying a query",
-        { ARIADNA_IMAGE_PROCESSOR_URL: "http://sidecar:8000/?model=u2net" },
+        { WAYMARK_IMAGE_PROCESSOR_URL: "http://sidecar:8000/?model=u2net" },
       ],
-      ["a concurrency of zero", { ARIADNA_IMAGE_PROCESSOR_CONCURRENCY: "0" }],
-      ["a timeout of zero", { ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS: "0" }],
-      ["no attempts at all", { ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS: "0" }],
-      ["a poll interval that is not a number", { ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS: "often" }],
+      ["a concurrency of zero", { WAYMARK_IMAGE_PROCESSOR_CONCURRENCY: "0" }],
+      ["a timeout of zero", { WAYMARK_IMAGE_PROCESSOR_TIMEOUT_SECONDS: "0" }],
+      ["no attempts at all", { WAYMARK_IMAGE_PROCESSOR_MAX_ATTEMPTS: "0" }],
+      ["a poll interval that is not a number", { WAYMARK_IMAGE_PROCESSOR_POLL_SECONDS: "often" }],
     ])("rejects %s", (_name, env) => {
       expect(() => loadConfig(env)).toThrow(InvalidConfiguration);
     });

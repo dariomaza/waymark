@@ -13,7 +13,7 @@ services:
       # `image-processor` is the compose service name, resolved on the project
       # network. Nothing is published to the host: the only thing that should
       # ever talk to this sidecar is the API.
-      ARIADNA_IMAGE_PROCESSOR_URL: http://image-processor:8000
+      WAYMARK_IMAGE_PROCESSOR_URL: http://image-processor:8000
 
     # There is deliberately NO `depends_on`.
     #

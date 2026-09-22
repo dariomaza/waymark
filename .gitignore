@@ -9,7 +9,7 @@ build/
 *.db-journal
 *.sqlite
 uploads/
-# Photo files. `ARIADNA_PHOTO_ROOT` defaults in here; production mounts a volume.
+# Photo files. `WAYMARK_PHOTO_ROOT` defaults in here; production mounts a volume.
 data/
 .DS_Store
 .expo/

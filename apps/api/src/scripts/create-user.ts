@@ -33,7 +33,7 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
  * 2. Piped: `printf '%s' "$PASSWORD" | pnpm --filter @waymark/api create-user
  *    --username dario`, for a provisioning script. The password travels through
  *    a pipe, which no history file and no process list ever sees.
- * 3. `ARIADNA_PASSWORD` in the environment. Convenient for automation and the
+ * 3. `WAYMARK_PASSWORD` in the environment. Convenient for automation and the
  *    weakest of the three: environment variables are readable by other
  *    processes of the same user and leak into crash dumps.
  */
@@ -45,7 +45,7 @@ Usage: pnpm --filter @waymark/api create-user [--username <name>]
 
 The password is NEVER taken as an argument. It is read, in this order, from:
   1. standard input, when it is piped
-  2. the ARIADNA_PASSWORD environment variable
+  2. the WAYMARK_PASSWORD environment variable
   3. an interactive prompt with echo switched off
 `.trim();
 
@@ -143,7 +143,7 @@ const main = async (): Promise<void> => {
 
   const password =
     piped ??
-    process.env["ARIADNA_PASSWORD"] ??
+    process.env["WAYMARK_PASSWORD"] ??
     (await promptForNewPassword());
 
   if (password.length < MINIMUM_PASSWORD_LENGTH) {

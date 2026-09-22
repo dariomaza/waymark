@@ -50,7 +50,7 @@ export interface PhotoProcessingInput {
   readonly queue: PhotoProcessingQueue;
   /**
    * Looked up per call rather than captured, and `null` when
-   * `ARIADNA_IMAGE_PROCESSOR_URL` is unset. Holding the instance would make
+   * `WAYMARK_IMAGE_PROCESSOR_URL` is unset. Holding the instance would make
    * this surface report a processor that has since been replaced, which is
    * exactly what an operator reading `/photos/processing` must not be told.
    */

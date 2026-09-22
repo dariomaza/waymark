@@ -12,7 +12,7 @@ import { workboxRuntimeCaching } from "./src/app/pwa-caching.js";
  * it with a bearer token (ADR 6). One container, one hostname on the tunnel,
  * and no CORS for this client at all: a same-origin request is not a
  * cross-origin one, so there is nothing for an allowlist to allow.
- * `VITE_ARIADNA_API_URL` is therefore unset for a production build, and the
+ * `VITE_WAYMARK_API_URL` is therefore unset for a production build, and the
  * bundle carries no hostname — see `src/app/create-client.ts`.
  *
  * The cost is that one origin now holds two namespaces, and a path belongs to

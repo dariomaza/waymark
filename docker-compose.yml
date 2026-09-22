@@ -46,22 +46,22 @@ services:
       # Set it to the tunnel's hostname before printing a single label — a
       # sticker is glued to a box and only reveals a wrong base months later,
       # in a garage.
-      ARIADNA_PUBLIC_BASE_URL: ${ARIADNA_PUBLIC_BASE_URL:-http://localhost:3000}
+      WAYMARK_PUBLIC_BASE_URL: ${WAYMARK_PUBLIC_BASE_URL:-http://localhost:3000}
       # Empty, and correct: the browser client is on this origin, so nothing
       # it does is a cross-origin request and there is no origin to allow.
       # This is now only for a browser client served from somewhere else — a
       # `vite dev` on :5173 pointed at this API — and it stays an allowlist,
       # never a reflection. An Ariadna deployed as this file describes runs
       # with no allowed origin at all, which is tighter than it used to be.
-      ARIADNA_ALLOWED_ORIGINS: ${ARIADNA_ALLOWED_ORIGINS:-}
-      # ARIADNA_WEB_ROOT is deliberately absent: the image bakes in where it
+      WAYMARK_ALLOWED_ORIGINS: ${WAYMARK_ALLOWED_ORIGINS:-}
+      # WAYMARK_WEB_ROOT is deliberately absent: the image bakes in where it
       # put the built client. Setting it to an empty value here would switch
       # the client off and leave a JSON-only API behind the tunnel.
-      ARIADNA_TRUSTED_PROXIES: ${ARIADNA_TRUSTED_PROXIES:-127.0.0.1,::1}
-      ARIADNA_MAX_PHOTO_MB: ${ARIADNA_MAX_PHOTO_MB:-12}
-      ARIADNA_LOGIN_ATTEMPT_LIMIT: ${ARIADNA_LOGIN_ATTEMPT_LIMIT:-10}
-      ARIADNA_LOGIN_WINDOW_MINUTES: ${ARIADNA_LOGIN_WINDOW_MINUTES:-15}
-      # ARIADNA_IMAGE_PROCESSOR_URL is deliberately absent. Unset means the
+      WAYMARK_TRUSTED_PROXIES: ${WAYMARK_TRUSTED_PROXIES:-127.0.0.1,::1}
+      WAYMARK_MAX_PHOTO_MB: ${WAYMARK_MAX_PHOTO_MB:-12}
+      WAYMARK_LOGIN_ATTEMPT_LIMIT: ${WAYMARK_LOGIN_ATTEMPT_LIMIT:-10}
+      WAYMARK_LOGIN_WINDOW_MINUTES: ${WAYMARK_LOGIN_WINDOW_MINUTES:-15}
+      # WAYMARK_IMAGE_PROCESSOR_URL is deliberately absent. Unset means the
       # feature is off, which is what this file describes (ADR 4).
 
     # The HOST's network namespace, with the process bound to its loopback.

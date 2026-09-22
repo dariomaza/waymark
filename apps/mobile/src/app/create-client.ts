@@ -15,7 +15,7 @@ import type { SessionStore } from "../auth/session-store.js";
  * and the credential is the token in the keystore.
  */
 export const apiBaseUrl = (): string =>
-  process.env["EXPO_PUBLIC_ARIADNA_API_URL"] ?? "http://127.0.0.1:3000";
+  process.env["EXPO_PUBLIC_WAYMARK_API_URL"] ?? "http://127.0.0.1:3000";
 
 /**
  * The one place the HTTP client and the session are tied together.

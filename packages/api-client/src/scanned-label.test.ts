@@ -10,7 +10,7 @@ describe("reading a scanned label", () => {
   });
 
   it("reads a label printed before the public base URL moved", () => {
-    // `ARIADNA_PUBLIC_BASE_URL` is a server setting and the stickers in the
+    // `WAYMARK_PUBLIC_BASE_URL` is a server setting and the stickers in the
     // garage keep whatever it was when they were printed. A client that only
     // accepted its own origin would stop reading them.
     expect(publicIdFromScannedText("http://old-host.lan:5173/u/7ZK3QWERTY")).toBe(

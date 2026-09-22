@@ -30,7 +30,7 @@ export type SidecarHandler = (
 ) => void;
 
 export interface StubSidecar {
-  /** Origin only, exactly as `ARIADNA_IMAGE_PROCESSOR_URL` would carry it. */
+  /** Origin only, exactly as `WAYMARK_IMAGE_PROCESSOR_URL` would carry it. */
   readonly url: string;
   readonly requests: readonly RecordedRequest[];
   /** Replaces the handler for the next requests. */

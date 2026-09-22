@@ -35,7 +35,7 @@ describe("scanning a label", () => {
   });
 
   /**
-   * `ARIADNA_PUBLIC_BASE_URL` is a server setting, and the stickers already
+   * `WAYMARK_PUBLIC_BASE_URL` is a server setting, and the stickers already
    * glued to the boxes keep whatever it was when they were printed. A client
    * that only accepted its own host would stop reading them.
    */

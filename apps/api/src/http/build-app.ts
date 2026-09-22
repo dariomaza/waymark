@@ -142,7 +142,7 @@ export interface AppDependencies {
  *
  * Photo uploads are NOT covered by this: `@fastify/multipart` installs its own
  * content type parser and consumes the request as a stream, so the limit that
- * matters for them is `limits.fileSize`, set from `ARIADNA_MAX_PHOTO_MB`.
+ * matters for them is `limits.fileSize`, set from `WAYMARK_MAX_PHOTO_MB`.
  */
 const BODY_LIMIT_BYTES = 64 * 1024;
 

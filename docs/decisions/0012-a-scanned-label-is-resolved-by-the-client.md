@@ -6,7 +6,7 @@
 ## Context
 
 Every storage unit carries a `publicId` and its QR encodes
-`<ARIADNA_PUBLIC_BASE_URL>/u/<publicId>` — a URL pointing at the web client,
+`<WAYMARK_PUBLIC_BASE_URL>/u/<publicId>` — a URL pointing at the web client,
 because Android's stock camera offers to OPEN a URL and merely offers to copy
 a string. That address is the product's front door: it is the one thing
 printed on a box, and it is opened by a phone that may never have run the app.

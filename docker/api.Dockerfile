@@ -49,7 +49,7 @@ COPY packages/api-client packages/api-client
 COPY packages/i18n packages/i18n
 COPY apps/web apps/web
 
-# `VITE_ARIADNA_API_URL` is deliberately unset. The bundle then talks to the
+# `VITE_WAYMARK_API_URL` is deliberately unset. The bundle then talks to the
 # origin it was downloaded from, which is this same container, so the image
 # does not have to be rebuilt when the tunnel's hostname changes.
 RUN pnpm --filter @waymark/web build
@@ -118,12 +118,12 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000 \
     DATABASE_URL=file:/data/db/ariadna.db \
-    ARIADNA_PHOTO_ROOT=/data/photos \
+    WAYMARK_PHOTO_ROOT=/data/photos \
     # Where stage 1 left the built client. Baked in rather than left to the
     # compose file because it is a property of this image's layout, not of a
     # deployment — and because an API that came up serving nothing would look
     # exactly like a healthy one until somebody opened the hostname.
-    ARIADNA_WEB_ROOT=/repo/apps/web/dist
+    WAYMARK_WEB_ROOT=/repo/apps/web/dist
 
 WORKDIR /repo
 

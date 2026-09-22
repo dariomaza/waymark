@@ -100,7 +100,7 @@ const DEFAULTS = {
   publicBaseUrl: "http://localhost:5173",
   /**
    * Relative to the working directory, so a checkout runs with no setup. The
-   * container mounts a volume and points `ARIADNA_PHOTO_ROOT` at it; the files
+   * container mounts a volume and points `WAYMARK_PHOTO_ROOT` at it; the files
    * must not live inside the image, or an upgrade deletes the photos.
    */
   photoRoot: "data/photos",
@@ -162,8 +162,8 @@ const DEFAULTS = {
 /**
  * Configuration is read once, at startup, and every value is validated there.
  *
- * A typo in `ARIADNA_ALLOWED_ORIGINS` that silently disables CORS, or one in
- * `ARIADNA_TRUSTED_PROXIES` that silently disables the rate limiter, is a
+ * A typo in `WAYMARK_ALLOWED_ORIGINS` that silently disables CORS, or one in
+ * `WAYMARK_TRUSTED_PROXIES` that silently disables the rate limiter, is a
  * security hole that looks exactly like a working deployment. Failing to start
  * is the only honest response.
  */
@@ -171,58 +171,58 @@ export const loadConfig = (env: NodeJS.ProcessEnv): ApiConfig => ({
   host: env["HOST"] ?? DEFAULTS.host,
   port: readPort(env["PORT"]),
   databaseUrl: env["DATABASE_URL"],
-  publicBaseUrl: readPublicBaseUrl(env["ARIADNA_PUBLIC_BASE_URL"]),
-  webRoot: readWebRoot(env["ARIADNA_WEB_ROOT"]),
+  publicBaseUrl: readPublicBaseUrl(env["WAYMARK_PUBLIC_BASE_URL"]),
+  webRoot: readWebRoot(env["WAYMARK_WEB_ROOT"]),
   security: {
-    trustedProxies: readTrustedProxies(env["ARIADNA_TRUSTED_PROXIES"]),
-    allowedOrigins: readAllowedOrigins(env["ARIADNA_ALLOWED_ORIGINS"]),
+    trustedProxies: readTrustedProxies(env["WAYMARK_TRUSTED_PROXIES"]),
+    allowedOrigins: readAllowedOrigins(env["WAYMARK_ALLOWED_ORIGINS"]),
   },
   photos: {
-    root: readPhotoRoot(env["ARIADNA_PHOTO_ROOT"]),
+    root: readPhotoRoot(env["WAYMARK_PHOTO_ROOT"]),
     maxBytes:
       readPositiveInteger(
-        "ARIADNA_MAX_PHOTO_MB",
-        env["ARIADNA_MAX_PHOTO_MB"],
+        "WAYMARK_MAX_PHOTO_MB",
+        env["WAYMARK_MAX_PHOTO_MB"],
         DEFAULTS.maxPhotoMegabytes,
       ) *
       1024 *
       1024,
   },
   imageProcessing: {
-    url: readImageProcessorUrl(env["ARIADNA_IMAGE_PROCESSOR_URL"]),
+    url: readImageProcessorUrl(env["WAYMARK_IMAGE_PROCESSOR_URL"]),
     timeoutMs:
       readPositiveInteger(
-        "ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS",
-        env["ARIADNA_IMAGE_PROCESSOR_TIMEOUT_SECONDS"],
+        "WAYMARK_IMAGE_PROCESSOR_TIMEOUT_SECONDS",
+        env["WAYMARK_IMAGE_PROCESSOR_TIMEOUT_SECONDS"],
         DEFAULTS.imageProcessorTimeoutSeconds,
       ) * 1_000,
     concurrency: readPositiveInteger(
-      "ARIADNA_IMAGE_PROCESSOR_CONCURRENCY",
-      env["ARIADNA_IMAGE_PROCESSOR_CONCURRENCY"],
+      "WAYMARK_IMAGE_PROCESSOR_CONCURRENCY",
+      env["WAYMARK_IMAGE_PROCESSOR_CONCURRENCY"],
       DEFAULTS.imageProcessorConcurrency,
     ),
     maxAttempts: readPositiveInteger(
-      "ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS",
-      env["ARIADNA_IMAGE_PROCESSOR_MAX_ATTEMPTS"],
+      "WAYMARK_IMAGE_PROCESSOR_MAX_ATTEMPTS",
+      env["WAYMARK_IMAGE_PROCESSOR_MAX_ATTEMPTS"],
       DEFAULTS.imageProcessorMaxAttempts,
     ),
     pollIntervalMs:
       readPositiveInteger(
-        "ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS",
-        env["ARIADNA_IMAGE_PROCESSOR_POLL_SECONDS"],
+        "WAYMARK_IMAGE_PROCESSOR_POLL_SECONDS",
+        env["WAYMARK_IMAGE_PROCESSOR_POLL_SECONDS"],
         DEFAULTS.imageProcessorPollSeconds,
       ) * 1_000,
   },
   login: {
     limit: readPositiveInteger(
-      "ARIADNA_LOGIN_ATTEMPT_LIMIT",
-      env["ARIADNA_LOGIN_ATTEMPT_LIMIT"],
+      "WAYMARK_LOGIN_ATTEMPT_LIMIT",
+      env["WAYMARK_LOGIN_ATTEMPT_LIMIT"],
       DEFAULTS.loginAttemptLimit,
     ),
     windowMs:
       readPositiveInteger(
-        "ARIADNA_LOGIN_WINDOW_MINUTES",
-        env["ARIADNA_LOGIN_WINDOW_MINUTES"],
+        "WAYMARK_LOGIN_WINDOW_MINUTES",
+        env["WAYMARK_LOGIN_WINDOW_MINUTES"],
         DEFAULTS.loginWindowMinutes,
       ) * 60_000,
   },
@@ -272,7 +272,7 @@ const readTrustedProxies = (raw: string | undefined): ReadonlySet<string> => {
   for (const address of addresses) {
     if (isIP(address) === 0) {
       throw new InvalidConfiguration(
-        "ARIADNA_TRUSTED_PROXIES",
+        "WAYMARK_TRUSTED_PROXIES",
         `"${address}" is not an IP address`,
       );
     }
@@ -298,14 +298,14 @@ const readAllowedOrigins = (raw: string | undefined): readonly string[] => {
       parsed = new URL(candidate);
     } catch {
       throw new InvalidConfiguration(
-        "ARIADNA_ALLOWED_ORIGINS",
+        "WAYMARK_ALLOWED_ORIGINS",
         `"${candidate}" is not an absolute URL`,
       );
     }
 
     if (parsed.origin !== candidate) {
       throw new InvalidConfiguration(
-        "ARIADNA_ALLOWED_ORIGINS",
+        "WAYMARK_ALLOWED_ORIGINS",
         `"${candidate}" is not a bare origin; a browser would send "${parsed.origin}"`,
       );
     }
@@ -336,21 +336,21 @@ const readPublicBaseUrl = (raw: string | undefined): string => {
     parsed = new URL(candidate);
   } catch {
     throw new InvalidConfiguration(
-      "ARIADNA_PUBLIC_BASE_URL",
+      "WAYMARK_PUBLIC_BASE_URL",
       `"${candidate}" is not an absolute URL`,
     );
   }
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new InvalidConfiguration(
-      "ARIADNA_PUBLIC_BASE_URL",
+      "WAYMARK_PUBLIC_BASE_URL",
       `"${candidate}" is not an http(s) URL, and a phone camera will not open it`,
     );
   }
 
   if (parsed.search !== "" || parsed.hash !== "") {
     throw new InvalidConfiguration(
-      "ARIADNA_PUBLIC_BASE_URL",
+      "WAYMARK_PUBLIC_BASE_URL",
       `"${candidate}" carries a query or a fragment, which cannot survive appending a path`,
     );
   }
@@ -362,7 +362,7 @@ const readPublicBaseUrl = (raw: string | undefined): string => {
  * The address of the rembg sidecar, or nothing at all.
  *
  * Absence is a valid, complete configuration and the reason this variable is
- * the on/off switch rather than a separate `ARIADNA_IMAGE_PROCESSING_ENABLED`:
+ * the on/off switch rather than a separate `WAYMARK_IMAGE_PROCESSING_ENABLED`:
  * two settings that can disagree ("enabled, with no address") is one more state
  * than the feature has, and the extra state is always the one that breaks.
  *
@@ -382,21 +382,21 @@ const readImageProcessorUrl = (raw: string | undefined): string | null => {
     parsed = new URL(candidate);
   } catch {
     throw new InvalidConfiguration(
-      "ARIADNA_IMAGE_PROCESSOR_URL",
+      "WAYMARK_IMAGE_PROCESSOR_URL",
       `"${candidate}" is not an absolute URL`,
     );
   }
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new InvalidConfiguration(
-      "ARIADNA_IMAGE_PROCESSOR_URL",
+      "WAYMARK_IMAGE_PROCESSOR_URL",
       `"${candidate}" is not an http(s) URL`,
     );
   }
 
   if (parsed.search !== "" || parsed.hash !== "") {
     throw new InvalidConfiguration(
-      "ARIADNA_IMAGE_PROCESSOR_URL",
+      "WAYMARK_IMAGE_PROCESSOR_URL",
       `"${candidate}" carries a query or a fragment, which cannot survive appending a path`,
     );
   }
@@ -408,12 +408,12 @@ const readImageProcessorUrl = (raw: string | undefined): string | null => {
  * Where the built web client lives, or nothing.
  *
  * Nothing is a complete configuration and not a degraded one, which is why
- * absence is the switch rather than a separate `ARIADNA_SERVE_WEB` — two
+ * absence is the switch rather than a separate `WAYMARK_SERVE_WEB` — two
  * settings that can disagree ("serving, from nowhere") is one more state than
  * this has, and the extra state is always the one that breaks.
  *
  * Blank counts as absent because that is what an unset variable looks like
- * coming through a compose file's `${ARIADNA_WEB_ROOT:-}`, and refusing to
+ * coming through a compose file's `${WAYMARK_WEB_ROOT:-}`, and refusing to
  * start over a variable nobody set would be refusing to start over nothing.
  * Whether the directory actually holds a build is not decided here: it is
  * read at boot by `createWebClient`, which fails loudly and says how to fix
@@ -443,7 +443,7 @@ const readPhotoRoot = (raw: string | undefined): string => {
   const root = raw.trim();
   if (root.length === 0) {
     throw new InvalidConfiguration(
-      "ARIADNA_PHOTO_ROOT",
+      "WAYMARK_PHOTO_ROOT",
       "it is empty, which would scatter photo files into the working directory",
     );
   }

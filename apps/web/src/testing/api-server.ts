@@ -15,7 +15,7 @@ import { setupServer } from "msw/node";
 export const apiServer = setupServer();
 
 /**
- * The default `VITE_ARIADNA_API_URL`, which is now the empty string: the API
+ * The default `VITE_WAYMARK_API_URL`, which is now the empty string: the API
  * is on this app's own origin, so every request it makes is a relative one.
  * Tests build their handlers against it so a change to the default breaks
  * them loudly rather than quietly.

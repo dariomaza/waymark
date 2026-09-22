@@ -43,7 +43,7 @@ through any of this.
 What is left over is handed to the client only when all of these hold. Each is
 a refusal that matters:
 
-1. **There is a built client at all.** With `ARIADNA_WEB_ROOT` unset there is
+1. **There is a built client at all.** With `WAYMARK_WEB_ROOT` unset there is
    no fallback, which is a complete configuration and the one a checkout and
    `vite dev` run as.
 2. **The first path segment is not one the API claims.** This is the load
@@ -115,7 +115,7 @@ Nothing about the allowlist changed in code. What changed is who needs it.
 A same-origin request is not a cross-origin request, so the browser does not
 apply CORS to anything the PWA does any more. The Expo app sends no `Origin`
 header at all, and never did — CORS is a rule browsers enforce on behalf of a
-document, and there is no document there. So `ARIADNA_ALLOWED_ORIGINS` is now
+document, and there is no document there. So `WAYMARK_ALLOWED_ORIGINS` is now
 for exactly one thing: a browser client served from somewhere ELSE, which in
 practice means `vite dev` on `:5173` pointed at an API on `:3000`.
 
@@ -168,7 +168,7 @@ a silently unindented tree. Scripts get no such concession.
 - The image is one deployable and cannot be half-upgraded.
 - Four screen addresses changed. Nothing printed changed: the QR encodes
   `/u/<publicId>` and that is untouched.
-- `ARIADNA_ALLOWED_ORIGINS` is empty in a normal deployment, and a `vite dev`
+- `WAYMARK_ALLOWED_ORIGINS` is empty in a normal deployment, and a `vite dev`
   against a deployed API is the case that still needs it.
 - The API can still be run with no client at all, and every HTTP test file but
   one does exactly that — so each of them is, incidentally, a test that the
