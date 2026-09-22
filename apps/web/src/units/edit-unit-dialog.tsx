@@ -32,7 +32,7 @@ export const EditUnitDialog = ({ unit, onClose }: EditUnitDialogProps): JSX.Elem
   const problems = fieldComplaints(edit.error);
 
   return (
-    <Sheet title={`Edit ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.edit", { name: unit.name })} onClose={onClose}>
       <UnitForm
         submitLabel="Save"
         initial={{

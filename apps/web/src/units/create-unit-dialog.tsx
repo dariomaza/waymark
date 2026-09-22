@@ -26,11 +26,11 @@ export const CreateUnitDialog = ({
 
   return (
     <Sheet
-      title={parentId === null ? "Add a room" : "Add a unit inside"}
+      title={parentId === null ? t("inventory.addRoom") : t("units.addInside")}
       onClose={onClose}
     >
       <UnitForm
-        submitLabel="Create"
+        submitLabel={t("action.create")}
         // What a person most likely means here: a root is a room, a child is
         // a box. A guess, never a rule — nesting is not constrained by kind.
         initial={{

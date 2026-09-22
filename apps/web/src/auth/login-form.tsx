@@ -4,6 +4,7 @@ import { useState, type FormEvent, type JSX } from "react";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { TextField } from "../ui/atoms/text-field.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface LoginFormProps {
   readonly onSubmit: (credentials: Credentials) => void;
@@ -18,6 +19,8 @@ export interface LoginFormProps {
  * session is. Which is why its test is a render and two `type` calls.
  */
 export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Element => {
+  const t = useTranslate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -28,16 +31,16 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
 
   return (
     <form className="login" onSubmit={submit} noValidate>
-      <h1>Sign in to Ariadna</h1>
+      <h1>{t("login.title")}</h1>
       <p className="login__lede">
-        Accounts are created on the server. There is no sign-up.
+        {t("login.note")}
       </p>
 
       {failure === null ? null : <Callout tone="wrong">{failure}</Callout>}
 
       <TextField
         id="username"
-        label="Username"
+        label={t("login.username")}
         name="username"
         autoComplete="username"
         autoCapitalize="none"
@@ -52,7 +55,7 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
 
       <TextField
         id="password"
-        label="Password"
+        label={t("login.password")}
         name="password"
         type="password"
         autoComplete="current-password"
@@ -64,7 +67,7 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
       />
 
       <Button type="submit" tone="primary" block disabled={busy}>
-        {busy ? "Signing in…" : "Sign in"}
+        {busy ? t("login.submitting") : t("login.submit")}
       </Button>
     </form>
   );

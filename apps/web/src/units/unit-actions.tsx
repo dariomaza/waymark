@@ -9,6 +9,7 @@ import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
 import { ROUTES, labelsWithinPath, findWithinPath, unitLabelPath, unitPath } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
@@ -33,6 +34,8 @@ type OpenDialog = "create" | "edit" | "move" | "empty" | "delete" | null;
  * behind the first.
  */
 export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
+  const t = useTranslate();
+
   const [open, setOpen] = useState<OpenDialog>(null);
   const navigate = useNavigate();
   const parent = path.at(-2) ?? null;
@@ -48,28 +51,28 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
           setOpen("create");
         }}
       >
-        Add a unit inside
+        {t("units.addInside")}
       </Button>
       <Button
         onClick={() => {
           setOpen("edit");
         }}
       >
-        Edit
+        {t("action.edit")}
       </Button>
       <Button
         onClick={() => {
           setOpen("move");
         }}
       >
-        Move
+        {t("action.move")}
       </Button>
       <Button
         onClick={() => {
           setOpen("empty");
         }}
       >
-        Empty
+        {t("action.empty")}
       </Button>
       <Button
         tone="danger"
@@ -77,13 +80,13 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
           setOpen("delete");
         }}
       >
-        Delete
+        {t("action.delete")}
       </Button>
       <Link className="button button--secondary" to={findWithinPath(unit.id)}>
-        Search inside
+        {t("units.searchInside")}
       </Link>
       <Link className="button button--secondary" to={unitLabelPath(unit.id)}>
-        Label
+        {t("units.showLabel")}
       </Link>
       {/*
         One label and a sheet of them are two different jobs: sticking a
@@ -92,7 +95,7 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
         inside, not the unit itself (ADR 11).
       */}
       <Link className="button button--secondary" to={labelsWithinPath(unit.id)}>
-        Label sheet
+        {t("label.sheet")}
       </Link>
 
       {open === "create" ? (

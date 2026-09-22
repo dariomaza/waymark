@@ -101,4 +101,237 @@ export const ES: Dictionary = {
   "units.kind.bag": "Bolsa",
   "units.kind.other": "Otro",
 
+
+  // ---------------------------------------------------------------------
+  // Words that are the same wherever they appear
+  // ---------------------------------------------------------------------
+  "action.cancel": "Cancelar",
+  "action.create": "Crear",
+  "action.saveChanges": "Guardar los cambios",
+  "action.saving": "Guardando…",
+  "action.edit": "Editar",
+  "action.move": "Mover",
+  "action.delete": "Borrar",
+  "action.empty": "Vaciar",
+  "action.close": "Cerrar",
+  "action.tryAgain": "Inténtelo de nuevo",
+  "action.selectAll": "Seleccionar todo",
+  "action.clear": "Quitar",
+  "action.clearSelection": "Quitar la selección",
+  "action.optional": "Opcional.",
+
+  // ---------------------------------------------------------------------
+  // Signing in
+  // ---------------------------------------------------------------------
+  "login.title": "Iniciar sesión en Ariadna",
+  "login.note": "Las cuentas se crean en el servidor. No hay registro.",
+  "login.username": "Usuario",
+  "login.password": "Contraseña",
+  "login.submit": "Iniciar sesión",
+  "login.submitting": "Iniciando sesión…",
+
+  // ---------------------------------------------------------------------
+  // The inventory, and the units in it
+  // ---------------------------------------------------------------------
+  "inventory.title": "Su inventario",
+  "inventory.loading": "Cargando su inventario",
+  "inventory.failed": "No se ha podido cargar su inventario",
+  "inventory.addRoom": "Añadir una habitación",
+  "inventory.addUnit": "Añadir una unidad",
+  "inventory.emptyLine":
+    "Todavía no hay nada guardado. Añada una habitación, un estante o una caja para empezar.",
+  "inventory.emptyTitle": "Todavía no hay nada registrado",
+  "inventory.emptyExplains": "Empiece por una habitación y siga con los muebles que hay en ella.",
+
+  "units.addInside": "Añadir una unidad dentro",
+  "units.searchInside": "Buscar aquí dentro",
+  "units.loading": "Cargando esta unidad",
+  "units.notOpen": "Esa caja no está abierta",
+  "units.addItem": "Añadir una cosa",
+  "units.unitsInside": "Unidades dentro",
+  "units.items": "Cosas",
+  "units.checklistLabel": "Unidades",
+  "units.isEmpty": "Esta está vacía",
+  "units.isEmptyExplains": "Lo que guarde aquí aparecerá al escanear su etiqueta.",
+  "units.name": "Nombre",
+  "units.kind": "Tipo",
+  "units.description": "Descripción",
+  "units.delete": "Borrar esta unidad",
+  "units.notEmptyTitle": "Esta no está vacía",
+  "units.moveEverythingInto": "Mover todo a",
+  "units.chooseUnit": "Elija una unidad…",
+  "units.emptyThereAndDelete": "Vaciarla ahí y borrarla",
+  "units.leaveItAlone": "Dejarla como está",
+  "units.emptyIt": "Vaciarla",
+  "units.moveInto": "Moverla a",
+  "units.moveIt": "Moverla",
+  "units.nowhereRoot": "A ningún sitio — que sea una unidad raíz",
+
+  // ---------------------------------------------------------------------
+  // Things
+  // ---------------------------------------------------------------------
+  "items.everything": "Todo lo que tiene",
+  "items.gathering": "Reuniendo todas las cosas",
+  "items.loadingAll": "Cargando todo lo que tiene",
+  "items.listFailed": "No se ha podido cargar esa lista",
+  "items.everyItem": "Todas las cosas",
+  "items.emptyTitle": "Todavía no ha guardado nada",
+  "items.emptyExplains":
+    "Abra un lugar y añada la primera; aparecerá aquí y al escanear la etiqueta de ese lugar.",
+  "items.loading": "Cargando esta cosa",
+  "items.failed": "No se ha podido cargar esa cosa",
+  "items.delete": "Borrar esta cosa",
+  "items.moveInto": "Moverla a",
+  "items.moveIt": "Moverla",
+  "items.moveThemInto": "Moverlas a",
+  "items.moveThem": "Moverlas",
+  "items.name": "Nombre",
+  "items.quantity": "Cantidad",
+  "items.tags": "Etiquetas",
+  "items.description": "Descripción",
+  "items.tagsHint":
+    "Separadas por comas. Una etiqueta es como se encuentra algo cuyo nombre se ha olvidado.",
+  "items.tagsHintPhone":
+    "Separadas por comas. Una etiqueta es por lo que buscar “cables” encuentra un HDMI 2.1.",
+
+  // ---------------------------------------------------------------------
+  // Photos
+  // ---------------------------------------------------------------------
+  "photos.title": "Fotos",
+  "photos.cover": "Portada",
+  "photos.add": "Añadir una foto",
+  "photos.replace": "Cambiar la foto",
+  "photos.remove": "Quitar esta foto",
+  "photos.uploading": "Subiendo…",
+  "photos.take": "Hacer una foto",
+  "photos.choose": "Elegir una foto",
+  "photos.unreadable": "No se ha podido leer esa foto.",
+  "photos.retryRemoval": "Intentar recortar el fondo otra vez",
+  "photos.seeFailed": "Ver todas las fotos que han fallado",
+  "photos.processingTitle": "Recorte del fondo",
+  "photos.processingLoading": "Consultando qué está pasando",
+  "photos.retryAll": "Reintentar todas las fotos fallidas",
+  "photos.states": "Fotos en cada estado",
+  "photos.givenUpOn": "Abandonadas",
+  "photos.nothingFailed": "No ha fallado nada.",
+  "photos.processorUnreachable":
+    "El recorte del fondo está configurado, pero el servicio no responde. Las fotos se quedan tal y como se subieron y se reintentan hasta que vuelva.",
+  "photos.processorOn": "El recorte del fondo está activo y responde.",
+  "photos.processorOff":
+    "El recorte del fondo está desactivado. Las fotos se guardan y se muestran tal y como se subieron, y todas quedan a la espera por si más adelante aparece un servicio.",
+  "photos.failedCount": {
+    one: "Se ha abandonado 1 foto.",
+    other: "Se han abandonado {count} fotos.",
+  },
+  "photos.attempts": { one: "1 intento", other: "{count} intentos" },
+  "photos.lastOn": ", el último el {when}",
+  "photos.showingSome": "Mostrando {count} de ellas. El recuento de arriba es la verdad completa.",
+  "photos.waiting": "En espera",
+  "photos.removed": "Fondo recortado",
+  "photos.nothingToRemove": "Sin fondo que recortar",
+
+  // ---------------------------------------------------------------------
+  // The camera, and the label it reads
+  // ---------------------------------------------------------------------
+  "scan.title": "Escanear una etiqueta",
+  "scan.camera": "Cámara",
+  "scan.cameraFailed": "No se ha podido iniciar la cámara",
+  "scan.allowCamera": "Permitir la cámara",
+  "scan.typedCode": "O el código impreso bajo el símbolo",
+  "scan.openUnit": "Abrir esa unidad",
+  "scan.finding": "Buscando esa caja",
+  "scan.opening": "Abriendo esa caja",
+  "scan.lookupFailed": "No se ha podido consultar esa etiqueta",
+  "scan.goToInventory": "Ir a su inventario",
+
+  // ---------------------------------------------------------------------
+  // Finding something again
+  // ---------------------------------------------------------------------
+  "search.title": "Buscar",
+  "search.everywhere": "Buscar en todo",
+  "search.field": "Busque una cosa o una caja",
+  "search.hint": "Los acentos no importan. Tienen que coincidir todas las palabras.",
+  "search.fieldHint": "Una palabra de su nombre, una etiqueta o la caja donde puede estar.",
+  "search.searching": "Buscando",
+  "search.prompt": "Escriba lo que está buscando",
+  "search.noneExplains":
+    "Tienen que coincidir todas las palabras, así que cuantas menos escriba, más encontrará.",
+  "search.items": "Cosas",
+  "search.units": "Unidades de almacenaje",
+  "search.itemsFound": "Cosas encontradas",
+  "search.unitsFound": "Unidades de almacenaje encontradas",
+
+  // ---------------------------------------------------------------------
+  // The printed label
+  // ---------------------------------------------------------------------
+  "label.loading": "Cargando la etiqueta",
+  "label.loadingPhone": "Cargando esta etiqueta",
+  "label.drawFailed": "No se ha podido dibujar esa etiqueta",
+  "label.print": "Imprimir esta etiqueta",
+  "label.backToUnit": "Volver a la unidad",
+  "units.showLabel": "Etiqueta",
+  "units.showLabelPhone": "Ver la etiqueta",
+  "label.sheet": "Hoja de etiquetas",
+  "label.printFromWeb":
+    "Imprima esto desde el cliente web, que sirve el mismo símbolo como SVG.",
+
+  // ---------------------------------------------------------------------
+  // Odds and ends of the frame
+  // ---------------------------------------------------------------------
+  "shell.notFoundTitle": "No hay nada en esta dirección",
+  "shell.notFoundBody": "Puede que el enlace sea antiguo o esté mal escrito.",
+  "shell.backToInventory": "Volver a su inventario",
+  "shell.connection": "Conexión",
+  "shell.breadcrumb": "Ruta de navegación",
+
+
+  // ---------------------------------------------------------------------
+  // Sentences built around something a person named
+  // ---------------------------------------------------------------------
+  "sheet.delete": "Borrar {name}",
+  "sheet.move": "Mover {name}",
+  "sheet.edit": "Editar {name}",
+  "sheet.empty": "Vaciar {name}",
+  "sheet.addItemTo": "Añadir una cosa a {name}",
+  "sheet.addUnitInside": "Añadir una unidad dentro de {name}",
+
+  "items.moveCount": { one: "Mover {count} cosa", other: "Mover {count} cosas" },
+  "items.deleteUndone": "Borrar {name} no se puede deshacer, y sus fotos se borran con ella.",
+  "items.deleteUndoneAlone": "Borrar {name} no se puede deshacer.",
+  "items.deleteWithPhotos": {
+    one: "Borrar {name} también borra su foto. Esto no se puede deshacer.",
+    other: "Borrar {name} también borra sus fotos. Esto no se puede deshacer.",
+  },
+  "items.tagsLabel": "Etiquetas: {tags}",
+
+  "units.emptyIntoAndDelete": "Vaciarla en {name} y borrarla",
+  "units.select": "Seleccionar {name}",
+  "units.qrCodeFor": "Código QR de {name}",
+  "units.codeIs": "Código {code}",
+  "units.openNamed": "Abrir {name}",
+
+  "label.printWaiting": "Imprimir ({count} aún cargando)",
+  "label.pageOf": "Página {page} de {total}",
+
+  "photos.coverOf": "Foto de portada de {name}",
+  "photos.numberedOf": "Foto {index} de {name}",
+  "photos.makeCover": "Poner la foto {index} como portada",
+  "photos.moveEarlier": "Mover la foto {index} hacia delante",
+  "photos.deleteNumbered": "Borrar la foto {index}",
+  "photos.cameraPermission":
+    "Ariadna necesita permiso para usar la cámara antes de poder hacer una foto.",
+
+  "scan.noSuchCode":
+    "Ninguna unidad de este inventario lleva el código {code}. La etiqueta puede ser de otra casa, o la unidad puede haberse borrado.",
+
+  // «» rather than “”: the angular quotation marks are the Spanish convention.
+  "search.insideUnit": "Buscando dentro de {name} y de todo lo que hay debajo.",
+  "search.oneUnit": "una unidad",
+  "search.nothingMatches": "No hay nada que coincida con «{query}»",
+  "search.matched": "Coincide en {fields}",
+  "search.matchedLower": "coincide en {fields}",
+  "search.field.name": "el nombre",
+  "search.field.tag": "una etiqueta",
+  "search.field.description": "la descripción",
+
 };

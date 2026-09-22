@@ -53,7 +53,7 @@ export const DeleteUnitDialog = ({
     needsTarget && target !== "" ? unitId(target) : undefined;
 
   return (
-    <Sheet title={`Delete ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.delete", { name: unit.name })} onClose={onClose}>
       {stillFull === null ? (
         <>
           <p>Deleting {unit.name} cannot be undone.</p>
@@ -61,7 +61,7 @@ export const DeleteUnitDialog = ({
             <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}
           <div className="sheet__buttons">
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onClose}>{t("action.cancel")}</Button>
             <Button
               tone="danger"
               disabled={remove.isPending}
@@ -69,21 +69,21 @@ export const DeleteUnitDialog = ({
                 remove.mutate(undefined, { onSuccess: onDeleted });
               }}
             >
-              Delete this unit
+              {t("units.delete")}
             </Button>
           </div>
         </>
       ) : (
-        <Callout tone="blocked" title="This one is not empty">
+        <Callout tone="blocked" title={t("units.notEmptyTitle")}>
           <p>{stillFull}</p>
 
           {needsTarget ? (
             <SelectField
               id="delete-empty-target"
-              label="Move everything into"
+              label={t("units.moveEverythingInto")}
               value={target}
               options={[
-                { value: "", label: "Choose a unit…" },
+                { value: "", label: t("units.chooseUnit") },
                 ...unitOptions(
                   flattenUnits(tree.data?.tree ?? []).filter(
                     (entry) => entry.unit.id !== unit.id,
@@ -101,7 +101,7 @@ export const DeleteUnitDialog = ({
           ) : null}
 
           <div className="sheet__buttons">
-            <Button onClick={onClose}>Leave it alone</Button>
+            <Button onClick={onClose}>{t("units.leaveItAlone")}</Button>
             <Button
               tone="danger"
               disabled={emptyAndRemove.isPending || (needsTarget && chosen === undefined)}
@@ -110,8 +110,8 @@ export const DeleteUnitDialog = ({
               }}
             >
               {parent === null
-                ? "Empty it there and delete"
-                : `Empty it into ${parent.name} and delete`}
+                ? t("units.emptyThereAndDelete")
+                : t("units.emptyIntoAndDelete", { name: parent.name })}
             </Button>
           </div>
         </Callout>

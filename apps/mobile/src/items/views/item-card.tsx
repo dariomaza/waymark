@@ -76,6 +76,14 @@ export const ItemCard = ({
            * truncates, and "×8" is exactly the part that must not.
            */
           <View style={styles.quantity}>
+            {/*
+              * Not translated, and not a gap in the translation: "×8" is a
+              * symbol and a digit. There is no word in it to say differently
+              * in Spanish, and reaching for the translator here would cost
+              * this card its independence from the provider — it is rendered
+              * on its own in tests, which is what keeps it a card and not a
+              * screen.
+              */}
             <Text style={styles.quantityText}>{`×${String(quantity)}`}</Text>
           </View>
         )}

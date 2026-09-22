@@ -3,6 +3,7 @@ import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../atoms/button.js";
 import { colors, radius, space, text } from "../styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface SheetProps {
   readonly title: string;
@@ -18,29 +19,33 @@ export interface SheetProps {
  * is a real cost. Everything that asks a question here — create, edit, move,
  * empty, delete — uses the same one.
  */
-export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => (
-  <Modal
-    animationType="slide"
-    transparent
-    visible
-    onRequestClose={onClose}
-    accessibilityViewIsModal
-  >
-    <View style={styles.backdrop}>
-      <View style={styles.sheet} accessibilityViewIsModal>
-        <View style={styles.head}>
-          <Text accessibilityRole="header" style={styles.title}>
-            {title}
-          </Text>
-          <Button tone="quiet" onPress={onClose}>
-            Close
-          </Button>
+export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => {
+  const t = useTranslate();
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent
+      visible
+      onRequestClose={onClose}
+      accessibilityViewIsModal
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.sheet} accessibilityViewIsModal>
+          <View style={styles.head}>
+            <Text accessibilityRole="header" style={styles.title}>
+              {title}
+            </Text>
+            <Button tone="quiet" onPress={onClose}>
+              {t("action.close")}
+            </Button>
+          </View>
+          <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
         </View>
-        <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
       </View>
-    </View>
-  </Modal>
+    </Modal>
 );
+};
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#000000aa" },

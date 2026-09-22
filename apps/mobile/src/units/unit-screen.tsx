@@ -14,6 +14,7 @@ import { Screen } from "../ui/organisms/screen.js";
 import { UnitActions } from "./unit-actions.js";
 import { useStorageUnit } from "./unit-queries.js";
 import { UnitDetail } from "./views/unit-detail.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * One storage unit: where it is, what is inside it, and what can be done to
@@ -24,6 +25,8 @@ import { UnitDetail } from "./views/unit-detail.js";
  * worked is one presentational component away.
  */
 export const UnitScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const route = useRoute<RouteProp<RootStackParamList, "Unit">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const id = unitId(route.params.id);
@@ -35,12 +38,12 @@ export const UnitScreen = (): JSX.Element => {
     // virtualised list inside a scroll view is given infinite height and
     // quietly stops virtualising. See `ItemGrid`.
     <Screen scroll={false}>
-      {unit.isPending ? <Loading label="Loading this unit" /> : null}
+      {unit.isPending ? <Loading label={t("units.loading")} /> : null}
 
       {unit.isError ? (
         <FailureNote
           error={unit.error}
-          title="That box is not open"
+          title={t("units.notOpen")}
           onRetry={() => {
             void unit.refetch();
           }}
@@ -70,7 +73,7 @@ export const UnitScreen = (): JSX.Element => {
                     setAddingItem(true);
                   }}
                 >
-                  Add an item
+                  {t("units.addItem")}
                 </Button>
                 <UnitActions
                   unit={unit.data.unit}

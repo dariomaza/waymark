@@ -7,6 +7,7 @@ import { ItemCover } from "../../photos/item-cover.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { SearchHit } from "./search-hit.js";
 import { thingPath, unitPath } from "../../app/routes.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface SearchResultsProps {
   readonly results: SearchResponse;
@@ -21,12 +22,14 @@ export interface SearchResultsProps {
  * API refuses to invent one; so does this.
  */
 export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
+  const t = useTranslate();
+
   const nothing = results.items.length === 0 && results.storageUnits.length === 0;
 
   if (nothing) {
     return (
-      <EmptyNote explains="Every word has to match, so fewer of them finds more.">
-        Nothing matches “{results.query}”
+      <EmptyNote explains={t("search.noneExplains")}>
+        {t("search.nothingMatches", { query: results.query })}
       </EmptyNote>
     );
   }
@@ -35,7 +38,7 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
     <>
       {results.items.length === 0 ? null : (
         <section>
-          <h3>Items</h3>
+          <h3>{t("search.items")}</h3>
           {/**
            * A grid here too, at the user's choice and against my advice: a
            * card has no room for `Garage › Wardrobe › Box 3`, and in this
@@ -45,7 +48,7 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
            * most of the answer — the box to walk to. The full breadcrumb is
            * one tap away in the thing's own screen.
            */}
-          <ul className="item-grid" aria-label="Items found">
+          <ul className="item-grid" aria-label={t("search.itemsFound")}>
             {results.items.map((hit) => (
               <li key={hit.item.id}>
                 <ItemCard
@@ -63,8 +66,8 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
 
       {results.storageUnits.length === 0 ? null : (
         <section>
-          <h3>Storage units</h3>
-          <ul aria-label="Storage units found">
+          <h3>{t("search.units")}</h3>
+          <ul aria-label={t("search.unitsFound")}>
             {results.storageUnits.map((hit) => (
               <SearchHit
                 key={hit.unit.id}

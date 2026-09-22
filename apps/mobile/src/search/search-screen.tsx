@@ -19,6 +19,7 @@ import { useStorageUnitTree } from "../units/unit-queries.js";
 import { useSearch } from "./search-queries.js";
 import { useDebouncedValue } from "./use-debounced-value.js";
 import { SearchResults } from "./views/search-results.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # The screen the product is named after
@@ -31,6 +32,8 @@ import { SearchResults } from "./views/search-results.js";
  * "search the garage" means everything under it.
  */
 export const SearchScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const route = useRoute<RouteProp<TabParamList, "Search">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const tree = useStorageUnitTree();
@@ -48,11 +51,11 @@ export const SearchScreen = (): JSX.Element => {
     // The results grid is the scroller; the field stays put above it, which
     // is what a search screen wants anyway. See `ItemGrid`.
     <Screen scroll={false}>
-      <ScreenTitle>Search</ScreenTitle>
+      <ScreenTitle>{t("search.title")}</ScreenTitle>
 
       <TextField
-        label="Search for a thing or a box"
-        hint="Accents do not matter. Every word has to match."
+        label={t("search.field")}
+        hint={t("search.hint")}
         value={typed}
         onChangeText={setTyped}
         autoCapitalize="none"
@@ -63,25 +66,25 @@ export const SearchScreen = (): JSX.Element => {
       {within === null ? null : (
         <View style={styles.scope}>
           <Text style={styles.scopeText}>
-            {`Searching inside ${scopeUnit?.name ?? "one unit"}, and everything under it.`}
+            {t("search.insideUnit", { name: scopeUnit?.name ?? t("search.oneUnit") })}
           </Text>
           <Button
             onPress={() => {
               setScope(null);
             }}
           >
-            Search everywhere
+            {t("search.everywhere")}
           </Button>
         </View>
       )}
 
       {query.trim() === "" ? (
-        <EmptyNote explains="A word from its name, a tag, or the box it might be in.">
-          Type what you are looking for
+        <EmptyNote explains={t("search.fieldHint")}>
+          {t("search.prompt")}
         </EmptyNote>
       ) : null}
 
-      {results.isFetching && results.data === undefined ? <Loading label="Searching" /> : null}
+      {results.isFetching && results.data === undefined ? <Loading label={t("search.searching")} /> : null}
 
       {results.isError ? (
         <FailureNote

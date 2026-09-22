@@ -8,15 +8,18 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { ItemActions } from "./item-actions.js";
 import { useItem } from "./item-queries.js";
 import { ItemDetail } from "./views/item-detail.js";
+import { useTranslate } from "../app/language-context.js";
 
 export const ItemScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const params = useParams<{ id: string }>();
   const id = itemId(params.id ?? "");
   const item = useItem(id);
 
   return (
     <main className="screen">
-      {item.isPending ? <Loading label="Loading this item" /> : null}
+      {item.isPending ? <Loading label={t("items.loading")} /> : null}
 
       {item.isError ? (
         <FailureNote

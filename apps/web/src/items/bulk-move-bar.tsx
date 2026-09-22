@@ -4,6 +4,7 @@ import { useState, type JSX } from "react";
 import { Button } from "../ui/atoms/button.js";
 import { MoveItemsDialog } from "./move-items-dialog.js";
 import "./bulk-move-bar.css";
+import { useTranslate } from "../app/language-context.js";
 
 export interface BulkMoveBarProps {
   readonly itemIds: readonly ItemId[];
@@ -15,6 +16,8 @@ export interface BulkMoveBarProps {
  * the selection lives on the unit screen and the move is one request.
  */
 export const BulkMoveBar = ({ itemIds, onDone }: BulkMoveBarProps): JSX.Element => {
+  const t = useTranslate();
+
   const [open, setOpen] = useState(false);
   const count = itemIds.length;
 
@@ -28,14 +31,14 @@ export const BulkMoveBar = ({ itemIds, onDone }: BulkMoveBarProps): JSX.Element 
       >
         Move {count} {count === 1 ? "item" : "items"}
       </Button>
-      <Button onClick={onDone}>Clear selection</Button>
+      <Button onClick={onDone}>{t("action.clearSelection")}</Button>
 
       {open ? (
         <MoveItemsDialog
           itemIds={itemIds}
-          title={`Move ${String(count)} ${count === 1 ? "item" : "items"}`}
-          targetLabel="Move them into"
-          confirmLabel="Move them"
+          title={t("items.moveCount", { count })}
+          targetLabel={t("items.moveThemInto")}
+          confirmLabel={t("items.moveThem")}
           onMoved={onDone}
           onClose={() => {
             setOpen(false);

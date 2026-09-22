@@ -6,6 +6,7 @@ import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
 import { space } from "../../ui/styles/tokens.js";
 import { usePhotoSource } from "../photo-source-context.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface PhotoPickerProps {
   readonly busy: boolean;
@@ -25,6 +26,8 @@ export interface PhotoPickerProps {
  * a normal answer on a phone.
  */
 export const PhotoPicker = ({ busy, onPick }: PhotoPickerProps): JSX.Element => {
+  const t = useTranslate();
+
   const source = usePhotoSource();
   const [refused, setRefused] = useState<string | null>(null);
 
@@ -38,7 +41,7 @@ export const PhotoPicker = ({ busy, onPick }: PhotoPickerProps): JSX.Element => 
       })
       .catch((cause: unknown) => {
         setRefused(
-          cause instanceof Error ? cause.message : "That photo could not be read.",
+          cause instanceof Error ? cause.message : t("photos.unreadable"),
         );
       });
   };
@@ -46,15 +49,15 @@ export const PhotoPicker = ({ busy, onPick }: PhotoPickerProps): JSX.Element => 
   return (
     <View style={styles.wrap}>
       <View style={styles.buttons}>
-        <Button disabled={busy} onPress={ask(() => source.capture())} label="Take a photo">
-          {busy ? "Uploading…" : "Take a photo"}
+        <Button disabled={busy} onPress={ask(() => source.capture())} label={t("photos.take")}>
+          {busy ? t("photos.uploading") : t("photos.take")}
         </Button>
         <Button
           disabled={busy}
           onPress={ask(() => source.pick())}
-          label="Choose a photo"
+          label={t("photos.choose")}
         >
-          Choose a photo
+          {t("photos.choose")}
         </Button>
       </View>
       {refused === null ? null : <Callout tone="blocked">{refused}</Callout>}

@@ -46,11 +46,11 @@ export const PhotoStatusNote = ({
       {photo.processingStatus === PhotoProcessingStatus.FAILED ? (
         <Button
           tone="quiet"
-          label="Try removing the background again"
+          label={t("photos.retryRemoval")}
           disabled={retrying}
           onPress={onRetry}
         >
-          Try removing the background again
+          {t("photos.retryRemoval")}
         </Button>
       ) : null}
     </View>

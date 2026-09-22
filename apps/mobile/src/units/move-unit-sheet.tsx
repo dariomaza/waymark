@@ -39,12 +39,12 @@ export const MoveUnitSheet = ({ unit, onClose }: MoveUnitSheetProps): JSX.Elemen
   const cyclic = t(cyclicMoveMessage(move.error, unit.name));
 
   return (
-    <Sheet title={`Move ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.move", { name: unit.name })} onClose={onClose}>
       <OptionList
-        label="Move it into"
+        label={t("units.moveInto")}
         value={target}
         options={[
-          { value: MAKE_IT_A_ROOT, label: "Nowhere — make it a root" },
+          { value: MAKE_IT_A_ROOT, label: t("units.nowhereRoot") },
           ...unitOptions(flattenUnits(tree.data?.tree ?? [])),
         ]}
         onChange={setTarget}
@@ -61,14 +61,14 @@ export const MoveUnitSheet = ({ unit, onClose }: MoveUnitSheetProps): JSX.Elemen
           tone="primary"
           block
           disabled={move.isPending}
-          label="Move it"
+          label={t("units.moveIt")}
           onPress={() => {
             move.mutate(target === MAKE_IT_A_ROOT ? null : unitId(target), {
               onSuccess: onClose,
             });
           }}
         >
-          Move it
+          {t("units.moveIt")}
         </Button>
       </View>
     </Sheet>

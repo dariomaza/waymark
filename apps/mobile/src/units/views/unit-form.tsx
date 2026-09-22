@@ -52,7 +52,7 @@ export const UnitForm = ({
   return (
     <View style={styles.form}>
       <TextField
-        label="Name"
+        label={t("units.name")}
         value={name}
         onChangeText={setName}
         autoCapitalize="sentences"
@@ -60,7 +60,7 @@ export const UnitForm = ({
       />
 
       <OptionList
-        label="Kind"
+        label={t("units.kind")}
         value={kind}
         options={kindChoices(t).map((choice) => ({
           value: choice.kind,
@@ -72,7 +72,7 @@ export const UnitForm = ({
       />
 
       <TextField
-        label="Description"
+        label={t("units.description")}
         value={description}
         onChangeText={setDescription}
         multiline

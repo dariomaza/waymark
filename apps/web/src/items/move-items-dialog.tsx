@@ -50,7 +50,7 @@ export const MoveItemsDialog = ({
         label={targetLabel}
         value={target}
         options={[
-          { value: "", label: "Choose a unit…" },
+          { value: "", label: t("units.chooseUnit") },
           ...unitOptions(flattenUnits(tree.data?.tree ?? [])),
         ]}
         onChange={(event) => {
@@ -63,7 +63,7 @@ export const MoveItemsDialog = ({
       ) : null}
 
       <div className="sheet__buttons">
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("action.cancel")}</Button>
         <Button
           tone="primary"
           disabled={move.isPending || target === ""}

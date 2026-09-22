@@ -12,6 +12,7 @@ import { TextField } from "../ui/atoms/text-field.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { space } from "../ui/styles/tokens.js";
 import { useScanner } from "./scanner-context.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # The first thing the app shows
@@ -27,6 +28,8 @@ import { useScanner } from "./scanner-context.js";
  * that turns a code into a unit.
  */
 export const ScanScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const scanner = useScanner();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [unknownCode, setUnknownCode] = useState<string | null>(null);
@@ -46,7 +49,7 @@ export const ScanScreen = (): JSX.Element => {
 
   return (
     <Screen>
-      <ScreenTitle>Scan a label</ScreenTitle>
+      <ScreenTitle>{t("scan.title")}</ScreenTitle>
 
       <scanner.View onCode={open} />
 
@@ -59,7 +62,7 @@ export const ScanScreen = (): JSX.Element => {
 
       <View style={styles.byHand}>
         <TextField
-          label="Or the code printed under the symbol"
+          label={t("scan.typedCode")}
           value={typed}
           onChangeText={setTyped}
           autoCapitalize="characters"
@@ -68,12 +71,12 @@ export const ScanScreen = (): JSX.Element => {
         <Button
           tone="primary"
           block
-          label="Open that unit"
+          label={t("scan.openUnit")}
           onPress={() => {
             open(typed);
           }}
         >
-          Open that unit
+          {t("scan.openUnit")}
         </Button>
       </View>
     </Screen>

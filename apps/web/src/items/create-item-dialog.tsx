@@ -25,7 +25,7 @@ export const CreateItemDialog = ({
   const problems = fieldComplaints(create.error);
 
   return (
-    <Sheet title={`Add an item to ${unitName}`} onClose={onClose}>
+    <Sheet title={t("sheet.addItemTo", { name: unitName })} onClose={onClose}>
       <ItemForm
         submitLabel="Add"
         initial={{ name: "", description: "", quantity: 1, tags: [] }}

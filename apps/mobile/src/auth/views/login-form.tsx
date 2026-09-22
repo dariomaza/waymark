@@ -7,6 +7,7 @@ import { Callout } from "../../ui/atoms/callout.js";
 import { ScreenTitle } from "../../ui/atoms/screen-title.js";
 import { TextField } from "../../ui/atoms/text-field.js";
 import { colors, space, text } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface LoginFormProps {
   readonly onSubmit: (credentials: Credentials) => void;
@@ -21,6 +22,8 @@ export interface LoginFormProps {
  * session is.
  */
 export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Element => {
+  const t = useTranslate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -30,15 +33,15 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
 
   return (
     <View style={styles.form}>
-      <ScreenTitle>Sign in to Ariadna</ScreenTitle>
+      <ScreenTitle>{t("login.title")}</ScreenTitle>
       <Text style={styles.lede}>
-        Accounts are created on the server. There is no sign-up.
+        {t("login.note")}
       </Text>
 
       {failure === null ? null : <Callout tone="wrong">{failure}</Callout>}
 
       <TextField
-        label="Username"
+        label={t("login.username")}
         autoComplete="username"
         autoCapitalize="none"
         autoCorrect={false}
@@ -48,7 +51,7 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
       />
 
       <TextField
-        label="Password"
+        label={t("login.password")}
         autoComplete="current-password"
         secureTextEntry
         value={password}
@@ -57,8 +60,8 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
         onSubmitEditing={submit}
       />
 
-      <Button tone="primary" block disabled={busy} onPress={submit} label="Sign in">
-        {busy ? "Signing in…" : "Sign in"}
+      <Button tone="primary" block disabled={busy} onPress={submit} label={t("login.submit")}>
+        {busy ? t("login.submitting") : t("login.submit")}
       </Button>
     </View>
   );

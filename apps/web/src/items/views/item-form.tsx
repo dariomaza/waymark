@@ -5,6 +5,7 @@ import { Button } from "../../ui/atoms/button.js";
 import { Callout, type CalloutTone } from "../../ui/atoms/callout.js";
 import { TextArea } from "../../ui/atoms/text-area.js";
 import { TextField } from "../../ui/atoms/text-field.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface ItemFormValues {
   readonly name: string;
@@ -48,6 +49,8 @@ export const ItemForm = ({
   onSubmit,
   onCancel,
 }: ItemFormProps): JSX.Element => {
+  const t = useTranslate();
+
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description);
   const [quantity, setQuantity] = useState(String(initial.quantity));
@@ -77,7 +80,7 @@ export const ItemForm = ({
 
         <TextField
           id="item-name"
-          label="Name"
+          label={t("items.name")}
           required
           autoFocus
           value={name}
@@ -89,7 +92,7 @@ export const ItemForm = ({
 
         <TextField
           id="item-quantity"
-          label="Quantity"
+          label={t("items.quantity")}
           type="number"
           inputMode="numeric"
           value={quantity}
@@ -101,8 +104,8 @@ export const ItemForm = ({
 
         <TextField
           id="item-tags"
-          label="Tags"
-          hint="Separated by commas. A tag is how you find a thing whose name you have forgotten."
+          label={t("items.tags")}
+          hint={t("items.tagsHint")}
           value={tags}
           error={complaintFor("tags")}
           onChange={(event) => {
@@ -112,8 +115,8 @@ export const ItemForm = ({
 
         <TextArea
           id="item-description"
-          label="Description"
-          hint="Optional."
+          label={t("items.description")}
+          hint={t("action.optional")}
           value={description}
           error={complaintFor("description")}
           onChange={(event) => {
@@ -122,9 +125,9 @@ export const ItemForm = ({
         />
 
         <div className="sheet__buttons">
-          <Button onClick={onCancel}>Cancel</Button>
+          <Button onClick={onCancel}>{t("action.cancel")}</Button>
           <Button type="submit" tone="primary" disabled={busy}>
-            {busy ? "Saving…" : submitLabel}
+            {busy ? t("action.saving") : submitLabel}
           </Button>
         </div>
       </div>

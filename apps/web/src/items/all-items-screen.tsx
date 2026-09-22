@@ -7,6 +7,7 @@ import { ItemCover } from "../photos/item-cover.js";
 import { useEveryItem } from "./item-queries.js";
 import { ItemCard } from "./views/item-card.js";
 import { thingPath } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * Every item in the house, each with where it is.
@@ -16,14 +17,16 @@ import { thingPath } from "../app/routes.js";
  * and the full breadcrumb waits one tap away, in the thing's own screen.
  */
 export const AllItemsScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const everything = useEveryItem();
   const rows = everything.data?.items ?? [];
 
   return (
     <main className="screen">
-      <h2>Everything you own</h2>
+      <h2>{t("items.everything")}</h2>
 
-      {everything.isPending ? <Loading label="Gathering every item" /> : null}
+      {everything.isPending ? <Loading label={t("items.gathering")} /> : null}
 
       {everything.isError ? (
         <FailureNote
@@ -35,13 +38,13 @@ export const AllItemsScreen = (): JSX.Element => {
       ) : null}
 
       {everything.isSuccess && rows.length === 0 ? (
-        <EmptyNote explains="Open a place and add the first one; it will show up here and when you scan that place’s label.">
-          You have not put anything in yet
+        <EmptyNote explains={t("items.emptyExplains")}>
+          {t("items.emptyTitle")}
         </EmptyNote>
       ) : null}
 
       {rows.length === 0 ? null : (
-        <ul className="item-grid" aria-label="Every item">
+        <ul className="item-grid" aria-label={t("items.everyItem")}>
           {rows.map((row) => (
             <li key={row.item.id}>
               <ItemCard

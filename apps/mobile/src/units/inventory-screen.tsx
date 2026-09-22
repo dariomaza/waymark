@@ -12,6 +12,7 @@ import { Screen } from "../ui/organisms/screen.js";
 import { CreateUnitSheet } from "./create-unit-sheet.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { UnitTree } from "./views/unit-tree.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * Container. The whole house, as the forest the API answers with.
@@ -20,20 +21,22 @@ import { UnitTree } from "./views/unit-tree.js";
  * when the request worked is one presentational component away.
  */
 export const InventoryScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const tree = useStorageUnitTree();
   const [adding, setAdding] = useState(false);
 
   return (
     <Screen>
-      <ScreenTitle>Your inventory</ScreenTitle>
+      <ScreenTitle>{t("inventory.title")}</ScreenTitle>
 
-      {tree.isPending ? <Loading label="Loading your inventory" /> : null}
+      {tree.isPending ? <Loading label={t("inventory.loading")} /> : null}
 
       {tree.isError ? (
         <FailureNote
           error={tree.error}
-          title="Your inventory could not be loaded"
+          title={t("inventory.failed")}
           onRetry={() => {
             void tree.refetch();
           }}
@@ -48,12 +51,12 @@ export const InventoryScreen = (): JSX.Element => {
               setAdding(true);
             }}
           >
-            Add a unit
+            {t("inventory.addUnit")}
           </Button>
 
           {tree.data.tree.length === 0 ? (
-            <EmptyNote explains="Start with a room, then the furniture in it.">
-              Nothing is registered yet
+            <EmptyNote explains={t("inventory.emptyExplains")}>
+              {t("inventory.emptyTitle")}
             </EmptyNote>
           ) : (
             <UnitTree

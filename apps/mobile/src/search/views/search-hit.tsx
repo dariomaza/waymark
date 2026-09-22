@@ -1,8 +1,10 @@
 import { SearchMatchField } from "@ariadna/domain";
+import type { MessageKey, Translate } from "@ariadna/i18n";
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, space, TAP_TARGET, text } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface SearchHitProps {
   readonly title: string;
@@ -13,11 +15,11 @@ export interface SearchHitProps {
   readonly onPress: () => void;
 }
 
-export const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
-  [SearchMatchField.NAME]: "name",
-  [SearchMatchField.TAG]: "tag",
-  [SearchMatchField.DESCRIPTION]: "description",
-};
+export const FIELD_KEYS = {
+  [SearchMatchField.NAME]: "search.field.name",
+  [SearchMatchField.TAG]: "search.field.tag",
+  [SearchMatchField.DESCRIPTION]: "search.field.description",
+} as const satisfies Readonly<Record<SearchMatchField, MessageKey>>;
 
 /**
  * Why a result is here at all, in words.
@@ -26,8 +28,8 @@ export const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
  * thing in its accessible name — two spellings of "matched tag" would be two
  * chances for one of them to stop matching the field it names.
  */
-export const whyItMatched = (fields: readonly SearchMatchField[]): string =>
-  `matched ${fields.map((field) => FIELD_WORDS[field]).join(", ")}`;
+export const whyItMatched = (t: Translate, fields: readonly SearchMatchField[]): string =>
+  t("search.matchedLower", { fields: fields.map((field) => t(FIELD_KEYS[field])).join(", ") });
 
 /** Sentence case, for the line that starts one rather than ending a label. */
 const capitalised = (sentence: string): string =>
@@ -50,23 +52,27 @@ export const SearchHit = ({
   matchedFields,
   detail,
   onPress,
-}: SearchHitProps): JSX.Element => (
-  <Pressable
-    role="link"
-    accessibilityLabel={`${title}, ${location}`}
-    onPress={onPress}
-    style={styles.hit}
-  >
-    <View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.where}>{location}</Text>
-      <Text style={styles.why}>
-        {capitalised(whyItMatched(matchedFields))}
-        {detail === undefined ? "" : ` · ${detail}`}
-      </Text>
-    </View>
-  </Pressable>
-);
+}: SearchHitProps): JSX.Element => {
+  const t = useTranslate();
+
+  return (
+    <Pressable
+      role="link"
+      accessibilityLabel={`${title}, ${location}`}
+      onPress={onPress}
+      style={styles.hit}
+    >
+      <View>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.where}>{location}</Text>
+        <Text style={styles.why}>
+          {capitalised(whyItMatched(t, matchedFields))}
+          {detail === undefined ? "" : ` · ${detail}`}
+        </Text>
+      </View>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   hit: {

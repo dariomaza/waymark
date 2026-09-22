@@ -27,7 +27,7 @@ export const EditItemSheet = ({
   const complaints = fieldComplaints(edit.error);
 
   return (
-    <Sheet title={`Edit ${item.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.edit", { name: item.name })} onClose={onClose}>
       {edit.isError && complaints.length === 0 ? (
         <Callout tone="wrong">{t(describeFailure(edit.error))}</Callout>
       ) : null}
@@ -39,7 +39,7 @@ export const EditItemSheet = ({
           quantity: item.quantity,
           tags: item.tags,
         }}
-        submitLabel="Save changes"
+        submitLabel={t("action.saveChanges")}
         busy={edit.isPending}
         complaints={complaints}
         onSubmit={(values) => {

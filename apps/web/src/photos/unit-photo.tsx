@@ -55,7 +55,7 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
 
       <div className="unit-photo__controls">
         <PhotoPicker
-          label={photo === null ? "Add a photo" : "Replace the photo"}
+          label={photo === null ? t("photos.add") : t("photos.replace")}
           busy={upload.isPending}
           onPick={(file) => {
             upload.mutate(file);
@@ -68,7 +68,7 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
               remove.mutate();
             }}
           >
-            Remove this photo
+            {t("photos.remove")}
           </Button>
         )}
       </div>

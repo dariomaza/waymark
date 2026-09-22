@@ -104,9 +104,9 @@ export const LabelSheetScreen = (): JSX.Element => {
 
   return (
     <main className="screen label-sheet-screen">
-      <h2 className="label-sheet-screen__heading">Label sheet</h2>
+      <h2 className="label-sheet-screen__heading">{t("label.sheet")}</h2>
 
-      {tree.isPending ? <Loading label="Loading your inventory" /> : null}
+      {tree.isPending ? <Loading label={t("inventory.loading")} /> : null}
 
       {tree.isError ? (
         <FailureNote
@@ -134,14 +134,14 @@ export const LabelSheetScreen = (): JSX.Element => {
             >
               {symbols.waitingFor === 0
                 ? `Print`
-                : `Print (${String(symbols.waitingFor)} still loading)`}
+                : t("label.printWaiting", { count: symbols.waitingFor })}
             </Button>
             <Button
               onClick={() => {
                 setChosen(units.map((entry) => entry.unit.id));
               }}
             >
-              Select all
+              {t("action.selectAll")}
             </Button>
             <Button
               disabled={sheet.length === 0}
@@ -149,7 +149,7 @@ export const LabelSheetScreen = (): JSX.Element => {
                 setChosen([]);
               }}
             >
-              Clear
+              {t("action.clear")}
             </Button>
           </div>
 

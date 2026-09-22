@@ -56,7 +56,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
   return (
     <View style={styles.section}>
       <Text accessibilityRole="header" style={styles.heading}>
-        Photos
+        {t("photos.title")}
       </Text>
 
       <PhotoPicker
@@ -73,15 +73,15 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
       ) : null}
 
       {item.photos.length === 0 ? null : (
-        <View style={styles.grid} accessibilityLabel="Photos">
+        <View style={styles.grid} accessibilityLabel={t("photos.title")}>
           {item.photos.map((photo, index) => (
               <View key={photo.id} style={styles.cell}>
                 <AuthenticatedImage
                   src={photo.thumbnailUrl}
                   alt={
                     index === 0
-                      ? `Cover photo of ${item.name}`
-                      : `Photo ${String(index + 1)} of ${item.name}`
+                      ? t("photos.coverOf", { name: item.name })
+                      : t("photos.numberedOf", { index: index + 1, name: item.name })
                   }
                 />
                 <PhotoStatusNote
@@ -93,37 +93,37 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                 />
                 <View style={styles.controls}>
                   {index === 0 ? (
-                    <Text style={styles.cover}>Cover</Text>
+                    <Text style={styles.cover}>{t("photos.cover")}</Text>
                   ) : (
                     <>
                       <Button
                         tone="quiet"
-                        label={`Make photo ${index + 1} the cover`}
+                        label={t("photos.makeCover", { index: index + 1 })}
                         onPress={() => {
                           reorder.mutate(withCoverFirst(order, photo.id));
                         }}
                       >
-                        {`Make photo ${index + 1} the cover`}
+                        {t("photos.makeCover", { index: index + 1 })}
                       </Button>
                       <Button
                         tone="quiet"
-                        label={`Move photo ${index + 1} earlier`}
+                        label={t("photos.moveEarlier", { index: index + 1 })}
                         onPress={() => {
                           reorder.mutate(movedEarlier(order, photo.id));
                         }}
                       >
-                        {`Move photo ${index + 1} earlier`}
+                        {t("photos.moveEarlier", { index: index + 1 })}
                       </Button>
                     </>
                   )}
                   <Button
                     tone="quiet"
-                    label={`Delete photo ${index + 1}`}
+                    label={t("photos.deleteNumbered", { index: index + 1 })}
                     onPress={() => {
                       remove.mutate(photo.id);
                     }}
                   >
-                    {`Delete photo ${index + 1}`}
+                    {t("photos.deleteNumbered", { index: index + 1 })}
                   </Button>
                 </View>
               </View>

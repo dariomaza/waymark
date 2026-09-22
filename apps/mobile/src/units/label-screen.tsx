@@ -14,6 +14,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { colors, space, text } from "../ui/styles/tokens.js";
 import { useStorageUnit } from "./unit-queries.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # The label that goes on the box
@@ -31,6 +32,8 @@ import { useStorageUnit } from "./unit-queries.js";
  * the sticker, so it can be read aloud across a garage.
  */
 export const LabelScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const route = useRoute<RouteProp<RootStackParamList, "Label">>();
   const api = useApi();
   const token = useSessionStore().token();
@@ -47,12 +50,12 @@ export const LabelScreen = (): JSX.Element => {
 
   return (
     <Screen>
-      {unit.isPending ? <Loading label="Loading this label" /> : null}
+      {unit.isPending ? <Loading label={t("label.loadingPhone")} /> : null}
 
       {unit.isError ? (
         <FailureNote
           error={unit.error}
-          title="That label could not be drawn"
+          title={t("label.drawFailed")}
           onRetry={() => {
             void unit.refetch();
           }}
@@ -64,18 +67,18 @@ export const LabelScreen = (): JSX.Element => {
           <ScreenTitle>{unit.data.unit.name}</ScreenTitle>
           <Image
             accessibilityRole="image"
-            accessibilityLabel={`QR code for ${unit.data.unit.name}`}
+            accessibilityLabel={t("units.qrCodeFor", { name: unit.data.unit.name })}
             source={{
               uri: symbol.data,
               ...(token === null ? {} : { headers: { Authorization: `Bearer ${token}` } }),
             }}
             style={styles.symbol}
           />
-          <Text style={styles.code} accessibilityLabel={`Code ${unit.data.unit.publicId}`}>
+          <Text style={styles.code} accessibilityLabel={t("units.codeIs", { code: unit.data.unit.publicId })}>
             {unit.data.unit.publicId}
           </Text>
           <Text style={styles.hint}>
-            Print this from the web client, which serves the same symbol as an SVG.
+            {t("label.printFromWeb")}
           </Text>
         </View>
       ) : null}

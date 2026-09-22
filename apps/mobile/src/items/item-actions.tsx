@@ -5,6 +5,7 @@ import { Button } from "../ui/atoms/button.js";
 import { DeleteItemSheet } from "./delete-item-sheet.js";
 import { EditItemSheet } from "./edit-item-sheet.js";
 import { MoveItemSheet } from "./move-item-sheet.js";
+import { useTranslate } from "../app/language-context.js";
 
 type OpenSheet = "edit" | "move" | "delete" | null;
 
@@ -19,6 +20,8 @@ export const ItemActions = ({
   readonly item: ItemView;
   readonly onDeleted: () => void;
 }): JSX.Element => {
+  const t = useTranslate();
+
   const [open, setOpen] = useState<OpenSheet>(null);
   const close = (): void => {
     setOpen(null);
@@ -31,14 +34,14 @@ export const ItemActions = ({
           setOpen("edit");
         }}
       >
-        Edit
+        {t("action.edit")}
       </Button>
       <Button
         onPress={() => {
           setOpen("move");
         }}
       >
-        Move
+        {t("action.move")}
       </Button>
       <Button
         tone="danger"
@@ -46,7 +49,7 @@ export const ItemActions = ({
           setOpen("delete");
         }}
       >
-        Delete
+        {t("action.delete")}
       </Button>
 
       {open === "edit" ? <EditItemSheet item={item} onClose={close} /> : null}

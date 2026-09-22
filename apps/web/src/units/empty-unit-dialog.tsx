@@ -43,7 +43,7 @@ export const EmptyUnitDialog = ({
     needsTarget && target !== "" ? unitId(target) : undefined;
 
   return (
-    <Sheet title={`Empty ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.empty", { name: unit.name })} onClose={onClose}>
       {needsTarget ? (
         <>
           <p>
@@ -52,10 +52,10 @@ export const EmptyUnitDialog = ({
           </p>
           <SelectField
             id="empty-target"
-            label="Move everything into"
+            label={t("units.moveEverythingInto")}
             value={target}
             options={[
-              { value: "", label: "Choose a unit…" },
+              { value: "", label: t("units.chooseUnit") },
               ...unitOptions(
                 flattenUnits(tree.data?.tree ?? []).filter(
                   (entry) => entry.unit.id !== unit.id,
@@ -79,7 +79,7 @@ export const EmptyUnitDialog = ({
       ) : null}
 
       <div className="sheet__buttons">
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("action.cancel")}</Button>
         <Button
           tone="primary"
           disabled={empty.isPending || (needsTarget && chosen === undefined)}
@@ -92,7 +92,7 @@ export const EmptyUnitDialog = ({
             });
           }}
         >
-          Empty it
+          {t("units.emptyIt")}
         </Button>
       </div>
     </Sheet>

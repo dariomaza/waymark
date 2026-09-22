@@ -29,14 +29,14 @@ export const EditUnitSheet = ({ unit, onClose }: EditUnitSheetProps): JSX.Elemen
   const complaints = fieldComplaints(edit.error);
 
   return (
-    <Sheet title={`Edit ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.edit", { name: unit.name })} onClose={onClose}>
       {edit.isError && complaints.length === 0 ? (
         <Callout tone="wrong">{t(describeFailure(edit.error))}</Callout>
       ) : null}
 
       <UnitForm
         initial={{ name: unit.name, kind: unit.kind, description: unit.description }}
-        submitLabel="Save changes"
+        submitLabel={t("action.saveChanges")}
         busy={edit.isPending}
         complaints={complaints}
         onSubmit={(values) => {

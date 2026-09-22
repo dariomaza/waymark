@@ -9,6 +9,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { useSession, useSignOut } from "./use-session.js";
 import { ROUTES } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # The gate every screen but the login sits behind
@@ -49,6 +50,8 @@ export const RequireSession = (): JSX.Element => {
 };
 
 const ConfirmedSession = ({ token }: { readonly token: string }): JSX.Element => {
+  const t = useTranslate();
+
   const api = useApi();
   const signOut = useSignOut();
 
@@ -64,7 +67,7 @@ const ConfirmedSession = ({ token }: { readonly token: string }): JSX.Element =>
   if (check.isPending) {
     return (
       <main className="screen screen--centred">
-        <Loading label="Checking your session" />
+        <Loading label={t("shell.checkingSession")} />
       </main>
     );
   }
@@ -74,7 +77,7 @@ const ConfirmedSession = ({ token }: { readonly token: string }): JSX.Element =>
       <main className="screen screen--centred">
         <Callout
           tone="wrong"
-          title="Ariadna could not confirm your session"
+          title={t("session.unconfirmed")}
           action={
             <>
               <Button
@@ -83,14 +86,14 @@ const ConfirmedSession = ({ token }: { readonly token: string }): JSX.Element =>
                   void check.refetch();
                 }}
               >
-                Try again
+                {t("action.tryAgain")}
               </Button>
               <Button
                 onClick={() => {
                   signOut.mutate();
                 }}
               >
-                Sign out
+                {t("shell.signOut")}
               </Button>
             </>
           }

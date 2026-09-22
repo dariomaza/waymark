@@ -43,7 +43,7 @@ export const EmptyUnitSheet = ({
     needsTarget && target !== "" ? unitId(target) : undefined;
 
   return (
-    <Sheet title={`Empty ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.empty", { name: unit.name })} onClose={onClose}>
       {needsTarget ? (
         <>
           <Text style={styles.text}>
@@ -51,7 +51,7 @@ export const EmptyUnitSheet = ({
             go somewhere else.
           </Text>
           <OptionList
-            label="Move everything into"
+            label={t("units.moveEverythingInto")}
             value={target}
             options={unitOptions(
               flattenUnits(tree.data?.tree ?? []).filter(
@@ -75,12 +75,12 @@ export const EmptyUnitSheet = ({
         tone="primary"
         block
         disabled={empty.isPending || (needsTarget && chosen === undefined)}
-        label="Empty it"
+        label={t("units.emptyIt")}
         onPress={() => {
           empty.mutate(chosen, { onSuccess: onClose });
         }}
       >
-        Empty it
+        {t("units.emptyIt")}
       </Button>
     </Sheet>
   );

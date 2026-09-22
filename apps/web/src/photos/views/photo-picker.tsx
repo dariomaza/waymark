@@ -1,6 +1,7 @@
 import { useId, type JSX } from "react";
 
 import "./photo-picker.css";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface PhotoPickerProps {
   readonly label: string;
@@ -16,11 +17,13 @@ export interface PhotoPickerProps {
  * and opens a file picker, which is exactly right there.
  */
 export const PhotoPicker = ({ label, busy, onPick }: PhotoPickerProps): JSX.Element => {
+  const t = useTranslate();
+
   const id = useId();
 
   return (
     <label className="photo-picker" htmlFor={id}>
-      <span className="photo-picker__label">{busy ? "Uploading…" : label}</span>
+      <span className="photo-picker__label">{busy ? t("photos.uploading") : label}</span>
       <input
         className="photo-picker__input"
         id={id}

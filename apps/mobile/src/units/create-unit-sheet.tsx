@@ -34,7 +34,7 @@ export const CreateUnitSheet = ({
 
   return (
     <Sheet
-      title={parentName === null ? "Add a unit" : `Add a unit inside ${parentName}`}
+      title={parentName === null ? t("inventory.addUnit") : t("sheet.addUnitInside", { name: parentName })}
       onClose={onClose}
     >
       {create.isError && complaints.length === 0 ? (
@@ -43,7 +43,7 @@ export const CreateUnitSheet = ({
 
       <UnitForm
         initial={EMPTY}
-        submitLabel="Create"
+        submitLabel={t("action.create")}
         busy={create.isPending}
         complaints={complaints}
         onSubmit={(values) => {

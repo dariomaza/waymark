@@ -1,12 +1,14 @@
 import type { ItemSearchResultView, SearchResponse } from "@ariadna/api-client";
 import { SearchMatchField } from "@ariadna/domain";
+import type { Translate } from "@ariadna/i18n";
 import type { JSX, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ItemGrid } from "../../items/views/item-grid.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { colors, space, text } from "../../ui/styles/tokens.js";
-import { FIELD_WORDS, SearchHit, whyItMatched } from "./search-hit.js";
+import { FIELD_KEYS, SearchHit, whyItMatched } from "./search-hit.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface SearchResultsProps {
   readonly results: SearchResponse;
@@ -49,10 +51,12 @@ export const SearchResults = ({
   onOpenUnit,
   itemPhoto,
 }: SearchResultsProps): JSX.Element => {
+  const t = useTranslate();
+
   if (results.items.length === 0 && results.storageUnits.length === 0) {
     return (
-      <EmptyNote explains="Every word has to match, so fewer of them finds more.">
-        {`Nothing matches “${results.query}”`}
+      <EmptyNote explains={t("search.noneExplains")}>
+        {t("search.nothingMatches", { query: results.query })}
       </EmptyNote>
     );
   }
@@ -61,9 +65,9 @@ export const SearchResults = ({
     results.storageUnits.length === 0 ? null : (
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>
-          Storage units
+          {t("search.units")}
         </Text>
-        <View style={styles.list} accessibilityLabel="Storage units found">
+        <View style={styles.list} accessibilityLabel={t("search.unitsFound")}>
           {results.storageUnits.map((hit) => (
             <SearchHit
               key={hit.unit.id}
@@ -88,13 +92,13 @@ export const SearchResults = ({
 
   return (
     <ItemGrid
-      label="Items found"
+      label={t("search.itemsFound")}
       cells={results.items.map((hit) => ({
         key: hit.item.id,
         name: hit.item.name,
-        secondary: whereAndWhy(hit.path.at(-1)?.name, hit.matchedFields),
+        secondary: whereAndWhy(t, hit.path.at(-1)?.name, hit.matchedFields),
         quantity: hit.item.quantity,
-        label: spokenName(hit),
+        label: spokenName(t, hit),
         photo: itemPhoto?.(hit),
         onPress: () => {
           onOpenItem(hit.item.id);
@@ -102,7 +106,7 @@ export const SearchResults = ({
       }))}
       header={
         <Text accessibilityRole="header" style={styles.heading}>
-          Items
+          {t("search.items")}
         </Text>
       }
       {...(units === null ? {} : { footer: units })}
@@ -118,20 +122,21 @@ export const SearchResults = ({
  * and this is the cost of the grid.
  */
 const whereAndWhy = (
+  t: Translate,
   where: string | undefined,
   matched: readonly SearchMatchField[],
 ): string | undefined =>
-  [where, ...explainable(matched).map((field) => FIELD_WORDS[field])]
+  [where, ...explainable(matched).map((field) => t(FIELD_KEYS[field]))]
     .filter((part) => part !== undefined && part !== "")
     .join(" \u00b7 ") || undefined;
 
 /** What a screen reader hears: the whole path, and the reason when there is one. */
-const spokenName = (hit: ItemSearchResultView): string => {
+const spokenName = (t: Translate, hit: ItemSearchResultView): string => {
   const why = explainable(hit.matchedFields);
 
   return why.length === 0
     ? `${hit.item.name}, ${hit.location}`
-    : `${hit.item.name}, ${hit.location}, ${whyItMatched(why)}`;
+    : `${hit.item.name}, ${hit.location}, ${whyItMatched(t, why)}`;
 };
 
 /** Every reason but the obvious one. A match on the name explains itself. */

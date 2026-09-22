@@ -8,6 +8,7 @@ import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
 import { ROUTES, unitPath } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # `/u/<publicId>` — the address on every box in the house
@@ -33,6 +34,8 @@ import { ROUTES, unitPath } from "../app/routes.js";
  * box lands on whatever came before the scan and not in a loop through it.
  */
 export const ScannedLabelScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const params = useParams<{ publicId: string }>();
   const code = publicId(params.publicId ?? "");
   const tree = useStorageUnitTree();
@@ -40,7 +43,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
   if (tree.isPending) {
     return (
       <main className="screen screen--centred">
-        <Loading label="Finding that box" />
+        <Loading label={t("scan.finding")} />
       </main>
     );
   }
@@ -50,7 +53,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
       <main className="screen">
         <FailureNote
           error={tree.error}
-          title="That label could not be looked up"
+          title={t("scan.lookupFailed")}
           onRetry={() => {
             void tree.refetch();
           }}
@@ -64,9 +67,8 @@ export const ScannedLabelScreen = (): JSX.Element => {
   if (unit === null) {
     return (
       <main className="screen">
-        <EmptyNote action={<Link to={ROUTES.inventory}>Go to your inventory</Link>}>
-          No unit in this inventory carries the code {code}. The label may
-          belong to another house, or the unit may have been deleted.
+        <EmptyNote action={<Link to={ROUTES.inventory}>{t("scan.goToInventory")}</Link>}>
+          {t("scan.noSuchCode", { code })}
         </EmptyNote>
       </main>
     );

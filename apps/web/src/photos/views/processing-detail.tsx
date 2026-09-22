@@ -1,11 +1,13 @@
 import type { PhotoProcessingResponse } from "@ariadna/api-client";
 import { PhotoProcessingStatus } from "@ariadna/domain";
+import type { Translate } from "@ariadna/i18n";
 import type { JSX, ReactNode } from "react";
 
 import { Callout } from "../../ui/atoms/callout.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 
 import "./processing-detail.css";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface ProcessingDetailProps {
   readonly processing: PhotoProcessingResponse;
@@ -33,6 +35,8 @@ export const ProcessingDetail = ({
   bulkRetry,
   rowAction,
 }: ProcessingDetailProps): JSX.Element => {
+  const t = useTranslate();
+
   const { processor, counts, abandoned } = processing;
   const failed = counts[PhotoProcessingStatus.FAILED];
 
@@ -41,9 +45,9 @@ export const ProcessingDetail = ({
       <Callout tone={processor.reachable === false ? "blocked" : "note"}>
         {processor.enabled
           ? processor.reachable === false
-            ? `Background removal is configured but the sidecar is not answering. Photos stay as they were uploaded and are retried until it comes back.`
-            : `Background removal is on and answering.`
-          : `Background removal is switched off. Photos are stored and shown exactly as they were uploaded, and every one of them waits in case a sidecar appears later.`}
+            ? t("photos.processorUnreachable")
+            : t("photos.processorOn")
+          : t("photos.processorOff")}
         {processor.url === null ? null : (
           <>
             {" "}
@@ -53,11 +57,11 @@ export const ProcessingDetail = ({
       </Callout>
 
       <section>
-        <h3>Photos in each state</h3>
-        <dl className="processing__counts" aria-label="Photos in each state">
+        <h3>{t("photos.states")}</h3>
+        <dl className="processing__counts" aria-label={t("photos.states")}>
           {Object.values(PhotoProcessingStatus).map((status) => (
             <div className="processing__count" key={status}>
-              <dt>{STATE_LABELS[status]}</dt>
+              <dt>{stateLabels(t)[status]}</dt>
               <dd>{counts[status]}</dd>
             </div>
           ))}
@@ -65,30 +69,32 @@ export const ProcessingDetail = ({
       </section>
 
       <section>
-        <h3>Given up on</h3>
+        <h3>{t("photos.givenUpOn")}</h3>
         {failed === 0 ? (
-          <EmptyNote>Nothing has failed.</EmptyNote>
+          <EmptyNote>{t("photos.nothingFailed")}</EmptyNote>
         ) : (
           <>
             <p className="processing__failed-count">
-              {failed === 1
-                ? `1 photo was given up on.`
-                : `${String(failed)} photos were given up on.`}
+              {t("photos.failedCount", { count: failed })}
             </p>
             {bulkRetry}
           </>
         )}
 
         {abandoned.length === 0 ? null : (
-          <ul className="processing__abandoned" aria-label="Given up on">
+          <ul className="processing__abandoned" aria-label={t("photos.givenUpOn")}>
             {abandoned.map((entry) => (
               <li className="processing__row" key={entry.photoId}>
                 <p className="processing__photo-id">{entry.photoId}</p>
                 <p className="processing__reason">{entry.lastError}</p>
                 <p className="processing__spent">
-                  {entry.attempts === 1 ? `1 attempt` : `${String(entry.attempts)} attempts`}
-                  {", last on "}
-                  {new Date(entry.lastAttemptAt).toISOString().slice(0, 16).replace("T", " ")}
+                  {t("photos.attempts", { count: entry.attempts })}
+                  {t("photos.lastOn", {
+                    when: new Date(entry.lastAttemptAt)
+                      .toISOString()
+                      .slice(0, 16)
+                      .replace("T", " "),
+                  })}
                 </p>
                 {rowAction?.(entry.photoId)}
               </li>
@@ -98,7 +104,7 @@ export const ProcessingDetail = ({
 
         {abandoned.length > 0 && abandoned.length < failed ? (
           <p className="processing__sample">
-            Showing {abandoned.length} of them. The count above is the whole truth.
+            {t("photos.showingSome", { count: abandoned.length })}
           </p>
         ) : null}
       </section>
@@ -106,10 +112,16 @@ export const ProcessingDetail = ({
   );
 };
 
-/** Said the way somebody standing outside this feature would say it. */
-const STATE_LABELS: Readonly<Record<PhotoProcessingStatus, string>> = {
-  [PhotoProcessingStatus.PENDING]: "Waiting",
-  [PhotoProcessingStatus.DONE]: "Background removed",
-  [PhotoProcessingStatus.FAILED]: "Given up on",
-  [PhotoProcessingStatus.SKIPPED]: "Nothing to remove",
-};
+/**
+ * Said the way somebody standing outside this feature would say it.
+ *
+ * A function of the translator rather than the constant it used to be: the
+ * words are not knowable until a language is, and a table built once at
+ * import time would be built in whichever language loaded first.
+ */
+const stateLabels = (t: Translate): Readonly<Record<PhotoProcessingStatus, string>> => ({
+  [PhotoProcessingStatus.PENDING]: t("photos.waiting"),
+  [PhotoProcessingStatus.DONE]: t("photos.removed"),
+  [PhotoProcessingStatus.FAILED]: t("photos.givenUpOn"),
+  [PhotoProcessingStatus.SKIPPED]: t("photos.nothingToRemove"),
+});

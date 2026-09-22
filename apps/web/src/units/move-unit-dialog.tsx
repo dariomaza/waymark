@@ -39,13 +39,13 @@ export const MoveUnitDialog = ({ unit, onClose }: MoveUnitDialogProps): JSX.Elem
   const cyclic = t(cyclicMoveMessage(move.error, unit.name));
 
   return (
-    <Sheet title={`Move ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.move", { name: unit.name })} onClose={onClose}>
       <SelectField
         id="move-target"
-        label="Move it into"
+        label={t("units.moveInto")}
         value={target}
         options={[
-          { value: MAKE_IT_A_ROOT, label: "Nowhere — make it a root" },
+          { value: MAKE_IT_A_ROOT, label: t("units.nowhereRoot") },
           ...unitOptions(flattenUnits(tree.data?.tree ?? [])),
         ]}
         onChange={(event) => {
@@ -60,7 +60,7 @@ export const MoveUnitDialog = ({ unit, onClose }: MoveUnitDialogProps): JSX.Elem
       ) : null}
 
       <div className="sheet__buttons">
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t("action.cancel")}</Button>
         <Button
           tone="primary"
           disabled={move.isPending}
@@ -70,7 +70,7 @@ export const MoveUnitDialog = ({ unit, onClose }: MoveUnitDialogProps): JSX.Elem
             });
           }}
         >
-          Move it
+          {t("units.moveIt")}
         </Button>
       </div>
     </Sheet>

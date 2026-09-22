@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type JSX, type ReactNode } from "react";
 
 import { Button } from "../atoms/button.js";
 import "./sheet.css";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface SheetProps {
   readonly title: string;
@@ -55,6 +56,8 @@ const FOCUSABLE = [
  * somehow escaped can still be pulled back by it.
  */
 export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => {
+  const t = useTranslate();
+
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
 
@@ -133,7 +136,7 @@ export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => 
         <div className="sheet__head">
           <h3 id={titleId}>{title}</h3>
           <Button tone="quiet" onClick={onClose}>
-            Close
+            {t("action.close")}
           </Button>
         </div>
         <div className="sheet__body">{children}</div>

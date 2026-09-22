@@ -78,15 +78,15 @@ export const UnitDetail = ({
       {actions === undefined ? null : <div className="unit-detail__actions">{actions}</div>}
 
       {isEmpty ? (
-        <EmptyNote explains="Whatever you put in here will show up when you scan its label.">
-          This one is empty
+        <EmptyNote explains={t("units.isEmptyExplains")}>
+          {t("units.isEmpty")}
         </EmptyNote>
       ) : null}
 
       {childUnits.length === 0 ? null : (
         <section>
-          <h3>Units inside</h3>
-          <ul aria-label="Units inside">
+          <h3>{t("units.unitsInside")}</h3>
+          <ul aria-label={t("units.unitsInside")}>
             {childUnits.map((child) => (
               <li key={child.id}>
                 <RowLink
@@ -102,13 +102,13 @@ export const UnitDetail = ({
 
       {items.length === 0 ? null : (
         <section>
-          <h3>Items</h3>
+          <h3>{t("units.items")}</h3>
           {/**
            * A grid, because a thing is recognised by its picture. Its second
            * line is the tags: inside a unit the location is the same string
            * on every card, which is noise rather than an answer.
            */}
-          <ul className="item-grid" aria-label="Items">
+          <ul className="item-grid" aria-label={t("units.items")}>
             {items.map((item) => (
               <li key={item.id}>
                 <ItemCard

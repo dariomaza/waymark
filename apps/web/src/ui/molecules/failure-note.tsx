@@ -32,7 +32,7 @@ export const FailureNote = ({ error, onRetry, title }: FailureNoteProps): JSX.El
         ? {
             action: (
               <Button tone="primary" onClick={onRetry}>
-                Try again
+                {t("action.tryAgain")}
               </Button>
             ),
           }

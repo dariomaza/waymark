@@ -9,6 +9,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { useStorageUnit } from "./unit-queries.js";
 import "./label-screen.css";
 import { unitPath } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # The label that goes on the box
@@ -28,13 +29,15 @@ import { unitPath } from "../app/routes.js";
  * the whole reason `publicId` is Crockford Base32.
  */
 export const LabelScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const params = useParams<{ id: string }>();
   const id = unitId(params.id ?? "");
   const unit = useStorageUnit(id);
 
   return (
     <main className="screen label-screen">
-      {unit.isPending ? <Loading label="Loading the label" /> : null}
+      {unit.isPending ? <Loading label={t("label.loading")} /> : null}
 
       {unit.isError ? (
         <FailureNote
@@ -54,10 +57,10 @@ export const LabelScreen = (): JSX.Element => {
                 globalThis.print();
               }}
             >
-              Print this label
+              {t("label.print")}
             </Button>
             <Link className="button button--secondary" to={unitPath(unit.data.unit.id)}>
-              Back to the unit
+              {t("label.backToUnit")}
             </Link>
           </div>
 
@@ -65,7 +68,7 @@ export const LabelScreen = (): JSX.Element => {
             <AuthenticatedImage
               className="label__symbol"
               src={`/storage-units/${encodeURIComponent(unit.data.unit.id)}/qr.svg`}
-              alt={`QR code for ${unit.data.unit.name}`}
+              alt={t("units.qrCodeFor", { name: unit.data.unit.name })}
             />
             <p className="label__name">{unit.data.unit.name}</p>
             <p className="label__where">

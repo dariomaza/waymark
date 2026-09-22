@@ -54,7 +54,7 @@ export const DeleteUnitSheet = ({
     needsTarget && target !== "" ? unitId(target) : undefined;
 
   return (
-    <Sheet title={`Delete ${unit.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.delete", { name: unit.name })} onClose={onClose}>
       {stillFull === null ? (
         <View style={styles.block}>
           <Text style={styles.text}>Deleting {unit.name} cannot be undone.</Text>
@@ -65,22 +65,22 @@ export const DeleteUnitSheet = ({
             tone="danger"
             block
             disabled={remove.isPending}
-            label="Delete this unit"
+            label={t("units.delete")}
             onPress={() => {
               remove.mutate(undefined, { onSuccess: onDeleted });
             }}
           >
-            Delete this unit
+            {t("units.delete")}
           </Button>
         </View>
       ) : (
-        <Callout tone="blocked" title="This one is not empty">
+        <Callout tone="blocked" title={t("units.notEmptyTitle")}>
           <View style={styles.block}>
             <Text style={styles.text}>{stillFull}</Text>
 
             {needsTarget ? (
               <OptionList
-                label="Move everything into"
+                label={t("units.moveEverythingInto")}
                 value={target}
                 options={unitOptions(
                   flattenUnits(tree.data?.tree ?? []).filter(
@@ -101,16 +101,16 @@ export const DeleteUnitSheet = ({
               disabled={emptyAndRemove.isPending || (needsTarget && chosen === undefined)}
               label={
                 parent === null
-                  ? "Empty it there and delete"
-                  : `Empty it into ${parent.name} and delete`
+                  ? t("units.emptyThereAndDelete")
+                  : t("units.emptyIntoAndDelete", { name: parent.name })
               }
               onPress={() => {
                 emptyAndRemove.mutate(chosen, { onSuccess: onDeleted });
               }}
             >
               {parent === null
-                ? "Empty it there and delete"
-                : `Empty it into ${parent.name} and delete`}
+                ? t("units.emptyThereAndDelete")
+                : t("units.emptyIntoAndDelete", { name: parent.name })}
             </Button>
           </View>
         </Callout>

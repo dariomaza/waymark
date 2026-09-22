@@ -61,7 +61,7 @@ export const UnitDetail = ({
 
   return (
     <ItemGrid
-      label="Items"
+      label={t("units.items")}
       cells={items.map((item) => ({
         key: item.id,
         name: item.name,
@@ -95,17 +95,17 @@ export const UnitDetail = ({
           <View style={styles.actions}>{actions}</View>
 
           {childUnits.length === 0 && items.length === 0 ? (
-            <EmptyNote explains="Whatever you put in here will show up when you scan its label.">
-              This one is empty
+            <EmptyNote explains={t("units.isEmptyExplains")}>
+              {t("units.isEmpty")}
             </EmptyNote>
           ) : null}
 
           {childUnits.length === 0 ? null : (
             <>
               <Text accessibilityRole="header" style={styles.heading}>
-                Units inside
+                {t("units.unitsInside")}
               </Text>
-              <View style={styles.list} accessibilityLabel="Units inside">
+              <View style={styles.list} accessibilityLabel={t("units.unitsInside")}>
                 {childUnits.map((child) => (
                   <RowLink
                     key={child.id}
@@ -123,7 +123,7 @@ export const UnitDetail = ({
 
           {items.length === 0 ? null : (
             <Text accessibilityRole="header" style={styles.heading}>
-              Items
+              {t("units.items")}
             </Text>
           )}
         </View>

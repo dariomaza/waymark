@@ -57,10 +57,10 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
 
   return (
     <section className="item-photos">
-      <h3>Photos</h3>
+      <h3>{t("photos.title")}</h3>
 
       <PhotoPicker
-        label="Add a photo"
+        label={t("photos.add")}
         busy={upload.isPending}
         onPick={(file) => {
           upload.mutate(file);
@@ -74,15 +74,15 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
       ) : null}
 
       {item.photos.length === 0 ? null : (
-        <ul className="item-photos__grid" aria-label="Photos">
+        <ul className="item-photos__grid" aria-label={t("photos.title")}>
           {item.photos.map((photo, index) => (
               <li className="item-photos__cell" key={photo.id}>
                 <AuthenticatedImage
                   src={photo.thumbnailUrl}
                   alt={
                     index === 0
-                      ? `Cover photo of ${item.name}`
-                      : `Photo ${String(index + 1)} of ${item.name}`
+                      ? t("photos.coverOf", { name: item.name })
+                      : t("photos.numberedOf", { index: index + 1, name: item.name })
                   }
                 />
                 <PhotoStatusNote
@@ -94,7 +94,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                 />
                 <div className="item-photos__controls">
                   {index === 0 ? (
-                    <span className="item-photos__cover">Cover</span>
+                    <span className="item-photos__cover">{t("photos.cover")}</span>
                   ) : (
                     <>
                       <Button

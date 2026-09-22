@@ -28,11 +28,11 @@ export const DeleteItemSheet = ({
   const remove = useDeleteItem(item.id);
 
   return (
-    <Sheet title={`Delete ${item.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.delete", { name: item.name })} onClose={onClose}>
       <Text style={styles.text}>
         {item.photos.length === 0
-          ? `Deleting ${item.name} cannot be undone.`
-          : `Deleting ${item.name} also deletes its ${item.photos.length === 1 ? "photo" : "photos"}. This cannot be undone.`}
+          ? t("items.deleteUndoneAlone", { name: item.name })
+          : t("items.deleteWithPhotos", { count: item.photos.length, name: item.name })}
       </Text>
 
       {remove.isError ? (
@@ -43,12 +43,12 @@ export const DeleteItemSheet = ({
         tone="danger"
         block
         disabled={remove.isPending}
-        label="Delete this item"
+        label={t("items.delete")}
         onPress={() => {
           remove.mutate(undefined, { onSuccess: onDeleted });
         }}
       >
-        Delete this item
+        {t("items.delete")}
       </Button>
     </Sheet>
   );

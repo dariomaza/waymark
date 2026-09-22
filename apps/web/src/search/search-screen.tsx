@@ -14,6 +14,7 @@ import { useDebouncedValue } from "./use-debounced-value.js";
 import { SearchResults } from "./views/search-results.js";
 
 import "./search-screen.css";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # The screen the product is named after
@@ -28,6 +29,8 @@ import "./search-screen.css";
  * for.
  */
 export const SearchScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const [params, setParams] = useSearchParams();
   const queryInUrl = params.get("q") ?? "";
   const withinId = params.get("within");
@@ -58,13 +61,13 @@ export const SearchScreen = (): JSX.Element => {
 
   return (
     <main className="screen">
-      <h2>Search</h2>
+      <h2>{t("search.title")}</h2>
 
       <TextField
         id="search"
         type="search"
-        label="Search for a thing or a box"
-        hint="Accents do not matter. Every word has to match."
+        label={t("search.field")}
+        hint={t("search.hint")}
         autoComplete="off"
         autoCapitalize="none"
         // The reason somebody opened this screen is to type.
@@ -85,7 +88,7 @@ export const SearchScreen = (): JSX.Element => {
       ) : null}
 
       {results.isFetching && results.data === undefined ? (
-        <Loading label="Searching" />
+        <Loading label={t("search.searching")} />
       ) : null}
 
       {results.isError ? (
@@ -109,6 +112,8 @@ export const SearchScreen = (): JSX.Element => {
  * between a scope and a search that mysteriously finds nothing.
  */
 const ScopeNote = ({ within }: { readonly within: ReturnType<typeof unitId> }): JSX.Element => {
+  const t = useTranslate();
+
   const [, setParams] = useSearchParams();
   const tree = useStorageUnitTree();
   const unit = tree.data === undefined ? null : findById(tree.data.tree, within);
@@ -116,8 +121,7 @@ const ScopeNote = ({ within }: { readonly within: ReturnType<typeof unitId> }): 
   return (
     <div className="search-scope">
       <p className="search-scope__text">
-        Searching inside {unit === null ? "one unit" : unit.name}, and everything
-        under it.
+        {t("search.insideUnit", { name: unit === null ? t("search.oneUnit") : unit.name })}
       </p>
       <Button
         onClick={() => {
@@ -132,7 +136,7 @@ const ScopeNote = ({ within }: { readonly within: ReturnType<typeof unitId> }): 
           );
         }}
       >
-        Search everywhere
+        {t("search.everywhere")}
       </Button>
     </div>
   );

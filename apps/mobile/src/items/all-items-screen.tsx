@@ -11,6 +11,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { useEveryItem } from "./item-queries.js";
 import { ItemGrid } from "./views/item-grid.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * Everything you own, in one request, every card carrying where it is
@@ -25,20 +26,22 @@ import { ItemGrid } from "./views/item-grid.js";
  * for somebody who cannot see the grid would lose the answer itself.
  */
 export const AllItemsScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const items = useEveryItem();
 
   return (
     // The grid is the scroller here; see `ItemGrid` for why that matters.
     <Screen scroll={false}>
-      <ScreenTitle>Everything you own</ScreenTitle>
+      <ScreenTitle>{t("items.everything")}</ScreenTitle>
 
-      {items.isPending ? <Loading label="Loading everything you own" /> : null}
+      {items.isPending ? <Loading label={t("items.loadingAll")} /> : null}
 
       {items.isError ? (
         <FailureNote
           error={items.error}
-          title="That list could not be loaded"
+          title={t("items.listFailed")}
           onRetry={() => {
             void items.refetch();
           }}
@@ -47,12 +50,12 @@ export const AllItemsScreen = (): JSX.Element => {
 
       {items.isSuccess ? (
         items.data.items.length === 0 ? (
-          <EmptyNote explains="Open a place and add the first one; it will show up here and when you scan that place’s label.">
-            You have not put anything in yet
+          <EmptyNote explains={t("items.emptyExplains")}>
+            {t("items.emptyTitle")}
           </EmptyNote>
         ) : (
           <ItemGrid
-            label="Everything you own"
+            label={t("items.everything")}
             cells={items.data.items.map((row) => ({
               key: row.item.id,
               name: row.item.name,

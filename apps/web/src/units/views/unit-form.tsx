@@ -72,7 +72,7 @@ export const UnitForm = ({
 
         <TextField
           id="unit-name"
-          label="Name"
+          label={t("units.name")}
           required
           autoFocus
           value={name}
@@ -84,7 +84,7 @@ export const UnitForm = ({
 
         <SelectField
           id="unit-kind"
-          label="Kind"
+          label={t("units.kind")}
           hint="A label, never a rule: anything can go inside anything."
           value={kind}
           options={kindChoices(t).map((choice) => ({
@@ -98,8 +98,8 @@ export const UnitForm = ({
 
         <TextArea
           id="unit-description"
-          label="Description"
-          hint="Optional."
+          label={t("units.description")}
+          hint={t("action.optional")}
           value={description}
           error={complaintFor("description")}
           onChange={(event) => {
@@ -108,9 +108,9 @@ export const UnitForm = ({
         />
 
         <div className="sheet__buttons">
-          <Button onClick={onCancel}>Cancel</Button>
+          <Button onClick={onCancel}>{t("action.cancel")}</Button>
           <Button type="submit" tone="primary" disabled={busy}>
-            {busy ? "Saving…" : submitLabel}
+            {busy ? t("action.saving") : submitLabel}
           </Button>
         </div>
       </div>

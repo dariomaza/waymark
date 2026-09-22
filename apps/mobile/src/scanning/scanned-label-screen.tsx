@@ -11,6 +11,7 @@ import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # `/u/<publicId>` — the address on every box in the house
@@ -28,6 +29,8 @@ import { useStorageUnitTree } from "../units/unit-queries.js";
  * on whatever came before the scan and not in a loop through it.
  */
 export const ScannedLabelScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const route = useRoute<RouteProp<RootStackParamList, "ScannedLabel">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const code = publicId(route.params.publicId);
@@ -44,7 +47,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
   if (tree.isPending) {
     return (
       <Screen>
-        <Loading label="Finding that box" />
+        <Loading label={t("scan.finding")} />
       </Screen>
     );
   }
@@ -54,7 +57,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
       <Screen>
         <FailureNote
           error={tree.error}
-          title="That label could not be looked up"
+          title={t("scan.lookupFailed")}
           onRetry={() => {
             void tree.refetch();
           }}
@@ -73,7 +76,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
                 navigation.navigate("Tabs", { screen: "Inventory" });
               }}
             >
-              Go to your inventory
+              {t("scan.goToInventory")}
             </Button>
           }
         >
@@ -85,7 +88,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
 
   return (
     <Screen>
-      <Loading label="Opening that box" />
+      <Loading label={t("scan.opening")} />
     </Screen>
   );
 };

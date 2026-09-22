@@ -2,6 +2,7 @@ import type { JSX } from "react";
 
 import { useOnlineStatus } from "./use-online-status.js";
 import "./offline-note.css";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # What this app promises offline, and what it does not
@@ -19,6 +20,8 @@ import "./offline-note.css";
  * server that never heard it.
  */
 export const OfflineNote = (): JSX.Element | null => {
+  const t = useTranslate();
+
   const online = useOnlineStatus();
 
   if (online) {
@@ -26,7 +29,7 @@ export const OfflineNote = (): JSX.Element | null => {
   }
 
   return (
-    <p className="offline-note" role="status" aria-label="Connection">
+    <p className="offline-note" role="status" aria-label={t("shell.connection")}>
       Offline. You can look at what is already loaded; nothing you change will be
       saved until the connection is back.
     </p>

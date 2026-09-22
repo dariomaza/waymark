@@ -3,6 +3,8 @@ import { useId, type JSX } from "react";
 import { Link } from "react-router-dom";
 
 import "./search-hit.css";
+import type { MessageKey } from "@ariadna/i18n";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface SearchHitProps {
   readonly title: string;
@@ -13,11 +15,11 @@ export interface SearchHitProps {
   readonly detail?: string | undefined;
 }
 
-const FIELD_WORDS: Readonly<Record<SearchMatchField, string>> = {
-  [SearchMatchField.NAME]: "name",
-  [SearchMatchField.TAG]: "tag",
-  [SearchMatchField.DESCRIPTION]: "description",
-};
+const FIELD_KEYS = {
+  [SearchMatchField.NAME]: "search.field.name",
+  [SearchMatchField.TAG]: "search.field.tag",
+  [SearchMatchField.DESCRIPTION]: "search.field.description",
+} as const satisfies Readonly<Record<SearchMatchField, MessageKey>>;
 
 /**
  * One answer to "where is my stuff".
@@ -37,6 +39,8 @@ export const SearchHit = ({
   matchedFields,
   detail,
 }: SearchHitProps): JSX.Element => {
+  const t = useTranslate();
+
   const titleId = useId();
 
   return (
@@ -49,7 +53,9 @@ export const SearchHit = ({
           <span className="search-hit__where">{location}</span>
         </Link>
         <p className="search-hit__why">
-          Matched {matchedFields.map((field) => FIELD_WORDS[field]).join(", ")}
+          {t("search.matched", {
+            fields: matchedFields.map((field) => t(FIELD_KEYS[field])).join(", "),
+          })}
           {detail === undefined ? null : ` · ${detail}`}
         </p>
       </article>

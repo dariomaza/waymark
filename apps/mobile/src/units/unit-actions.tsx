@@ -7,6 +7,7 @@ import { DeleteUnitSheet } from "./delete-unit-sheet.js";
 import { EditUnitSheet } from "./edit-unit-sheet.js";
 import { EmptyUnitSheet } from "./empty-unit-sheet.js";
 import { MoveUnitSheet } from "./move-unit-sheet.js";
+import { useTranslate } from "../app/language-context.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
@@ -31,6 +32,8 @@ export const UnitActions = ({
   onShowLabel,
   onDeleted,
 }: UnitActionsProps): JSX.Element => {
+  const t = useTranslate();
+
   const [open, setOpen] = useState<OpenSheet>(null);
   const parent = path.at(-2) ?? null;
   const close = (): void => {
@@ -44,37 +47,37 @@ export const UnitActions = ({
           setOpen("add");
         }}
       >
-        Add a unit inside
+        {t("units.addInside")}
       </Button>
       <Button
         onPress={() => {
           setOpen("edit");
         }}
       >
-        Edit
+        {t("action.edit")}
       </Button>
       <Button
         onPress={() => {
           setOpen("move");
         }}
       >
-        Move
+        {t("action.move")}
       </Button>
       <Button
         onPress={() => {
           setOpen("empty");
         }}
       >
-        Empty
+        {t("action.empty")}
       </Button>
-      <Button onPress={onShowLabel}>Show the label</Button>
+      <Button onPress={onShowLabel}>{t("units.showLabelPhone")}</Button>
       <Button
         tone="danger"
         onPress={() => {
           setOpen("delete");
         }}
       >
-        Delete
+        {t("action.delete")}
       </Button>
 
       {open === "add" ? (

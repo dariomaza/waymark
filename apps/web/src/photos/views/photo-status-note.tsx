@@ -63,10 +63,10 @@ export const PhotoStatusNote = ({
                     onRetry();
                   }}
                 >
-                  Try removing the background again
+                  {t("photos.retryRemoval")}
                 </Button>
                 <Link className="button button--quiet" to={ROUTES.backgroundRemoval}>
-                  See every photo that failed
+                  {t("photos.seeFailed")}
                 </Link>
               </>
             ),

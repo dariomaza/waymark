@@ -27,14 +27,14 @@ export const CreateItemSheet = ({
   const complaints = fieldComplaints(create.error);
 
   return (
-    <Sheet title={`Add an item to ${unitName}`} onClose={onClose}>
+    <Sheet title={t("sheet.addItemTo", { name: unitName })} onClose={onClose}>
       {create.isError && complaints.length === 0 ? (
         <Callout tone="wrong">{t(describeFailure(create.error))}</Callout>
       ) : null}
 
       <ItemForm
         initial={EMPTY}
-        submitLabel="Create"
+        submitLabel={t("action.create")}
         busy={create.isPending}
         complaints={complaints}
         onSubmit={(values) => {

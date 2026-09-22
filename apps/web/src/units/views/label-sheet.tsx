@@ -6,6 +6,7 @@ import { AuthenticatedImage } from "../../photos/authenticated-image.js";
 import { qrSvgPath } from "../label-symbols.js";
 
 import "./label-sheet.css";
+import { useTranslate } from "../../app/language-context.js";
 
 /**
  * # Twelve labels to an A4 page
@@ -49,15 +50,17 @@ export interface LabelSheetProps {
 }
 
 export const LabelSheet = ({ units }: LabelSheetProps): JSX.Element => {
+  const t = useTranslate();
+
   const pages = chunk(units, LABELS_PER_PAGE);
 
   return (
-    <section className="label-sheet" aria-label="Label sheet">
+    <section className="label-sheet" aria-label={t("label.sheet")}>
       {pages.map((page, index) => (
         <div
           className="label-sheet__page"
           role="group"
-          aria-label={`Page ${String(index + 1)} of ${String(pages.length)}`}
+          aria-label={t("label.pageOf", { page: index + 1, total: pages.length })}
           key={page[0]?.unit.id ?? index}
         >
           {page.map((entry) => (
@@ -103,6 +106,8 @@ export const LabelSheet = ({ units }: LabelSheetProps): JSX.Element => {
  * thing it is stuck to.
  */
 const SheetLabel = ({ entry }: { readonly entry: FlatUnit }): JSX.Element => {
+  const t = useTranslate();
+
   const where = entry.ancestry.join(STORAGE_UNIT_PATH_SEPARATOR);
 
   return (
@@ -111,7 +116,7 @@ const SheetLabel = ({ entry }: { readonly entry: FlatUnit }): JSX.Element => {
       <AuthenticatedImage
         className="sheet-label__symbol"
         src={qrSvgPath(entry.unit.id)}
-        alt={`QR code for ${entry.unit.name}`}
+        alt={t("units.qrCodeFor", { name: entry.unit.name })}
       />
       <p className="sheet-label__code">{entry.unit.publicId}</p>
       {where === "" ? null : <p className="sheet-label__where">{where}</p>}

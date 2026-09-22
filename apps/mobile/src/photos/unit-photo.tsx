@@ -63,12 +63,12 @@ export const UnitPhoto = ({
       {photo === null ? null : (
         <Button
           tone="quiet"
-          label="Remove this photo"
+          label={t("photos.remove")}
           onPress={() => {
             remove.mutate();
           }}
         >
-          Remove this photo
+          {t("photos.remove")}
         </Button>
       )}
 

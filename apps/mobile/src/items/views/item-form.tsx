@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { Button } from "../../ui/atoms/button.js";
 import { TextField } from "../../ui/atoms/text-field.js";
 import { space } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface ItemFormValues {
   readonly name: string;
@@ -40,6 +41,8 @@ export const ItemForm = ({
   complaints,
   onSubmit,
 }: ItemFormProps): JSX.Element => {
+  const t = useTranslate();
+
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description ?? "");
   const [quantity, setQuantity] = useState(String(initial.quantity));
@@ -51,28 +54,28 @@ export const ItemForm = ({
   return (
     <View style={styles.form}>
       <TextField
-        label="Name"
+        label={t("items.name")}
         value={name}
         onChangeText={setName}
         problem={complaintFor("name")}
       />
       <TextField
-        label="Description"
+        label={t("items.description")}
         value={description}
         onChangeText={setDescription}
         multiline
         problem={complaintFor("description")}
       />
       <TextField
-        label="Quantity"
+        label={t("items.quantity")}
         value={quantity}
         onChangeText={setQuantity}
         keyboardType="number-pad"
         problem={complaintFor("quantity")}
       />
       <TextField
-        label="Tags"
-        hint="Separated by commas. A tag is why searching “cables” finds an HDMI 2.1."
+        label={t("items.tags")}
+        hint={t("items.tagsHintPhone")}
         value={tags}
         onChangeText={setTags}
         autoCapitalize="none"

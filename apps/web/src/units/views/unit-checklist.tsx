@@ -6,6 +6,7 @@ import { Button } from "../../ui/atoms/button.js";
 import { Checkbox } from "../../ui/atoms/checkbox.js";
 
 import "./unit-checklist.css";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface UnitChecklistProps {
   readonly units: readonly FlatUnit[];
@@ -37,35 +38,39 @@ export const UnitChecklist = ({
   isPicked,
   onToggle,
   onPickInside,
-}: UnitChecklistProps): JSX.Element => (
-  <ul className="unit-checklist" aria-label="Units">
-    {units.map((entry, index) => (
-      <li
-        className="unit-checklist__row"
-        style={{ marginInlineStart: `${String(entry.depth)}rem` }}
-        key={entry.unit.id}
-      >
-        <Checkbox
-          label={entry.unit.name}
-          checked={isPicked(entry.unit.id)}
-          onChange={() => {
-            onToggle(entry.unit.id);
-          }}
-        />
-        {holdsSomething(units, index) ? (
-          <Button
-            tone="quiet"
-            onClick={() => {
-              onPickInside(entry.unit.id);
+}: UnitChecklistProps): JSX.Element => {
+  const t = useTranslate();
+
+  return (
+    <ul className="unit-checklist" aria-label={t("units.checklistLabel")}>
+      {units.map((entry, index) => (
+        <li
+          className="unit-checklist__row"
+          style={{ marginInlineStart: `${String(entry.depth)}rem` }}
+          key={entry.unit.id}
+        >
+          <Checkbox
+            label={entry.unit.name}
+            checked={isPicked(entry.unit.id)}
+            onChange={() => {
+              onToggle(entry.unit.id);
             }}
-          >
-            Everything inside {entry.unit.name}
-          </Button>
-        ) : null}
-      </li>
-    ))}
-  </ul>
+          />
+          {holdsSomething(units, index) ? (
+            <Button
+              tone="quiet"
+              onClick={() => {
+                onPickInside(entry.unit.id);
+              }}
+            >
+              Everything inside {entry.unit.name}
+            </Button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
 );
+};
 
 /**
  * The list is depth first, so the unit at `index` holds something exactly

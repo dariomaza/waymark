@@ -9,6 +9,7 @@ import { useScanner } from "./scanner-context.js";
 
 import "./scan-screen.css";
 import { scannedLabelPath } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * # Scanning from inside the app
@@ -23,6 +24,8 @@ import { scannedLabelPath } from "../app/routes.js";
  * there is exactly one place that turns a code into a unit.
  */
 export const ScanScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const scanner = useScanner();
   const navigate = useNavigate();
   const video = useRef<HTMLVideoElement>(null);
@@ -82,12 +85,12 @@ export const ScanScreen = (): JSX.Element => {
 
   return (
     <main className="screen">
-      <h2>Scan a label</h2>
+      <h2>{t("scan.title")}</h2>
 
       {cameraProblem === null ? (
-        <video className="scan__video" ref={video} muted playsInline aria-label="Camera" />
+        <video className="scan__video" ref={video} muted playsInline aria-label={t("scan.camera")} />
       ) : (
-        <Callout tone="blocked" title="The camera could not be started">
+        <Callout tone="blocked" title={t("scan.cameraFailed")}>
           <p>
             Ariadna needs permission to use the camera, and the page has to be
             served over HTTPS. Either way, the code printed under the symbol works
@@ -106,7 +109,7 @@ export const ScanScreen = (): JSX.Element => {
       <form className="scan__by-hand" onSubmit={openTyped}>
         <TextField
           id="scan-code"
-          label="Or the code printed under the symbol"
+          label={t("scan.typedCode")}
           value={typed}
           autoCapitalize="characters"
           autoCorrect="off"
@@ -116,7 +119,7 @@ export const ScanScreen = (): JSX.Element => {
           }}
         />
         <Button type="submit" tone="primary">
-          Open that unit
+          {t("scan.openUnit")}
         </Button>
       </form>
     </main>

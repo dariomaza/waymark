@@ -14,6 +14,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { UnitActions } from "./unit-actions.js";
 import { useStorageUnit } from "./unit-queries.js";
 import { UnitDetail } from "./views/unit-detail.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * One storage unit: where it is, what is inside it, and what can be done to
@@ -24,6 +25,8 @@ import { UnitDetail } from "./views/unit-detail.js";
  * when the request worked is one presentational component away.
  */
 export const UnitScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const params = useParams<{ id: string }>();
   const id = unitId(params.id ?? "");
   const unit = useStorageUnit(id);
@@ -32,12 +35,12 @@ export const UnitScreen = (): JSX.Element => {
 
   return (
     <main className="screen">
-      {unit.isPending ? <Loading label="Loading this unit" /> : null}
+      {unit.isPending ? <Loading label={t("units.loading")} /> : null}
 
       {unit.isError ? (
         <FailureNote
           error={unit.error}
-          title="That box is not open"
+          title={t("units.notOpen")}
           onRetry={() => {
             void unit.refetch();
           }}
@@ -61,7 +64,7 @@ export const UnitScreen = (): JSX.Element => {
                     setAddingItem(true);
                   }}
                 >
-                  Add an item
+                  {t("units.addItem")}
                 </Button>
                 <UnitActions unit={unit.data.unit} path={unit.data.path} />
               </>
@@ -69,7 +72,7 @@ export const UnitScreen = (): JSX.Element => {
             itemTrailing={(item) => (
               <Checkbox
                 className="checkbox--bare"
-                label={`Select ${item.name}`}
+                label={t("units.select", { name: item.name })}
                 checked={selection.isSelected(item.id)}
                 onChange={() => {
                   selection.toggle(item.id);

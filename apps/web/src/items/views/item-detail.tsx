@@ -4,6 +4,7 @@ import type { JSX, ReactNode } from "react";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import "./item-detail.css";
 import { unitPath } from "../../app/routes.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface ItemDetailProps {
   readonly item: ItemView;
@@ -19,33 +20,37 @@ export const ItemDetail = ({
   path,
   actions,
   photos,
-}: ItemDetailProps): JSX.Element => (
-  <>
-    <Breadcrumb steps={path.map((step) => ({ name: step.name, to: unitPath(step.id) }))} />
+}: ItemDetailProps): JSX.Element => {
+  const t = useTranslate();
 
-    <header className="item-detail__head">
-      <h2>{item.name}</h2>
-      {item.quantity > 1 ? (
-        <p className="item-detail__quantity">Quantity {item.quantity}</p>
-      ) : null}
-    </header>
+  return (
+    <>
+      <Breadcrumb steps={path.map((step) => ({ name: step.name, to: unitPath(step.id) }))} />
 
-    {photos}
+      <header className="item-detail__head">
+        <h2>{item.name}</h2>
+        {item.quantity > 1 ? (
+          <p className="item-detail__quantity">Quantity {item.quantity}</p>
+        ) : null}
+      </header>
 
-    {item.description === null ? null : (
-      <p className="item-detail__description">{item.description}</p>
-    )}
+      {photos}
 
-    {item.tags.length === 0 ? null : (
-      <ul className="item-detail__tags" aria-label="Tags">
-        {item.tags.map((tag) => (
-          <li className="item-detail__tag" key={tag}>
-            {tag}
-          </li>
-        ))}
-      </ul>
-    )}
+      {item.description === null ? null : (
+        <p className="item-detail__description">{item.description}</p>
+      )}
 
-    {actions === undefined ? null : <div className="item-detail__actions">{actions}</div>}
-  </>
+      {item.tags.length === 0 ? null : (
+        <ul className="item-detail__tags" aria-label={t("items.tags")}>
+          {item.tags.map((tag) => (
+            <li className="item-detail__tag" key={tag}>
+              {tag}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {actions === undefined ? null : <div className="item-detail__actions">{actions}</div>}
+    </>
 );
+};

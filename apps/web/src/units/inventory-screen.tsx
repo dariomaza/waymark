@@ -10,6 +10,7 @@ import { useStorageUnitTree } from "./unit-queries.js";
 import { UnitTree } from "./views/unit-tree.js";
 import "./label-sheet-screen.css";
 import { ROUTES } from "../app/routes.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * The home screen: everything you own, as the tree it is stored in.
@@ -21,12 +22,14 @@ import { ROUTES } from "../app/routes.js";
  * the top: the roots ARE the house.
  */
 export const InventoryScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const tree = useStorageUnitTree();
   const [adding, setAdding] = useState(false);
 
   return (
     <main className="screen">
-      <h2>Your inventory</h2>
+      <h2>{t("inventory.title")}</h2>
 
       <div className="inventory-screen__actions">
         <Button
@@ -35,14 +38,14 @@ export const InventoryScreen = (): JSX.Element => {
             setAdding(true);
           }}
         >
-          Add a room
+          {t("inventory.addRoom")}
         </Button>
         <Link className="button button--secondary" to={ROUTES.labels}>
-          Label sheet
+          {t("label.sheet")}
         </Link>
       </div>
 
-      {tree.isPending ? <Loading label="Loading your inventory" /> : null}
+      {tree.isPending ? <Loading label={t("inventory.loading")} /> : null}
 
       {tree.isError ? (
         <FailureNote
@@ -54,7 +57,7 @@ export const InventoryScreen = (): JSX.Element => {
       ) : null}
 
       {tree.isSuccess && tree.data.tree.length === 0 ? (
-        <EmptyNote>Nothing stored yet. Add a room, a shelf or a box to start.</EmptyNote>
+        <EmptyNote>{t("inventory.emptyLine")}</EmptyNote>
       ) : null}
 
       {tree.isSuccess && tree.data.tree.length > 0 ? (

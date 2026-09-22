@@ -38,9 +38,9 @@ export const PhotoProcessingScreen = (): JSX.Element => {
 
   return (
     <main className="screen">
-      <h2>Background removal</h2>
+      <h2>{t("photos.processingTitle")}</h2>
 
-      {processing.isPending ? <Loading label="Asking what is happening" /> : null}
+      {processing.isPending ? <Loading label={t("photos.processingLoading")} /> : null}
 
       {processing.isError ? (
         <FailureNote
@@ -62,7 +62,7 @@ export const PhotoProcessingScreen = (): JSX.Element => {
                 retryAll.mutate();
               }}
             >
-              Retry every failed photo
+              {t("photos.retryAll")}
             </Button>
           }
           rowAction={(photoId) => (

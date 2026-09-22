@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../ui/atoms/button.js";
 import { colors, radius, space, text } from "../ui/styles/tokens.js";
 import type { CodeScanner, CodeScannerViewProps } from "./code-scanner.js";
+import { useTranslate } from "../app/language-context.js";
 
 /**
  * The adapter. The one file that knows `expo-camera` exists.
@@ -16,6 +17,8 @@ import type { CodeScanner, CodeScannerViewProps } from "./code-scanner.js";
  * symbol is typed in instead, which is why it is printed there.
  */
 const ExpoCameraView = ({ onCode }: CodeScannerViewProps): JSX.Element => {
+  const t = useTranslate();
+
   const [permission, requestPermission] = useCameraPermissions();
 
   if (permission == null) {
@@ -35,7 +38,7 @@ const ExpoCameraView = ({ onCode }: CodeScannerViewProps): JSX.Element => {
             void requestPermission();
           }}
         >
-          Allow the camera
+          {t("scan.allowCamera")}
         </Button>
       </View>
     );
@@ -43,7 +46,7 @@ const ExpoCameraView = ({ onCode }: CodeScannerViewProps): JSX.Element => {
 
   return (
     <CameraView
-      accessibilityLabel="Camera"
+      accessibilityLabel={t("scan.camera")}
       style={styles.camera}
       facing="back"
       barcodeScannerSettings={{ barcodeTypes: ["qr"] }}

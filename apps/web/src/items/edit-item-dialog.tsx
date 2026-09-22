@@ -31,7 +31,7 @@ export const EditItemDialog = ({ item, onClose }: EditItemDialogProps): JSX.Elem
   const problems = fieldComplaints(edit.error);
 
   return (
-    <Sheet title={`Edit ${item.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.edit", { name: item.name })} onClose={onClose}>
       <ItemForm
         submitLabel="Save"
         initial={{

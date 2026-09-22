@@ -35,9 +35,9 @@ export const MoveItemSheet = ({
   const refused = t(moveRefusedMessage(move.error));
 
   return (
-    <Sheet title={`Move ${item.name}`} onClose={onClose}>
+    <Sheet title={t("sheet.move", { name: item.name })} onClose={onClose}>
       <OptionList
-        label="Move it into"
+        label={t("items.moveInto")}
         value={target}
         options={unitOptions(flattenUnits(tree.data?.tree ?? []))}
         onChange={setTarget}
@@ -51,7 +51,7 @@ export const MoveItemSheet = ({
         tone="primary"
         block
         disabled={move.isPending || target === ""}
-        label="Move it"
+        label={t("items.moveIt")}
         onPress={() => {
           move.mutate(
             { itemIds: [item.id], targetUnitId: unitId(target) },
@@ -59,7 +59,7 @@ export const MoveItemSheet = ({
           );
         }}
       >
-        Move it
+        {t("items.moveIt")}
       </Button>
     </Sheet>
   );

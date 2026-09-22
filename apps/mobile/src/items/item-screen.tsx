@@ -11,9 +11,12 @@ import { Screen } from "../ui/organisms/screen.js";
 import { ItemActions } from "./item-actions.js";
 import { useItem } from "./item-queries.js";
 import { ItemDetail } from "./views/item-detail.js";
+import { useTranslate } from "../app/language-context.js";
 
 /** Container. One item, its breadcrumb, its photos and what can be done to it. */
 export const ItemScreen = (): JSX.Element => {
+  const t = useTranslate();
+
   const route = useRoute<RouteProp<RootStackParamList, "Item">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const id = itemId(route.params.id);
@@ -21,12 +24,12 @@ export const ItemScreen = (): JSX.Element => {
 
   return (
     <Screen>
-      {item.isPending ? <Loading label="Loading this item" /> : null}
+      {item.isPending ? <Loading label={t("items.loading")} /> : null}
 
       {item.isError ? (
         <FailureNote
           error={item.error}
-          title="That item could not be loaded"
+          title={t("items.failed")}
           onRetry={() => {
             void item.refetch();
           }}

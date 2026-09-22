@@ -44,14 +44,14 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
           setOpen("edit");
         }}
       >
-        Edit
+        {t("action.edit")}
       </Button>
       <Button
         onClick={() => {
           setOpen("move");
         }}
       >
-        Move
+        {t("action.move")}
       </Button>
       <Button
         tone="danger"
@@ -59,7 +59,7 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
           setOpen("delete");
         }}
       >
-        Delete
+        {t("action.delete")}
       </Button>
 
       {open === "edit" ? <EditItemDialog item={item} onClose={close} /> : null}
@@ -67,24 +67,21 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
       {open === "move" ? (
         <MoveItemsDialog
           itemIds={[item.id]}
-          title={`Move ${item.name}`}
-          targetLabel="Move it into"
-          confirmLabel="Move it"
+          title={t("sheet.move", { name: item.name })}
+          targetLabel={t("items.moveInto")}
+          confirmLabel={t("items.moveIt")}
           onClose={close}
         />
       ) : null}
 
       {open === "delete" ? (
-        <Sheet title={`Delete ${item.name}`} onClose={close}>
-          <p>
-            Deleting {item.name} cannot be undone, and its photos are deleted with
-            it.
-          </p>
+        <Sheet title={t("sheet.delete", { name: item.name })} onClose={close}>
+          <p>{t("items.deleteUndone", { name: item.name })}</p>
           {remove.isError ? (
             <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}
           <div className="sheet__buttons">
-            <Button onClick={close}>Cancel</Button>
+            <Button onClick={close}>{t("action.cancel")}</Button>
             <Button
               tone="danger"
               disabled={remove.isPending}
@@ -99,7 +96,7 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
                 });
               }}
             >
-              Delete this item
+              {t("items.delete")}
             </Button>
           </div>
         </Sheet>

@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { ScreenTitle } from "../../ui/atoms/screen-title.js";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { colors, space, text } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
 
 export interface ItemDetailProps {
   readonly item: ItemView;
@@ -22,32 +23,36 @@ export const ItemDetail = ({
   photos,
   actions,
   onOpenUnit,
-}: ItemDetailProps): JSX.Element => (
-  <View style={styles.wrap}>
-    <Breadcrumb
-      path={path}
-      onOpen={(unit) => {
-        onOpenUnit(unit.id);
-      }}
-    />
-    <ScreenTitle>{item.name}</ScreenTitle>
-    {item.quantity > 1 ? (
-      <Text style={styles.quiet}>Quantity {item.quantity}</Text>
-    ) : null}
-    {item.description === null ? null : (
-      <Text style={styles.description}>{item.description}</Text>
-    )}
-    {item.tags.length === 0 ? null : (
-      <Text style={styles.quiet} accessibilityLabel={`Tags: ${item.tags.join(", ")}`}>
-        {item.tags.join(" · ")}
-      </Text>
-    )}
+}: ItemDetailProps): JSX.Element => {
+  const t = useTranslate();
 
-    <View style={styles.actions}>{actions}</View>
+  return (
+    <View style={styles.wrap}>
+      <Breadcrumb
+        path={path}
+        onOpen={(unit) => {
+          onOpenUnit(unit.id);
+        }}
+      />
+      <ScreenTitle>{item.name}</ScreenTitle>
+      {item.quantity > 1 ? (
+        <Text style={styles.quiet}>Quantity {item.quantity}</Text>
+      ) : null}
+      {item.description === null ? null : (
+        <Text style={styles.description}>{item.description}</Text>
+      )}
+      {item.tags.length === 0 ? null : (
+        <Text style={styles.quiet} accessibilityLabel={t("items.tagsLabel", { tags: item.tags.join(", ") })}>
+          {item.tags.join(" · ")}
+        </Text>
+      )}
 
-    {photos}
-  </View>
+      <View style={styles.actions}>{actions}</View>
+
+      {photos}
+    </View>
 );
+};
 
 const styles = StyleSheet.create({
   wrap: { gap: space.s3 },
