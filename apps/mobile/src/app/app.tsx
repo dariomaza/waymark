@@ -39,7 +39,8 @@ import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { createDefaultClient } from "./create-client.js";
-import { createLanguageStore, type LanguageStore } from "./language.js";
+import { createLanguageStore } from "./language.js";
+import { LanguageProvider, useTranslate } from "./language-context.js";
 import { LanguageSwitcher } from "./language-switcher.js";
 import { linking, type RootStackParamList, type TabParamList } from "./navigation.js";
 
@@ -102,17 +103,19 @@ export const App = ({
     // black flash before the camera.
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? TEST_METRICS}>
       <StatusBar style="light" />
-      <QueryClientProvider client={queries}>
-        <SessionProvider store={sessions}>
-          <ApiProvider client={api}>
-            <ScannerProvider scanner={camera}>
-              <PhotoSourceProvider source={photoSource}>
-                <SessionGate initialState={initialState} languages={languages} />
-              </PhotoSourceProvider>
-            </ScannerProvider>
-          </ApiProvider>
-        </SessionProvider>
-      </QueryClientProvider>
+      <LanguageProvider store={languages}>
+        <QueryClientProvider client={queries}>
+          <SessionProvider store={sessions}>
+            <ApiProvider client={api}>
+              <ScannerProvider scanner={camera}>
+                <PhotoSourceProvider source={photoSource}>
+                  <SessionGate initialState={initialState} />
+                </PhotoSourceProvider>
+              </ScannerProvider>
+            </ApiProvider>
+          </SessionProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 };
@@ -139,17 +142,16 @@ export const App = ({
  */
 const SessionGate = ({
   initialState,
-  languages,
 }: {
   readonly initialState: PartialState<NavigationState> | undefined;
-  readonly languages: LanguageStore;
 }): JSX.Element => {
   const state = useSessionState();
+  const t = useTranslate();
 
   if (state.status === "unknown") {
     return (
       <Screen scroll={false}>
-        <Loading label="Opening Ariadna" />
+        <Loading label={t("shell.opening")} />
       </Screen>
     );
   }
@@ -158,13 +160,7 @@ const SessionGate = ({
     return <LoginScreen />;
   }
 
-  return (
-    <ConfirmedSession
-      token={state.session.token}
-      initialState={initialState}
-      languages={languages}
-    />
-  );
+  return <ConfirmedSession token={state.session.token} initialState={initialState} />;
 };
 
 /**
@@ -184,14 +180,13 @@ const SessionGate = ({
 const ConfirmedSession = ({
   token,
   initialState,
-  languages,
 }: {
   readonly token: string;
   readonly initialState: PartialState<NavigationState> | undefined;
-  readonly languages: LanguageStore;
 }): JSX.Element => {
   const api = useApi();
   const signOut = useSignOut();
+  const t = useTranslate();
 
   const check = useQuery({
     // The token is part of the key so a fresh sign-in is a fresh question,
@@ -205,7 +200,7 @@ const ConfirmedSession = ({
   if (check.isPending) {
     return (
       <Screen scroll={false}>
-        <Loading label="Checking your session" />
+        <Loading label={t("shell.checkingSession")} />
       </Screen>
     );
   }
@@ -215,7 +210,7 @@ const ConfirmedSession = ({
       <Screen>
         <Callout
           tone="wrong"
-          title="Ariadna could not confirm your session"
+          title={t("session.unconfirmed")}
           action={
             <Button
               tone="primary"
@@ -223,7 +218,7 @@ const ConfirmedSession = ({
                 signOut.mutate();
               }}
             >
-              Sign in again
+              {t("session.signInAgain")}
             </Button>
           }
         >
@@ -246,7 +241,7 @@ const ConfirmedSession = ({
         * screen keeps drawing its own title; this one says which product you
         * are in and carries the one setting there is.
         */}
-      <AppBar title="Ariadna" actions={<LanguageSwitcher store={languages} />} />
+      <AppBar title="Ariadna" actions={<LanguageSwitcher />} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={Tabs} />
         <Stack.Screen name="Unit" component={UnitScreen} />
@@ -266,55 +261,70 @@ const ConfirmedSession = ({
  * opens on: the product is a printed QR on a box and a phone pointed at it,
  * and burying that behind a menu would be burying the reason the app exists.
  */
-const Tabs = (): JSX.Element => (
-  <Tab.Navigator
-    initialRouteName="Scan"
-    screenOptions={{
-      headerShown: false,
-      tabBarActiveTintColor: colors.accent,
-      tabBarInactiveTintColor: colors.inkMuted,
-      tabBarStyle: { backgroundColor: colors.surfaceRaised, borderTopColor: colors.line },
-    }}
-  >
-    {/*
-      * Each tab states its accessible name rather than leaving it to be
-      * inferred from the label under the icon. A bar of four one-word buttons
-      * is exactly where an inferred name goes missing, and the name is what a
-      * screen reader announces and what a test asks for.
-      *
-      * The name is the WORD, never a description of the drawing: "cube icon"
-      * describes the shape and withholds the destination.
-      */}
-    <Tab.Screen
-      name="Scan"
-      component={ScanScreen}
-      options={{ title: "Scan", tabBarAccessibilityLabel: "Scan", tabBarIcon: tabIcon("scan") }}
-    />
-    <Tab.Screen
-      name="Inventory"
-      component={InventoryScreen}
-      options={{ title: "Places", tabBarAccessibilityLabel: "Places", tabBarIcon: tabIcon("tree") }}
-    />
-    <Tab.Screen
-      name="Search"
-      component={SearchScreen}
-      options={{
-        title: "Search",
-        tabBarAccessibilityLabel: "Search",
-        tabBarIcon: tabIcon("search"),
+const Tabs = (): JSX.Element => {
+  const t = useTranslate();
+
+  return (
+    <Tab.Navigator
+      initialRouteName="Scan"
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.inkMuted,
+        tabBarStyle: { backgroundColor: colors.surfaceRaised, borderTopColor: colors.line },
       }}
-    />
-    <Tab.Screen
-      name="Items"
-      component={AllItemsScreen}
-      options={{
-        title: "Things",
-        tabBarAccessibilityLabel: "Things",
-        tabBarIcon: tabIcon("things"),
-      }}
-    />
-  </Tab.Navigator>
-);
+    >
+      {/*
+        * Each tab states its accessible name rather than leaving it to be
+        * inferred from the label under the icon. A bar of four one-word buttons
+        * is exactly where an inferred name goes missing, and the name is what a
+        * screen reader announces and what a test asks for.
+        *
+        * The name is the WORD, never a description of the drawing: "cube icon"
+        * describes the shape and withholds the destination. It is the same word
+        * as the title on purpose — two spellings of one destination is how a
+        * screen reader and a pair of eyes come to disagree about where a button
+        * goes — so both come from one key.
+        */}
+      <Tab.Screen
+        name="Scan"
+        component={ScanScreen}
+        options={{
+          title: t("nav.scan"),
+          tabBarAccessibilityLabel: t("nav.scan"),
+          tabBarIcon: tabIcon("scan"),
+        }}
+      />
+      <Tab.Screen
+        name="Inventory"
+        component={InventoryScreen}
+        options={{
+          title: t("nav.places"),
+          tabBarAccessibilityLabel: t("nav.places"),
+          tabBarIcon: tabIcon("tree"),
+        }}
+      />
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{
+          title: t("nav.search"),
+          tabBarAccessibilityLabel: t("nav.search"),
+          tabBarIcon: tabIcon("search"),
+        }}
+      />
+      <Tab.Screen
+        name="Items"
+        component={AllItemsScreen}
+        options={{
+          title: t("nav.things"),
+          tabBarAccessibilityLabel: t("nav.things"),
+          tabBarIcon: tabIcon("things"),
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 /**
  * A destination's drawing, in the colour the bar says it is.

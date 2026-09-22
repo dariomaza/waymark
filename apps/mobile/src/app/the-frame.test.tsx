@@ -61,11 +61,6 @@ describe("the frame every signed-in screen sits in", () => {
     });
 
     /**
-     * The switcher is a real control from the start: it stores a choice and
-     * reflects it, and it translates nothing yet. A decoration that looks like
-     * a setting is worse than an absent one, because it invites somebody to
-     * change something and then ignores them.
-     *
      * The code is what fits in a bar; the language's own name is what makes it
      * a label somebody can act on, because "ES" read aloud is two letters.
      */
@@ -81,5 +76,68 @@ describe("the frame every signed-in screen sits in", () => {
       expect(spanish).toBeSelected();
       expect(english).not.toBeSelected();
     });
+  });
+});
+
+/**
+ * # The switcher means something now
+ *
+ * It has been storing a choice in the keystore since the day it shipped and
+ * translating nothing. These are the tests that say the choice reaches the
+ * screen — and, because this store is asynchronous, that it reaches the FIRST
+ * screen rather than the second.
+ */
+describe("the language the interface is in", () => {
+  beforeEach(() => {
+    theApiKnowsTheHouse();
+  });
+
+  it("changes every word on screen the moment the choice changes", async () => {
+    await renderApp({ session: aSession() });
+
+    await fireEvent.press(await screen.findByRole("radio", { name: "Español" }));
+
+    expect(screen.getByRole("button", { name: "Lugares" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Cosas" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Escanear" })).toBeOnTheScreen();
+  });
+
+  /**
+   * The point of putting the preference in the keystore in the first place.
+   *
+   * `renderApp` builds the whole app against a keystore that already holds
+   * the choice, which is exactly what reopening a killed app looks like. The
+   * assertion that matters is the ABSENCE of an English frame first: the
+   * store is asynchronous, so the naive wiring renders English and corrects
+   * itself, and somebody who chose Spanish would see that flash every single
+   * cold start.
+   */
+  it("opens in Spanish for somebody who chose Spanish before the app was killed", async () => {
+    await renderApp({ session: aSession(), language: "es" });
+
+    expect(await screen.findByRole("button", { name: "Lugares" })).toBeOnTheScreen();
+    expect(screen.queryByText("Places")).toBeNull();
+    expect(screen.queryByText("Things")).toBeNull();
+  });
+
+  it("reflects the stored choice in the switcher itself", async () => {
+    await renderApp({ session: aSession(), language: "es" });
+
+    expect(await screen.findByRole("radio", { name: "Español" })).toBeSelected();
+    expect(screen.getByRole("radio", { name: "English" })).not.toBeSelected();
+  });
+
+  /** The product is called Ariadna in both languages. A name is not a word to be translated. */
+  it("leaves the product's own name alone", async () => {
+    await renderApp({ session: aSession(), language: "es" });
+
+    expect(await screen.findByRole("header", { name: "Ariadna" })).toBeOnTheScreen();
+  });
+
+  /** The group a screen reader announces before the two options inside it. */
+  it("names the language control itself in the chosen language", async () => {
+    await renderApp({ session: aSession(), language: "es" });
+
+    expect(await screen.findByLabelText("Idioma")).toBeOnTheScreen();
   });
 });

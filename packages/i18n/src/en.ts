@@ -29,6 +29,12 @@ export const EN = {
   "shell.signedInAs": "Signed in as {username}",
   "shell.signOut": "Sign out",
 
+  /** What the app is doing while the keystore is being read on a cold start. */
+  "shell.opening": "Opening Ariadna",
+  "shell.checkingSession": "Checking your session",
+  "session.unconfirmed": "Ariadna could not confirm your session",
+  "session.signInAgain": "Sign in again",
+
   /** The name of the landmark itself, announced before the links inside it. */
   "nav.label": "Main",
 

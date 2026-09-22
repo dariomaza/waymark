@@ -31,6 +31,11 @@ export const ES: Dictionary = {
   "shell.signedInAs": "Sesión iniciada como {username}",
   "shell.signOut": "Cerrar sesión",
 
+  "shell.opening": "Abriendo Ariadna",
+  "shell.checkingSession": "Comprobando la sesión",
+  "session.unconfirmed": "Ariadna no ha podido confirmar la sesión",
+  "session.signInAgain": "Iniciar sesión de nuevo",
+
   // "Lugares" and "Cosas" for the same reason the English says "Places" and
   // "Things": these are the words somebody uses out loud in a garage, not the
   // database's `Inventario` and `Artículos`.

@@ -1,16 +1,12 @@
-import { useEffect, useState, type JSX } from "react";
+import { LANGUAGE_NAMES, LANGUAGES } from "@ariadna/i18n";
+import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, radius, space, TAP_TARGET, text } from "../ui/styles/tokens.js";
-import { LANGUAGE_NAMES, LANGUAGES, type Language, type LanguageStore } from "./language.js";
-
-export interface LanguageSwitcherProps {
-  readonly store: LanguageStore;
-}
+import { useLanguageChoice, useTranslate } from "./language-context.js";
 
 /**
- * Container and view in one small piece: it owns the choice, and the choice
- * is the only state there is.
+ * The one control that is ABOUT the language rather than written in it.
  *
  * Two buttons rather than a picker, because there are two options and both fit
  * in the bar — an Android picker to choose between two things opens a modal
@@ -18,29 +14,18 @@ export interface LanguageSwitcherProps {
  * the radio role so a screen reader gets the grouping and says which one is
  * chosen, the way the web client's real `<input type="radio">` does for free.
  *
- * The stored choice arrives asynchronously (see `language.ts`), so this opens
- * on the default and corrects itself. Nothing is translated yet, so a person
- * sees the control settle rather than the interface change under them.
+ * The choice itself now lives in the provider, because it is no longer this
+ * component's private state: it decides every other word on the screen. And
+ * it no longer opens on a default and corrects itself, because the provider
+ * waits for the keystore rather than letting the interface change under
+ * somebody — see `language-context.tsx`.
  */
-export const LanguageSwitcher = ({ store }: LanguageSwitcherProps): JSX.Element => {
-  const [language, setLanguage] = useState<Language>("en");
-
-  useEffect(() => {
-    let listening = true;
-
-    void store.read().then((stored) => {
-      if (listening) {
-        setLanguage(stored);
-      }
-    });
-
-    return () => {
-      listening = false;
-    };
-  }, [store]);
+export const LanguageSwitcher = (): JSX.Element => {
+  const { language, choose } = useLanguageChoice();
+  const t = useTranslate();
 
   return (
-    <View style={styles.group} accessibilityRole="radiogroup" accessibilityLabel="Language">
+    <View style={styles.group} accessibilityRole="radiogroup" accessibilityLabel={t("language.label")}>
       {LANGUAGES.map((code) => (
         <Pressable
           key={code}
@@ -49,12 +34,17 @@ export const LanguageSwitcher = ({ store }: LanguageSwitcherProps): JSX.Element 
            * The code is what fits in a bar; the language's own name is what
            * makes it a label somebody can act on. "ES" read aloud is two
            * letters.
+           *
+           * The names are NOT translated, and that is the point: a person
+           * looking for Spanish in an interface they cannot read is looking
+           * for the word "Español". A list of languages written in the
+           * language you are trying to leave is a list only its speakers can
+           * use.
            */
           accessibilityLabel={LANGUAGE_NAMES[code]}
           accessibilityState={{ selected: language === code, checked: language === code }}
           onPress={() => {
-            setLanguage(code);
-            void store.save(code);
+            choose(code);
           }}
           style={[styles.option, language === code ? styles.chosen : null]}
         >
