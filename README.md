@@ -1,16 +1,37 @@
-# Ariadna
+# Waymark
 
 Self-hosted inventory for a home / homelab: register storage units (drawers,
 boxes, shelves, crates), record the items inside them, and find anything again
 by scanning a QR code or searching by name, unit, or location.
 
-Named after the thread that leads you out of the labyrinth. The house is the
-labyrinth; this is the thread.
+**Find your way back.**
+
+A waymark is the marker a walker leaves on a trail so the route can be
+retraced. Stick one on a box and the box has an address.
+
+### Why the name changed
+
+This was called **Ariadna** until it was renamed, after the thread that leads
+out of the labyrinth: the house was the labyrinth and the app was the thread.
+That reading was not wrong, but it was a metaphor — it needed a myth to
+explain itself, it cast the house as an adversary, and the thread is the one
+part of the story that is not a thing you leave behind on purpose.
+
+A waymark is not a metaphor. It is a physical marker, left deliberately, so
+that somebody can find their way again — which is exactly and literally what a
+printed QR label glued to a box is. The name stopped describing the product by
+allusion and started describing it by definition, and that is why it is
+better.
+
+The rename was done while the inventory was still empty and no label had been
+printed. It would not have been free afterwards: a printed `publicId` is glued
+to a box, so the id scheme and the `/u/<publicId>` address it resolves through
+were deliberately left untouched by the rename and will stay untouched.
 
 ## Problem
 
 Things get stored and then lost. Not lost as in gone, lost as in "it is
-somewhere in one of forty boxes". Ariadna makes every storage unit addressable
+somewhere in one of forty boxes". Waymark makes every storage unit addressable
 via a printed QR code and every item searchable.
 
 ## Scope
@@ -230,7 +251,7 @@ the table, so an unmapped error can never become an accidental 500.
 
 The feature the product is named after. Things get stored and then lost — not
 lost as in gone, lost as in "it is somewhere in one of forty boxes" — and this
-is the thread out of that labyrinth.
+is the way back to them when there is no label in front of you to scan.
 
 ```
 GET /search?q=cab&within=<unitId>&limit=20
@@ -658,10 +679,10 @@ Android 9 and up refuse plain HTTP by default, so a LAN address needs
 anything else.
 
 The `https` intent filter in `app.json` carries a placeholder host,
-`ariadna.example`. Set it to the host in `WAYMARK_PUBLIC_BASE_URL` to make the
+`waymark.example`. Set it to the host in `WAYMARK_PUBLIC_BASE_URL` to make the
 stock camera open labels in this app rather than in the browser; leaving it
 alone keeps the labels working exactly as they do today, through the web PWA.
-The `ariadna://u/<code>` scheme works either way.
+The `waymark://u/<code>` scheme works either way.
 
 ## Deployment
 

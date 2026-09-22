@@ -108,7 +108,7 @@ the same library that already re-encodes every upload, and stored as a JPEG
 beside the original.
 
 It is done there and not in the sidecar because it is a decision about what
-Ariadna stores. A sidecar that made it would be a sidecar with an opinion about
+Waymark stores. A sidecar that made it would be a sidecar with an opinion about
 the product, and the next change to how a photo looks would mean rebuilding a
 Python container.
 

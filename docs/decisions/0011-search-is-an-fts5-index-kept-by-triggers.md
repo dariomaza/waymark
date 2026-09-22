@@ -6,9 +6,14 @@
 ## Context
 
 "Find anything again by searching by name, unit, or location" is in the first
-paragraph of the README, and it is the feature the product is named after: the
-house is the labyrinth, this is the thread. It is not a filter box bolted onto
-a list.
+paragraph of the README, and it is the feature the product is named after:
+things get lost inside a house, and this is the way back to them when there is
+no label in front of you to scan. It is not a filter box bolted onto a list.
+
+(This ADR was written when the product was called Ariadna, and that sentence
+read "the house is the labyrinth, this is the thread". The decision below is
+unchanged; only the sentence that motivates it has been rewritten against the
+name the product actually has. See the README for why the name moved.)
 
 Four things had to be true, and they pull in different directions.
 

@@ -8,7 +8,7 @@
 The product was finished and unusable. The domain, the API, the PWA and the
 Android app were built and tested; the Docker stack had one service in it, the
 API, and there was no web Dockerfile and nothing serving `apps/web/dist`. A
-deployed Ariadna could be driven with `curl` and in no other way.
+deployed Waymark could be driven with `curl` and in no other way.
 
 Every earlier document said the opposite of what this one decides, and said it
 deliberately. `vite.config.ts`: "It is deliberately not served BY the API: that

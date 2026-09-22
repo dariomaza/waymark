@@ -88,7 +88,7 @@ than details of it.
 every request while `navigator.onLine` is false. That flag says an interface
 is up, not that a homelab behind a Cloudflare Tunnel can be reached, and
 pausing on it leaves a screen spinning with nothing to read. So requests go
-out regardless, and "the app could not reach Ariadna" is a real answer from a
+out regardless, and "the app could not reach Waymark" is a real answer from a
 real attempt.
 
 **The caches are dropped on sign-out.** They hold photographs of the inside
