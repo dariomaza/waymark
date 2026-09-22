@@ -1,0 +1,68 @@
+.language-switcher {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+/**
+ * The group needs a name for assistive technology and no room for one in a
+ * bar. Clipped rather than `display: none`, which would take it out of the
+ * accessibility tree along with the pixels.
+ */
+.language-switcher__legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.language-switcher__option {
+  display: flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-s);
+  font-weight: 650;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+/* The control itself is the label; the input is only the mechanism. */
+.language-switcher__option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/** Same trick as the legend: read aloud, never drawn. */
+.language-switcher__name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.language-switcher__option:has(input:checked) {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+/**
+ * The focus ring has to come from the label, because the input it belongs to
+ * is the invisible one. Without this the control is unusable by keyboard and
+ * looks fine, which is the worst combination.
+ */
+.language-switcher__option:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}

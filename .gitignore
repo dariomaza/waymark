@@ -17,3 +17,5 @@ data/
 # not source: regenerating them is how a config plugin takes effect.
 apps/mobile/android/
 apps/mobile/ios/
+.atl/
+.codegraph/

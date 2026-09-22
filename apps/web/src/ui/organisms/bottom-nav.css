@@ -12,14 +12,34 @@
   flex: 1;
   min-height: 56px;
   display: flex;
+  /* Icon over word, which is what lets the word be small without being cramped. */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   text-decoration: none;
   color: var(--color-ink-muted);
-  font-weight: 600;
 }
 
+.bottom-nav__label {
+  font-size: 0.7rem;
+  font-weight: 650;
+  /* The word is a hint under a symbol, not a heading. It must not wrap. */
+  white-space: nowrap;
+}
+
+/**
+ * The accent here is a FOREGROUND, so it uses the foreground token. The fill
+ * token is a lime that is unreadable as text on the light scheme's surface;
+ * these two are the same value in the dark and deliberately differ in the
+ * light, which is the whole reason the accent is split by job.
+ */
 .bottom-nav__link--current {
-  color: var(--color-accent);
-  box-shadow: inset 0 2px 0 var(--color-accent);
+  color: var(--color-accent-text);
+  box-shadow: inset 0 2px 0 var(--color-accent-text);
+}
+
+.bottom-nav__link:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
 }

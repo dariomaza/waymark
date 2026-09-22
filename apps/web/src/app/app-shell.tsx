@@ -3,6 +3,8 @@ import { Outlet } from "react-router-dom";
 
 import { useSession, useSignOut } from "../auth/use-session.js";
 import { Button } from "../ui/atoms/button.js";
+import { Icon } from "../ui/atoms/icon.js";
+import { LanguageSwitcher } from "./language-switcher.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { BottomNav } from "../ui/organisms/bottom-nav.js";
 import { OfflineNote } from "./offline-note.js";
@@ -24,15 +26,19 @@ export const AppShell = (): JSX.Element => {
     <div className="app-shell">
       <AppBar
         title="Ariadna"
+        leading={<Icon name="thread" size={24} />}
         actions={
-          <Button
-            tone="quiet"
-            onClick={() => {
-              signOut.mutate();
-            }}
-          >
-            Sign out
-          </Button>
+          <>
+            <LanguageSwitcher />
+            <Button
+              tone="quiet"
+              onClick={() => {
+                signOut.mutate();
+              }}
+            >
+              Sign out
+            </Button>
+          </>
         }
       />
       <OfflineNote />
@@ -43,10 +49,17 @@ export const AppShell = (): JSX.Element => {
 
       <BottomNav
         items={[
-          { to: ROUTES.inventory, label: "Inventory" },
-          { to: ROUTES.everything, label: "Items" },
-          { to: ROUTES.find, label: "Search" },
-          { to: ROUTES.scan, label: "Scan" },
+          /**
+           * "Places" and "Things", not "Inventory" and "Items".
+           *
+           * The two words a person uses standing in a garage are where and
+           * what. "Inventory" is the name of the database; the tab is for the
+           * person, so it takes the person's word.
+           */
+          { to: ROUTES.inventory, label: "Places", icon: "tree" },
+          { to: ROUTES.everything, label: "Things", icon: "things" },
+          { to: ROUTES.find, label: "Search", icon: "search" },
+          { to: ROUTES.scan, label: "Scan", icon: "scan" },
         ]}
       />
     </div>
