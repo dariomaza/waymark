@@ -134,3 +134,33 @@ jobs:
       # checked and it was fine".
       - name: Test
         run: pnpm test
+
+  image:
+    name: build the image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # The only step in this file that can catch a whole class of failure the
+      # other job is blind to.
+      #
+      # `docker/api.Dockerfile` does not copy the workspace. It enumerates the
+      # packages it needs, by hand, twice — once for the manifests so that a
+      # dependency change alone does not bust the install layer, and once for
+      # the sources. That hand-kept list is the price of the layer cache, and
+      # it goes stale the moment somebody adds a package.
+      #
+      # Which is exactly what happened: `packages/i18n` was written, the whole
+      # suite stayed green, `pnpm typecheck` stayed green, `vite build` stayed
+      # green on a developer machine — and the image failed to build, because
+      # inside it `@ariadna/i18n` did not exist. Nothing before this step could
+      # see it, because every one of them runs against the complete workspace.
+      # Running `vite build` in CI would NOT have caught it either.
+      #
+      # So this builds the real image from the real Dockerfile. It is slower
+      # than everything above it put together, and it is the step that answers
+      # "will this deploy".
+      - name: Build the API image
+        run: docker build -f docker/api.Dockerfile -t ariadna-api:ci .
