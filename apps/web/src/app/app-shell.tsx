@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { useSession, useSignOut } from "../auth/use-session.js";
 import { Button } from "../ui/atoms/button.js";
 import { Icon } from "../ui/atoms/icon.js";
+import { useTranslate } from "./language-context.js";
 import { LanguageSwitcher } from "./language-switcher.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { BottomNav } from "../ui/organisms/bottom-nav.js";
@@ -21,6 +22,7 @@ import { ROUTES } from "./routes.js";
 export const AppShell = (): JSX.Element => {
   const session = useSession();
   const signOut = useSignOut();
+  const t = useTranslate();
 
   return (
     <div className="app-shell">
@@ -36,30 +38,31 @@ export const AppShell = (): JSX.Element => {
                 signOut.mutate();
               }}
             >
-              Sign out
+              {t("shell.signOut")}
             </Button>
           </>
         }
       />
       <OfflineNote />
       {session === null ? null : (
-        <p className="app-shell__who">Signed in as {session.user.username}</p>
+        <p className="app-shell__who">
+          {t("shell.signedInAs", { username: session.user.username })}
+        </p>
       )}
       <Outlet />
 
       <BottomNav
+        label={t("nav.label")}
         items={[
           /**
-           * "Places" and "Things", not "Inventory" and "Items".
-           *
-           * The two words a person uses standing in a garage are where and
-           * what. "Inventory" is the name of the database; the tab is for the
-           * person, so it takes the person's word.
+           * "Places" and "Things", not "Inventory" and "Items" — and the same
+           * decision is made again in Spanish rather than translated out of
+           * the English. See `nav.places` in the dictionary.
            */
-          { to: ROUTES.inventory, label: "Places", icon: "tree" },
-          { to: ROUTES.everything, label: "Things", icon: "things" },
-          { to: ROUTES.find, label: "Search", icon: "search" },
-          { to: ROUTES.scan, label: "Scan", icon: "scan" },
+          { to: ROUTES.inventory, label: t("nav.places"), icon: "tree" },
+          { to: ROUTES.everything, label: t("nav.things"), icon: "things" },
+          { to: ROUTES.find, label: t("nav.search"), icon: "search" },
+          { to: ROUTES.scan, label: t("nav.scan"), icon: "scan" },
         ]}
       />
     </div>

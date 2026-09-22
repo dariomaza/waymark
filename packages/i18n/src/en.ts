@@ -29,6 +29,9 @@ export const EN = {
   "shell.signedInAs": "Signed in as {username}",
   "shell.signOut": "Sign out",
 
+  /** The name of the landmark itself, announced before the links inside it. */
+  "nav.label": "Main",
+
   /**
    * "Places" and "Things", not "Inventory" and "Items".
    *

@@ -34,6 +34,7 @@ export const ES: Dictionary = {
   // "Lugares" and "Cosas" for the same reason the English says "Places" and
   // "Things": these are the words somebody uses out loud in a garage, not the
   // database's `Inventario` and `Artículos`.
+  "nav.label": "Principal",
   "nav.places": "Lugares",
   "nav.things": "Cosas",
   "nav.search": "Buscar",

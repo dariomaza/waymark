@@ -1,56 +1,80 @@
+import { DEFAULT_LANGUAGE, isLanguage, preferredLanguage, type Language } from "@ariadna/i18n";
+
 /**
- * Which language the interface is asked for.
+ * # Where the browser keeps the one preference this app has
  *
- * The choice is stored and honoured from the day the switcher appears, before
- * a single string is translated. That order is deliberate: a control that
- * looks like a setting and quietly ignores you is worse than no control, and
- * wiring the storage first means the day translations land there is nothing
- * to migrate — the preference is already there, already chosen.
+ * The language list, the names and the translations themselves live in
+ * `@ariadna/i18n`, shared with the phone. What stays here is the only part
+ * that is genuinely the browser's: `localStorage`, and what to do when there
+ * is nothing in it.
  */
-export const LANGUAGES = ["en", "es"] as const;
-
-export type Language = (typeof LANGUAGES)[number];
-
-/**
- * English, because every string in the product is English today. The moment
- * translations exist this should ask the browser first and fall back here.
- */
-export const DEFAULT_LANGUAGE: Language = "en";
-
-/** What each language calls ITSELF. A language list in one language is a list only its speakers can read. */
-export const LANGUAGE_NAMES: Record<Language, string> = {
-  en: "English",
-  es: "Español",
-};
-
 const KEY = "ariadna.language";
 
-const isLanguage = (value: unknown): value is Language =>
-  typeof value === "string" && (LANGUAGES as readonly string[]).includes(value);
+/**
+ * What to show somebody who has never touched the switcher.
+ *
+ * Now that there ARE translations, the browser is asked first. Somebody whose
+ * machine is in Spanish should not have to find a control to be spoken to in
+ * Spanish — the setting exists to OVERRIDE this, not to be the only way to
+ * reach it.
+ *
+ * `navigator.languages` rather than `navigator.language`: the first is the
+ * ordered list a person actually configured, and somebody with Catalan first
+ * and Spanish second should get Spanish rather than English.
+ */
+const fromTheBrowser = (): Language => {
+  try {
+    return preferredLanguage(globalThis.navigator?.languages ?? []) ?? DEFAULT_LANGUAGE;
+  } catch {
+    return DEFAULT_LANGUAGE;
+  }
+};
 
 /**
- * Reads and writes never throw.
+ * # Reads and writes never throw, and never depend on there being a store
  *
- * `localStorage` is not a variable: it throws on access in a private window,
- * with site data blocked, and inside some embedded browsers. A preference
- * this small must never be the reason a screen fails to render, so an
- * unreadable store simply means "no choice made yet".
+ * `localStorage` is not a variable. It throws on access in a private window,
+ * with site data blocked, and inside some embedded browsers — and it is
+ * absent outright under the test runner, where jsdom is configured without
+ * it. A preference this small must never be the reason a screen fails to
+ * render.
+ *
+ * So this falls back to memory exactly the way `session-store.ts` does, and
+ * for the same reason: a choice that could not be written to disk must still
+ * hold for as long as the app is open. Without that, somebody in a private
+ * window would pick Spanish and watch it revert on the next navigation.
  */
+let remembered: Language | null = null;
+
 export const languageStore = {
   read(): Language {
     try {
-      const stored: unknown = window.localStorage.getItem(KEY);
-      return isLanguage(stored) ? stored : DEFAULT_LANGUAGE;
+      const stored: unknown = globalThis.localStorage?.getItem(KEY) ?? remembered;
+
+      return isLanguage(stored) ? stored : fromTheBrowser();
     } catch {
-      return DEFAULT_LANGUAGE;
+      return remembered ?? fromTheBrowser();
     }
   },
 
   save(language: Language): void {
+    remembered = language;
+
     try {
-      window.localStorage.setItem(KEY, language);
+      globalThis.localStorage?.setItem(KEY, language);
     } catch {
-      // A preference that could not be remembered still applies to this visit.
+      // A preference that could not be written down still applies to this visit.
+    }
+  },
+
+  /** Only ever called between tests, so one person's choice is not the next one's. */
+  forget(): void {
+    remembered = null;
+
+    try {
+      globalThis.localStorage?.removeItem(KEY);
+    } catch {
+      // Nothing stored is the state we were after anyway.
     }
   },
 };

@@ -12,6 +12,13 @@ export interface BottomNavItem {
 
 export interface BottomNavProps {
   readonly items: readonly BottomNavItem[];
+  /**
+   * The name of the landmark itself, which a screen reader announces before
+   * anything inside it. Handed in rather than written here for the same
+   * reason the labels are: this component stays presentational, and the words
+   * are the shell's to choose in whichever language is on screen.
+   */
+  readonly label: string;
 }
 
 /**
@@ -31,8 +38,8 @@ export interface BottomNavProps {
  * The icon is hidden from assistive technology precisely because the word is
  * there: announcing the picture and the word would say the same thing twice.
  */
-export const BottomNav = ({ items }: BottomNavProps): JSX.Element => (
-  <nav className="bottom-nav" aria-label="Main">
+export const BottomNav = ({ items, label }: BottomNavProps): JSX.Element => (
+  <nav className="bottom-nav" aria-label={label}>
     {items.map((item) => (
       <NavLink
         key={item.to}

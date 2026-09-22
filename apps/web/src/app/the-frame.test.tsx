@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { aSession, aStorageUnit, aTree } from "@ariadna/api-client/testing";
 
 import { sessionStore } from "../auth/session-store.js";
+import { languageStore } from "./language.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { renderApp, screen, userEvent } from "../testing/render-app.js";
 
@@ -60,12 +61,6 @@ describe("the frame every signed-in screen sits in", () => {
       expect(await screen.findByRole("heading", { name: "Ariadna" })).toBeVisible();
     });
 
-    /**
-     * The switcher is a real control from the start: it stores a choice and
-     * reflects it, and it translates nothing yet. A decoration that looks like
-     * a setting is worse than an absent one, because it invites somebody to
-     * change something and then ignores them.
-     */
     it("offers a language, and remembers which one was chosen", async () => {
       const user = userEvent.setup();
       renderApp({ route: "/" });
@@ -78,6 +73,81 @@ describe("the frame every signed-in screen sits in", () => {
 
       expect(spanish).toBeChecked();
       expect(english).not.toBeChecked();
+    });
+  });
+
+  /**
+   * # The switcher means something now
+   *
+   * It has been storing a choice since the day it shipped and translating
+   * nothing. These are the tests that say the choice reaches the screen.
+   */
+  describe("the language the interface is in", () => {
+    it("changes every word on screen the moment the choice changes", async () => {
+      const user = userEvent.setup();
+      renderApp({ route: "/" });
+
+      await user.click(await screen.findByRole("radio", { name: /español/i }));
+
+      expect(screen.getByRole("link", { name: "Lugares" })).toBeVisible();
+      expect(screen.getByRole("link", { name: "Cosas" })).toBeVisible();
+      expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
+    });
+
+    /**
+     * The point of storing the preference in the first place.
+     *
+     * A switcher that only works until you close the tab is a switcher that
+     * makes somebody choose Spanish every morning. `renderApp` builds the
+     * whole app from scratch against a store that already holds the choice,
+     * which is exactly what a reload is.
+     */
+    it("opens in Spanish for somebody who chose Spanish the last time they were here", async () => {
+      languageStore.save("es");
+
+      renderApp({ route: "/" });
+
+      expect(await screen.findByRole("link", { name: "Lugares" })).toBeVisible();
+      expect(screen.getByRole("radio", { name: /español/i })).toBeChecked();
+    });
+
+    /**
+     * Not decoration. A screen reader picks its voice and its pronunciation
+     * rules from this attribute, and Spanish read aloud by an English
+     * synthesiser is less intelligible than either language on its own —
+     * which is the worst possible outcome for the person who most depends on
+     * the words being right.
+     */
+    it("tells the browser which language the page is in", async () => {
+      const user = userEvent.setup();
+      renderApp({ route: "/" });
+
+      expect(document.documentElement.lang).toBe("en");
+
+      await user.click(await screen.findByRole("radio", { name: /español/i }));
+
+      expect(document.documentElement.lang).toBe("es");
+    });
+
+    /** The nav's own accessible name is copy too — it is read out before the links inside it. */
+    it("names the navigation itself in the chosen language", async () => {
+      languageStore.save("es");
+
+      renderApp({ route: "/" });
+
+      expect(await screen.findByRole("navigation", { name: "Principal" })).toBeVisible();
+    });
+
+    /**
+     * The product is called Ariadna in both languages. A name is not a word
+     * to be translated, and "Hilo" would be a different product.
+     */
+    it("leaves the product's own name alone", async () => {
+      languageStore.save("es");
+
+      renderApp({ route: "/" });
+
+      expect(await screen.findByRole("heading", { name: "Ariadna" })).toBeVisible();
     });
   });
 });

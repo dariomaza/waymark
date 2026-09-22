@@ -5,6 +5,7 @@ import { Blob as NodeBlob, File as NodeFile } from "node:buffer";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
+import { languageStore } from "../app/language.js";
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer } from "./api-server.js";
 
@@ -76,8 +77,12 @@ afterEach(() => {
   cleanup();
   apiServer.resetHandlers();
   // The session outlives a render on purpose — it is in storage — so a test
-  // that signed in must not decide the next one's starting state.
+  // that signed in must not decide the next one's starting state. The chosen
+  // language is stored the same way and leaks the same way: without this, one
+  // test choosing Spanish would leave the next one reading Spanish and
+  // failing on words it never asked about.
   sessionStore.clear();
+  languageStore.forget();
 });
 
 afterAll(() => {

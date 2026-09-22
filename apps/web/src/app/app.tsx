@@ -20,6 +20,7 @@ import { LabelScreen } from "../units/label-screen.js";
 import { LabelSheetScreen } from "../units/label-sheet-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
+import { LanguageProvider } from "./language-context.js";
 import { createDefaultClient } from "./create-client.js";
 import { NotFoundScreen } from "./not-found-screen.js";
 import { ROUTES } from "./routes.js";
@@ -57,35 +58,37 @@ export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
   const [camera] = useState(() => scanner ?? defaultScanner());
 
   return (
-    <QueryClientProvider client={queries}>
-      <ApiProvider client={api}>
-        <ScannerProvider scanner={camera}>
-          <Routes>
-            <Route path={ROUTES.login} element={<LoginScreen />} />
+    <LanguageProvider>
+      <QueryClientProvider client={queries}>
+        <ApiProvider client={api}>
+          <ScannerProvider scanner={camera}>
+            <Routes>
+              <Route path={ROUTES.login} element={<LoginScreen />} />
 
-            <Route element={<RequireSession />}>
-              <Route element={<AppShell />}>
-                <Route path={ROUTES.inventory} element={<InventoryScreen />} />
-                <Route path={ROUTES.find} element={<SearchScreen />} />
-                <Route path={ROUTES.scan} element={<ScanScreen />} />
-                <Route path={ROUTES.unit} element={<UnitScreen />} />
-                <Route path={ROUTES.unitLabel} element={<LabelScreen />} />
-                <Route path={ROUTES.labels} element={<LabelSheetScreen />} />
-                <Route path={ROUTES.everything} element={<AllItemsScreen />} />
-                <Route path={ROUTES.thing} element={<ItemScreen />} />
-                <Route
-                  path={ROUTES.backgroundRemoval}
-                  element={<PhotoProcessingScreen />}
-                />
-                <Route path={ROUTES.scannedLabel} element={<ScannedLabelScreen />} />
+              <Route element={<RequireSession />}>
+                <Route element={<AppShell />}>
+                  <Route path={ROUTES.inventory} element={<InventoryScreen />} />
+                  <Route path={ROUTES.find} element={<SearchScreen />} />
+                  <Route path={ROUTES.scan} element={<ScanScreen />} />
+                  <Route path={ROUTES.unit} element={<UnitScreen />} />
+                  <Route path={ROUTES.unitLabel} element={<LabelScreen />} />
+                  <Route path={ROUTES.labels} element={<LabelSheetScreen />} />
+                  <Route path={ROUTES.everything} element={<AllItemsScreen />} />
+                  <Route path={ROUTES.thing} element={<ItemScreen />} />
+                  <Route
+                    path={ROUTES.backgroundRemoval}
+                    element={<PhotoProcessingScreen />}
+                  />
+                  <Route path={ROUTES.scannedLabel} element={<ScannedLabelScreen />} />
+                </Route>
               </Route>
-            </Route>
 
-            <Route path="*" element={<NotFoundScreen />} />
-          </Routes>
-        </ScannerProvider>
-      </ApiProvider>
-    </QueryClientProvider>
+              <Route path="*" element={<NotFoundScreen />} />
+            </Routes>
+          </ScannerProvider>
+        </ApiProvider>
+      </QueryClientProvider>
+    </LanguageProvider>
   );
 };
 
