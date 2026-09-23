@@ -6,10 +6,23 @@
       `viewport-fit=cover` plus the safe-area insets in the stylesheet: this is
       held one-handed, and the bottom bar must sit above the home indicator
       rather than under it.
+
+      `interactive-widget=resizes-content` is about the OTHER thing that eats
+      the bottom of a phone screen. By default a virtual keyboard slides over
+      the page without telling it: the layout viewport keeps its full height,
+      `dvh` keeps reporting that height, and anything anchored to the bottom —
+      every sheet in this app — is behind the keys with no way to reach it.
+      With this, the keyboard shortens the viewport instead of covering it, so
+      the sheet's `max-height: 88dvh` shrinks with it and `.sheet__body`
+      scrolls, which is what makes a form inside a sheet usable while it is
+      being typed into.
+
+      The cost is a relayout when the keyboard opens, which is the honest
+      version of what is happening.
     -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <meta name="theme-color" content="#101011" />
     <meta name="description" content="Find anything in the house again." />

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type JSX, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { Button } from "../atoms/button.js";
 import "./sheet.css";
@@ -54,6 +55,35 @@ const FOCUSABLE = [
  * The trap is a `keydown` listener on the document rather than on the panel
  * on purpose: it is the same listener Escape already needs, and a focus that
  * somehow escaped can still be pulled back by it.
+ *
+ * ## Why it is drawn on `<body>` and not where it is written
+ *
+ * Because a modal that renders where it was opened from inherits whatever
+ * that place has done to the painting order, and one of those places had done
+ * something.
+ *
+ * `AccountSheet` is handed to `AppBar` as its `actions`, so this panel used to
+ * render inside `<header class="app-bar">`. That header is `position: sticky`
+ * with a `z-index`, which makes it A STACKING CONTEXT: every descendant of it
+ * is painted inside it, `position: fixed` ones included, and their `z-index`
+ * orders them against each other and against nothing outside. So the sheet's
+ * `z-index: 20` was never compared with the navigation's `z-index: 10`. What
+ * was compared was the header (10) against the navigation (10) — a tie, which
+ * document order gives to the navigation, because it comes last in the shell.
+ * The result was a sign-out button cut in half on a real phone.
+ *
+ * No number fixes that. `z-index: 100` on the panel is ordered inside the same
+ * trapped context; raising the HEADER above the navigation would move the bug
+ * to the next piece of chrome anybody adds.
+ *
+ * A portal removes the question. The panel becomes a sibling of the
+ * application root, in the root stacking context, where 20 and 10 are finally
+ * two numbers about the same thing. It is also what `aria-modal` has been
+ * claiming all along: this is not a part of the bar, it is on top of the page.
+ *
+ * Nothing else changes. React events still propagate through the component
+ * tree rather than the DOM tree, so the state above this component works
+ * exactly as it did, and the keyboard listener was already on the document.
  */
 export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => {
   const t = useTranslate();
@@ -123,7 +153,7 @@ export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => 
     };
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div className="sheet__backdrop">
       <div
         className="sheet"
@@ -141,6 +171,7 @@ export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => 
         </div>
         <div className="sheet__body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
