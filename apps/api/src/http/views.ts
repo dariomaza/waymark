@@ -8,6 +8,7 @@ import {
   type StorageUnitSearchResult,
 } from "@waymark/domain";
 
+import type { MachineToken } from "../auth/machine-token.js";
 import type { StorageUnitTreeNode } from "./storage-unit-tree.js";
 
 /**
@@ -262,3 +263,34 @@ export interface UserView {
   readonly id: string;
   readonly username: string;
 }
+
+/**
+ * A machine token as a client may see it.
+ *
+ * `tokenHash` is not here, and that is the whole reason this function exists
+ * rather than the row being sent. A projection written out by hand is what
+ * makes "the hash never leaves the server" a property of the code instead of a
+ * thing somebody has to keep remembering — the same argument the rest of this
+ * file makes about entities, with a sharper consequence if it is got wrong.
+ *
+ * The secret itself is not here either. It cannot be: it was never stored.
+ */
+export interface MachineTokenView {
+  readonly id: string;
+  readonly name: string;
+  readonly scope: string;
+  readonly createdAt: string;
+  /** `null` when it never lapses. */
+  readonly expiresAt: string | null;
+  /** `null` until it is first presented. Coarse by design; see the entity. */
+  readonly lastUsedAt: string | null;
+}
+
+export const machineTokenView = (token: MachineToken): MachineTokenView => ({
+  id: token.id,
+  name: token.name,
+  scope: token.scope,
+  createdAt: token.createdAt.toISOString(),
+  expiresAt: token.expiresAt === null ? null : token.expiresAt.toISOString(),
+  lastUsedAt: token.lastUsedAt === null ? null : token.lastUsedAt.toISOString(),
+});

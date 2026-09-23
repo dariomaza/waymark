@@ -34,13 +34,18 @@ import Fastify, {
 } from "fastify";
 import { ZodError } from "zod";
 
-import { AuthenticateSession, type AuthenticatedCaller } from "../auth/authenticate-session.js";
+import { AuthenticateMachineToken } from "../auth/authenticate-machine-token.js";
+import { AuthenticateSession } from "../auth/authenticate-session.js";
 import {
   AuthError,
   InvalidCredentials,
+  InvalidMachineToken,
   InvalidSession,
+  ReadOnlyMachineToken,
   TooManyLoginAttempts,
 } from "../auth/auth-errors.js";
+import { callerMayWrite, type Caller } from "../auth/caller.js";
+import type { MachineTokenRepository } from "../auth/machine-token-repository.js";
 import type { RateLimiter } from "../auth/login-rate-limiter.js";
 import { Login } from "../auth/login.js";
 import { Logout } from "../auth/logout.js";
@@ -52,6 +57,11 @@ import type { PhotoProcessingDependencies } from "../photos/photo-processing.js"
 import { PhotoRelease } from "../photos/photo-release.js";
 import { collectApiNamespace, pathnameOf, rootSegmentOf } from "./api-namespace.js";
 import { bearerTokenOf } from "./bearer-token.js";
+import {
+  claimsMachineScheme,
+  isWriteRequest,
+  machineTokenOf,
+} from "./machine-token-header.js";
 import { resolveClientIp, type TrustedProxyPolicy } from "./client-ip.js";
 import { createWebClient, type WebClient, type WebClientConfig } from "./web-client.js";
 import { mapDomainError } from "./error-mapping.js";
@@ -80,10 +90,11 @@ declare module "fastify" {
     /** Resolved once per request; see `resolveClientIp`. */
     clientIp: string;
     /**
-     * Who is calling. Non-null on every route behind the authenticated scope,
-     * which is what lets a handler read it without a check of its own.
+     * Who is calling: a person with a session, or a machine with a token
+     * (ADR 17). Non-null on every route behind the authenticated scope, which
+     * is what lets a handler read it without a check of its own.
      */
-    caller: AuthenticatedCaller;
+    caller: Caller;
   }
 }
 
@@ -110,6 +121,8 @@ export interface AppDependencies {
   readonly search: SearchRepository;
   readonly users: UserRepository;
   readonly sessions: SessionRepository;
+  /** Long-lived credentials that are not people; see ADR 17. */
+  readonly machineTokens: MachineTokenRepository;
   readonly hasher: PasswordHasher;
   readonly ids: IdGenerator;
   readonly publicIds: PublicIdGenerator;
@@ -133,6 +146,8 @@ export interface AppDependencies {
   readonly webClient?: WebClientConfig;
   readonly sessionTtlMs?: number;
   readonly renewAfterMs?: number;
+  /** How stale a machine token's `lastUsedAt` may be before it is rewritten. */
+  readonly lastUsedGranularityMs?: number;
   readonly logger?: FastifyServerOptions["logger"];
 }
 
@@ -257,6 +272,13 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     ...(deps.sessionTtlMs === undefined ? {} : { sessionTtlMs: deps.sessionTtlMs }),
   });
   const logout = new Logout({ sessions: deps.sessions });
+  const authenticateMachine = new AuthenticateMachineToken({
+    machineTokens: deps.machineTokens,
+    clock: deps.clock,
+    ...(deps.lastUsedGranularityMs === undefined
+      ? {}
+      : { lastUsedGranularityMs: deps.lastUsedGranularityMs }),
+  });
   const authenticate = new AuthenticateSession({
     users: deps.users,
     sessions: deps.sessions,
@@ -268,7 +290,9 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   app.decorateRequest("clientIp", "");
   // `null` until the authenticated scope's hook fills it in. Declared as
   // non-nullable because every route that reads it lives behind that hook.
-  app.decorateRequest("caller", null as unknown as AuthenticatedCaller);
+  // The explicit type argument matters: with a union, Fastify's inference
+  // picks one arm and then rejects the other as a getter/setter pair.
+  app.decorateRequest<Caller>("caller", null as unknown as Caller);
 
   app.addHook("onRequest", async (request) => {
     request.clientIp = resolveClientIp(
@@ -305,13 +329,60 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
    */
   void app.register(async (scope) => {
     scope.addHook("onRequest", async (request) => {
-      const token = bearerTokenOf(request.headers.authorization);
+      request.caller = await identify(request.headers.authorization);
+
+      /**
+       * The scope check, here and not in a route.
+       *
+       * It runs in the hook that authenticated the caller, which means a
+       * read-only machine token is refused a write BEFORE the body is parsed,
+       * before a schema sees it and before any use case runs — so a refusal
+       * cannot have changed anything, and a caller that may not write learns
+       * nothing about the shape of the route it was refused.
+       *
+       * A person is never refused here: ADR 5 is unchanged, and every
+       * authenticated human may perform every inventory operation.
+       */
+      if (isWriteRequest(request.method) && !callerMayWrite(request.caller)) {
+        throw new ReadOnlyMachineToken(
+          request.caller.kind === "machine"
+            ? request.caller.machineToken.name
+            : "",
+          request.method,
+        );
+      }
+    });
+
+    /**
+     * Which credential was presented is decided by the SCHEME, once, and the
+     * request then goes to exactly one authenticator.
+     *
+     * Never both in turn. Trying the session table and then the machine token
+     * table would mean a leak of either was replayable as the other, which is
+     * the property `machine-token-header.ts` exists to guarantee.
+     */
+    async function identify(header: string | string[] | undefined): Promise<Caller> {
+      if (claimsMachineScheme(header)) {
+        const presented = machineTokenOf(header);
+        if (presented === null) {
+          throw new InvalidMachineToken();
+        }
+
+        return {
+          kind: "machine",
+          machineToken: await authenticateMachine.execute(presented),
+        };
+      }
+
+      const token = bearerTokenOf(header);
       if (token === null) {
         throw new InvalidSession();
       }
 
-      request.caller = await authenticate.execute(token);
-    });
+      const { user, session } = await authenticate.execute(token);
+
+      return { kind: "user", user, session };
+    }
 
     void scope.register(authenticatedAuthRoutes, { login, logout });
     void scope.register(storageUnitRoutes, {
@@ -593,6 +664,39 @@ const sendAuthError = async (
       .code(401)
       .header("www-authenticate", "Bearer")
       .send(errorBody("INVALID_SESSION", error.message));
+  }
+
+  if (error instanceof InvalidMachineToken) {
+    // 401 and the same challenge a session gets. The header exists to tell a
+    // BROWSER how to authenticate and it has one answer; a machine token is
+    // configured out of band by an admin and nothing discovers it here.
+    return reply
+      .code(401)
+      .header("www-authenticate", "Bearer")
+      .send(errorBody("INVALID_MACHINE_TOKEN", error.message));
+  }
+
+  /**
+   * 403, and deliberately neither of ADR 8's two codes.
+   *
+   * 409 means "fix the world, then retry" and 422 means "fix the request, then
+   * retry". This is neither: the request bytes are fine and the world is fine,
+   * and the identical call succeeds the moment a read-write token makes it.
+   * What has to change is the CREDENTIAL, which is what 403 says — the server
+   * understood, knows exactly who is asking, and refuses to authorize it
+   * (RFC 9110). 401 would be wrong too: it means "authenticate", and this
+   * caller already did, successfully.
+   */
+  if (error instanceof ReadOnlyMachineToken) {
+    return reply
+      .code(403)
+      .send(
+        errorBody("READ_ONLY_MACHINE_TOKEN", error.message, {
+          machineTokenName: error.tokenName,
+          method: error.method,
+          requiredScope: "read-write",
+        }),
+      );
   }
 
   return reply

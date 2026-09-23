@@ -17,6 +17,7 @@ import {
 } from "./photos/photo-processing-worker.js";
 import { RembgImageProcessor } from "./photos/rembg-image-processor.js";
 import { PrismaItemRepository } from "./persistence/prisma-item-repository.js";
+import { PrismaMachineTokenRepository } from "./persistence/prisma-machine-token-repository.js";
 import { PrismaPhotoRepository } from "./persistence/prisma-photo-repository.js";
 import { PrismaSearchRepository } from "./persistence/prisma-search-repository.js";
 import { PrismaSessionRepository } from "./persistence/prisma-session-repository.js";
@@ -92,6 +93,7 @@ export const composeApp = (
       search: new PrismaSearchRepository(prisma),
       users: new PrismaUserRepository(prisma),
       sessions: new PrismaSessionRepository(prisma),
+      machineTokens: new PrismaMachineTokenRepository(prisma),
       hasher: new ScryptPasswordHasher(),
       ids: new UuidIdGenerator(),
       publicIds: new Base32PublicIdGenerator(),

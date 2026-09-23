@@ -9,10 +9,14 @@ import type { PhotoId } from "@waymark/domain";
 
 import { UuidIdGenerator } from "../../adapters/uuid-id-generator.js";
 import { Base32PublicIdGenerator } from "../../adapters/public-id-generator.js";
+import { CreateMachineToken } from "../../auth/create-machine-token.js";
 import { CreateUser } from "../../auth/create-user.js";
 import { FixedWindowRateLimiter } from "../../auth/login-rate-limiter.js";
+import type { MachineTokenScope } from "../../auth/machine-token.js";
 import { ScryptPasswordHasher } from "../../auth/password-hasher.js";
+import { RevokeMachineToken } from "../../auth/revoke-machine-token.js";
 import { PrismaItemRepository } from "../../persistence/prisma-item-repository.js";
+import { PrismaMachineTokenRepository } from "../../persistence/prisma-machine-token-repository.js";
 import { PrismaPhotoRepository } from "../../persistence/prisma-photo-repository.js";
 import { PrismaSearchRepository } from "../../persistence/prisma-search-repository.js";
 import { PrismaSessionRepository } from "../../persistence/prisma-session-repository.js";
@@ -112,6 +116,17 @@ export interface TestApi {
   /** Re-points the processor, for the cases about a sidecar going away. */
   pointProcessorAt(baseUrl: string): void;
   createUser(username: string, password: string): Promise<void>;
+  /** Issues one and returns the secret, exactly as the CLI prints it once. */
+  createMachineToken(
+    name: string,
+    scope: MachineTokenScope,
+    expiresInDays?: number,
+  ): Promise<string>;
+  revokeMachineToken(name: string): Promise<boolean>;
+  /** Straight out of the database, so a test can assert it never leaves it. */
+  machineTokenHashOf(name: string): Promise<string>;
+  lastUsedAtOf(name: string): Promise<Date | null>;
+  machineHeaders(token: string): Record<string, string>;
   /** Logs in and returns the bearer token. */
   login(username?: string, password?: string): Promise<string>;
   authHeaders(token: string): Record<string, string>;
@@ -127,6 +142,7 @@ export const createTestApi = async (
   const publicIds = new Base32PublicIdGenerator();
 
   const users = new PrismaUserRepository(database.client);
+  const machineTokens = new PrismaMachineTokenRepository(database.client);
   const sessions = new PrismaSessionRepository(database.client);
   const storageUnits = new PrismaStorageUnitRepository(database.client);
   const items = new PrismaItemRepository(database.client);
@@ -188,6 +204,7 @@ export const createTestApi = async (
         search,
         users,
         sessions,
+        machineTokens,
         hasher,
         ids,
         publicIds,
@@ -254,6 +271,45 @@ export const createTestApi = async (
         username,
         password,
       });
+    },
+
+    async createMachineToken(
+      name: string,
+      scope: MachineTokenScope,
+      expiresInDays?: number,
+    ): Promise<string> {
+      const { token } = await new CreateMachineToken({
+        machineTokens,
+        ids,
+        clock: api.clock,
+      }).execute({
+        name,
+        scope,
+        ...(expiresInDays === undefined ? {} : { expiresInDays }),
+      });
+
+      return token;
+    },
+
+    async revokeMachineToken(name: string): Promise<boolean> {
+      return new RevokeMachineToken({ machineTokens }).execute(name);
+    },
+
+    async machineTokenHashOf(name: string): Promise<string> {
+      const stored = await machineTokens.findByName(name);
+      if (stored === null) {
+        throw new Error(`No machine token named "${name}"`);
+      }
+
+      return stored.tokenHash;
+    },
+
+    async lastUsedAtOf(name: string): Promise<Date | null> {
+      return (await machineTokens.findByName(name))?.lastUsedAt ?? null;
+    },
+
+    machineHeaders(token: string): Record<string, string> {
+      return { authorization: `Machine ${token}` };
     },
 
     async login(
