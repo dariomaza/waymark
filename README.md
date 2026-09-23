@@ -931,6 +931,14 @@ Android 9 and up refuse plain HTTP by default, so a LAN address needs
 `usesCleartextTraffic` for development or the tunnel's HTTPS hostname for
 anything else.
 
+**The installable APK is built by EAS**, and `apps/mobile/README.md` is the
+whole of it: one command after `eas-cli login`, plus one `eas env:set` the
+first time. `eas.json` names no server. This repository is public, and a
+hostname committed into it would be a hostname every fork inherited — so the
+address lives on whichever Expo account runs the build, and a build that was
+never given one fails by name instead of returning an APK that reaches
+nothing.
+
 The `https` intent filter is **derived from that same variable**, in
 `app.config.ts`, and that is why this app has a `.ts` config beside its
 `app.json` at all. A label encodes `<WAYMARK_PUBLIC_BASE_URL>/u/<publicId>`
@@ -1225,8 +1233,11 @@ Native has neither a print dialog nor a page.
 The Android app is verified as far as this repository can verify anything that
 runs on a phone: it typechecks, its tests pass, `expo prebuild` generates the
 native project from `app.config.ts`, and `expo export` produces an Android
-Hermes bundle. It has never been run on a device or an emulator, and there is
-no signed APK — that needs a device, an emulator or EAS credentials.
+Hermes bundle whose bytecode carries the API address it was built with. It is
+now configured for EAS — `eas.json` is validated against the schema EAS itself
+parses it with, and asks for an `.apk` rather than the App Bundle EAS defaults
+to. It has never been run on a device or an emulator, and no APK has been
+built: that needs a device, an emulator or an Expo account.
 
 The MCP server is verified the same way, and with the same honesty about where
 that stops. Its tools are driven through the real protocol against a stubbed

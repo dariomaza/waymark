@@ -91,8 +91,41 @@ const httpsIntentFilters = (
   ];
 };
 
+/**
+ * Refuses to produce a build that could not possibly work.
+ *
+ * Locally, an absent address is ordinary: `expo start` against an emulator
+ * wants the loopback default, and so does `expo config` run by somebody
+ * reading this. On an EAS worker it is not ordinary at all — it is an APK
+ * being cut, and an APK carries whatever address was in scope when its
+ * JavaScript was bundled for as long as that APK exists. Letting that one
+ * through means a file somebody installs, signs in on, and finds inert, with
+ * nothing on screen to say why.
+ *
+ * `EAS_BUILD` is set by the builder and deliberately is NOT among the
+ * variables available when this config is evaluated on a laptop, so this
+ * cannot fire in the one place it would only be in the way.
+ */
+const requireApiUrl = (apiUrl: string | undefined): string => {
+  if (apiUrl !== undefined) {
+    return apiUrl;
+  }
+
+  if (process.env["EAS_BUILD"] === undefined) {
+    return DEFAULT_API_URL;
+  }
+
+  throw new Error(
+    "EXPO_PUBLIC_WAYMARK_API_URL is not set. An APK built without it is " +
+      "baked to talk to the phone's own loopback and can reach no server. " +
+      "Set it once for this account with: eas env:set --name " +
+      "EXPO_PUBLIC_WAYMARK_API_URL --value https://your.waymark.host " +
+      "--environment production --visibility plaintext",
+  );
+};
+
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const apiUrl = process.env["EXPO_PUBLIC_WAYMARK_API_URL"] ?? DEFAULT_API_URL;
+  const apiUrl = requireApiUrl(process.env["EXPO_PUBLIC_WAYMARK_API_URL"]);
 
   return {
     ...config,

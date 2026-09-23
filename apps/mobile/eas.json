@@ -1,0 +1,115 @@
+// # How the APK gets built
+//
+// EAS reads this file as strict JSON first and falls back to JSON5, so these
+// comments are part of the file rather than something that has to live
+// somewhere else and go stale.
+//
+// It sits in `apps/mobile` and not at the repository root, which is what EAS
+// documents for a monorepo — "All files related to EAS Build, such as eas.json
+// and credentials.json, should be in the root of the app directory" — and
+// every `eas` command is run from here.
+//
+// The BUILD still gets the whole workspace. EAS uploads from the git root, and
+// `apps/mobile` is carried along as the project directory inside it, which is
+// the only thing that could work: `@waymark/api-client`, `@waymark/domain` and
+// `@waymark/i18n` are TypeScript source consumed through `workspace:*`, so an
+// upload of this one directory could not install, let alone bundle. The
+// install runs at the workspace root, and the package manager is chosen by
+// which lockfile is found THERE — `pnpm-lock.yaml`, and nothing else, which is
+// worth keeping true.
+{
+  "cli": {
+    // A floor, not a pin. Everything used below has been in the eas.json
+    // schema for a long time, and `npx eas-cli` fetches the current version.
+    "version": ">= 16.0.0",
+
+    // Android refuses to install an APK over one with a HIGHER `versionCode`,
+    // and what it shows is "App not installed" with no reason given. Remote is
+    // what makes that impossible to get wrong: EAS keeps the counter and
+    // `autoIncrement` below moves it, so nobody has to remember on the evening
+    // they are trying to ship something. It has been the recommended source
+    // since EAS CLI 12.
+    //
+    // It does NOT touch `version` in `app.json`. That one is the version a
+    // person reads in Android's app list, it is still written by hand, and the
+    // first build seeds the remote counter from 1.
+    "appVersionSource": "remote"
+  },
+
+  "build": {
+    // One profile, named `production` because that is the one `eas build`
+    // picks when nobody passes `--profile`.
+    //
+    // There is deliberately no `development` profile. A build pointed at a
+    // machine on the LAN would be plain HTTP, which Android 9 and up refuse
+    // without `usesCleartextTraffic`, and that is not configured — a profile
+    // that cannot produce a working APK is worse than no profile at all.
+    // Development is `pnpm --filter @waymark/mobile start` and a `.env`.
+    "production": {
+      // ## An APK, not an App Bundle
+      //
+      // EAS builds an `.aab` by default, because its default audience is the
+      // Play Store. This one is not going there: it is a file attached to a
+      // release that a person downloads and installs, and an App Bundle is not
+      // installable — Google's servers are what turn one into APKs. So `apk`
+      // is the entire reason this profile exists, and it is stated rather than
+      // inferred: `distribution: "internal"` happens to imply it today, but
+      // only while nothing else sets `buildType` or `gradleCommand`.
+      //
+      // `internal` is about who can get the file, not what shape it is. It
+      // makes the build URL shareable, and it signs with this project's own
+      // Android keystore — the same one every later build uses, which is what
+      // lets the next APK install OVER this one rather than being refused as a
+      // different app.
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "autoIncrement": true,
+
+      // ## Where the API address comes from, and why it is not written here
+      //
+      // `EXPO_PUBLIC_WAYMARK_API_URL` is baked into the JavaScript bundle.
+      // Proven, not assumed: the exported Hermes bytecode contains the value
+      // that was in scope, does not contain the variable's NAME, and does not
+      // contain the `http://127.0.0.1:3000` fallback — which is dead code once
+      // the variable is set. An APK built without it points at the phone's own
+      // loopback and reaches nothing.
+      //
+      // So it MUST be set, and there is exactly one place it must not be: this
+      // file. This repository is public. A hostname here is a hostname every
+      // fork inherits, and the first APK somebody else built would send their
+      // session token — and their inventory — to a stranger's server that
+      // happens to be the one named in the file they did not know to edit.
+      //
+      // `environment` is the answer. It names an EAS environment rather than a
+      // value, and the value lives on whichever Expo account runs the build:
+      //
+      //   eas env:set --name EXPO_PUBLIC_WAYMARK_API_URL \
+      //     --value https://waymark.example \
+      //     --environment production --visibility plaintext
+      //
+      // Once, per account. A fork runs the identical command with its own
+      // address, edits nothing here, and has nothing to conflict on the next
+      // time it pulls.
+      //
+      // `plaintext` and not `secret` on purpose, and it is not carelessness:
+      // an address is not a credential, and secret-visibility variables are
+      // deliberately unreadable outside the EAS servers — including while the
+      // dynamic app config is resolved, which is exactly when `app.config.ts`
+      // needs this one to derive the deep link host.
+      //
+      // And if it is missing, the build FAILS. `app.config.ts` refuses on an
+      // EAS worker rather than handing back an APK that connects to nothing.
+      "environment": "production",
+
+      // The same pnpm that wrote `pnpm-lock.yaml` and the same one named in
+      // `packageManager` at the repository root. The SDK 57 build image ships
+      // a different patch of the same major, which would almost certainly be
+      // fine; "almost certainly" is not worth it for a lockfile that is
+      // installed with `--frozen-lockfile` and fails the build when it is not
+      // understood. Move this when the root `packageManager` moves.
+      "pnpm": "11.3.0"
+    }
+  }
+}
