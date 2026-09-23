@@ -1,37 +1,37 @@
-import { type ItemView, type StorageUnitView } from "@waymark/api-client";
-import { describeFailure } from "@waymark/i18n";
+import { type ItemView } from "@waymark/api-client";
 import { useState, type JSX } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { Button } from "../ui/atoms/button.js";
-import { Callout } from "../ui/atoms/callout.js";
-import { Sheet } from "../ui/organisms/sheet.js";
 import { EditItemDialog } from "./edit-item-dialog.js";
-import { useDeleteItem } from "./item-mutations.js";
 import { MoveItemsDialog } from "./move-items-dialog.js";
-import { ROUTES, unitPath } from "../app/routes.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface ItemActionsProps {
   readonly item: ItemView;
-  /** Where it currently is, so a delete can go back there. */
-  readonly holder: StorageUnitView | null;
 }
 
 /**
- * What can be done to one item.
+ * What an item's screen is FOR: correcting what it says, and saying where it
+ * has gone.
  *
- * "Edit" changes what the item says about itself — its name, its quantity,
- * its tags. "Move" changes which box holds it. They are two buttons because
- * they are two different acts, and only one of them can make the inventory
- * lie about where something is.
+ * "Edit" changes what the item says about itself — its name, its quantity, its
+ * tags. "Move" changes which box holds it. They are two controls because they
+ * are two different acts, and only one of them can make the inventory lie
+ * about where something is (ADR 14).
+ *
+ * Editing is the primary, because it is the superset: every field an item has
+ * is behind it. Moving is the secondary rather than a third peer, and stays
+ * visible rather than joining the menu, because a thing that has moved and has
+ * not been recorded as moved is the one failure this whole product exists to
+ * prevent — it should cost one tap.
+ *
+ * Deleting is not here. It is behind the menu beside the item's name, where a
+ * thumb aiming at Edit cannot land on it (ADR 21).
  */
-export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => {
+export const ItemActions = ({ item }: ItemActionsProps): JSX.Element => {
   const t = useTranslate();
 
-  const [open, setOpen] = useState<"edit" | "move" | "delete" | null>(null);
-  const navigate = useNavigate();
-  const remove = useDeleteItem(item.id);
+  const [open, setOpen] = useState<"edit" | "move" | null>(null);
 
   const close = (): void => {
     setOpen(null);
@@ -40,6 +40,7 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
   return (
     <>
       <Button
+        tone="primary"
         icon="pencil"
         onClick={() => {
           setOpen("edit");
@@ -55,19 +56,6 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
       >
         {t("action.move")}
       </Button>
-      {/*
-        The bin is IN FRONT OF the word and never instead of it. Deleting is
-        the one act nobody should perform from a picture they half recognised.
-      */}
-      <Button
-        tone="danger"
-        icon="trash"
-        onClick={() => {
-          setOpen("delete");
-        }}
-      >
-        {t("action.delete")}
-      </Button>
 
       {open === "edit" ? <EditItemDialog item={item} onClose={close} /> : null}
 
@@ -79,34 +67,6 @@ export const ItemActions = ({ item, holder }: ItemActionsProps): JSX.Element => 
           confirmLabel={t("items.moveIt")}
           onClose={close}
         />
-      ) : null}
-
-      {open === "delete" ? (
-        <Sheet title={t("sheet.delete", { name: item.name })} onClose={close}>
-          <p>{t("items.deleteUndone", { name: item.name })}</p>
-          {remove.isError ? (
-            <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
-          ) : null}
-          <div className="sheet__buttons">
-            <Button onClick={close}>{t("action.cancel")}</Button>
-            <Button
-              tone="danger"
-              disabled={remove.isPending}
-              onClick={() => {
-                remove.mutate(undefined, {
-                  onSuccess: () => {
-                    close();
-                    navigate(holder === null ? ROUTES.inventory : unitPath(holder.id), {
-                      replace: true,
-                    });
-                  },
-                });
-              }}
-            >
-              {t("items.delete")}
-            </Button>
-          </div>
-        </Sheet>
       ) : null}
     </>
   );

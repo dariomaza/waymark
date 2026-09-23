@@ -287,6 +287,25 @@ describe("looking after items", () => {
     expect(complaint.closest(".callout")).toHaveClass("callout--wrong");
   });
 
+  /**
+   * # A bin a thumb cannot reach by accident
+   *
+   * The three things you can do to an item used to be three controls of the
+   * same size in one row, and the last of them deleted it. On a phone held
+   * one-handed in a garage that is a 48px target next to the one somebody
+   * actually meant to press, with no hover to hesitate in and no cursor to aim
+   * with — distance is the only guard a touch screen has (ADR 21).
+   *
+   * So the row is what the screen is for, and the bin is behind the menu.
+   */
+  it("keeps the bin off the screen until it is asked for", async () => {
+    renderApp({ route: "/things/drill" });
+
+    expect(await screen.findByRole("button", { name: /^edit$/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^move$/i })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /^delete$/i })).toBeNull();
+  });
+
   it("deletes an item and goes back to the box it was in", async () => {
     let deleted = false;
     apiServer.use(
@@ -299,6 +318,11 @@ describe("looking after items", () => {
 
     renderApp({ route: "/things/drill" });
 
+    // Behind the thing's own menu, where nothing that destroys anything sits
+    // within a thumb of the thing the screen is for (ADR 21).
+    await userEvent.click(
+      await screen.findByRole("button", { name: "More actions for Cordless drill" }),
+    );
     await userEvent.click(await screen.findByRole("button", { name: /^delete$/i }));
     await userEvent.click(await screen.findByRole("button", { name: /delete this item/i }));
 
