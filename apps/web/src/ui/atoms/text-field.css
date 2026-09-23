@@ -16,6 +16,16 @@
   color: var(--color-ink-muted);
 }
 
+/*
+ * The box the input and anything inside it share. `position: relative` here
+ * and not on `.field`, so a control anchored to the right edge is anchored to
+ * the INPUT rather than to the label, the hint and the error as well.
+ */
+.field__control {
+  position: relative;
+  display: flex;
+}
+
 .field__input {
   min-height: 48px;
   padding: 0 var(--space-3);
@@ -48,4 +58,28 @@
   min-height: 84px;
   resize: vertical;
   font-family: inherit;
+}
+
+/*
+ * Room for the control, reserved by the input rather than taken from it. The
+ * text stops before the icon instead of running under it, and the icon keeps
+ * the full 48px it needs to be hittable with a thumb.
+ */
+.field__input--with-trailing {
+  padding-right: 52px;
+}
+
+/*
+ * Centred on the input's own height, which is at least 48px and usually 56
+ * with the border. A 48px control therefore fits inside it with room to
+ * spare — which is what makes an inset icon possible here without shrinking
+ * the target, and is the thing that was got wrong when this was a full-width
+ * button below the field.
+ */
+.field__trailing {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  display: flex;
 }

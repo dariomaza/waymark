@@ -3,9 +3,9 @@ import type { JSX } from "react";
 /**
  * The whole icon set, drawn here.
  *
- * No icon library. There are nine symbols in this product, and the smallest
+ * No icon library. There are ten symbols in this product, and the smallest
  * useful icon package is hundreds of kilobytes plus a dependency to keep
- * current — for nine shapes that never change. These are the same paths the
+ * current — for ten shapes that never change. These are the same paths the
  * mobile client draws, so the two clients look like one product.
  *
  * Every icon is a 24-unit square on a common stroke weight, which is what
@@ -28,7 +28,15 @@ export type IconName =
   | "box"
   | "tag"
   | "camera"
-  | "plus";
+  | "plus"
+  /**
+   * The reveal on a password field. It never changes with the state: the
+   * control means "showing the password", and whether it is ON is carried by
+   * `aria-pressed` and by the fill — one vocabulary for "this is on" across
+   * the app. An icon that swapped for a crossed-out eye would be a second,
+   * contradictory answer beside a label that deliberately does not flip.
+   */
+  | "eye";
 
 const PATHS: Record<IconName, JSX.Element> = {
   /**
@@ -91,6 +99,17 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  /**
+   * An almond and a ring, on the same stroke weight as everything else. The
+   * pupil is a circle rather than a filled dot for the reason the waypoints
+   * are rings: a filled shape at this weight reads as a blob at 22px.
+   */
+  eye: (
+    <>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="3.2" />
+    </>
+  ),
 };
 
 export interface IconProps {
