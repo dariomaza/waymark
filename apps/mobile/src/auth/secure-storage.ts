@@ -24,7 +24,17 @@ import * as SecureStore from "expo-secure-store";
 export interface SecureStorage {
   read(key: string): Promise<string | null>;
   write(key: string, value: string): Promise<void>;
+  /**
+   * Removes the ORDINARY entry, and only that one.
+   *
+   * A sealed value lives under a keychain of its own, so this does not reach
+   * it — the same way it does not on the device, where the two are different
+   * Keystore keys. `unseal` is the other half, and a phone that has moved
+   * between the two needs both.
+   */
   remove(key: string): Promise<void>;
+  /** Removes the sealed entry. Deletes the bytes; never decrypts them, so it asks nobody for a fingerprint. */
+  unseal(key: string): Promise<void>;
   /**
    * Whether this device can stand behind a sealed value AT ALL.
    *
@@ -76,6 +86,9 @@ export const expoSecureStorage = (): SecureStorage => ({
   },
   async remove(key) {
     await SecureStore.deleteItemAsync(key);
+  },
+  async unseal(key) {
+    await SecureStore.deleteItemAsync(key, { keychainService: SEALED_KEYCHAIN });
   },
   canUnlock() {
     return SecureStore.canUseBiometricAuthentication();
@@ -137,6 +150,8 @@ export const inMemorySecureStorage = (
     },
     remove: async (key) => {
       held.delete(key);
+    },
+    unseal: async (key) => {
       sealed.delete(key);
     },
     canUnlock: () => canUnlock,

@@ -339,6 +339,81 @@ describe("unlocking a sealed session with a fingerprint", () => {
     });
   });
 
+  /**
+   * # One token, in one place, whichever place that is
+   *
+   * A phone can move between the two. Somebody enrols a fingerprint on a phone
+   * that had none; somebody removes the only one they had. Either way the
+   * copy written under the OLD rules is still sitting there afterwards, and
+   * the dangerous direction is obvious: a readable token left beside a sealed
+   * one makes the seal decorative, because anything that can read the first
+   * one never has to ask about the second.
+   */
+  describe("when the phone changes its mind about biometrics", () => {
+    const signInWithAPassword = async (): Promise<void> => {
+      apiServer.use(
+        http.post(`${API_URL}/auth/login`, () =>
+          HttpResponse.json({
+            token: "a-fresh-token",
+            expiresAt: "2099-01-01T00:00:00.000Z",
+            user: { id: "u1", username: "dario" },
+          }),
+        ),
+      );
+
+      await fireEvent.changeText(await screen.findByLabelText("Username"), "dario");
+      await fireEvent.changeText(screen.getByLabelText("Password"), "correct horse");
+      await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
+      await screen.findByText(theCamera);
+    };
+
+    it("leaves no readable copy behind once a fingerprint is enrolled", async () => {
+      const storage = inMemorySecureStorage(
+        { [LANGUAGE_KEY]: "en", [SESSION_KEY]: JSON.stringify(aSession({ token: "the-old-one" })) },
+        { canUnlock: true },
+      );
+
+      await renderApp({ screen: { name: "Tabs" }, storage });
+      // The session it already had still works: nothing is taken away from
+      // somebody mid-week for a change they did not make.
+      await screen.findByText(theCamera);
+      await fireEvent.press(screen.getByRole("button", { name: /signed in as dario/i }));
+      await fireEvent.press(await screen.findByRole("button", { name: "Sign out" }));
+
+      await signInWithAPassword();
+
+      await waitFor(async () => {
+        expect(await storage.unlock(SESSION_KEY, A_PROMPT)).toContain("a-fresh-token");
+      });
+      expect(await storage.read(SESSION_KEY)).toBeNull();
+    });
+
+    /**
+     * The other direction. A sealed token on a phone with nothing left to open
+     * it is not a credential, it is a value that can never be decrypted again
+     * — and a note claiming a door is waiting would offer one that cannot
+     * open.
+     */
+    it("clears a sealed token the phone can no longer open", async () => {
+      const storage = inMemorySecureStorage(
+        { [LANGUAGE_KEY]: "en", [SEALED_UNTIL_KEY]: aLiveSealedSession.expiresAt },
+        {
+          sealed: { [SESSION_KEY]: JSON.stringify(aLiveSealedSession) },
+          canUnlock: false,
+        },
+      );
+
+      await renderApp({ screen: { name: "Tabs" }, storage });
+      await signInWithAPassword();
+
+      await waitFor(async () => {
+        expect(await storage.read(SESSION_KEY)).toContain("a-fresh-token");
+      });
+      expect(await storage.read(SEALED_UNTIL_KEY)).toBeNull();
+      expect(await storage.unlock(SESSION_KEY, A_PROMPT)).toBeNull();
+    });
+  });
+
   describe("in Spanish", () => {
     it("names the door in the language on screen", async () => {
       const storage = inMemorySecureStorage(

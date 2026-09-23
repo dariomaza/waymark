@@ -100,6 +100,9 @@ describe("which language the interface is asked for", () => {
       remove: async () => {
         throw new Error("keystore is locked");
       },
+      unseal: async () => {
+        throw new Error("keystore is locked");
+      },
       // A locked keystore cannot stand behind a sealed value either, which is
       // the honest answer rather than a convenient one: a language is not a
       // credential and never goes near any of this.

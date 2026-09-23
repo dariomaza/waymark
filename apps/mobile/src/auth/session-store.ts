@@ -182,9 +182,20 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
       settle(session, sealing);
 
       if (!sealing) {
-        void storage.write(SESSION_KEY, JSON.stringify(session)).catch(() => {
-          // Memory already holds it; the session lasts as long as the app does.
-        });
+        void storage
+          .write(SESSION_KEY, JSON.stringify(session))
+          // A sealed token on a phone with nothing left to open it can never
+          // be decrypted again, and a note claiming a door is waiting would
+          // offer one that cannot open.
+          .then(async () => {
+            await Promise.all([
+              storage.unseal(SESSION_KEY),
+              storage.remove(SEALED_UNTIL_KEY),
+            ]);
+          })
+          .catch(() => {
+            // Memory already holds it; the session lasts as long as the app does.
+          });
 
         return;
       }
@@ -193,6 +204,11 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
         .seal(SESSION_KEY, JSON.stringify(session), sealPrompt)
         .then(async () => {
           await storage.write(SEALED_UNTIL_KEY, session.expiresAt);
+          // And no readable copy beside the sealed one. A phone that had none
+          // of this yesterday still holds the token it wrote then, and
+          // anything that can read THAT never has to ask about the seal —
+          // which would make the seal decoration.
+          await storage.remove(SESSION_KEY);
         })
         .catch(() => {
           // Nothing was sealed, so nothing must claim one is waiting.
@@ -210,6 +226,7 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
       // with a thumb that will not read.
       void Promise.all([
         storage.remove(SESSION_KEY),
+        storage.unseal(SESSION_KEY),
         storage.remove(SEALED_UNTIL_KEY),
       ]).catch(() => {
         // Nothing to do: the token is gone from this process either way.
