@@ -1,7 +1,9 @@
-import { useState, type JSX } from "react";
+import type { JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";
+import { CopyButton } from "../../ui/molecules/copy-button.js";
 import { useTranslate } from "../../app/language-context.js";
+import { mcpSettings } from "../mcp-settings.js";
 import "./issued-secret.css";
 
 export interface IssuedSecretProps {
@@ -9,6 +11,8 @@ export interface IssuedSecretProps {
   readonly name: string;
   /** The only copy that will ever exist. */
   readonly secret: string;
+  /** Where the credential is presented. Not a secret, and not treated as one. */
+  readonly endpoint: string;
   readonly onDismiss: () => void;
 }
 
@@ -26,6 +30,12 @@ export interface IssuedSecretProps {
  * dismiss button are one panel: nobody can reach the control that takes it
  * away without having passed the sentence that says what that means.
  *
+ * Everything added to help somebody USE the credential sits below that
+ * dismiss button, and nothing was added above the warning. A block that made
+ * this panel more useful at the cost of pushing the warning down the screen
+ * would be a worse panel than one with no help in it at all — the warning is
+ * the only thing between somebody and a credential they cannot get back.
+ *
  * ## What a secret in a browser actually is, and what this cannot do about it
  *
  * Honestly: it is in the DOM, so any XSS on this origin reads it. It is in a
@@ -41,6 +51,12 @@ export interface IssuedSecretProps {
  * - it is never written to storage — it lives in the parent's state and goes
  *   with the sheet;
  * - it is not logged, not in a URL, and not in a query key.
+ *
+ * The pair below carries the same secret, so it has exactly the same
+ * lifetime: it is assembled while rendering, from props, and there is no
+ * moment at which it exists anywhere the secret itself does not. The ADDRESS
+ * is the opposite kind of thing and is drawn separately, on the list, where
+ * it keeps working after this panel is gone.
  *
  * ## Why copying is offered rather than withheld
  *
@@ -60,10 +76,10 @@ export interface IssuedSecretProps {
 export const IssuedSecret = ({
   name,
   secret,
+  endpoint,
   onDismiss,
 }: IssuedSecretProps): JSX.Element => {
   const t = useTranslate();
-  const [copied, setCopied] = useState<boolean | null>(null);
 
   return (
     /**
@@ -85,41 +101,48 @@ export const IssuedSecret = ({
         {secret}
       </code>
 
+      {/*
+        What the credential is FOR, and the scheme it travels under. `Machine`
+        is its own scheme (ADR 17) and the mistake anybody makes at one in the
+        morning is `Bearer` — which fails as a 401 that looks exactly like a
+        bad credential, so nobody suspects the header.
+      */}
       <p className="issued-secret__how">{t("tokens.secretHow")}</p>
 
       <div className="issued-secret__actions">
-        <Button
+        <CopyButton
+          value={secret}
           tone="primary"
-          onClick={() => {
-            void copy(secret).then(setCopied);
-          }}
-        >
-          {copied === true ? t("tokens.copied") : t("tokens.copyAction")}
-        </Button>
+          label={t("tokens.copyAction")}
+          copiedLabel={t("tokens.copied")}
+          failedLabel={t("tokens.copyFailed")}
+        />
         <Button tone="secondary" onClick={onDismiss}>
           {t("tokens.storedAction")}
         </Button>
       </div>
 
-      {copied === false ? (
-        <p className="issued-secret__copy-failed">{t("tokens.copyFailed")}</p>
-      ) : null}
+      {/*
+        Below the dismiss button on purpose. Somebody who only wants the secret
+        has already been served by everything above this line; somebody who is
+        about to go and configure the MCP server saves retyping both halves.
+      */}
+      <div className="issued-secret__pair">
+        <p className="issued-secret__pair-note">{t("tokens.pairNote")}</p>
+        <code
+          className="issued-secret__pair-value"
+          aria-label={t("tokens.pairLabel", { name })}
+        >
+          {mcpSettings(endpoint, secret)}
+        </code>
+        <CopyButton
+          value={mcpSettings(endpoint, secret)}
+          tone="quiet"
+          label={t("tokens.pairCopy")}
+          copiedLabel={t("tokens.pairCopied")}
+          failedLabel={t("tokens.copyFailed")}
+        />
+      </div>
     </div>
   );
-};
-
-/**
- * `navigator.clipboard` is absent over plain HTTP and can be refused outright
- * by a permissions policy, so the failure is a normal outcome rather than an
- * exception to let through. Saying "copy it by hand" is a worse experience and
- * a true sentence; a button that silently did nothing would be neither.
- */
-const copy = async (value: string): Promise<boolean> => {
-  try {
-    await navigator.clipboard.writeText(value);
-
-    return true;
-  } catch {
-    return false;
-  }
 };

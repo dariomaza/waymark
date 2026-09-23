@@ -60,7 +60,11 @@ const DRAWN_OR_SPOKEN = new Set([
   "aria-roledescription",
   "aria-valuetext",
   "caption",
+  // `CopyButton` says three different things depending on what the clipboard
+  // did, and all three are read by the person pressing it.
+  "copiedLabel",
   "error",
+  "failedLabel",
   "explains",
   "heading",
   "hint",

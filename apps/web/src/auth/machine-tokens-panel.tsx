@@ -7,6 +7,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { SelectField } from "../ui/atoms/select-field.js";
 import { TextField } from "../ui/atoms/text-field.js";
+import { apiEndpoint } from "../app/api-endpoint.js";
 import { useTranslate } from "../app/language-context.js";
 import {
   useCreateMachineToken,
@@ -14,6 +15,7 @@ import {
   useRevokeMachineToken,
   useRotateMachineToken,
 } from "./machine-token-queries.js";
+import { ApiAddress } from "./views/api-address.js";
 import { IssuedSecret } from "./views/issued-secret.js";
 import { MachineTokenRow, type PendingAct } from "./views/machine-token-row.js";
 import "./machine-tokens-panel.css";
@@ -47,6 +49,15 @@ interface ShownSecret {
  * Not into the query cache, not into `localStorage`, not into a URL. It is
  * rendered by `IssuedSecret` and it goes when this unmounts, which is when the
  * account sheet closes. That is the whole lifetime, on purpose.
+ *
+ * ## The address is the opposite kind of thing
+ *
+ * `apiEndpoint()` is read here, once, and handed down as a prop — because a
+ * component that reached for `window.location` itself would be a view that
+ * cannot be drawn without a browser. It is not a secret: it is re-read on
+ * every render, it can be copied as often as anybody likes, and it stays on
+ * the list after the secret has gone. The two are deliberately not given the
+ * same ceremony and deliberately not given the same lifetime.
  */
 export const MachineTokensPanel = (): JSX.Element => {
   const t = useTranslate();
@@ -62,6 +73,14 @@ export const MachineTokensPanel = (): JSX.Element => {
   const [scope, setScope] = useState<string>(MachineTokenScope.Read);
   const [asking, setAsking] = useState<{ name: string; act: PendingAct } | null>(null);
   const [shown, setShown] = useState<ShownSecret | null>(null);
+
+  /**
+   * Where the calls a machine token authenticates actually go. Derived from
+   * the document this app was served from rather than from the build, for the
+   * reasons in `app/api-endpoint.ts` — a bundle carries no hostname (ADR 16),
+   * so the only source that is true on somebody else's phone is the browser.
+   */
+  const endpoint = apiEndpoint();
 
   /**
    * One place for every refusal this panel can meet. The three it has real
@@ -113,10 +132,20 @@ export const MachineTokensPanel = (): JSX.Element => {
       </h4>
       <p className="machine-tokens__explains">{t("tokens.explains")}</p>
 
+      {/*
+        The address belongs to the LIST, not to the panel that appears once.
+        The secret is shown one time and is then gone for ever; the address is
+        not a secret, does not change, and is exactly what somebody coming
+        back a month later to rotate a credential needs — at a moment that has
+        no issued-secret panel anywhere on it.
+      */}
+      <ApiAddress endpoint={endpoint} />
+
       {shown === null ? null : (
         <IssuedSecret
           name={shown.name}
           secret={shown.secret}
+          endpoint={endpoint}
           onDismiss={() => {
             setShown(null);
           }}

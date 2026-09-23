@@ -605,6 +605,199 @@ describe("machine tokens, from the account sheet", () => {
     });
   });
 
+  /**
+   * # Where to point the thing that is going to use it
+   *
+   * A secret on its own is half a credential. Somebody who has just made one
+   * now has to find out which address to send it to, and the app knows that
+   * answer exactly: it is the origin it was itself downloaded from (ADR 16).
+   */
+  describe("the address the calls go to", () => {
+    it("is on the list before anybody has made a single token", async () => {
+      const account = await openTheAccountSheet();
+      await within(account).findByText(/no machine tokens yet/i);
+
+      expect(within(account).getByText("http://localhost:3000")).toBeVisible();
+    });
+
+    /**
+     * The secret is shown once and is gone; the address is not a secret and
+     * stays useful for ever. Somebody coming back a month later to rotate a
+     * credential needs it THEN, which is a moment that has no issued-secret
+     * panel in it.
+     */
+    it("is on the list beside the tokens that already exist", async () => {
+      answerWith([aMachineTokenView()]);
+
+      const account = await openTheAccountSheet();
+      await within(account).findByText("mcp-server");
+
+      expect(within(account).getByText("http://localhost:3000")).toBeVisible();
+    });
+
+    it("can be copied, because it is not a secret and gets typed into things", async () => {
+      const copied: string[] = [];
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (value: string) => {
+            copied.push(value);
+          },
+        },
+      });
+
+      const account = await openTheAccountSheet();
+      await within(account).findByText(/no machine tokens yet/i);
+
+      await userEvent.click(
+        within(account).getByRole("button", { name: /copy the address/i }),
+      );
+
+      await waitFor(() => {
+        expect(copied).toEqual(["http://localhost:3000"]);
+      });
+    });
+  });
+
+  describe("moving the pair to where it will be used", () => {
+    const createAnswering = (token: string): void => {
+      apiServer.use(
+        http.post(`${API_URL}/auth/machine-tokens`, () =>
+          HttpResponse.json(
+            { token, machineToken: aMachineTokenView() },
+            { status: 201 },
+          ),
+        ),
+      );
+    };
+
+    const createOne = async (account: HTMLElement): Promise<void> => {
+      await userEvent.click(
+        within(account).getByRole("button", { name: /new token/i }),
+      );
+      await userEvent.type(
+        within(account).getByRole("textbox", { name: /what is it for/i }),
+        "mcp-server",
+      );
+      await userEvent.click(
+        within(account).getByRole("button", { name: /create it/i }),
+      );
+    };
+
+    /**
+     * The obvious consumer is `apps/mcp`, which reads these two variables and
+     * nothing else. Offering them already assembled is what stops somebody
+     * transcribing either half.
+     */
+    it("offers both settings in the shape the MCP server reads", async () => {
+      createAnswering("wmk_the-only-copy");
+
+      const account = await openTheAccountSheet();
+      await within(account).findByText(/no machine tokens yet/i);
+      await createOne(account);
+
+      const pair = await within(account).findByText(
+        /WAYMARK_API_URL=http:\/\/localhost:3000/,
+      );
+      expect(pair).toHaveTextContent("WAYMARK_MACHINE_TOKEN=wmk_the-only-copy");
+    });
+
+    it("copies both at once, so neither half is retyped", async () => {
+      const copied: string[] = [];
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (value: string) => {
+            copied.push(value);
+          },
+        },
+      });
+      createAnswering("wmk_the-only-copy");
+
+      const account = await openTheAccountSheet();
+      await within(account).findByText(/no machine tokens yet/i);
+      await createOne(account);
+      await within(account).findByText("wmk_the-only-copy");
+
+      await userEvent.click(
+        within(account).getByRole("button", { name: /copy both settings/i }),
+      );
+
+      await waitFor(() => {
+        expect(copied).toEqual([
+          "WAYMARK_API_URL=http://localhost:3000\nWAYMARK_MACHINE_TOKEN=wmk_the-only-copy",
+        ]);
+      });
+    });
+
+    /**
+     * `Machine` is a scheme of its own (ADR 17), and the mistake anybody
+     * wiring this up at one in the morning will make is `Bearer`. It is a
+     * 401 that says nothing, so the sentence says it here instead.
+     */
+    it("says the scheme is Machine and not Bearer, without anybody reading an ADR", async () => {
+      createAnswering("wmk_the-only-copy");
+
+      const account = await openTheAccountSheet();
+      await within(account).findByText(/no machine tokens yet/i);
+      await createOne(account);
+      await within(account).findByText("wmk_the-only-copy");
+
+      const how = within(account).getByText(/Authorization: Machine/i);
+      expect(how).toHaveTextContent(/not .*Bearer/i);
+    });
+
+    /**
+     * # The warning is still the first thing in the panel
+     *
+     * Everything added here sits BELOW the sentence that says the secret will
+     * not be shown again. That warning is the only thing standing between
+     * somebody and a credential they cannot get back, and a helpful block
+     * that pushed it down the screen would be a worse panel than one with no
+     * help in it at all.
+     */
+    it("keeps the warning ahead of everything it added", async () => {
+      createAnswering("wmk_the-only-copy");
+
+      const account = await openTheAccountSheet();
+      await within(account).findByText(/no machine tokens yet/i);
+      await createOne(account);
+
+      const secret = await within(account).findByText("wmk_the-only-copy");
+      const panel = within(secret.closest(".issued-secret") as HTMLElement);
+      const warning = panel.getByText(/cannot show it to you again/i);
+      const pair = panel.getByText(/WAYMARK_MACHINE_TOKEN=/);
+
+      // DOCUMENT_POSITION_FOLLOWING: the pair comes after the warning.
+      expect(warning.compareDocumentPosition(pair) & Node.DOCUMENT_POSITION_FOLLOWING)
+        .toBeTruthy();
+      expect(panel.getByText(/only time you will see this/i)).toBeVisible();
+    });
+
+    /**
+     * The address and the credential are not the same kind of thing and must
+     * not share a lifetime. Dismissing takes the secret — and the pair that
+     * carries it — away; the address is still where it always was.
+     */
+    it("takes the pair away with the secret and leaves the address standing", async () => {
+      createAnswering("wmk_the-only-copy");
+
+      const account = await openTheAccountSheet();
+      await within(account).findByText(/no machine tokens yet/i);
+      await createOne(account);
+      await within(account).findByText("wmk_the-only-copy");
+
+      await userEvent.click(
+        within(account).getByRole("button", { name: /i have stored it/i }),
+      );
+
+      await waitFor(() => {
+        expect(within(account).queryByText(/WAYMARK_MACHINE_TOKEN=/)).toBeNull();
+      });
+      expect(within(account).getByText("http://localhost:3000")).toBeVisible();
+    });
+  });
+
   /** The way out is still there, underneath all of this. */
   it("still carries the way out, which is what the sheet was for", async () => {
     answerWith([aMachineTokenView()]);

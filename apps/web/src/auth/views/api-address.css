@@ -1,0 +1,38 @@
+/*
+ * Deliberately plain. This is a fact somebody looks up, not a warning and not
+ * a refusal, so it carries none of the ceremony `issued-secret` does — a
+ * second bordered box beside that one would make the panel that matters look
+ * like one of a pair.
+ */
+.api-address {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.api-address__title {
+  margin: 0;
+  font-size: var(--text-s);
+  font-weight: 650;
+}
+
+.api-address__note {
+  margin: 0;
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+}
+
+/* It wraps: a tunnel hostname is long and a phone is narrow. */
+.api-address__value {
+  display: block;
+  width: 100%;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--text-s);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-s);
+  padding: var(--space-2);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
