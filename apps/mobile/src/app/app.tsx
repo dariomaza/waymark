@@ -33,6 +33,8 @@ import { Avatar } from "../ui/atoms/avatar.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Icon, type IconName } from "../ui/atoms/icon.js";
+import { expoClipboard, type Clipboard } from "../ui/clipboard.js";
+import { ClipboardProvider } from "../ui/clipboard-context.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { Screen } from "../ui/organisms/screen.js";
@@ -57,6 +59,12 @@ export interface AppProps {
   readonly storage?: SecureStorage;
   readonly scanner?: CodeScanner;
   readonly photos?: PhotoSource;
+  /**
+   * The system clipboard. A port for the same reason the other three are: it
+   * is a native module, and a machine token nobody can copy is a machine
+   * token nobody can use.
+   */
+  readonly clipboard?: Clipboard;
   /** Where the app opens, for the tests. A phone always starts at the tabs. */
   readonly initialState?: PartialState<NavigationState>;
   /**
@@ -85,6 +93,7 @@ export const App = ({
   storage,
   scanner,
   photos,
+  clipboard,
   initialState,
   queries: given,
 }: AppProps = {}): JSX.Element => {
@@ -97,6 +106,7 @@ export const App = ({
   const [api] = useState(() => createDefaultClient(sessions, baseUrl));
   const [camera] = useState(() => scanner ?? expoCameraScanner());
   const [photoSource] = useState(() => photos ?? expoPhotoSource());
+  const [board] = useState(() => clipboard ?? expoClipboard());
 
   return (
     // `initialMetrics` rather than a measurement: without it the first frame
@@ -110,7 +120,9 @@ export const App = ({
             <ApiProvider client={api}>
               <ScannerProvider scanner={camera}>
                 <PhotoSourceProvider source={photoSource}>
-                  <SessionGate initialState={initialState} />
+                  <ClipboardProvider clipboard={board}>
+                    <SessionGate initialState={initialState} />
+                  </ClipboardProvider>
                 </PhotoSourceProvider>
               </ScannerProvider>
             </ApiProvider>

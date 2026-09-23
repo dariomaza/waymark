@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 
 import { LanguageSwitcher } from "../app/language-switcher.js";
+import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
 import { useSessionState, useSignOut } from "../auth/use-session.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { AccountPanel } from "./views/account-panel.js";
@@ -34,6 +35,12 @@ export const AccountScreen = (): JSX.Element => {
       <AccountPanel
         username={state.status === "known" ? (state.session?.user.username ?? null) : null}
         language={<LanguageSwitcher />}
+        /*
+         * Handed in rather than reached for, so the panel stays the only
+         * thing that knows what a machine token is and this screen stays the
+         * only thing that knows the account surface exists.
+         */
+        machineTokens={<MachineTokensPanel />}
         busy={signOut.isPending}
         onSignOut={() => {
           signOut.mutate();

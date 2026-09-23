@@ -449,6 +449,17 @@ export const ES: Dictionary = {
   "tokens.copyAction": "Copiar",
   "tokens.copied": "Copiado",
   "tokens.copyFailed": "Este navegador no lo ha copiado. Selecciónalo y cópialo a mano.",
+  /**
+   * The same refusal, said to somebody holding a phone.
+   *
+   * It is a second sentence rather than a reworded one because the ADVICE
+   * differs, not just the noun. "Select it and copy it by hand" is a real
+   * instruction in a browser and a dead end on Android, where the way out of
+   * a refused clipboard is to hold the text until the system offers its own
+   * copy — and where the credential is still on screen to be read from.
+   */
+  "tokens.copyFailedPhone":
+    "Este teléfono no ha querido copiarlo. Mantén el texto pulsado para copiarlo tú, antes de salir de esta pantalla.",
   "tokens.storedAction": "Ya lo he guardado",
 
   "tokens.rotateAction": "Rotar",

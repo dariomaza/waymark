@@ -1,0 +1,80 @@
+import type { JSX } from "react";
+import { StyleSheet, Text, View } from "react-native";
+
+import { CopyButton } from "../../ui/molecules/copy-button.js";
+import { colors, radius, space, text } from "../../ui/styles/tokens.js";
+import { useTranslate } from "../../app/language-context.js";
+
+export interface ApiAddressProps {
+  /** Where this phone is talking to, already resolved. */
+  readonly endpoint: string;
+}
+
+/**
+ * # The other half of a credential, and the half that keeps
+ *
+ * A machine token answers "what do I present"; this answers "where do I
+ * present it". Without it somebody who has just made a credential has to go
+ * and work out which hostname the thing they are wiring up should call, and
+ * the two ways of finding that out are a README written for a different
+ * installation and a guess.
+ *
+ * ## It sits on the LIST, not only on the panel that appears once
+ *
+ * The secret is shown once and is then gone for ever. The address is not a
+ * secret at all: it can be re-read, cached and copied as often as anybody
+ * likes, and it is still true a year later. Putting it only beside the secret
+ * would have tied a permanent fact to a panel with a five-second lifetime,
+ * and the moment somebody most needs it — coming back to rotate a credential
+ * — is precisely a moment with no issued secret on screen.
+ *
+ * ## Once, not once per row
+ *
+ * There is one API and every token on the list is presented to it, so the
+ * address belongs to the list rather than to a row. Repeating it under each
+ * credential would be the same forty characters printed six times on a phone,
+ * which reads as six different addresses at a glance.
+ */
+export const ApiAddress = ({ endpoint }: ApiAddressProps): JSX.Element => {
+  const t = useTranslate();
+
+  return (
+    <View style={styles.wrap}>
+      <Text style={styles.title}>{t("tokens.addressTitle")}</Text>
+      {/*
+        It WRAPS rather than truncating. An address with its last eight
+        characters off the right-hand edge of a phone is an address somebody
+        retypes wrongly by hand.
+      */}
+      <Text
+        accessibilityLabel={t("tokens.addressLabel")}
+        selectable
+        style={styles.value}
+      >
+        {endpoint}
+      </Text>
+      <Text style={styles.note}>{t("tokens.addressNote")}</Text>
+      <CopyButton
+        value={endpoint}
+        tone="quiet"
+        label={t("tokens.addressCopy")}
+        copiedLabel={t("tokens.addressCopied")}
+        failedLabel={t("tokens.copyFailedPhone")}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  wrap: {
+    gap: space.s2,
+    padding: space.s3,
+    borderRadius: radius.m,
+    backgroundColor: colors.surfaceRaised,
+    alignItems: "flex-start",
+  },
+  title: { color: colors.ink, fontSize: text.s, fontWeight: "700" },
+  /** Monospaced, because this is a string to be transcribed, not prose. */
+  value: { color: colors.ink, fontFamily: "monospace", fontSize: text.s, lineHeight: 20 },
+  note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+});
