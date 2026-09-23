@@ -35,14 +35,31 @@
  * by its real name there.
  *
  * If a package ever does need compiling and is not covered, the failure is a
- * syntax error naming its own file. The fix is to add that ONE package:
+ * syntax error naming its own file. The fix is to add that ONE package, which
+ * is what the list below is — and `lucide-react-native` is the first entry on
+ * it, for exactly that reason (ADR 20).
  *
- *     const preset = require("jest-expo/jest-preset");
- *     transformIgnorePatterns: [
- *       preset.transformIgnorePatterns[0].replace(")", "|the-package)"),
- *       ...preset.transformIgnorePatterns.slice(1),
- *     ]
+ * ## Why `lucide-react-native` is on it, and why that alone was not enough
+ *
+ * Its `exports` map answers the `react-native` condition with `.mjs`, so Jest
+ * is handed real ESM and says so in a syntax error naming the file. It is not
+ * a package doing anything unusual: it is shipping the module build Metro
+ * wants, and the test runner is the one that needs it compiled (ADR 20).
+ *
+ * Allowing it past `transformIgnorePatterns` only says it MAY be compiled.
+ * The preset's own transform is keyed on `\.[jt]sx?$`, which does not match
+ * `.mjs`, so the file was allowed through and then not compiled — and the
+ * error is identical either way, which is the part worth writing down. Both
+ * halves are needed: the package by name, and the extension.
  */
+const preset = require("jest-expo/jest-preset");
+
+/** Packages that ship ESM and therefore have to be compiled, by name. */
+const COMPILE_ANYWAY = ["lucide-react-native"];
+
+/** The preset's own Babel transform, whatever it is configured with today. */
+const BABEL = preset.transform["\\.[jt]sx?$"];
+
 module.exports = {
   preset: "jest-expo",
   setupFilesAfterEnv: ["<rootDir>/src/testing/setup.ts"],
@@ -50,4 +67,12 @@ module.exports = {
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
+  transform: {
+    ...preset.transform,
+    "\\.mjs$": BABEL,
+  },
+  transformIgnorePatterns: [
+    preset.transformIgnorePatterns[0].replace(")", `|${COMPILE_ANYWAY.join("|")})`),
+    ...preset.transformIgnorePatterns.slice(1),
+  ],
 };

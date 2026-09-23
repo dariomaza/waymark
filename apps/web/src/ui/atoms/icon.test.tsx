@@ -15,11 +15,14 @@ describe("the icon set both clients draw", () => {
    * The list is pinned rather than counted, because the failure this guards
    * against is a name quietly disappearing while the total stays the same.
    *
-   * It is the same list the phone client draws, minus `eyeOff`: the web reveal
-   * deliberately never flips its icon (see `password-field.tsx`), so a crossed
-   * eye here would be a shape with nowhere to be drawn.
+   * These are the PRODUCT's names, not lucide's, and that is the point of
+   * asserting them: the drawings behind them changed wholesale in ADR 20 and
+   * not one of these names had to. It is the same list the phone client
+   * draws, minus `eyeOff` — the web reveal deliberately never flips its icon
+   * (see `password-field.tsx`), so a crossed eye here would be a name with
+   * nothing to draw it for.
    */
-  it("carries every symbol this product has, and no library", () => {
+  it("carries every symbol this product has, under this product's names", () => {
     expect([...ICON_NAMES]).toEqual([
       "waypoints",
       "eye",
@@ -47,8 +50,13 @@ describe("the icon set both clients draw", () => {
   });
 
   /**
-   * A common box and a common stroke weight are what stop a set drawn over
-   * time from looking like a set collected over time.
+   * # The assertion that made the library switch safe
+   *
+   * A common box and a common stroke weight are what stop a set from looking
+   * assembled over time — and the mark is still drawn by hand while the other
+   * twenty-one come from lucide, whose own default weight is 2. So the risk is
+   * precise and this is the test that stands in front of it: one shape landing
+   * heavier than the rest, in a set nobody would think to re-measure.
    */
   it("draws every symbol in the same 24-unit box, on one stroke weight", () => {
     for (const name of ICON_NAMES) {
@@ -61,15 +69,27 @@ describe("the icon set both clients draw", () => {
     }
   });
 
-  /** Nothing is drawn as a filled blob: the whole set is strokes. */
-  it("strokes every symbol rather than filling it", () => {
-    for (const name of ICON_NAMES) {
-      const { container } = render(<Icon name={name} />);
+  /**
+   * The mark is OURS, and stays ours.
+   *
+   * lucide ships a `waypoints` of its own. Taking it would have made the thing
+   * standing for Waymark in the top bar the same picture as a routing feature
+   * in a thousand other products, so this one drawing is still drawn in the
+   * atom — and this is what says so out loud, because an exception nobody
+   * asserts is an exception somebody tidies away.
+   */
+  it("keeps the product's mark out of the library", () => {
+    const { container } = render(<Icon name="waypoints" />);
 
-      for (const shape of container.querySelectorAll("svg *")) {
-        expect(shape).not.toHaveAttribute("fill");
-      }
-    }
+    expect(container.querySelector("svg")).not.toHaveClass("lucide");
+    expect(container.querySelectorAll("svg circle")).toHaveLength(3);
+  });
+
+  /** A caller asking for 20 gets 20: the set is used at three sizes. */
+  it("draws at the size it is asked for", () => {
+    const { container } = render(<Icon name="copy" size={20} />);
+
+    expect(container.querySelector("svg")).toHaveAttribute("width", "20");
   });
 
   /**

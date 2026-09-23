@@ -179,6 +179,25 @@ first, and a base URL no browser will run WebAuthn against stops the process
 at boot. And removing every passkey is allowed, with no warning and no rule
 against it, because there is no state in which one is the only way in.
 
+**The icons come from one family; the mark does not** (ADR 20). The icon set
+used to be drawn by hand, under a rule written inside the file itself: no
+library, because there are ten symbols and the smallest package is hundreds of
+kilobytes. Both halves of that failed. Ten was not enough — a vocabulary too
+thin to say "copy" is why two features in a row shipped a full-width word
+button where an icon belonged — and "hundreds of kilobytes" measured the
+package on disk rather than the bundle, which turns out to be 2.48 kB gzipped
+for twenty-one icons.
+
+Neither is what decided it. `lucide-react` and `lucide-react-native` are
+published in lockstep from one design source, so the two clients cannot draw
+the same name differently — which is the thing two hand-maintained files could
+never promise, and the strongest argument that had been FOR drawing them here.
+`ui/atoms/icon.tsx` stays the seam in both clients: screens ask for a name out
+of this product's vocabulary and nothing outside that file knows lucide exists.
+The mark — `waypoints`, the three rings in the top bar — is still drawn by
+hand, because the picture that means Waymark may not also mean "routing" in a
+thousand other products.
+
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no
 Android Studio in the build path. Native Kotlin would mean two independent
@@ -216,6 +235,7 @@ field, so choosing one is spelled as a reorder.
 - Fastify, Prisma, SQLite (FTS5 for search)
 - sharp for image ingestion, qrcode for label symbols
 - `@simplewebauthn/server` and `@simplewebauthn/browser` for passkeys (ADR 19)
+- `lucide-react` and `lucide-react-native` for the icon set (ADR 20)
 - React + Vite (PWA), `@zxing/browser` for scanning
 - Expo / React Native, React Navigation, `expo-camera` for scanning
 - Python + rembg (sidecar only)
