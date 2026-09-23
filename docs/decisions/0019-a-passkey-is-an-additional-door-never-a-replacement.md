@@ -124,7 +124,22 @@ end up not revoking things.
 
 ### A passkey opens the same session a password does
 
-`POST /auth/passkeys/authentication` answers the same body `POST /auth/login`
+The six routes, and the line through the middle of them:
+
+```
+POST   /auth/passkey-login/options   no session — how a session begins
+POST   /auth/passkey-login           no session — answers the session
+GET    /auth/passkeys                any session
+POST   /auth/passkeys/options        a PASSWORD-backed session
+POST   /auth/passkeys                a PASSWORD-backed session
+DELETE /auth/passkeys/:id            any session
+```
+
+They are named `passkey-login` rather than `passkeys/authentication` because
+they are not operations on a passkey: they are a way to open a session, which
+is what `/auth/login` already is in this API's vocabulary.
+
+`POST /auth/passkey-login` answers the same body `POST /auth/login`
 answers: an opaque 256-bit token, stored as a SHA-256, sliding over 30 days,
 revoked by deleting the row (ADR 6). There is no second kind of session, no
 "strong" session, and nothing downstream can tell which door somebody came
