@@ -8,8 +8,13 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
-import { useState, type JSX } from "react";
-import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context";
+import { useMemo, useState, type JSX } from "react";
+import {
+  initialWindowMetrics,
+  SafeAreaInsetsContext,
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { AccountScreen } from "../account/account-screen.js";
 import { ApiProvider, useApi } from "../api/api-context.js";
@@ -201,6 +206,22 @@ const ConfirmedSession = ({
   const api = useApi();
   const signOut = useSignOut();
   const t = useTranslate();
+  const insets = useSafeAreaInsets();
+
+  /**
+   * What the tree under the bar is told the insets are.
+   *
+   * The top one is SPENT: `AppBar` pads itself by it, so by the time anything
+   * below the bar is drawn there is no clock left to be underneath. Saying so
+   * here is what lets `Screen` keep the inset by default — right for the
+   * sign-in screen and the loading states, which have no bar above them —
+   * without opening a second status bar's worth of nothing under the bar on
+   * every screen in the app.
+   *
+   * The bottom is untouched, and belongs to the tab bar, which reads it from
+   * this same context and pads itself off the gesture bar with it.
+   */
+  const belowTheBar = useMemo(() => ({ ...insets, top: 0 }), [insets]);
 
   const check = useQuery({
     // The token is part of the key so a fresh sign-in is a fresh question,
@@ -261,19 +282,21 @@ const ConfirmedSession = ({
         * to a person rather than to an inventory.
         */}
       <AppBar title="Waymark" />
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Tabs" component={Tabs} />
-        <Stack.Screen name="Unit" component={UnitScreen} />
-        <Stack.Screen name="Item" component={ItemScreen} />
-        <Stack.Screen name="Label" component={LabelScreen} />
-        {/* The address printed on every box. See the screen. */}
-        <Stack.Screen name="ScannedLabel" component={ScannedLabelScreen} />
-        {/*
-          * Reached from the note under a photo whose background removal
-          * failed, which is the moment the question it answers gets asked.
-          */}
-        <Stack.Screen name="Processing" component={PhotoProcessingScreen} />
-      </Stack.Navigator>
+      <SafeAreaInsetsContext.Provider value={belowTheBar}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Tabs" component={Tabs} />
+          <Stack.Screen name="Unit" component={UnitScreen} />
+          <Stack.Screen name="Item" component={ItemScreen} />
+          <Stack.Screen name="Label" component={LabelScreen} />
+          {/* The address printed on every box. See the screen. */}
+          <Stack.Screen name="ScannedLabel" component={ScannedLabelScreen} />
+          {/*
+            * Reached from the note under a photo whose background removal
+            * failed, which is the moment the question it answers gets asked.
+            */}
+          <Stack.Screen name="Processing" component={PhotoProcessingScreen} />
+        </Stack.Navigator>
+      </SafeAreaInsetsContext.Provider>
     </NavigationContainer>
   );
 };
