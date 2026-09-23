@@ -1,44 +1,36 @@
 import type { StorageUnitView } from "@waymark/api-client";
 import { useState, type JSX } from "react";
-import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "../ui/atoms/button.js";
+import { CreateItemDialog } from "../items/create-item-dialog.js";
 import { CreateUnitDialog } from "./create-unit-dialog.js";
-import { DeleteUnitDialog } from "./delete-unit-dialog.js";
-import { EditUnitDialog } from "./edit-unit-dialog.js";
-import { EmptyUnitDialog } from "./empty-unit-dialog.js";
-import { MoveUnitDialog } from "./move-unit-dialog.js";
-import { ROUTES, labelsWithinPath, findWithinPath, unitLabelPath, unitPath } from "../app/routes.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
-  /** Root first, ending at this unit; the step before last is its parent. */
-  readonly path: readonly StorageUnitView[];
 }
 
-type OpenDialog = "create" | "edit" | "move" | "empty" | "delete" | null;
-
 /**
- * Everything that can be done to a storage unit, and the sheets that ask.
+ * What a box is FOR: putting something in it.
  *
- * A container: it owns which sheet is open and nothing else. Each sheet owns
- * its own request and its own refusal, which is why the not-empty conflict
- * can offer to empty the box without any of this knowing that deleting can
- * even be refused.
+ * Two controls, and they are the only two on this screen that are not behind
+ * the menu — because they are the two reasons somebody opens a box's screen
+ * with an intention rather than a question. Everything else that can be done
+ * to this unit is in `UnitMenu`, beside its name (ADR 21).
  *
- * "Edit" and "Move" are separate buttons because they are separate things.
- * Editing changes what the unit SAYS about itself and is a `PATCH` that
- * cannot carry a parent; moving changes where it IS and is guarded by the
- * subtree invariant (ADR 2). One button for both would hide the second
- * behind the first.
+ * The primary is "Add an item" and not "Add a space inside": a shelf holds
+ * things a hundred times for every time it grows a drawer. The second is a
+ * secondary rather than a peer, which is the whole difference between a
+ * hierarchy and a row — one lime rectangle, one outlined one, and a person's
+ * eye lands on the right one without reading either.
+ *
+ * It owns which of its two sheets is open and nothing else. Each sheet owns
+ * its own request and its own refusal.
  */
-export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
+export const UnitActions = ({ unit }: UnitActionsProps): JSX.Element => {
   const t = useTranslate();
 
-  const [open, setOpen] = useState<OpenDialog>(null);
-  const navigate = useNavigate();
-  const parent = path.at(-2) ?? null;
+  const [open, setOpen] = useState<"item" | "unit" | null>(null);
 
   const close = (): void => {
     setOpen(null);
@@ -47,94 +39,34 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
   return (
     <>
       {/*
-        Seven controls in a row, and until now seven identical word-buttons —
-        which is a wall a hand has to READ to use. The pictures are what make
-        one of them findable at a glance; the words stay, because no shape
-        means "empty this box but keep it".
+        The two shapes say what KIND of thing is about to be added, which is
+        the only thing that separates these two sentences — a plus for a thing,
+        a box for a box. Two identical pluses would leave the eye to the words
+        again, which is the state this whole change is getting out of.
       */}
       <Button
+        tone="primary"
         icon="plus"
         onClick={() => {
-          setOpen("create");
+          setOpen("item");
+        }}
+      >
+        {t("units.addItem")}
+      </Button>
+      <Button
+        icon="box"
+        onClick={() => {
+          setOpen("unit");
         }}
       >
         {t("units.addInside")}
       </Button>
-      <Button
-        icon="pencil"
-        onClick={() => {
-          setOpen("edit");
-        }}
-      >
-        {t("action.edit")}
-      </Button>
-      <Button
-        icon="move"
-        onClick={() => {
-          setOpen("move");
-        }}
-      >
-        {t("action.move")}
-      </Button>
-      <Button
-        onClick={() => {
-          setOpen("empty");
-        }}
-      >
-        {t("action.empty")}
-      </Button>
-      <Button
-        tone="danger"
-        icon="trash"
-        onClick={() => {
-          setOpen("delete");
-        }}
-      >
-        {t("action.delete")}
-      </Button>
-      <Link className="button button--secondary" to={findWithinPath(unit.id)}>
-        {t("units.searchInside")}
-      </Link>
-      <Link className="button button--secondary" to={unitLabelPath(unit.id)}>
-        {t("units.showLabel")}
-      </Link>
-      {/*
-        One label and a sheet of them are two different jobs: sticking a
-        label on THIS box, and labelling everything it holds in one
-        afternoon. `?within=` means the same as it does on a search — what is
-        inside, not the unit itself (ADR 11).
-      */}
-      <Link className="button button--secondary" to={labelsWithinPath(unit.id)}>
-        {t("label.sheet")}
-      </Link>
 
-      {open === "create" ? (
-        <CreateUnitDialog parentId={unit.id} onClose={close} />
+      {open === "item" ? (
+        <CreateItemDialog storageUnitId={unit.id} unitName={unit.name} onClose={close} />
       ) : null}
 
-      {open === "edit" ? <EditUnitDialog unit={unit} onClose={close} /> : null}
-
-      {open === "move" ? <MoveUnitDialog unit={unit} onClose={close} /> : null}
-
-      {open === "empty" ? (
-        <EmptyUnitDialog unit={unit} parent={parent} onClose={close} />
-      ) : null}
-
-      {open === "delete" ? (
-        <DeleteUnitDialog
-          unit={unit}
-          parent={parent}
-          onClose={close}
-          onDeleted={() => {
-            close();
-            // Standing on the screen of a unit that no longer exists is how a
-            // delete ends in a 404 the person thinks they caused.
-            navigate(parent === null ? ROUTES.inventory : unitPath(parent.id), {
-              replace: true,
-            });
-          }}
-        />
-      ) : null}
+      {open === "unit" ? <CreateUnitDialog parentId={unit.id} onClose={close} /> : null}
     </>
   );
 };

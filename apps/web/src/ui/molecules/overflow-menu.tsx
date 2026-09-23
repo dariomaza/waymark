@@ -17,8 +17,18 @@ export interface OverflowAction {
   readonly label: string;
   /** In FRONT of the word, never instead of it. Left out where no shape is honest. */
   readonly icon?: IconName | undefined;
-  /** `danger` is the one that destroys something; it is drawn last, and apart. */
+  /** The colour. `danger` is the one that deletes; most lines want none of it. */
   readonly tone?: ButtonTone | undefined;
+  /**
+   * This line takes something away.
+   *
+   * Separate from `tone` because they answer different questions. `tone` is
+   * what it LOOKS like — emptying a box deletes nothing, so painting it red
+   * would be a lie. This is what it COSTS, and it is what decides that the
+   * line is drawn at the far end of the menu, behind a rule, where a thumb
+   * aiming at anything else cannot reach it.
+   */
+  readonly destructive?: boolean | undefined;
   readonly onSelect?: (() => void) | undefined;
   /** A route, when the line is a way somewhere rather than an act. */
   readonly to?: string | undefined;
@@ -72,10 +82,12 @@ export interface OverflowMenuProps {
  *
  * ## Destructive lines are last, and set apart
  *
- * Not decoration either. The rule the ADR states is that nothing which
- * destroys anything may sit where a thumb reaching for the primary action can
+ * Not decoration either. The rule the ADR states is that nothing which takes
+ * something away may sit where a thumb reaching for the primary action can
  * land on it — so `delete` and `empty` are not merely in here, they are at the
- * far end of here, behind a rule, after a gap.
+ * far end of here, behind a rule, after a gap. The ORDER is the caller's, and
+ * the gap is this file's: a caller that puts a destructive line in the middle
+ * gets a rule in the middle, which is the kind of wrong somebody notices.
  */
 export const OverflowMenu = ({ label, actions }: OverflowMenuProps): JSX.Element => {
   const [open, setOpen] = useState(false);
@@ -109,7 +121,9 @@ export const OverflowMenu = ({ label, actions }: OverflowMenuProps): JSX.Element
             {actions.map((action) => (
               <li
                 className={
-                  action.tone === "danger" ? "overflow-menu__line overflow-menu__line--apart" : "overflow-menu__line"
+                  action.destructive === true
+                    ? "overflow-menu__line overflow-menu__line--apart"
+                    : "overflow-menu__line"
                 }
                 key={action.label}
               >

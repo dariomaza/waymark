@@ -1,17 +1,16 @@
 import { unitId } from "@waymark/domain";
-import { useState, type JSX } from "react";
+import type { JSX } from "react";
 import { useParams } from "react-router-dom";
 
 import { BulkMoveBar } from "../items/bulk-move-bar.js";
-import { CreateItemDialog } from "../items/create-item-dialog.js";
 import { useItemSelection } from "../items/use-item-selection.js";
 import { ItemCover } from "../photos/item-cover.js";
 import { UnitPhoto } from "../photos/unit-photo.js";
-import { Button } from "../ui/atoms/button.js";
 import { Checkbox } from "../ui/atoms/checkbox.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { UnitActions } from "./unit-actions.js";
+import { UnitMenu } from "./unit-menu.js";
 import { useStorageUnit } from "./unit-queries.js";
 import { UnitDetail } from "./views/unit-detail.js";
 import { useTranslate } from "../app/language-context.js";
@@ -23,6 +22,12 @@ import { useTranslate } from "../app/language-context.js";
  * The container owns the id from the URL, the request, the three states it
  * can be in, and which items are ticked for a bulk move. Everything it draws
  * when the request worked is one presentational component away.
+ *
+ * What CAN be done arrives in two pieces, and the split is the whole of ADR
+ * 21: `UnitActions` is what this screen is for — putting something in the box
+ * — and `UnitMenu` is everything that can be done to the box itself, behind
+ * one control beside its name. This file no longer owns a dialog of its own,
+ * because the screen no longer has an action of its own.
  */
 export const UnitScreen = (): JSX.Element => {
   const t = useTranslate();
@@ -31,7 +36,6 @@ export const UnitScreen = (): JSX.Element => {
   const id = unitId(params.id ?? "");
   const unit = useStorageUnit(id);
   const selection = useItemSelection();
-  const [addingItem, setAddingItem] = useState(false);
 
   return (
     <main className="screen">
@@ -48,54 +52,31 @@ export const UnitScreen = (): JSX.Element => {
       ) : null}
 
       {unit.isSuccess ? (
-        <>
-          <UnitDetail
-            unit={unit.data.unit}
-            path={unit.data.path}
-            childUnits={unit.data.children}
-            items={unit.data.items}
-            photo={<UnitPhoto unit={unit.data.unit} />}
-            itemPhoto={(item) => <ItemCover item={item} />}
-            actions={
-              <>
-                <Button
-                  tone="primary"
-                  onClick={() => {
-                    setAddingItem(true);
-                  }}
-                >
-                  {t("units.addItem")}
-                </Button>
-                <UnitActions unit={unit.data.unit} path={unit.data.path} />
-              </>
-            }
-            itemTrailing={(item) => (
-              <Checkbox
-                className="checkbox--bare"
-                label={t("units.select", { name: item.name })}
-                checked={selection.isSelected(item.id)}
-                onChange={() => {
-                  selection.toggle(item.id);
-                }}
-              />
-            )}
-            belowItems={
-              selection.selected.length === 0 ? null : (
-                <BulkMoveBar itemIds={selection.selected} onDone={selection.clear} />
-              )
-            }
-          />
-
-          {addingItem ? (
-            <CreateItemDialog
-              storageUnitId={unit.data.unit.id}
-              unitName={unit.data.unit.name}
-              onClose={() => {
-                setAddingItem(false);
+        <UnitDetail
+          unit={unit.data.unit}
+          path={unit.data.path}
+          childUnits={unit.data.children}
+          items={unit.data.items}
+          photo={<UnitPhoto unit={unit.data.unit} />}
+          itemPhoto={(item) => <ItemCover item={item} />}
+          actions={<UnitActions unit={unit.data.unit} />}
+          menu={<UnitMenu unit={unit.data.unit} path={unit.data.path} />}
+          itemTrailing={(item) => (
+            <Checkbox
+              className="checkbox--bare"
+              label={t("units.select", { name: item.name })}
+              checked={selection.isSelected(item.id)}
+              onChange={() => {
+                selection.toggle(item.id);
               }}
             />
-          ) : null}
-        </>
+          )}
+          belowItems={
+            selection.selected.length === 0 ? null : (
+              <BulkMoveBar itemIds={selection.selected} onDone={selection.clear} />
+            )
+          }
+        />
       ) : null}
     </main>
   );

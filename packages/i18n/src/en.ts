@@ -370,8 +370,16 @@ export const EN = {
   "label.drawFailed": "That label could not be drawn",
   "label.print": "Print this label",
   "label.backToUnit": "Back to the unit",
-  "units.showLabel": "Label",
-  "units.showLabelPhone": "Show the label",
+  /**
+   * One key for both clients, where there used to be two.
+   *
+   * The browser's said "Label" and the phone's said "Show the label", and the
+   * only reason was width: on the web it was one button in a row of nine, and
+   * a verb would not fit. It is a line in a menu now, on both, so it can say
+   * what it does. A key that exists only because a row was cramped is a key
+   * that should go when the row does — see ADR 21.
+   */
+  "units.showLabel": "Show the label",
   "label.sheet": "Label sheet",
   "label.printFromWeb":
     "Print this from the web client, which serves the same symbol as an SVG.",

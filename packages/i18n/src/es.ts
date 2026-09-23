@@ -299,8 +299,7 @@ export const ES: Dictionary = {
   "label.drawFailed": "No se ha podido dibujar esa etiqueta",
   "label.print": "Imprimir esta etiqueta",
   "label.backToUnit": "Volver a la unidad",
-  "units.showLabel": "Etiqueta",
-  "units.showLabelPhone": "Ver la etiqueta",
+  "units.showLabel": "Ver la etiqueta",
   "label.sheet": "Hoja de etiquetas",
   "label.printFromWeb":
     "Imprime esto desde el cliente web, que sirve el mismo símbolo como SVG.",

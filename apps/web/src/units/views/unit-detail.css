@@ -17,6 +17,40 @@
   color: var(--color-ink-muted);
 }
 
+/**
+ * The name, and the box's own menu at the end of the line.
+ *
+ * `flex-start` rather than `center`: a long name wraps to two lines and the
+ * control stays level with the FIRST of them, which is where the eye already
+ * is. Centring it would float the control into the middle of a name.
+ */
+.unit-detail__title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/**
+ * # Two controls, and one of them is lime
+ *
+ * This used to be nine, with `flex: 1 1 8rem` and a comment promising "two per
+ * row on a narrow phone, never a single cramped column". It never held. In
+ * Spanish "Añadir una cosa" and "Buscar aquí dentro" are both wider than 8rem
+ * on a phone, so every basis was exceeded, every button took its own row, and
+ * `flex-grow: 1` then stretched each one to the full width — the single
+ * cramped column the comment was written to prevent, nine blocks tall.
+ *
+ * No basis fixes that, because the problem was never the number. Nine peers
+ * cannot be laid out well: the layout was being asked to express a priority
+ * nobody had decided. ADR 21 decides it, and what is left here is two
+ * controls that are NOT peers — one primary and one secondary, told apart by
+ * colour before they are told apart by width.
+ *
+ * So the basis can be honest now. `10rem` fits both sentences in both
+ * languages on a 360px phone; when it does not, two rows of one is a primary
+ * above a secondary, which is still a hierarchy rather than a wall.
+ */
 .unit-detail__actions {
   display: flex;
   flex-wrap: wrap;
@@ -24,6 +58,5 @@
 }
 
 .unit-detail__actions .button {
-  /* Two per row on a narrow phone, never a single cramped column. */
-  flex: 1 1 8rem;
+  flex: 1 1 10rem;
 }

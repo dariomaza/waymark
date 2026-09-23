@@ -68,7 +68,7 @@ describe("everything a screen can do that is not the thing it is for", () => {
     draw([
       { label: "Edit", onSelect: () => undefined },
       { label: "Move", onSelect: () => undefined },
-      { label: "Delete", tone: "danger", onSelect: () => undefined },
+      { label: "Delete", tone: "danger", destructive: true, onSelect: () => undefined },
     ]);
 
     const menu = await open();
@@ -82,7 +82,7 @@ describe("everything a screen can do that is not the thing it is for", () => {
 
   it("does the thing that was chosen, and gets out of the way", async () => {
     const deleted = vi.fn();
-    draw([{ label: "Delete", tone: "danger", onSelect: deleted }]);
+    draw([{ label: "Delete", tone: "danger", destructive: true, onSelect: deleted }]);
 
     await open();
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
@@ -110,7 +110,7 @@ describe("everything a screen can do that is not the thing it is for", () => {
    */
   it("closes on Escape, having done nothing, and hands the focus back", async () => {
     const chosen = vi.fn();
-    draw([{ label: "Delete", tone: "danger", onSelect: chosen }]);
+    draw([{ label: "Delete", tone: "danger", destructive: true, onSelect: chosen }]);
 
     const trigger = screen.getByRole("button", { name: "More actions for Box 3" });
     await open();

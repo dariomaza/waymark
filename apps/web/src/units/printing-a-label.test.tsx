@@ -61,9 +61,13 @@ describe("the label on a box", () => {
   it("is reachable from the unit itself", async () => {
     renderApp({ route: "/units/box3" });
 
-    // Exact: the unit now also offers a SHEET of labels for what it holds,
-    // which is a different job and a different screen.
-    await userEvent.click(await screen.findByRole("link", { name: /^label$/i }));
+    // Behind the box's own menu, along with everything else that is not the
+    // thing the screen is for (ADR 21). It says "Show the label" now, on both
+    // clients: it is a line in a list rather than a word squeezed into a row.
+    await userEvent.click(
+      await screen.findByRole("button", { name: "More actions for Box 3" }),
+    );
+    await userEvent.click(await screen.findByRole("link", { name: /show the label/i }));
 
     await waitFor(() => {
       expect(screen.getByText("7ZK3QWERTY")).toBeVisible();

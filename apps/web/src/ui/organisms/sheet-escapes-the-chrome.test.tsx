@@ -182,6 +182,10 @@ describe("a sheet, wherever in the app it was opened from", () => {
     it("leaves the shell as well, rather than relying on the screen not trapping it", async () => {
       renderApp({ route: "/units/box3" });
 
+      // Two panels deep now: the box's own menu, and Move from inside it. The
+      // second one has to escape the chrome exactly as the first did — a
+      // portal that only worked for the outermost sheet would fail here.
+      await userEvent.click(await screen.findByRole("button", { name: "More actions for Box 3" }));
       await userEvent.click(await screen.findByRole("button", { name: /^move$/i }));
       const move = await screen.findByRole("dialog", { name: /move box 3/i });
 

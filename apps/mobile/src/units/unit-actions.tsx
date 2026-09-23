@@ -79,7 +79,7 @@ export const UnitActions = ({
       >
         {t("action.empty")}
       </Button>
-      <Button onPress={onShowLabel}>{t("units.showLabelPhone")}</Button>
+      <Button onPress={onShowLabel}>{t("units.showLabel")}</Button>
       <Button
         tone="danger"
         icon="trash"
