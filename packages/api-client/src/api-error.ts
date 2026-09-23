@@ -116,6 +116,52 @@ export const ApiErrorCode = {
    * server has to be able to recognise the refusal rather than read a status.
    */
   MACHINE_TOKEN_CANNOT_MANAGE_MACHINE_TOKENS: "MACHINE_TOKEN_CANNOT_MANAGE_MACHINE_TOKENS",
+  /**
+   * # The refusals a passkey ceremony can make (ADR 19)
+   *
+   * One of them is a 401 with something for the person to DO, and it is the
+   * reason this list grew rather than folding them all into `INVALID_PASSKEY`.
+   */
+  /** Unknown credential, bad signature, wrong origin, wrong relying party (401). */
+  INVALID_PASSKEY: "INVALID_PASSKEY",
+  /**
+   * The prompt timed out, was already used, or was never issued (422).
+   *
+   * Deliberately not `INVALID_PASSKEY`: it says nothing about a credential.
+   * Somebody whose phone went to sleep mid-prompt has a perfectly good device
+   * and needs to be told to press the button again.
+   */
+  PASSKEY_CEREMONY_EXPIRED: "PASSKEY_CEREMONY_EXPIRED",
+  /**
+   * The signature counter went backwards, which is what a copied authenticator
+   * looks like (401). `details.label` names the device, because the only
+   * useful thing to say is which one to remove.
+   */
+  CLONED_PASSKEY: "CLONED_PASSKEY",
+  /** The authenticator proved presence and not identity (422). */
+  PASSKEY_DID_NOT_VERIFY_THE_USER: "PASSKEY_DID_NOT_VERIFY_THE_USER",
+  /** That device already has a passkey here (409). */
+  PASSKEY_ALREADY_REGISTERED: "PASSKEY_ALREADY_REGISTERED",
+  /** The name for the device is blank or too long (422). `details.label`. */
+  INVALID_PASSKEY_LABEL: "INVALID_PASSKEY_LABEL",
+  /** Nothing was removed, because that id is not on this account (404). */
+  PASSKEY_NOT_FOUND: "PASSKEY_NOT_FOUND",
+  /**
+   * A session a passkey opened tried to register another one (403, ADR 19).
+   *
+   * The same shape of rule ADR 18 makes about a machine token minting a
+   * machine token: a credential that can issue its own successor outlives
+   * every password change made to stop it.
+   */
+  PASSKEY_NEEDS_A_PASSWORD: "PASSKEY_NEEDS_A_PASSWORD",
+  /** Too many ceremonies from one caller (429). A counter of its own. */
+  TOO_MANY_PASSKEY_ATTEMPTS: "TOO_MANY_PASSKEY_ATTEMPTS",
+  /**
+   * A machine token asked about passkeys (403, ADR 19). Never seen by the two
+   * apps that hold a person's session; it is here because the code is part of
+   * the contract.
+   */
+  MACHINE_TOKEN_HAS_NO_PASSKEYS: "MACHINE_TOKEN_HAS_NO_PASSKEYS",
   VALIDATION_FAILED: "VALIDATION_FAILED",
 } as const;
 

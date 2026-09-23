@@ -30,6 +30,12 @@ export const queryKeys = {
    * happen to share an origin.
    */
   machineTokens: () => ["machine-tokens"] as const,
+  /**
+   * The devices on your own account (ADR 19). Outside `INVENTORY_ROOTS` for
+   * the same reason the machine tokens are: moving a box must not refetch a
+   * list of credentials, and adding a device must not invalidate the forest.
+   */
+  passkeys: () => ["passkeys"] as const,
 } as const;
 
 /** What a change to the inventory makes stale. Used by every mutation. */

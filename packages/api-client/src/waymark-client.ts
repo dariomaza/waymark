@@ -7,6 +7,8 @@ import type {
   CreateItemInput,
   CreateMachineTokenInput,
   CreateStorageUnitInput,
+  FinishPasskeyLoginInput,
+  FinishPasskeyRegistrationInput,
   DetachedItemPhotoResponse,
   DetachedStorageUnitPhotoResponse,
   EmptyStorageUnitResponse,
@@ -17,7 +19,10 @@ import type {
   IssuedMachineTokenResponse,
   MachineTokenListResponse,
   MovedItemsResponse,
+  PasskeyCeremony,
+  PasskeyListResponse,
   PhotoProcessingResponse,
+  RegisteredPasskeyResponse,
   ReleasedPhotosResponse,
   RequeuedPhotoResponse,
   RequeuedPhotosResponse,
@@ -177,6 +182,52 @@ export interface WaymarkClient<TFile> {
   ): Promise<IssuedMachineTokenResponse>;
   /** One name, one credential. There is no call that revokes everything. */
   revokeMachineToken(name: string): Promise<void>;
+
+  /**
+   * # A passkey: an additional door, never a replacement (ADR 19)
+   *
+   * Six calls, and the division between them is the decision worth knowing
+   * about. The two `PasskeyLogin` ones take NO session — they are how a
+   * session begins, they answer the same thing to everybody, and there is no
+   * username anywhere in them. The other four need one, and adding a device
+   * needs one a PASSWORD opened: a credential that can issue its own successor
+   * outlives every password change made to stop it, which is ADR 18's argument
+   * about machine tokens with one word changed.
+   *
+   * `apps/mcp` holds a machine token and is refused all four of the managed
+   * ones. A machine has no thumb, and no person behind it whose devices these
+   * would be.
+   */
+
+  /** What to ask the authenticator for, and the id to send back with it. */
+  beginPasskeyRegistration(): Promise<PasskeyCeremony>;
+  /**
+   * The answer from the authenticator, and the name for the device.
+   *
+   * Nothing secret comes back — there is nothing to come back. The private
+   * half never left the authenticator, which is why this answers the same
+   * plain row the list shows.
+   */
+  finishPasskeyRegistration(
+    input: FinishPasskeyRegistrationInput,
+  ): Promise<RegisteredPasskeyResponse>;
+  /**
+   * A challenge, asked for by nobody in particular.
+   *
+   * It carries no credential ids, so it reveals neither which usernames exist
+   * nor which devices anybody owns — which is what lets the sign-in screen ask
+   * for no username at all.
+   */
+  beginPasskeyLogin(): Promise<PasskeyCeremony>;
+  /**
+   * The assertion, and then the very same session a password opens (ADR 6).
+   * There is no second kind of session, so everything above this is unchanged.
+   */
+  finishPasskeyLogin(input: FinishPasskeyLoginInput): Promise<SessionView>;
+  /** The devices on your own account, and never anybody else's. */
+  passkeys(): Promise<PasskeyListResponse>;
+  /** One device, by its id. There is no call that removes them all. */
+  removePasskey(id: string): Promise<void>;
 
   tree(): Promise<StorageUnitTreeResponse>;
   unit(id: UnitId): Promise<StorageUnitDetailResponse>;
@@ -360,6 +411,41 @@ export const createWaymarkClient = <TFile>(
       await send(`/auth/machine-tokens/${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
+    },
+
+    async beginPasskeyRegistration() {
+      return post<PasskeyCeremony>("/auth/passkeys/options");
+    },
+
+    async finishPasskeyRegistration(input) {
+      return post<RegisteredPasskeyResponse>("/auth/passkeys", {
+        ceremonyId: input.ceremonyId,
+        label: input.label,
+        // Passed through exactly as the platform composed it. Picking fields
+        // out of it here would be this client forming an opinion about a
+        // specification it does not implement, and would drop whatever a
+        // browser learns to send next.
+        credential: input.credential,
+      });
+    },
+
+    async beginPasskeyLogin() {
+      return post<PasskeyCeremony>("/auth/passkey-login/options");
+    },
+
+    async finishPasskeyLogin(input) {
+      return post<SessionView>("/auth/passkey-login", {
+        ceremonyId: input.ceremonyId,
+        credential: input.credential,
+      });
+    },
+
+    async passkeys() {
+      return readJson<PasskeyListResponse>("/auth/passkeys");
+    },
+
+    async removePasskey(id) {
+      await send(`/auth/passkeys/${encodeURIComponent(id)}`, { method: "DELETE" });
     },
 
     async tree() {

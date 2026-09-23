@@ -205,6 +205,81 @@ export interface RotateMachineTokenInput {
   readonly expiresInDays?: number;
 }
 
+/**
+ * # A passkey, as its owner reads it in a list
+ *
+ * There is no secret here and there never can be one: the private half of a
+ * passkey never leaves the authenticator, which is the whole difference
+ * between this and the machine token managed in the same sheet.
+ *
+ * There is no public key either, no credential id and no signature counter.
+ * Those are things the SERVER needs to verify a signature, and a list of
+ * somebody's authenticators is information about them — so the view carries
+ * what the one decision this list supports needs and stops: which device is
+ * this, and is anything still using it.
+ */
+export interface PasskeyView {
+  readonly id: string;
+  /** What the person called the device: "Pixel 8", "Work laptop". */
+  readonly label: string;
+  readonly createdAt: string;
+  /** `null` until it has opened a session. */
+  readonly lastUsedAt: string | null;
+}
+
+export interface PasskeyListResponse {
+  readonly passkeys: readonly PasskeyView[];
+}
+
+export interface RegisteredPasskeyResponse {
+  readonly passkey: PasskeyView;
+}
+
+/**
+ * # The one shape in this contract that is deliberately not described
+ *
+ * Every other type in this file is a view mirrored by hand, because the API
+ * projects its domain deliberately and copying that projection is what keeps
+ * this client honest. A WebAuthn ceremony is the opposite kind of thing: it is
+ * a specification's shape, produced by a library on the server and consumed by
+ * a library in the browser, and this package is only ever the courier.
+ *
+ * Re-describing it here would be a second, worse copy of a standard — one that
+ * would have to be edited every time WebAuthn grows a field, and that would
+ * refuse a browser sending something it had not heard of. So it passes through
+ * untouched, and the two ends that actually understand it are the ones that
+ * read it.
+ */
+export type PasskeyCeremonyOptions = Readonly<Record<string, unknown>>;
+
+/** What an authenticator handed the browser. Opaque here, for the same reason. */
+export type PasskeyCredential = Readonly<Record<string, unknown>>;
+
+/**
+ * A ceremony in flight: what to ask the authenticator for, and the id to send
+ * back with its answer.
+ *
+ * The id is how the server finds the challenge again. It is not the challenge:
+ * addressing a row and signing a value are two jobs, and a challenge that
+ * travelled as its own lookup key would be one more thing an attacker holds.
+ */
+export interface PasskeyCeremony {
+  readonly ceremonyId: string;
+  readonly options: PasskeyCeremonyOptions;
+}
+
+export interface FinishPasskeyRegistrationInput {
+  readonly ceremonyId: string;
+  /** What this person calls the device. */
+  readonly label: string;
+  readonly credential: PasskeyCredential;
+}
+
+export interface FinishPasskeyLoginInput {
+  readonly ceremonyId: string;
+  readonly credential: PasskeyCredential;
+}
+
 export interface UserCallerResponse {
   readonly user: UserView;
 }
