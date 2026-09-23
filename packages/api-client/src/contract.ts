@@ -163,6 +163,48 @@ export interface MachineTokenView {
  * lie a client could act on: it is not a user, it has no account, and
  * `POST /auth/logout` would then look available to it.
  */
+/**
+ * Every machine token in the house, for the account screen (ADR 18).
+ *
+ * Never a secret and never a hash: the secret was shown once and was never
+ * stored, and the hash never leaves the server. What is here is what a person
+ * reads to decide whether a credential is still in use.
+ */
+export interface MachineTokenListResponse {
+  readonly machineTokens: readonly MachineTokenView[];
+}
+
+/**
+ * The one answer in this whole contract that carries a live credential.
+ *
+ * It comes back from a creation and from a rotation, it exists nowhere else,
+ * and the server cannot produce it again — it kept a SHA-256. Whatever holds
+ * this is holding the only copy, which is the reason the account sheet says so
+ * while it is still on screen rather than afterwards.
+ */
+export interface IssuedMachineTokenResponse {
+  readonly token: string;
+  readonly machineToken: MachineTokenView;
+}
+
+export interface CreateMachineTokenInput {
+  readonly name: string;
+  readonly scope: MachineTokenScope;
+  /** Absent means it never lapses, which is the normal case. */
+  readonly expiresInDays?: number;
+}
+
+/**
+ * What a rotation may say, which is an expiry and nothing else.
+ *
+ * There is deliberately no `scope`: the API refuses the key rather than
+ * ignoring it, because a rotation that could widen a read key into a writing
+ * one would be an escalation path wearing the word "maintenance" (ADR 18).
+ */
+export interface RotateMachineTokenInput {
+  readonly expiresInDays?: number;
+}
+
 export interface UserCallerResponse {
   readonly user: UserView;
 }

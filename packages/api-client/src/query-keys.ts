@@ -23,6 +23,13 @@ export const queryKeys = {
   /** What background removal is doing. Not part of the inventory graph. */
   photoProcessing: () => ["photo-processing"] as const,
   qr: (id: UnitId) => ["qr", id] as const,
+  /**
+   * Credentials for programs (ADR 17, ADR 18). Deliberately NOT in
+   * `INVENTORY_ROOTS`: moving a box must not refetch a list of credentials,
+   * and issuing one must not invalidate the forest. They are two graphs that
+   * happen to share an origin.
+   */
+  machineTokens: () => ["machine-tokens"] as const,
 } as const;
 
 /** What a change to the inventory makes stale. Used by every mutation. */

@@ -5,6 +5,7 @@ import type {
   CallerResponse,
   Credentials,
   CreateItemInput,
+  CreateMachineTokenInput,
   CreateStorageUnitInput,
   DetachedItemPhotoResponse,
   DetachedStorageUnitPhotoResponse,
@@ -13,11 +14,14 @@ import type {
   ItemListResponse,
   ItemPhotoResponse,
   ItemResponse,
+  IssuedMachineTokenResponse,
+  MachineTokenListResponse,
   MovedItemsResponse,
   PhotoProcessingResponse,
   ReleasedPhotosResponse,
   RequeuedPhotoResponse,
   RequeuedPhotosResponse,
+  RotateMachineTokenInput,
   SearchQuery,
   SearchResponse,
   SessionView,
@@ -131,6 +135,48 @@ export interface WaymarkClient<TFile> {
   me(): Promise<CallerResponse>;
   /** A session only. A machine token is refused 403: it is revoked from a shell. */
   logout(): Promise<void>;
+
+  /**
+   * # Credentials for programs, managed by a person (ADR 18)
+   *
+   * All four need a SESSION. A machine token is refused every one of them: a
+   * read-scoped one by the API's scope hook, because three of the four are
+   * writes, and a read-write one by the routes themselves, because a
+   * credential that can issue its own successor cannot be revoked. Listing is
+   * refused too — a `GET` passes the scope hook untouched, and enumerating
+   * every credential in the house is reconnaissance rather than a read of the
+   * inventory.
+   *
+   * So these live in this client for `apps/web` and `apps/mobile`. `apps/mcp`
+   * holds a machine token and will be refused all four, which is the point.
+   */
+  machineTokens(): Promise<MachineTokenListResponse>;
+  /**
+   * The secret comes back HERE and nowhere else, once. The server kept a
+   * SHA-256 of it and cannot produce it again, so whatever the caller does
+   * with this string is the only copy there will be.
+   */
+  createMachineToken(input: CreateMachineTokenInput): Promise<IssuedMachineTokenResponse>;
+  /**
+   * A new secret for a credential that already exists, and the death of the
+   * old one in the same step.
+   *
+   * It is one call because neither order of two would be safe: revoke-then-
+   * create leaves a window in which the name holds nothing, and create-then-
+   * revoke cannot be written at all, because the name is unique and the name
+   * is what revocation is keyed by.
+   *
+   * The old secret stops working immediately, with no grace period. A request
+   * already authenticated finishes; every one after it is a 401 until the new
+   * secret is in place. That is a real outage for the machine and the screen
+   * that offers this says so before the button is pressed.
+   */
+  rotateMachineToken(
+    name: string,
+    input?: RotateMachineTokenInput,
+  ): Promise<IssuedMachineTokenResponse>;
+  /** One name, one credential. There is no call that revokes everything. */
+  revokeMachineToken(name: string): Promise<void>;
 
   tree(): Promise<StorageUnitTreeResponse>;
   unit(id: UnitId): Promise<StorageUnitDetailResponse>;
@@ -283,6 +329,37 @@ export const createWaymarkClient = <TFile>(
 
     async logout() {
       await send("/auth/logout", { method: "POST" });
+    },
+
+    async machineTokens() {
+      return readJson<MachineTokenListResponse>("/auth/machine-tokens");
+    },
+
+    async createMachineToken(input) {
+      return post<IssuedMachineTokenResponse>("/auth/machine-tokens", {
+        name: input.name,
+        scope: input.scope,
+        // Left off rather than sent as `undefined`: the API refuses a key it
+        // does not know, and "no expiry" is an absent field, not a null one.
+        ...(input.expiresInDays === undefined
+          ? {}
+          : { expiresInDays: input.expiresInDays }),
+      });
+    },
+
+    async rotateMachineToken(name, input) {
+      return post<IssuedMachineTokenResponse>(
+        `/auth/machine-tokens/${encodeURIComponent(name)}/rotate`,
+        input?.expiresInDays === undefined
+          ? {}
+          : { expiresInDays: input.expiresInDays },
+      );
+    },
+
+    async revokeMachineToken(name) {
+      await send(`/auth/machine-tokens/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
     },
 
     async tree() {
