@@ -17,8 +17,18 @@ export interface UnitDetailProps {
   readonly path: readonly StorageUnitView[];
   readonly childUnits: readonly StorageUnitView[];
   readonly items: readonly ItemView[];
-  /** What can be done to this unit. Injected, so this view stays a view. */
+  /**
+   * What this screen is FOR: the primary action, and at most one secondary.
+   * Injected, so this view stays a view.
+   */
   readonly actions?: ReactNode;
+  /**
+   * Everything that can be done TO this unit, behind one control beside its
+   * name. It sits in the HEADING and not in the row below, because renaming a
+   * box or throwing it away is about the box rather than about the screen —
+   * and because a row of peers is what this redesign exists to end (ADR 21).
+   */
+  readonly menu?: ReactNode;
   /** A photo of the unit, when there is one. */
   readonly photo?: ReactNode;
   /** Rendered next to each item row; a checkbox during a bulk move. */
@@ -48,6 +58,7 @@ export const UnitDetail = ({
   childUnits,
   items,
   actions,
+  menu,
   photo,
   itemTrailing,
   itemPhoto,
@@ -67,7 +78,10 @@ export const UnitDetail = ({
       />
 
       <header className="unit-detail__head">
-        <h2>{unit.name}</h2>
+        <div className="unit-detail__title">
+          <h2>{unit.name}</h2>
+          {menu}
+        </div>
         <p className="unit-detail__kind">{kindLabel(t, unit.kind)}</p>
         {unit.description === null ? null : (
           <p className="unit-detail__description">{unit.description}</p>

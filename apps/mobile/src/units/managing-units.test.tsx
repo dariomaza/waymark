@@ -30,9 +30,63 @@ const refusedBecauseCyclic = () =>
     { status: 409 },
   );
 
+/**
+ * # Opening the box's own menu
+ *
+ * Everything that is not the point of this screen now lives behind one control
+ * beside the box's name (ADR 21). The tests that used to press a button in a
+ * column of six open the menu first; what they do after that is unchanged,
+ * which is the whole claim this file makes about the redesign.
+ */
+const openTheMenuFor = async (name: string): Promise<void> => {
+  await fireEvent.press(await screen.findByRole("button", { name: `More actions for ${name}` }));
+};
+
+/** The same control, for somebody reading the app in Spanish. */
+const abreElMenuDe = async (name: string): Promise<void> => {
+  await fireEvent.press(await screen.findByRole("button", { name: `Más acciones para ${name}` }));
+};
+
 describe("looking after a storage unit", () => {
   beforeEach(() => {
     theApiKnowsTheHouse();
+  });
+
+  /**
+   * # A screen that has decided what it is for
+   *
+   * This box used to offer six controls stacked down the phone, every one of
+   * them the same size and the same weight — a wall a thumb has to READ to
+   * use. The rule (ADR 21) is one primary action and at most one secondary;
+   * on a box the primary is putting something in it.
+   *
+   * What is asserted is not a colour but what a person can reach: none of the
+   * six is pressable until the menu is opened.
+   */
+  it("shows only what a box is FOR, until it is asked for more", async () => {
+    await renderApp({ session: aSession(), screen: atBox3 });
+
+    expect(await screen.findByRole("button", { name: "Add an item" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Add a space inside" })).toBeOnTheScreen();
+
+    for (const gone of ["Edit", "Move", "Empty", "Delete", "Show the label", "Select several"]) {
+      expect(screen.queryByRole("button", { name: gone })).toBeNull();
+    }
+  });
+
+  /**
+   * Hiding six things is only an improvement if all six are still there. This
+   * is the test that fails if somebody tidies one away while moving them,
+   * which is the failure a redesign invites.
+   */
+  it("still offers every one of them, all behind the one control", async () => {
+    await renderApp({ session: aSession(), screen: atBox3 });
+
+    await openTheMenuFor("Box 3");
+
+    for (const name of ["Select several", "Show the label", "Edit", "Move", "Empty", "Delete"]) {
+      expect(await screen.findByRole("button", { name })).toBeOnTheScreen();
+    }
   });
 
   it("shows where a box is, what is in it, and what is inside it", async () => {
@@ -105,6 +159,7 @@ describe("looking after a storage unit", () => {
 
     await renderApp({ session: aSession(), screen: atBox3 });
 
+    await openTheMenuFor("Box 3");
     await fireEvent.press(await screen.findByRole("button", { name: "Edit" }));
     await fireEvent.changeText(screen.getByLabelText("Name"), "Box 4");
     await fireEvent.press(screen.getByRole("button", { name: "Save changes" }));
@@ -144,6 +199,7 @@ describe("looking after a storage unit", () => {
 
     await renderApp({ session: aSession(), screen: atBox3 });
 
+    await openTheMenuFor("Box 3");
     await fireEvent.press(await screen.findByRole("button", { name: "Delete" }));
     await fireEvent.press(screen.getByRole("button", { name: "Delete this unit" }));
 
@@ -180,6 +236,7 @@ describe("looking after a storage unit", () => {
       screen: { name: "Unit", params: { id: "wardrobe" } },
     });
 
+    await openTheMenuFor("Metal wardrobe");
     await fireEvent.press(await screen.findByRole("button", { name: "Move" }));
 
     // Box 3 is inside the wardrobe, and it is still on the list.
@@ -303,6 +360,7 @@ describe("looking after a storage unit, in Spanish", () => {
 
     await renderApp({ session: aSession(), screen: atBox3, language: "es" });
 
+    await abreElMenuDe("Box 3");
     await fireEvent.press(await screen.findByRole("button", { name: "Borrar" }));
     await fireEvent.press(screen.getByRole("button", { name: "Borrar esta unidad" }));
 
@@ -318,6 +376,7 @@ describe("looking after a storage unit, in Spanish", () => {
 
     await renderApp({ session: aSession(), screen: atBox3, language: "es" });
 
+    await abreElMenuDe("Box 3");
     await fireEvent.press(await screen.findByRole("button", { name: "Borrar" }));
     await fireEvent.press(screen.getByRole("button", { name: "Borrar esta unidad" }));
 
@@ -330,6 +389,7 @@ describe("looking after a storage unit, in Spanish", () => {
 
     await renderApp({ session: aSession(), screen: atBox3, language: "es" });
 
+    await abreElMenuDe("Box 3");
     await fireEvent.press(await screen.findByRole("button", { name: "Borrar" }));
     await fireEvent.press(screen.getByRole("button", { name: "Borrar esta unidad" }));
 
@@ -350,6 +410,7 @@ describe("looking after a storage unit, in Spanish", () => {
       language: "es",
     });
 
+    await abreElMenuDe("Metal wardrobe");
     await fireEvent.press(await screen.findByRole("button", { name: "Mover" }));
 
     // The breadcrumb is made of names somebody typed, so it stays as typed.

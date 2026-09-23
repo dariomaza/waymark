@@ -6,6 +6,7 @@ import { ItemPhotos } from "../photos/item-photos.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { ItemActions } from "./item-actions.js";
+import { ItemMenu } from "./item-menu.js";
 import { useItem } from "./item-queries.js";
 import { ItemDetail } from "./views/item-detail.js";
 import { useTranslate } from "../app/language-context.js";
@@ -35,9 +36,8 @@ export const ItemScreen = (): JSX.Element => {
           item={item.data.item}
           path={item.data.path}
           photos={<ItemPhotos item={item.data.item} />}
-          actions={
-            <ItemActions item={item.data.item} holder={item.data.storageUnit} />
-          }
+          actions={<ItemActions item={item.data.item} />}
+          menu={<ItemMenu item={item.data.item} holder={item.data.storageUnit} />}
         />
       ) : null}
     </main>

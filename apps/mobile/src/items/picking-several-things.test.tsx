@@ -86,6 +86,9 @@ describe("picking several things at once", () => {
     it("also starts from a button, for anybody who does not know the gesture", async () => {
       await renderApp({ session: aSession(), screen: atBox3 });
 
+      await fireEvent.press(
+        await screen.findByRole("button", { name: "More actions for Box 3" }),
+      );
       await fireEvent.press(await screen.findByRole("button", { name: "Select several" }));
 
       expect(
@@ -97,6 +100,9 @@ describe("picking several things at once", () => {
     it("says how picking works, so the gesture is learnable", async () => {
       await renderApp({ session: aSession(), screen: atBox3 });
 
+      await fireEvent.press(
+        await screen.findByRole("button", { name: "More actions for Box 3" }),
+      );
       await fireEvent.press(await screen.findByRole("button", { name: "Select several" }));
 
       expect(await screen.findByText(/holding one down/i)).toBeOnTheScreen();
@@ -107,6 +113,9 @@ describe("picking several things at once", () => {
     it("ticks a thing rather than opening it", async () => {
       await renderApp({ session: aSession(), screen: atBox3 });
 
+      await fireEvent.press(
+        await screen.findByRole("button", { name: "More actions for Box 3" }),
+      );
       await fireEvent.press(await screen.findByRole("button", { name: "Select several" }));
       await fireEvent.press(screen.getByRole("checkbox", { name: "Select Hand saw" }));
 

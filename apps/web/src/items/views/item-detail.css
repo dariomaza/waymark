@@ -28,6 +28,23 @@
   color: var(--color-ink-muted);
 }
 
+/** The name, and the thing's own menu at the end of the line. See the unit's. */
+.item-detail__title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/**
+ * Two controls, and one of them is lime. It was three, all the same shape and
+ * the same width, and the last of them deleted the thing — see ADR 21 for why
+ * that is a layout question rather than a colour one.
+ *
+ * `10rem` rather than `8rem`: the basis existed to promise two per row, and
+ * with three long Spanish labels sharing it that promise was worth nothing.
+ * Two is a promise a row can keep.
+ */
 .item-detail__actions {
   display: flex;
   flex-wrap: wrap;
@@ -35,5 +52,5 @@
 }
 
 .item-detail__actions .button {
-  flex: 1 1 8rem;
+  flex: 1 1 10rem;
 }

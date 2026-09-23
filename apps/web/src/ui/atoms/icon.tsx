@@ -5,6 +5,7 @@ import {
   Check,
   ChevronRight,
   Copy,
+  EllipsisVertical,
   Eye,
   Globe,
   Image,
@@ -110,6 +111,15 @@ export const ICON_NAMES = [
   "rotate",
   /** There is more of this behind the row you are looking at. */
   "chevronRight",
+  /**
+   * The overflow: everything a screen can do that is not the thing it is FOR.
+   *
+   * Vertical dots rather than horizontal, because this control sits at the end
+   * of a heading line beside the name of what is on screen, and that position
+   * has meant "the rest of this thing's menu" on a phone for fifteen years.
+   * Reading it takes nobody a moment. See ADR 21 for what is behind it and why.
+   */
+  "more",
   /** A credential: a passkey, or a key handed to a program. */
   "key",
   "signOut",
@@ -149,6 +159,7 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "waypoints">, LucideIcon> = {
   move: Move,
   rotate: RotateCw,
   chevronRight: ChevronRight,
+  more: EllipsisVertical,
   /**
    * `Key` and not `KeyRound`: the round one draws its bit as a filled dot,
    * which at 20px on a phone reads as a smudge rather than as a key.

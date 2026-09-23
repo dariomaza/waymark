@@ -27,6 +27,7 @@ const box = aStorageUnit({ id: "box3", parentId: "garage", name: "Box 3" });
 const openTheMoveSheet = async (): Promise<HTMLElement> => {
   renderApp({ route: "/units/box3" });
 
+  await userEvent.click(await screen.findByRole("button", { name: "More actions for Box 3" }));
   await userEvent.click(await screen.findByRole("button", { name: /^move$/i }));
 
   return await screen.findByRole("dialog", { name: /move box 3/i });
@@ -138,9 +139,15 @@ describe("a sheet that is open", () => {
     expect(close).toHaveTextContent("");
   });
 
-  it("hands the focus back to the button that opened it", async () => {
+  /**
+   * The Move sheet is now opened from a line inside the box's own menu, and
+   * that line goes away with the menu — so the control the focus comes back to
+   * is the one still on the screen: the menu itself. Which is where somebody
+   * who has just finished moving a box would carry on.
+   */
+  it("hands the focus back to the control that opened it", async () => {
     const sheet = await openTheMoveSheet();
-    const opener = screen.getByRole("button", { name: /^move$/i });
+    const opener = screen.getByRole("button", { name: "More actions for Box 3" });
 
     await userEvent.click(within(sheet).getByRole("button", { name: /close/i }));
 

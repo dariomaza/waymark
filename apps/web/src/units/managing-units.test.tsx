@@ -54,6 +54,24 @@ const refusedBecauseNotEmpty = () =>
     { status: 409 },
   );
 
+/**
+ * # Opening the box's own menu
+ *
+ * Everything that is not the point of this screen now lives behind one
+ * control (ADR 21). The tests that used to press a button in a row of nine
+ * open the menu first; what they do after that is unchanged, because what a
+ * person can DO is unchanged — which is the entire claim this file makes
+ * about the redesign.
+ */
+const openTheMenuFor = async (name: string): Promise<void> => {
+  await userEvent.click(await screen.findByRole("button", { name: `More actions for ${name}` }));
+};
+
+/** The same control, for somebody reading the app in Spanish. */
+const abreElMenuDe = async (name: string): Promise<void> => {
+  await userEvent.click(await screen.findByRole("button", { name: `Más acciones para ${name}` }));
+};
+
 describe("looking after a storage unit", () => {
   beforeEach(() => {
     sessionStore.save(aSession());
@@ -126,6 +144,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.clear(screen.getByRole("textbox", { name: /^name/i }));
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "Box 4");
@@ -148,6 +167,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
 
@@ -173,6 +193,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
 
     expect(screen.getByRole("textbox", { name: /^name/i })).toHaveValue("Box 3");
@@ -203,6 +224,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
 
@@ -228,6 +250,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^delete$/i }));
     await userEvent.click(await screen.findByRole("button", { name: /delete this unit/i }));
 
@@ -260,6 +283,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/shed" });
 
+    await openTheMenuFor("Shed");
     await userEvent.click(await screen.findByRole("button", { name: /^empty$/i }));
 
     expect(
@@ -286,6 +310,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/wardrobe" });
 
+    await openTheMenuFor("Metal wardrobe");
     await userEvent.click(await screen.findByRole("button", { name: /^move$/i }));
     await userEvent.selectOptions(
       await screen.findByRole("combobox", { name: /move it into/i }),
@@ -308,6 +333,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^move$/i }));
     await userEvent.selectOptions(
       await screen.findByRole("combobox", { name: /move it into/i }),
@@ -318,6 +344,90 @@ describe("looking after a storage unit", () => {
     await waitFor(() => {
       expect(moves).toEqual([{ parentId: "garage" }]);
     });
+  });
+
+  /**
+   * # A screen that has decided what it is for
+   *
+   * This box used to offer nine controls of the same size and weight, and in
+   * Spanish every one of their labels is wider than the 8rem the row was laid
+   * out around — so they stacked, and the screen became a column of identical
+   * blocks a person had to READ from the top to use.
+   *
+   * The rule (ADR 21) is one primary action and at most one secondary. On a
+   * box the primary is putting something in it. Everything else is behind the
+   * menu, and this is what says so: not a class name, but the fact that a
+   * person looking at the screen cannot press any of them yet.
+   */
+  it("shows only what a box is FOR, until it is asked for more", async () => {
+    renderApp({ route: "/units/box3" });
+
+    expect(await screen.findByRole("button", { name: /add an item/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /add a space inside/i })).toBeVisible();
+
+    for (const gone of [/^edit$/i, /^move$/i, /^empty$/i, /^delete$/i]) {
+      expect(screen.queryByRole("button", { name: gone })).toBeNull();
+    }
+
+    for (const gone of [/search inside/i, /show the label/i, /label sheet/i]) {
+      expect(screen.queryByRole("link", { name: gone })).toBeNull();
+    }
+  });
+
+  /**
+   * Hiding seven things is only an improvement if all seven are still there.
+   * This is the test that would fail if somebody "tidied" one away while
+   * moving them, which is the failure a redesign invites.
+   */
+  it("still offers every one of them, all behind the one control", async () => {
+    renderApp({ route: "/units/box3" });
+
+    await openTheMenuFor("Box 3");
+
+    for (const name of [/^edit$/i, /^move$/i, /^empty$/i, /^delete$/i]) {
+      expect(await screen.findByRole("button", { name })).toBeVisible();
+    }
+
+    for (const name of [/search inside/i, /show the label/i, /label sheet/i]) {
+      expect(await screen.findByRole("link", { name })).toBeVisible();
+    }
+  });
+
+  /**
+   * The whole point of a redesign is that nothing a person could do before has
+   * become impossible. So this drives the longest path there is — open the
+   * menu, delete the box, watch the screen go back to where the box was — and
+   * asserts the request that left the browser.
+   */
+  it("can still delete a box, from behind the overflow", async () => {
+    const deleted: string[] = [];
+    apiServer.use(
+      http.get(`${API_URL}/storage-units/box3`, () =>
+        HttpResponse.json({
+          unit: withPhoto(box),
+          path: [garage, wardrobe, box],
+          children: [],
+          items: [],
+        }),
+      ),
+      http.delete(`${API_URL}/storage-units/box3`, () => {
+        deleted.push("box3");
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderApp({ route: "/units/box3" });
+
+    await openTheMenuFor("Box 3");
+    await userEvent.click(await screen.findByRole("button", { name: /^delete$/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /delete this unit/i }));
+
+    await waitFor(() => {
+      expect(deleted).toEqual(["box3"]);
+    });
+    // And it does not leave you standing on the screen of a box that is gone.
+    expect(await screen.findByRole("heading", { name: "Metal wardrobe" })).toBeVisible();
   });
 
   it("starts a new root from the inventory screen", async () => {
@@ -386,6 +496,7 @@ describe("looking after a storage unit, in Spanish", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await abreElMenuDe("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^borrar$/i }));
     await userEvent.click(await screen.findByRole("button", { name: /borrar esta unidad/i }));
 
@@ -414,6 +525,7 @@ describe("looking after a storage unit, in Spanish", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await abreElMenuDe("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^borrar$/i }));
     await userEvent.click(await screen.findByRole("button", { name: /borrar esta unidad/i }));
 
@@ -440,6 +552,7 @@ describe("looking after a storage unit, in Spanish", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await abreElMenuDe("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^borrar$/i }));
     await userEvent.click(await screen.findByRole("button", { name: /borrar esta unidad/i }));
 

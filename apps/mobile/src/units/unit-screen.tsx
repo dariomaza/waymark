@@ -1,19 +1,18 @@
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { unitId } from "@waymark/domain";
-import { useState, type JSX } from "react";
+import type { JSX } from "react";
 
 import type { RootStackParamList } from "../app/navigation.js";
 import { BulkMoveBar } from "../items/bulk-move-bar.js";
-import { CreateItemSheet } from "../items/create-item-sheet.js";
 import { useItemSelection } from "../items/use-item-selection.js";
 import { ItemCover } from "../photos/item-cover.js";
 import { UnitPhoto } from "../photos/unit-photo.js";
-import { Button } from "../ui/atoms/button.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { UnitActions } from "./unit-actions.js";
+import { UnitMenu } from "./unit-menu.js";
 import { useStorageUnit } from "./unit-queries.js";
 import { UnitDetail } from "./views/unit-detail.js";
 import { useTranslate } from "../app/language-context.js";
@@ -34,7 +33,6 @@ export const UnitScreen = (): JSX.Element => {
   const id = unitId(route.params.id);
   const unit = useStorageUnit(id);
   const selection = useItemSelection();
-  const [addingItem, setAddingItem] = useState(false);
 
   return (
     // Not a scroll view: the item grid below is the scroller, because a
@@ -54,85 +52,55 @@ export const UnitScreen = (): JSX.Element => {
       ) : null}
 
       {unit.isSuccess ? (
-        <>
-          <UnitDetail
-            unit={unit.data.unit}
-            path={unit.data.path}
-            childUnits={unit.data.children}
-            items={unit.data.items}
-            photo={<UnitPhoto unit={unit.data.unit} />}
-            itemPhoto={(item) => <ItemCover item={item} />}
-            onOpenUnit={(openId) => {
-              navigation.push("Unit", { id: openId });
-            }}
-            onOpenItem={(itemId) => {
-              navigation.navigate("Item", { id: itemId });
-            }}
-            actions={
-              <>
-                <Button
-                  tone="primary"
-                  onPress={() => {
-                    setAddingItem(true);
-                  }}
-                >
-                  {t("units.addItem")}
-                </Button>
-                {unit.data.items.length === 0 || selection.picking ? null : (
-                  /*
-                   * The way in that does not need a gesture. Long-pressing a
-                   * card is what Android has meant by "start picking" for as
-                   * long as it has had lists, and it is still invisible — so
-                   * the box says it in words, and the bar that appears
-                   * teaches the gesture for next time.
-                   */
-                  <Button
-                    onPress={() => {
-                      selection.start();
-                    }}
-                  >
-                    {t("items.selectSeveral")}
-                  </Button>
-                )}
-                <UnitActions
-                  unit={unit.data.unit}
-                  path={unit.data.path}
-                  onShowLabel={() => {
-                    navigation.navigate("Label", { id: unit.data.unit.id });
-                  }}
-                  onDeleted={() => {
-                    navigation.navigate("Tabs", { screen: "Inventory" });
-                  }}
-                />
-              </>
-            }
-            picking={{
-              on: selection.picking,
-              isSelected: (item) => selection.isSelected(item.id),
-              toggle: (item) => {
-                selection.toggle(item.id);
-              },
-              label: (item) => t("units.select", { name: item.name }),
-            }}
-            {...(selection.picking
-              ? {
-                  belowItems: (
-                    <BulkMoveBar itemIds={selection.selected} onDone={selection.clear} />
-                  ),
-                }
-              : {})}
-          />
-
-          {addingItem ? (
-            <CreateItemSheet
-              storageUnitId={unit.data.unit.id}
-              unitName={unit.data.unit.name}
-              onClose={() => {
-                setAddingItem(false);
+        <UnitDetail
+          unit={unit.data.unit}
+          path={unit.data.path}
+          childUnits={unit.data.children}
+          items={unit.data.items}
+          photo={<UnitPhoto unit={unit.data.unit} />}
+          itemPhoto={(item) => <ItemCover item={item} />}
+          onOpenUnit={(openId) => {
+            navigation.push("Unit", { id: openId });
+          }}
+          onOpenItem={(itemId) => {
+            navigation.navigate("Item", { id: itemId });
+          }}
+          actions={<UnitActions unit={unit.data.unit} />}
+          menu={
+            <UnitMenu
+              unit={unit.data.unit}
+              path={unit.data.path}
+              onShowLabel={() => {
+                navigation.navigate("Label", { id: unit.data.unit.id });
               }}
+              onDeleted={() => {
+                navigation.navigate("Tabs", { screen: "Inventory" });
+              }}
+              {...(unit.data.items.length === 0 || selection.picking
+                ? {}
+                : {
+                    onPickSeveral: () => {
+                      selection.start();
+                    },
+                  })}
             />
-          ) : null}
-        </>
+          }
+          picking={{
+            on: selection.picking,
+            isSelected: (item) => selection.isSelected(item.id),
+            toggle: (item) => {
+              selection.toggle(item.id);
+            },
+            label: (item) => t("units.select", { name: item.name }),
+          }}
+          {...(selection.picking
+            ? {
+                belowItems: (
+                  <BulkMoveBar itemIds={selection.selected} onDone={selection.clear} />
+                ),
+              }
+            : {})}
+        />
       ) : null}
     </Screen>
   );

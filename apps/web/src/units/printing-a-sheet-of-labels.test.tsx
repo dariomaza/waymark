@@ -199,6 +199,11 @@ describe("a sheet of labels for a whole storage room", () => {
 
     renderApp({ route: "/units/garage" });
 
+    // Behind the room's own menu now: labelling everything a room holds is a
+    // job you come back to, not the thing the screen is for (ADR 21).
+    await userEvent.click(
+      await screen.findByRole("button", { name: "More actions for Garage" }),
+    );
     await userEvent.click(await screen.findByRole("link", { name: /label sheet/i }));
 
     expect(labelsOn(await theSheet()).map((label) => label.dataset["labelFor"])).toEqual([
