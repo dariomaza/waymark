@@ -46,6 +46,11 @@ export { translator, type Translate } from "./translate.js";
  * on both clients, and a sentence written twice is a sentence that drifts.
  * What each app then draws around them — a sheet, a callout, a toast — is its
  * own.
+ *
+ * `passkeyCeremonyFailureMessage` is the one that is NOT a function of an
+ * `ApiError`, and it is here for the same reason the rest are: a ceremony that
+ * failed on the device is still a thing a person has to be told, in the same
+ * words on whichever client they are holding.
  */
 export {
   cyclicMoveMessage,
@@ -56,9 +61,11 @@ export {
   missingTargetMessage,
   moveRefusedMessage,
   notEmptyMessage,
+  passkeyCeremonyFailureMessage,
   passkeyFailureMessage,
   tooManyPhotosMessage,
   type FieldComplaint,
+  type PasskeyCeremonyFailure,
 } from "./refusals.js";
 
 export { kindChoices, kindLabel } from "./kind-label.js";

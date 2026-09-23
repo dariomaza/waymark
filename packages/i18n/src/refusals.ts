@@ -203,6 +203,71 @@ export const passkeyFailureMessage = (error: unknown): Message | null => {
   }
 };
 
+/**
+ * A ceremony the device itself could not finish, as the two strings that
+ * diagnose it.
+ *
+ * It is an interface rather than a class because the class belongs to a
+ * client: the browser's `PasskeyCeremonyFailed` satisfies this by having the
+ * two fields, and nothing here has to know about `DOMException`, which does
+ * not exist on a phone client or under a test runner in Node.
+ */
+export interface PasskeyCeremonyFailure {
+  /** The `DOMException` name the browser raised — `NotSupportedError`. */
+  readonly reason: string;
+  /**
+   * `@simplewebauthn`'s own code when it recognised the failure, and `null`
+   * when the browser raised something it had no name for.
+   */
+  readonly code: string | null;
+}
+
+/**
+ * # What a ceremony the DEVICE refused becomes
+ *
+ * The other half of `passkeyFailureMessage`, and the one that was missing.
+ * That function answers `null` for anything that is not an `ApiError`, which
+ * is every browser failure there is, and the screens then fell through to
+ * `describeFailure` and told somebody Waymark had a problem answering. The API
+ * had answered 200 and was never asked again: the browser threw before the
+ * finishing request was built.
+ *
+ * So this never returns `null`. A ceremony that failed on the device is
+ * something this function always has an answer for, and the answer always
+ * carries `reason` — the browser's own name for what happened, untranslated,
+ * the same bargain `failure.asTheApiPutIt` makes with the API's prose. Three
+ * names earn a better sentence than the general one; everything else gets the
+ * general one WITH its reason, which is still a true sentence and still names
+ * the thing a person can report.
+ */
+export const passkeyCeremonyFailureMessage = (
+  failure: PasskeyCeremonyFailure,
+): Message => {
+  const reason =
+    failure.code === null ? failure.reason : `${failure.reason} (${failure.code})`;
+
+  switch (failure.reason) {
+    case "InvalidStateError":
+      // The authenticator was asked to make a credential it already holds for
+      // this account. Nothing is wrong with the device and nothing is wrong
+      // with Waymark; there is simply nothing to add.
+      return message("passkeys.deviceHasOneAlready", { reason });
+    case "NotSupportedError":
+      // No algorithm in `pubKeyCredParams` is one this authenticator can sign
+      // with, or nothing on the device can make the requested kind of
+      // credential at all.
+      return message("passkeys.deviceCannotMakeOne", { reason });
+    case "SecurityError":
+      // The page's own origin does not match the RP ID the server issued the
+      // options for — the one failure here that is a deployment's fault
+      // rather than a device's, and the one worth saying out loud, because
+      // ADR 19 derives both from `WAYMARK_PUBLIC_BASE_URL`.
+      return message("passkeys.deviceRefusedTheAddress", { reason });
+    default:
+      return message("passkeys.deviceFailed", { reason });
+  }
+};
+
 /** A string out of `details`, read without trusting the wire. */
 const detailText = (error: ApiError, key: string): string | null => {
   const value = error.details[key];
@@ -218,8 +283,28 @@ const detailText = (error: ApiError, key: string): string | null => {
  * kinds stay apart: "this is gone" and "the phone has no signal" are not the
  * same news, and telling somebody the wrong one sends them looking in the
  * wrong place.
+ *
+ * ## Why a throwable that is not an `ApiError` is answered before the kinds
+ *
+ * `failureKindOf` answers `SERVER` for anything that is not an `ApiError`,
+ * which is right for what it is — a reading of an HTTP failure, with one
+ * sensible value for "no HTTP here" — and wrong as a thing to SAY. It is how
+ * the passkey bug reached a person: a browser raised a `DOMException`, no
+ * request was ever sent, and the screen said Waymark had a problem answering.
+ * A TypeError in this app's own code lands in exactly the same place, and
+ * "try again in a moment" is not what somebody should do about a bug.
+ *
+ * So the one case is separated here rather than in `failureKindOf`, which is
+ * shared with `toneFor` and with every `switch` on a kind: the API's own
+ * failures keep every sentence they had, including `failure.server` for a 5xx
+ * and for a status this client has no rule for. Only the case that never
+ * reached the API changes, and it changes from a false sentence to a true one.
  */
 export const describeFailure = (error: unknown): Message => {
+  if (!(error instanceof ApiError)) {
+    return message("failure.unexpected");
+  }
+
   switch (failureKindOf(error)) {
     case FailureKind.OFFLINE:
       return message("failure.offline");
@@ -241,10 +326,13 @@ export const describeFailure = (error: unknown): Message => {
        * here for a refusal nobody has met yet would be a guess at what the
        * server meant; the server's own words at least describe what happened.
        * The refusals that MATTER each have a translated sentence above.
+       *
+       * There is no second branch for "not an `ApiError`" any more: one of
+       * those can no longer reach a kind at all, so the sentence that stood
+       * here for it (`Waymark refused that request`) was another apology the
+       * server had not made.
        */
-      return error instanceof ApiError
-        ? message("failure.asTheApiPutIt", { reason: capitalise(error.message) })
-        : message("failure.refused");
+      return message("failure.asTheApiPutIt", { reason: capitalise(error.message) });
     default:
       return message("failure.server");
   }
