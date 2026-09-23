@@ -182,6 +182,189 @@ export const machineTokenRepositoryContract = (
       });
     });
 
+    /**
+     * # Rotation, which is the one operation that must not be two
+     *
+     * Every case here is about a property that a `deleteByName` followed by a
+     * `create` would get wrong in at least one implementation: the id and the
+     * scope surviving, the old hash dying at the same instant the new one
+     * starts working, and `lastUsedAt` going back to `null` rather than
+     * describing a secret that no longer exists.
+     */
+    describe("rotating the secret behind a name", () => {
+      const A_ROTATION = {
+        name: "mcp-server",
+        tokenHash: "hash-next",
+        createdAt: A_LATER_MOMENT,
+        expiresAt: null,
+      };
+
+      it("answers null for a name nobody was ever issued", async () => {
+        expect(
+          await machineTokens.rotate({ ...A_ROTATION, name: "nothing" }),
+        ).toBeNull();
+      });
+
+      it("makes the new hash open the token", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        await machineTokens.rotate(A_ROTATION);
+
+        expect((await machineTokens.findByTokenHash("hash-next"))?.name).toBe(
+          "mcp-server",
+        );
+      });
+
+      /**
+       * The half that makes it a rotation rather than an addition. Two live
+       * secrets under one name would mean revoking the name left one of them
+       * working, which is the failure this whole credential exists to prevent.
+       */
+      it("makes the old hash open nothing, in the same step", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        await machineTokens.rotate(A_ROTATION);
+
+        expect(await machineTokens.findByTokenHash("hash-old")).toBeNull();
+      });
+
+      it("keeps the name, so an operator still finds it where they left it", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        await machineTokens.rotate(A_ROTATION);
+
+        expect((await machineTokens.findByName("mcp-server"))?.tokenHash).toBe(
+          "hash-next",
+        );
+      });
+
+      /**
+       * A rotation that could change the scope would be a way to turn a read
+       * key into a writing one and call it maintenance. `MachineTokenRotation`
+       * has no `scope` field, and this is the case that says so at runtime.
+       */
+      it("keeps the scope it was issued with", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-old", scope: MachineTokenScope.Read }),
+        );
+
+        const rotated = await machineTokens.rotate(A_ROTATION);
+
+        expect(rotated?.scope).toBe(MachineTokenScope.Read);
+      });
+
+      it("keeps the id, because this is the same credential slot", async () => {
+        await machineTokens.create(
+          aMachineToken({ id: "token-9", tokenHash: "hash-old" }),
+        );
+
+        expect((await machineTokens.rotate(A_ROTATION))?.id).toBe("token-9");
+      });
+
+      /**
+       * `lastUsedAt` is the field a person reads to decide whether anything is
+       * still using a credential. Carried across a rotation it would report a
+       * use that happened before the secret it describes existed, which is
+       * exactly backwards for the one field that makes an abandoned token
+       * visible.
+       */
+      it("forgets when the OLD secret was last used", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-old", lastUsedAt: A_MOMENT }),
+        );
+
+        expect((await machineTokens.rotate(A_ROTATION))?.lastUsedAt).toBeNull();
+      });
+
+      it("stamps the moment the new secret was issued", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        expect((await machineTokens.rotate(A_ROTATION))?.createdAt).toEqual(
+          A_LATER_MOMENT,
+        );
+      });
+
+      it("takes a fresh expiry, and an absent one means it never lapses", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-old", expiresAt: A_MOMENT }),
+        );
+
+        expect((await machineTokens.rotate(A_ROTATION))?.expiresAt).toBeNull();
+      });
+
+      it("sets an expiry when one is asked for", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        const rotated = await machineTokens.rotate({
+          ...A_ROTATION,
+          expiresAt: A_LATER_MOMENT,
+        });
+
+        expect(rotated?.expiresAt).toEqual(A_LATER_MOMENT);
+      });
+
+      it("answers the token as it now stands, so nothing has to read it back", async () => {
+        await machineTokens.create(
+          aMachineToken({ id: "token-3", tokenHash: "hash-old" }),
+        );
+
+        const rotated = await machineTokens.rotate(A_ROTATION);
+
+        expect(rotated).toEqual({
+          id: "token-3",
+          name: "mcp-server",
+          tokenHash: "hash-next",
+          scope: MachineTokenScope.Read,
+          createdAt: A_LATER_MOMENT,
+          expiresAt: null,
+          lastUsedAt: null,
+        });
+      });
+
+      it("leaves every other token alone", async () => {
+        await machineTokens.create(
+          aMachineToken({ id: "a", name: "mcp-server", tokenHash: "h-a" }),
+        );
+        await machineTokens.create(
+          aMachineToken({ id: "b", name: "writer", tokenHash: "h-b" }),
+        );
+
+        await machineTokens.rotate(A_ROTATION);
+
+        expect((await machineTokens.findByTokenHash("h-b"))?.name).toBe("writer");
+      });
+
+      it("adds nothing: the list is as long as it was", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        await machineTokens.rotate(A_ROTATION);
+
+        expect(await machineTokens.list()).toHaveLength(1);
+      });
+
+      it("can be done again, so a rotated token is still rotatable", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        await machineTokens.rotate(A_ROTATION);
+        await machineTokens.rotate({ ...A_ROTATION, tokenHash: "hash-third" });
+
+        expect(await machineTokens.findByTokenHash("hash-next")).toBeNull();
+        expect((await machineTokens.findByTokenHash("hash-third"))?.name).toBe(
+          "mcp-server",
+        );
+      });
+
+      /** Revocation still means revocation: rotating does not make it sticky. */
+      it("leaves the token revocable by the name it still has", async () => {
+        await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
+
+        await machineTokens.rotate(A_ROTATION);
+
+        expect(await machineTokens.deleteByName("mcp-server")).toBe(true);
+        expect(await machineTokens.findByTokenHash("hash-next")).toBeNull();
+      });
+    });
+
     describe("revoking one by name", () => {
       it("says it removed one, and the hash then opens nothing", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-a" }));

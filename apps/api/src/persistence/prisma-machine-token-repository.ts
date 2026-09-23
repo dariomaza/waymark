@@ -4,7 +4,10 @@ import {
   isMachineTokenScope,
   type MachineToken,
 } from "../auth/machine-token.js";
-import type { MachineTokenRepository } from "../auth/machine-token-repository.js";
+import type {
+  MachineTokenRepository,
+  MachineTokenRotation,
+} from "../auth/machine-token-repository.js";
 import { UnknownMachineTokenScope } from "./persistence-errors.js";
 
 /**
@@ -51,6 +54,39 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
       where: { id },
       data: { lastUsedAt: at },
     });
+  }
+
+  /**
+   * One `UPDATE ... WHERE name = ?`, which is the whole reason this is a port
+   * method rather than a delete and a create in a use case.
+   *
+   * SQLite applies a single statement atomically, so there is no instant at
+   * which the name holds two working secrets or none. A revoke-then-create
+   * would have both of those instants, and a crash inside the second one
+   * leaves an operator holding nothing on the credential that was supposed to
+   * be replaced.
+   *
+   * `scope` and `name` are absent from `data` on purpose: they are what the
+   * rotation must NOT change, and leaving them out of the statement is a
+   * stronger guarantee than copying them across correctly.
+   */
+  async rotate(rotation: MachineTokenRotation): Promise<MachineToken | null> {
+    // `updateMany` rather than `update`, so a name that is not there is an
+    // ordinary empty result instead of a thrown `P2025` to catch and discard —
+    // the same choice `recordLastUsed` makes, for the same reason.
+    const { count } = await this.prisma.machineToken.updateMany({
+      where: { name: rotation.name },
+      data: {
+        tokenHash: rotation.tokenHash,
+        createdAt: rotation.createdAt,
+        expiresAt: rotation.expiresAt,
+        // The secret is new, so nothing has used it yet. Saying anything else
+        // would date the new credential by the old one's traffic.
+        lastUsedAt: null,
+      },
+    });
+
+    return count === 0 ? null : await this.findByName(rotation.name);
   }
 
   async deleteByName(name: string): Promise<boolean> {

@@ -1,5 +1,8 @@
 import type { MachineToken } from "./machine-token.js";
-import type { MachineTokenRepository } from "./machine-token-repository.js";
+import type {
+  MachineTokenRepository,
+  MachineTokenRotation,
+} from "./machine-token-repository.js";
 
 /**
  * A real, working repository backed by a Map, for use in tests.
@@ -52,6 +55,35 @@ export class InMemoryMachineTokenRepository implements MachineTokenRepository {
     }
 
     this.#tokens.set(id, { ...token, lastUsedAt: at });
+  }
+
+  /**
+   * One `Map.set` over the row that is already there, which is what makes it
+   * the single step the port promises: the old hash and the new one are never
+   * both live, and there is no moment in which the name holds nothing.
+   *
+   * `id`, `name` and `scope` are taken from the stored row rather than from
+   * the rotation, so a caller cannot widen a scope through this door.
+   */
+  async rotate(rotation: MachineTokenRotation): Promise<MachineToken | null> {
+    const stored = await this.findByName(rotation.name);
+    if (stored === null) {
+      return null;
+    }
+
+    const rotated: MachineToken = {
+      id: stored.id,
+      name: stored.name,
+      scope: stored.scope,
+      tokenHash: rotation.tokenHash,
+      createdAt: rotation.createdAt,
+      expiresAt: rotation.expiresAt,
+      // Never carried over: it would describe a secret that no longer exists.
+      lastUsedAt: null,
+    };
+    this.#tokens.set(stored.id, rotated);
+
+    return rotated;
   }
 
   async deleteByName(name: string): Promise<boolean> {

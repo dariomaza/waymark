@@ -35,6 +35,37 @@ export interface MachineTokenRepository {
   recordLastUsed(id: string, at: Date): Promise<void>;
 
   /**
+   * A new secret behind a name that is already taken, in ONE statement.
+   *
+   * ## Why this is a port method and not `deleteByName` then `create`
+   *
+   * Because those two are not one step, and there is no order of them that is
+   * safe. Delete first and there is a window in which the name has no
+   * credential at all — and if the process dies in that window, the operator
+   * has destroyed a live token and has nothing to put in its place, on the one
+   * credential whose whole job is to be in a compose file. Create first is not
+   * even possible: the name is unique, so it would have to be created under a
+   * different name, and the name is what revocation is keyed by.
+   *
+   * One statement removes the question. The row is replaced or it is not.
+   *
+   * ## What it keeps, and what it must not
+   *
+   * `name`, `scope` and `id` survive — this is the same credential slot, and
+   * an operator addressing it by name must still find it there. The secret is
+   * new by definition, and `lastUsedAt` MUST go back to `null`: it is the one
+   * field that says whether anything is still using this credential, and
+   * carrying it across a rotation would have it report a use that happened
+   * before the secret it describes existed.
+   *
+   * `null` when the name named nothing, for the same reason `deleteByName`
+   * answers `false`: rotating a credential is a person acting on a decision,
+   * and success in answer to a typo lets them walk away believing a secret
+   * they still hold has been replaced.
+   */
+  rotate(rotation: MachineTokenRotation): Promise<MachineToken | null>;
+
+  /**
    * Revocation. `true` when a token went, `false` when the name named nothing —
    * so the CLI can tell "revoked" from "there was nothing to revoke" rather
    * than reporting success at a typo.
@@ -43,4 +74,20 @@ export interface MachineTokenRepository {
 
   /** Every token, by name, for the CLI. Never the secret; there is none stored. */
   list(): Promise<readonly MachineToken[]>;
+}
+
+/**
+ * Everything a rotation replaces, which is deliberately not everything.
+ *
+ * `name` addresses the row; `scope` is absent because a rotation issues a new
+ * secret for the SAME key, and a rotation that could widen `read` into
+ * `read-write` would be a way to escalate a credential while calling it
+ * maintenance.
+ */
+export interface MachineTokenRotation {
+  readonly name: string;
+  readonly tokenHash: string;
+  readonly createdAt: Date;
+  /** Fresh, and never carried over: see `RotateMachineToken`. */
+  readonly expiresAt: Date | null;
 }
