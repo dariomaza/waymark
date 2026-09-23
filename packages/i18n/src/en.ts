@@ -189,13 +189,32 @@ export const EN = {
   "inventory.title": "Your inventory",
   "inventory.loading": "Loading your inventory",
   "inventory.failed": "Your inventory could not be loaded",
-  "inventory.addRoom": "Add a room",
-  "inventory.addUnit": "Add a unit",
-  "inventory.emptyLine": "Nothing stored yet. Add a room, a shelf or a box to start.",
+  /**
+   * A SPACE, and not a room, and not a unit.
+   *
+   * "Room" was too narrow and said so out loud: a garage, a shed, a loft, a
+   * car and a caravan are all things people keep boxes in, and none of them
+   * is a room. It also quietly asked somebody to classify the thing before
+   * they had named it, which is backwards — the kind is a label applied
+   * after, never a question at the door.
+   *
+   * "Unit" was the other failure and the worse one: it is the domain's word
+   * for the recursive node (`StorageUnit`), it was showing on the mobile
+   * client's button, and nobody says it out loud to another person. A model's
+   * vocabulary leaking onto a button is a reliable sign that nobody read the
+   * button as a sentence.
+   *
+   * The two clients said different words for the same act until now, which
+   * is how both mistakes survived: neither was wrong NEXT TO ITSELF.
+   */
+  "inventory.addSpace": "Add a space",
+  "inventory.emptyLine":
+    "Nothing stored yet. Add a space — a room, the garage, a shelf — to start.",
   "inventory.emptyTitle": "Nothing is registered yet",
-  "inventory.emptyExplains": "Start with a room, then the furniture in it.",
+  "inventory.emptyExplains":
+    "Start with somewhere you would name out loud: a room, the garage, the shed.",
 
-  "units.addInside": "Add a unit inside",
+  "units.addInside": "Add a space inside",
   "units.searchInside": "Search inside",
   "units.loading": "Loading this unit",
   "units.notOpen": "That box is not open",
@@ -234,7 +253,7 @@ export const EN = {
   "items.everyItem": "Every item",
   "items.emptyTitle": "You have not put anything in yet",
   "items.emptyExplains":
-    "Open a place and add the first one; it will show up here and when you scan that place’s label.",
+    "Open a space and add the first one; it will show up here and when you scan that space’s label.",
   "items.loading": "Loading this item",
   "items.failed": "That item could not be loaded",
   "items.delete": "Delete this item",
@@ -400,7 +419,7 @@ export const EN = {
   "label.printingHint":
     "Plain A4 and scissors — no special label paper. In the print dialog, turn headers and footers OFF and leave the margins at default: the page already carries its own. What you see below is the page at its real size.",
   "label.pickUnits":
-    "Tick the units you want labels for, or take a whole room with “everything inside”.",
+    "Tick the spaces you want labels for, or take a whole one with “everything inside”.",
   "label.nothingPicked": "Nothing picked yet.",
   /** Two counts, each agreeing with its own noun. Same shape as `units.contentsBoth`. */
   "label.labelCount": { one: "{count} label", other: "{count} labels" },

@@ -75,7 +75,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
-    await userEvent.click(await screen.findByRole("button", { name: /add a unit inside/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /add a space inside/i }));
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "Little bag");
     await userEvent.selectOptions(screen.getByRole("combobox", { name: /kind/i }), "BAG");
     await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
@@ -107,7 +107,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
-    await userEvent.click(await screen.findByRole("button", { name: /add a unit inside/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /add a space inside/i }));
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "A name");
     await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
 
@@ -335,7 +335,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/" });
 
-    await userEvent.click(await screen.findByRole("button", { name: /add a room/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /add a space/i }));
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "Shed");
     await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
 

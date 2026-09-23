@@ -19,9 +19,15 @@ import type { Dictionary } from "./dictionary.js";
  * with the noun's gender — which is why each plural form is a whole sentence
  * here rather than a stem and a suffix.
  *
- * Instructions use the `usted`-neutral impersonal or the infinitive where
- * English uses a bare imperative, because a product telling somebody `haz` is
- * making a familiarity decision on their behalf.
+ * Instructions are `tú`, not `usted`. This is the owner's own decision about
+ * his own inventory, and it is written here because the file said the
+ * opposite for a while and the sentences that were never converted are the
+ * ones somebody wrote AFTER reading the old paragraph. A voice policy that
+ * lives only in a commit message is a voice policy that drifts back.
+ *
+ * So: `añade`, `marca`, `desactiva` — never `añada`, `marque`, `desactive`.
+ * A possessive `su` is still correct when it belongs to a thing rather than
+ * to a person: `la página ya lleva los suyos` is about the margins.
  */
 export const ES: Dictionary = {
   // ---------------------------------------------------------------------
@@ -145,14 +151,14 @@ export const ES: Dictionary = {
   "inventory.title": "Tu inventario",
   "inventory.loading": "Cargando tu inventario",
   "inventory.failed": "No se ha podido cargar tu inventario",
-  "inventory.addRoom": "Añadir una habitación",
-  "inventory.addUnit": "Añadir una unidad",
+  "inventory.addSpace": "Añadir un espacio",
   "inventory.emptyLine":
-    "Todavía no hay nada guardado. Añade una habitación, un estante o una caja para empezar.",
+    "Todavía no hay nada guardado. Añade un espacio — una habitación, el garaje, un estante — para empezar.",
   "inventory.emptyTitle": "Todavía no hay nada registrado",
-  "inventory.emptyExplains": "Empiece por una habitación y siga con los muebles que hay en ella.",
+  "inventory.emptyExplains":
+    "Empieza por un sitio que llamarías por su nombre en voz alta: una habitación, el garaje, la caseta.",
 
-  "units.addInside": "Añadir una unidad dentro",
+  "units.addInside": "Añadir un espacio dentro",
   "units.searchInside": "Buscar aquí dentro",
   "units.loading": "Cargando esta unidad",
   "units.notOpen": "Esa caja no está abierta",
@@ -187,7 +193,7 @@ export const ES: Dictionary = {
   "items.everyItem": "Todas las cosas",
   "items.emptyTitle": "Todavía no has guardado nada",
   "items.emptyExplains":
-    "Abre un lugar y añade la primera; aparecerá aquí y al escanear la etiqueta de ese lugar.",
+    "Abre un espacio y añade la primera; aparecerá aquí y al escanear la etiqueta de ese espacio.",
   "items.loading": "Cargando esta cosa",
   "items.failed": "No se ha podido cargar esa cosa",
   "items.delete": "Borrar esta cosa",
@@ -347,9 +353,9 @@ export const ES: Dictionary = {
   "label.symbolMissing":
     "No se ha podido obtener un símbolo, así que la hoja está incompleta y la impresión está desactivada.",
   "label.printingHint":
-    "Papel A4 normal y tijeras: no hace falta papel de etiquetas. En el diálogo de impresión, desactive los encabezados y los pies de página y deje los márgenes por defecto: la página ya lleva los suyos. Lo que ve debajo es la página a su tamaño real.",
+    "Papel A4 normal y tijeras: no hace falta papel de etiquetas. En el diálogo de impresión, desactiva los encabezados y los pies de página y deja los márgenes por defecto: la página ya lleva los suyos. Lo que ves debajo es la página a su tamaño real.",
   "label.pickUnits":
-    "Marque las unidades de las que quiere etiquetas, o tome una habitación entera con «todo lo que hay dentro».",
+    "Marca los espacios de los que quieres etiquetas, o coge uno entero con «todo lo que hay dentro».",
   "label.nothingPicked": "Todavía no hay nada seleccionado.",
   "label.labelCount": { one: "{count} etiqueta", other: "{count} etiquetas" },
   "label.pageCount": { one: "{count} página", other: "{count} páginas" },
@@ -395,8 +401,8 @@ export const ES: Dictionary = {
   "login.show": "Mostrar",
   "login.hide": "Ocultar",
   "login.withBiometrics": "Iniciar sesión con la huella",
-  "login.unlockPrompt": "Desbloquee su sesión de Waymark",
-  "login.sealPrompt": "Confirme que es usted para que este teléfono recuerde su sesión de Waymark",
+  "login.unlockPrompt": "Desbloquea tu sesión de Waymark",
+  "login.sealPrompt": "Confirma que eres tú para que este teléfono recuerde tu sesión de Waymark",
   "scan.cameraNeeded":
     "Waymark necesita permiso para usar la cámara y leer una etiqueta. El código impreso bajo el símbolo sirve igual de bien.",
   "units.emptyRootNote":

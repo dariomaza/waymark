@@ -26,7 +26,7 @@ export const CreateUnitDialog = ({
 
   return (
     <Sheet
-      title={parentId === null ? t("inventory.addRoom") : t("units.addInside")}
+      title={parentId === null ? t("inventory.addSpace") : t("units.addInside")}
       onClose={onClose}
     >
       <UnitForm

@@ -209,7 +209,7 @@ describe("looking after a storage unit", () => {
 
     await renderApp({ session: aSession(), screen: atBox3 });
 
-    await fireEvent.press(await screen.findByRole("button", { name: "Add a unit inside" }));
+    await fireEvent.press(await screen.findByRole("button", { name: "Add a space inside" }));
     await fireEvent.changeText(screen.getByLabelText("Name"), "Little bag");
     await fireEvent.press(screen.getByRole("radio", { name: "Bag" }));
     await fireEvent.press(screen.getByRole("button", { name: "Create" }));
@@ -249,7 +249,7 @@ describe("looking after a storage unit", () => {
 
     await renderApp({ session: aSession(), screen: atBox3 });
 
-    await fireEvent.press(await screen.findByRole("button", { name: "Add a unit inside" }));
+    await fireEvent.press(await screen.findByRole("button", { name: "Add a space inside" }));
     await fireEvent.changeText(screen.getByLabelText("Name"), "A name");
     await fireEvent.press(screen.getByRole("button", { name: "Create" }));
 

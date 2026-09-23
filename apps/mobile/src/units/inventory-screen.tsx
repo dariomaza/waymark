@@ -52,7 +52,7 @@ export const InventoryScreen = (): JSX.Element => {
               setAdding(true);
             }}
           >
-            {t("inventory.addUnit")}
+            {t("inventory.addSpace")}
           </Button>
 
           {tree.data.tree.length === 0 ? (

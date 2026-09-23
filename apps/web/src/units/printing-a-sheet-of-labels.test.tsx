@@ -125,7 +125,7 @@ describe("a sheet of labels for a whole storage room", () => {
   it("starts with nothing picked, and says so rather than showing a blank page", async () => {
     renderApp({ route: "/labels" });
 
-    expect(await screen.findByText(/tick the units you want labels for/i)).toBeVisible();
+    expect(await screen.findByText(/tick the spaces you want labels for/i)).toBeVisible();
     expect(screen.queryByRole("region", { name: /label sheet/i })).toBeNull();
   });
 
@@ -213,7 +213,7 @@ describe("a sheet of labels for a whole storage room", () => {
 
     await userEvent.click(await screen.findByRole("link", { name: /label sheet/i }));
 
-    expect(await screen.findByText(/tick the units you want labels for/i)).toBeVisible();
+    expect(await screen.findByText(/tick the spaces you want labels for/i)).toBeVisible();
   });
 });
 
@@ -391,7 +391,7 @@ describe("the symbol on each label", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /^clear$/i }));
 
-    expect(await screen.findByText(/tick the units you want labels for/i)).toBeVisible();
+    expect(await screen.findByText(/tick the spaces you want labels for/i)).toBeVisible();
     expect(screen.queryByRole("region", { name: /label sheet/i })).toBeNull();
   });
 

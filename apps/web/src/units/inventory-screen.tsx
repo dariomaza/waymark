@@ -39,7 +39,7 @@ export const InventoryScreen = (): JSX.Element => {
             setAdding(true);
           }}
         >
-          {t("inventory.addRoom")}
+          {t("inventory.addSpace")}
         </Button>
         <Link className="button button--secondary" to={ROUTES.labels}>
           {t("label.sheet")}

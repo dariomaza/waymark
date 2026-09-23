@@ -34,7 +34,7 @@ export const CreateUnitSheet = ({
 
   return (
     <Sheet
-      title={parentName === null ? t("inventory.addUnit") : t("sheet.addUnitInside", { name: parentName })}
+      title={parentName === null ? t("inventory.addSpace") : t("sheet.addUnitInside", { name: parentName })}
       onClose={onClose}
     >
       {create.isError && complaints.length === 0 ? (
