@@ -36,9 +36,20 @@ export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => 
             <Text accessibilityRole="header" style={styles.title}>
               {title}
             </Text>
-            <Button tone="quiet" onPress={onClose}>
-              {t("action.close")}
-            </Button>
+            {/*
+              An X in the corner, and no word. It is one of the few shapes
+              that needs no caption anywhere in the world, and the word was
+              taking a button's width beside a title on a phone held in one
+              hand. The NAME is not dropped with it: `label` carries the same
+              dictionary word the button used to print, so a screen reader
+              still says "Close, button".
+            */}
+            <Button
+              tone="quiet"
+              icon="close"
+              label={t("action.close")}
+              onPress={onClose}
+            />
           </View>
           <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
         </View>

@@ -25,7 +25,13 @@ export const FailureNote = ({ error, title, onRetry }: FailureNoteProps): JSX.El
       {...(title === undefined ? {} : { title })}
       {...(onRetry === undefined
         ? {}
-        : { action: <Button onPress={onRetry}>{t("action.tryAgain")}</Button> })}
+        : {
+            action: (
+              <Button icon="rotate" onPress={onRetry}>
+                {t("action.tryAgain")}
+              </Button>
+            ),
+          })}
     >
       {t(describeFailure(error))}
     </Callout>
