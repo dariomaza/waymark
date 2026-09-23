@@ -3,39 +3,55 @@ import { useState, type JSX } from "react";
 
 import { CreateItemSheet } from "../items/create-item-sheet.js";
 import { Button } from "../ui/atoms/button.js";
-import { CreateUnitSheet } from "./create-unit-sheet.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
+  /**
+   * Into the search tab, already scoped to this box.
+   *
+   * Injected rather than navigated here for the same reason `UnitMenu` takes
+   * `onShowLabel`: this component would otherwise need to know that the search
+   * screen is a TAB inside the root stack, which is the navigator's business
+   * and not a box's.
+   */
+  readonly onSearchInside: () => void;
 }
 
 /**
- * What a box is FOR: putting something in it.
+ * What somebody standing in front of a box is here to do.
  *
  * Two controls, and they are the only two on this screen that are not behind
- * the menu — because they are the two reasons somebody opens a box's screen
+ * the menu — because they are the two reasons anybody opens a box's screen
  * with an intention rather than a question. Everything else that can be done
  * to this unit is in `UnitMenu`, beside its name (ADR 21).
  *
- * The primary is "Add an item" and not "Add a space inside": a shelf holds
- * things a hundred times for every time it grows a drawer. The second is a
- * secondary rather than a peer, which is the difference between a hierarchy
- * and a column — one lime rectangle and one outlined one, so a thumb lands on
- * the right one without reading either.
+ * ## Which two, and why it is not the two it started as
  *
- * The two shapes say what KIND of thing is about to be added, which is the
- * only thing separating the two sentences: a plus for a thing, a box for a
- * box. Two identical pluses would leave the eye to the words again.
+ * It shipped as "Add an item" and "Add a space inside", and the owner used the
+ * browser on his phone and said what the second one should have been:
+ *
+ * > dentro de un espacio, quiero que las acciones principales sean buscar y
+ * > añadir un objeto
+ *
+ * That is a statement about the box and not about a client, so this one
+ * answers it too — and it answers it by GAINING something. The browser at
+ * least had a scoped search behind its menu; this app had none anywhere, even
+ * though the search tab has read a `within` parameter all along. A capability
+ * reachable from nowhere is a capability that does not exist.
+ *
+ * Growing a drawer inside a shelf is a thing you do once, when the shelf is
+ * new, so it went into the menu and searching took its place. A swap and not
+ * an addition: still one primary, still one secondary.
+ *
+ * The two shapes say what KIND of intention each one is — a plus for something
+ * arriving, a magnifier for something being looked for — so a thumb lands on
+ * the right one without reading either.
  */
-export const UnitActions = ({ unit }: UnitActionsProps): JSX.Element => {
+export const UnitActions = ({ unit, onSearchInside }: UnitActionsProps): JSX.Element => {
   const t = useTranslate();
 
-  const [open, setOpen] = useState<"item" | "unit" | null>(null);
-
-  const close = (): void => {
-    setOpen(null);
-  };
+  const [adding, setAdding] = useState(false);
 
   return (
     <>
@@ -43,26 +59,23 @@ export const UnitActions = ({ unit }: UnitActionsProps): JSX.Element => {
         tone="primary"
         icon="plus"
         onPress={() => {
-          setOpen("item");
+          setAdding(true);
         }}
       >
         {t("units.addItem")}
       </Button>
-      <Button
-        icon="box"
-        onPress={() => {
-          setOpen("unit");
-        }}
-      >
-        {t("units.addInside")}
+      <Button icon="search" onPress={onSearchInside}>
+        {t("units.searchInside")}
       </Button>
 
-      {open === "item" ? (
-        <CreateItemSheet storageUnitId={unit.id} unitName={unit.name} onClose={close} />
-      ) : null}
-
-      {open === "unit" ? (
-        <CreateUnitSheet parentId={unit.id} parentName={unit.name} onClose={close} />
+      {adding ? (
+        <CreateItemSheet
+          storageUnitId={unit.id}
+          unitName={unit.name}
+          onClose={() => {
+            setAdding(false);
+          }}
+        />
       ) : null}
     </>
   );

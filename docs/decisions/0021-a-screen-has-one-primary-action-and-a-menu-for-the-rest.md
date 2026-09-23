@@ -111,10 +111,10 @@ Concretely, in both clients:
 | Action | Before | After |
 | --- | --- | --- |
 | `units.addItem` | peer, `primary` | **primary**, in the row |
-| `units.addInside` | peer | **secondary**, in the row |
-| `units.searchInside` | peer (link) | unit's menu |
+| `units.addInside` | peer | unit's menu (see the amendment below) |
+| `units.searchInside` | peer (link) | **secondary**, in the row |
 | `units.showLabel` | peer (link) | unit's menu |
-| `label.sheet` | peer (link) | unit's menu |
+| `label.sheet` | peer (link) | home screen only (see below) |
 | `action.edit` | peer | unit's menu |
 | `action.move` | peer | unit's menu |
 | `action.empty` | peer | unit's menu, destructive group |
@@ -133,6 +133,107 @@ that also starts it is unchanged.
 The home screen needed no change. It already had exactly one primary and one
 secondary, which is some evidence that the rule was latent in the codebase and
 only the detail screens had drifted.
+
+### Amended: a secondary PLACE is not a secondary action
+
+That last paragraph was wrong, and wrong in a way the rule as written could not
+catch. The home screen's two controls were an outlined rectangle beside a lime
+one — one primary and one secondary, exactly as required — and the owner looked
+at it on his phone and said:
+
+> lo mejor sería el botón principal en grande y lo de las etiquetas en
+> pequeñito con un icono al lado
+
+The count was right and the SHAPE was wrong. Adding a room is what the home
+screen is for; a sheet of labels is a different errand that happens to start
+there. Two rectangles side by side say the two controls are the same kind of
+thing, so a person reads both to find out which is which — which is the failure
+this whole ADR was written to end, at two controls instead of nine.
+
+So the vocabulary gains a third shape, `QuietLink` (`ui/atoms/quiet-link.tsx`):
+a word with a picture beside it, no fill and no edge, for **a second PLACE
+rather than a second action**. The primary takes the full width; this sits under
+it at its own size.
+
+Three rules come with it, and the first is the one that gets broken:
+
+1. **It is small to look at and not small to hit.** The 48px floor is
+   unchanged. Visual weight and touch area are different measurements, and this
+   is the shape where they are easiest to confuse: small text beside a small
+   picture looks like something that should be the height of a line of text.
+2. **Its picture is required**, unlike a `Button`'s. A control with no
+   rectangle around it has nothing but its words to say it is a control at all,
+   and small words alone read as a caption. Where no honest picture exists,
+   widen the icon set (ADR 20) — `tags` was added for exactly this, and is to
+   `tag` what `things` is to `box`.
+3. **It is a route, never an act.** Anything that does something to what the
+   screen is showing belongs in that thing's menu, which is the other half of
+   this ADR. `QuietLink` is for a way somewhere that the screen is not for.
+
+The other place it belongs today is `photos/views/photo-status-note.tsx`, where
+"See the ones that failed" is a `Button` in `quiet` tone doing this shape's job
+with a button's clothes on. That is left alone here only because nobody has
+complained about that screen, and a redesign nobody asked for is how the row of
+nine got built.
+
+Printing is a browser errand, so `apps/mobile` has no label sheet and needs
+none of this. The two clients still agree on what a screen offers; they differ
+on what a phone can do with a printer.
+
+### Amended: which second control a box gets
+
+The rule above survives this unchanged — one primary, at most one secondary —
+but the first pair chosen under it was wrong, and the owner said so after a
+week with it on his phone:
+
+> dentro de un espacio, quiero que las acciones principales sean buscar y
+> añadir un objeto
+
+He is right, and the original reasoning contains its own refutation. "A shelf
+holds things a hundred times for every time it grows a drawer" is the argument
+that made adding an ITEM the primary; applied once more it says that the
+second-commonest reason to open a box's screen is not growing a drawer either.
+Somebody who has walked to a shelf and opened it is putting something in it or
+looking for something in it. So `units.searchInside` is the secondary and
+`units.addInside` is the first line of the menu.
+
+This is a swap and not a widening: the row still holds two controls, and the
+count that made nine unusable is unchanged. It is worth naming as an amendment
+rather than a silent edit, because it shows what this rule can and cannot do —
+it decides HOW MANY controls a screen shows and says nothing about WHICH, and
+only the person using the app knows that second part.
+
+The phone answers the same sentence by GAINING something. `apps/mobile` had no
+scoped search anywhere: its search tab has read a `within` parameter all along
+and nothing in the app ever passed one, so the browser's version was behind a
+menu and the phone's existed only in the navigator's types. The two clients now
+offer the same pair — a URL in one and a navigation in the other, which is each
+platform's own business. **Intent is what the two clients owe each other;
+mechanism is not.**
+
+### Amended: what belongs in a subject's menu at all
+
+The rule says an action belonging to a THING goes in that thing's menu. It does
+not say what to do with something that is not an action on the thing, and one
+line slipped through on that silence. The owner found it:
+
+> tampoco tiene sentido que en las acciones de un espacio puedas ver todas las
+> etiquetas, con ver la del propio espacio es suficiente
+
+`label.sheet` was a page of labels for everything a box HOLDS, scoped with
+`?within=`. `units.showLabel` is the box's own label. The two were adjacent
+lines wearing almost the same words, and only the second is about the box. A
+sheet is a job you do for the whole house, standing at a printer, so it lives
+on the home screen and nowhere else.
+
+**A subject's menu holds what is done TO the subject. A different errand that
+happens to mention the subject is not that, however convenient the shortcut.**
+
+Nothing became unreachable. The shortcut saved was "labels for everything in
+the garage", and the sheet's own screen does that in one press — the subtree
+control beside each room, which has its own test. The narrowed address is still
+honoured for anybody holding one; nothing builds it any more, so
+`labelsWithinPath` is gone.
 
 ### Why the overflow opens a sheet, and not an ARIA `menu`
 
@@ -189,6 +290,12 @@ Named, because a decision that lists no cost has not been made.
   whole screen to offer seven lines. On a desktop browser that is heavier than
   the interaction deserves. It was accepted because this app's screen is a
   phone in a garage and the desktop is where it is merely also usable.
+- **The overflow is now the only way to a shortcut somebody had.** Printing
+  labels for everything in one room was two presses from that room and is now
+  two presses from the home screen, by way of the subtree control. Equal in
+  count, further in distance for somebody standing in front of the room — and
+  charged deliberately, because the alternative is a box's menu that offers
+  things which are not about the box.
 - **One menu with one line in it.** The item screen's overflow holds only
   `delete`. That looks like ceremony and is not: the rule is not "hide the
   rarely used", it is that nothing destructive may sit where a thumb reaching

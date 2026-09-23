@@ -3,17 +3,12 @@ import { useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { OverflowMenu, type OverflowAction } from "../ui/molecules/overflow-menu.js";
+import { CreateUnitDialog } from "./create-unit-dialog.js";
 import { DeleteUnitDialog } from "./delete-unit-dialog.js";
 import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
-import {
-  ROUTES,
-  labelsWithinPath,
-  findWithinPath,
-  unitLabelPath,
-  unitPath,
-} from "../app/routes.js";
+import { ROUTES, unitLabelPath, unitPath } from "../app/routes.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface UnitMenuProps {
@@ -22,7 +17,7 @@ export interface UnitMenuProps {
   readonly path: readonly StorageUnitView[];
 }
 
-type OpenDialog = "edit" | "move" | "empty" | "delete" | null;
+type OpenDialog = "add" | "edit" | "move" | "empty" | "delete" | null;
 
 /**
  * # Everything that can be done TO a storage unit
@@ -34,18 +29,30 @@ type OpenDialog = "edit" | "move" | "empty" | "delete" | null;
  * where a phone has put a subject's own menu for as long as phones have had
  * menus. ADR 21 is the rule, and this is the first place it is kept.
  *
- * Seven lines, in the order somebody reaches for them:
+ * Six lines, in the order somebody reaches for them:
  *
- * 1. **Search inside**, **Show the label**, **Label sheet** — three ways of
- *    looking at what is here, and none of them changes anything.
- * 2. **Edit** and **Move** — two acts, not one "manage", because editing
+ * 1. **Add a space inside** — the one line here that makes something, and the
+ *    one that used to stand in the row outside. It was demoted because a shelf
+ *    holds things a hundred times for every time it grows a drawer, and the
+ *    owner wanted the row to say searching instead; it is first IN here
+ *    because of that same count — of everything left behind this control, it
+ *    is what gets reached for most.
+ * 2. **Show the label** — this box's own label, looking at something and
+ *    changing nothing. A SHEET of labels used to sit beside it, scoped to this
+ *    unit, and it was a category error: a page of labels for everything a box
+ *    holds is not an act on the box. It is on the home screen, where the whole
+ *    house is.
+ * 3. **Edit** and **Move** — two acts, not one "manage", because editing
  *    changes what the unit SAYS about itself and is a `PATCH` that cannot
  *    carry a parent, while moving changes where it IS and is guarded by the
  *    subtree invariant (ADR 2, ADR 14). One control for both would hide the
  *    second behind the first.
- * 3. **Empty** and **Delete** — the two that take something away, last, behind
+ * 4. **Empty** and **Delete** — the two that take something away, last, behind
  *    a rule, as far from the screen's primary action as this menu goes. A
  *    thumb reaching for "Add an item" cannot land on either.
+ *
+ * Searching is NOT here any more: it is the screen's secondary action now, in
+ * the row, where the owner asked for it.
  *
  * A container: it owns which sheet is open and nothing else. Each sheet owns
  * its own request and its own refusal, which is why the not-empty conflict can
@@ -64,16 +71,27 @@ export const UnitMenu = ({ unit, path }: UnitMenuProps): JSX.Element => {
   };
 
   const actions: readonly OverflowAction[] = [
-    { label: t("units.searchInside"), icon: "search", to: findWithinPath(unit.id) },
-    { label: t("units.showLabel"), icon: "tag", to: unitLabelPath(unit.id) },
     /*
-      One label and a sheet of them are two different jobs: sticking a label on
-      THIS box, and labelling everything it holds in one afternoon. `?within=`
-      means the same as it does on a search — what is inside, not the unit
-      itself (ADR 11). No icon: nothing in the set means "a page of labels",
-      and a shape somebody has to learn by pressing it is worse than the words.
+      A box for a box, the same shape the row used to carry it with: what is
+      about to be added is a container and not a thing, and that distinction is
+      the only one separating this line from "Add an item" outside.
     */
-    { label: t("label.sheet"), to: labelsWithinPath(unit.id) },
+    {
+      label: t("units.addInside"),
+      icon: "box",
+      onSelect: () => {
+        setOpen("add");
+      },
+    },
+    /*
+      This box's OWN label, and only that. A sheet of every label in the house
+      used to sit on the next line, scoped to this unit, and it was a category
+      error: this menu is what can be done TO this box, and a page of labels
+      for everything it holds is a different errand that happened to be wearing
+      the same words. It lives on the home screen now, which is where the
+      whole house is.
+    */
+    { label: t("units.showLabel"), icon: "tag", to: unitLabelPath(unit.id) },
     {
       label: t("action.edit"),
       icon: "pencil",
@@ -117,6 +135,8 @@ export const UnitMenu = ({ unit, path }: UnitMenuProps): JSX.Element => {
   return (
     <>
       <OverflowMenu label={t("action.more", { name: unit.name })} actions={actions} />
+
+      {open === "add" ? <CreateUnitDialog parentId={unit.id} onClose={close} /> : null}
 
       {open === "edit" ? <EditUnitDialog unit={unit} onClose={close} /> : null}
 

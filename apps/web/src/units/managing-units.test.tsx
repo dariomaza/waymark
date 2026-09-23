@@ -5,7 +5,7 @@ import { languageStore } from "../app/language.js";
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { anItem, aSession, aStorageUnit, aTree, withPhoto } from "@waymark/api-client/testing";
-import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
+import { renderApp, screen, userEvent, waitFor, within } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
 const wardrobe = aStorageUnit({
@@ -67,6 +67,18 @@ const openTheMenuFor = async (name: string): Promise<void> => {
   await userEvent.click(await screen.findByRole("button", { name: `More actions for ${name}` }));
 };
 
+/**
+ * The panel that control opens, and the only honest place to ask what is
+ * BEHIND the menu.
+ *
+ * Asking `screen` instead would find a control of the same name standing in
+ * the row outside the panel and call the menu proved — which is exactly how
+ * `units.addInside` went on passing a test about the overflow while it was
+ * still a button on the screen.
+ */
+const theMenuFor = async (name: string): Promise<HTMLElement> =>
+  await screen.findByRole("dialog", { name: `More actions for ${name}` });
+
 /** The same control, for somebody reading the app in Spanish. */
 const abreElMenuDe = async (name: string): Promise<void> => {
   await userEvent.click(await screen.findByRole("button", { name: `Más acciones para ${name}` }));
@@ -93,6 +105,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /add a space inside/i }));
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "Little bag");
     await userEvent.selectOptions(screen.getByRole("combobox", { name: /kind/i }), "BAG");
@@ -125,6 +138,7 @@ describe("looking after a storage unit", () => {
 
     renderApp({ route: "/units/box3" });
 
+    await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /add a space inside/i }));
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "A name");
     await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
@@ -363,15 +377,56 @@ describe("looking after a storage unit", () => {
     renderApp({ route: "/units/box3" });
 
     expect(await screen.findByRole("button", { name: /add an item/i })).toBeVisible();
-    expect(screen.getByRole("button", { name: /add a space inside/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /search inside/i })).toBeVisible();
 
-    for (const gone of [/^edit$/i, /^move$/i, /^empty$/i, /^delete$/i]) {
+    for (const gone of [
+      /^edit$/i,
+      /^move$/i,
+      /^empty$/i,
+      /^delete$/i,
+      /add a space inside/i,
+    ]) {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
     }
 
-    for (const gone of [/search inside/i, /show the label/i, /label sheet/i]) {
+    for (const gone of [/show the label/i, /label sheet/i]) {
       expect(screen.queryByRole("link", { name: gone })).toBeNull();
     }
+  });
+
+  /**
+   * # The two things somebody does standing in front of a box
+   *
+   * The owner, after a week with it on his phone: "dentro de un espacio,
+   * quiero que las acciones principales sean buscar y añadir un objeto".
+   *
+   * He is right, and the reason is the box itself. Somebody who has walked to
+   * a shelf and opened its screen is either putting something in it or looking
+   * for something in it. Growing a drawer inside it is a thing you do once,
+   * when the shelf is new — so it moved into the menu and searching took its
+   * place, which is a swap and not an addition: still one primary and one
+   * secondary (ADR 21).
+   */
+  it("goes from a box straight to searching inside that box", async () => {
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("link", { name: /search inside/i }));
+
+    expect(
+      await screen.findByText("Searching inside Box 3, and everything under it."),
+    ).toBeVisible();
+    expect(screen.getByRole("searchbox", { name: /search for a thing or a box/i })).toBeVisible();
+  });
+
+  /** And the one it displaced is still there, one press further in. */
+  it("still grows a space inside a box, from behind the overflow", async () => {
+    renderApp({ route: "/units/box3" });
+
+    await openTheMenuFor("Box 3");
+
+    expect(
+      within(await theMenuFor("Box 3")).getByRole("button", { name: /add a space inside/i }),
+    ).toBeVisible();
   });
 
   /**
@@ -383,14 +438,27 @@ describe("looking after a storage unit", () => {
     renderApp({ route: "/units/box3" });
 
     await openTheMenuFor("Box 3");
+    const menu = within(await theMenuFor("Box 3"));
 
-    for (const name of [/^edit$/i, /^move$/i, /^empty$/i, /^delete$/i]) {
-      expect(await screen.findByRole("button", { name })).toBeVisible();
+    for (const name of [
+      /add a space inside/i,
+      /^edit$/i,
+      /^move$/i,
+      /^empty$/i,
+      /^delete$/i,
+    ]) {
+      expect(menu.getByRole("button", { name })).toBeVisible();
     }
 
-    for (const name of [/search inside/i, /show the label/i, /label sheet/i]) {
-      expect(await screen.findByRole("link", { name })).toBeVisible();
-    }
+    expect(menu.getByRole("link", { name: /show the label/i })).toBeVisible();
+
+    /*
+      And NOT a sheet of every label in the house. The owner: "tampoco tiene
+      sentido que en las acciones de un espacio puedas ver todas las etiquetas,
+      con ver la del propio espacio es suficiente". Printing a sheet is a job
+      you do for the whole house, from the screen that shows the whole house.
+    */
+    expect(menu.queryByRole("link", { name: /label sheet/i })).toBeNull();
   });
 
   /**

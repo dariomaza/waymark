@@ -24,9 +24,18 @@
   overflow-y: auto;
 }
 
-/* The home screen's two ways in: add a room, or label the ones there are. */
+/**
+ * The home screen's two ways in, and they are not two of a kind.
+ *
+ * A column rather than a wrapping row: the primary takes the whole width —
+ * "el botón principal en grande" — and the quiet way to the label sheet sits
+ * under it at its own size. `flex-start` is what keeps the small one small; in
+ * a stretched column it would grow to the full width and become a second
+ * rectangle by accident, which is the thing this arrangement exists to undo.
+ */
 .inventory-screen__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
 }

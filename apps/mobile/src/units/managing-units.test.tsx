@@ -67,11 +67,44 @@ describe("looking after a storage unit", () => {
     await renderApp({ session: aSession(), screen: atBox3 });
 
     expect(await screen.findByRole("button", { name: "Add an item" })).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Add a space inside" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Search inside" })).toBeOnTheScreen();
 
-    for (const gone of ["Edit", "Move", "Empty", "Delete", "Show the label", "Select several"]) {
+    for (const gone of [
+      "Add a space inside",
+      "Edit",
+      "Move",
+      "Empty",
+      "Delete",
+      "Show the label",
+      "Select several",
+    ]) {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
     }
+  });
+
+  /**
+   * # The two things somebody does standing in front of a box
+   *
+   * The owner said it about the browser — "dentro de un espacio, quiero que
+   * las acciones principales sean buscar y añadir un objeto" — and it is a
+   * statement about the box rather than about a client, so the phone answers
+   * it too.
+   *
+   * It answers it by GAINING something. The browser had a scoped search behind
+   * its menu and this app had none at all: the `within` parameter the search
+   * tab already reads was reachable from nowhere on the phone. So the two
+   * clients now offer the same pair, which is the agreement that matters —
+   * one of them does it with a URL and the other with a navigation, and that
+   * difference is each platform's own business.
+   */
+  it("goes from a box straight to searching inside that box", async () => {
+    await renderApp({ session: aSession(), screen: atBox3 });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Search inside" }));
+
+    expect(
+      await screen.findByText("Searching inside Box 3, and everything under it."),
+    ).toBeOnTheScreen();
   });
 
   /**
@@ -84,7 +117,15 @@ describe("looking after a storage unit", () => {
 
     await openTheMenuFor("Box 3");
 
-    for (const name of ["Select several", "Show the label", "Edit", "Move", "Empty", "Delete"]) {
+    for (const name of [
+      "Select several",
+      "Add a space inside",
+      "Show the label",
+      "Edit",
+      "Move",
+      "Empty",
+      "Delete",
+    ]) {
       expect(await screen.findByRole("button", { name })).toBeOnTheScreen();
     }
   });
@@ -266,6 +307,7 @@ describe("looking after a storage unit", () => {
 
     await renderApp({ session: aSession(), screen: atBox3 });
 
+    await openTheMenuFor("Box 3");
     await fireEvent.press(await screen.findByRole("button", { name: "Add a space inside" }));
     await fireEvent.changeText(screen.getByLabelText("Name"), "Little bag");
     await fireEvent.press(screen.getByRole("radio", { name: "Bag" }));
@@ -306,6 +348,7 @@ describe("looking after a storage unit", () => {
 
     await renderApp({ session: aSession(), screen: atBox3 });
 
+    await openTheMenuFor("Box 3");
     await fireEvent.press(await screen.findByRole("button", { name: "Add a space inside" }));
     await fireEvent.changeText(screen.getByLabelText("Name"), "A name");
     await fireEvent.press(screen.getByRole("button", { name: "Create" }));

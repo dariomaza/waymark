@@ -2,6 +2,7 @@ import type { StorageUnitView } from "@waymark/api-client";
 import { useState, type JSX } from "react";
 
 import { OverflowMenu, type OverflowAction } from "../ui/molecules/overflow-menu.js";
+import { CreateUnitSheet } from "./create-unit-sheet.js";
 import { DeleteUnitSheet } from "./delete-unit-sheet.js";
 import { EditUnitSheet } from "./edit-unit-sheet.js";
 import { EmptyUnitSheet } from "./empty-unit-sheet.js";
@@ -22,7 +23,7 @@ export interface UnitMenuProps {
   readonly onPickSeveral?: (() => void) | undefined;
 }
 
-type OpenSheet = "edit" | "move" | "empty" | "delete" | null;
+type OpenSheet = "add" | "edit" | "move" | "empty" | "delete" | null;
 
 /**
  * # Everything that can be done TO a storage unit
@@ -40,12 +41,17 @@ type OpenSheet = "edit" | "move" | "empty" | "delete" | null;
  *    gesture. Long-pressing a card is what Android has meant by "start
  *    picking" for as long as it has had lists, and it is still invisible, so
  *    the menu says it in words and the bar that appears teaches the gesture.
- * 2. **Show the label** — looking at something, changing nothing.
- * 3. **Edit** and **Move** — two acts, not one "manage": editing changes what
+ * 2. **Add a space inside** — the one line here that makes something, and the
+ *    one that used to stand in the column outside. It was demoted because a
+ *    shelf holds things a hundred times for every time it grows a drawer, and
+ *    the owner wanted the visible pair to be adding a thing and searching; it
+ *    sits this high IN here because of that same count.
+ * 3. **Show the label** — looking at something, changing nothing.
+ * 4. **Edit** and **Move** — two acts, not one "manage": editing changes what
  *    the unit SAYS about itself and cannot carry a parent, while moving
  *    changes where it IS and is guarded by the subtree invariant (ADR 2, ADR
  *    14). One control for both would hide the second behind the first.
- * 4. **Empty** and **Delete** — the two that take something away, last, behind
+ * 5. **Empty** and **Delete** — the two that take something away, last, behind
  *    a rule, as far from the screen's primary action as this menu goes.
  */
 export const UnitMenu = ({
@@ -67,6 +73,18 @@ export const UnitMenu = ({
     ...(onPickSeveral === undefined
       ? []
       : [{ label: t("items.selectSeveral"), icon: "check" as const, onSelect: onPickSeveral }]),
+    /*
+      A box for a box, the same shape the column used to carry it with: what is
+      about to be added is a container and not a thing, and that distinction is
+      the only one separating this line from "Add an item" outside.
+    */
+    {
+      label: t("units.addInside"),
+      icon: "box" as const,
+      onSelect: () => {
+        setOpen("add");
+      },
+    },
     { label: t("units.showLabel"), icon: "tag", onSelect: onShowLabel },
     {
       label: t("action.edit"),
@@ -111,6 +129,9 @@ export const UnitMenu = ({
     <>
       <OverflowMenu label={t("action.more", { name: unit.name })} actions={actions} />
 
+      {open === "add" ? (
+        <CreateUnitSheet parentId={unit.id} parentName={unit.name} onClose={close} />
+      ) : null}
       {open === "edit" ? <EditUnitSheet unit={unit} onClose={close} /> : null}
       {open === "move" ? <MoveUnitSheet unit={unit} onClose={close} /> : null}
       {open === "empty" ? (

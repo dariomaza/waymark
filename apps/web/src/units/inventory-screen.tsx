@@ -1,7 +1,7 @@
 import { useState, type JSX } from "react";
-import { Link } from "react-router-dom";
 
 import { Button } from "../ui/atoms/button.js";
+import { QuietLink } from "../ui/atoms/quiet-link.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
@@ -31,8 +31,15 @@ export const InventoryScreen = (): JSX.Element => {
     <main className="screen">
       <h2>{t("inventory.title")}</h2>
 
+      {/*
+        One big control and one small one. Adding a room is what this screen is
+        FOR; a sheet of labels is a different errand that happens to start here,
+        and while both were rectangles the screen said they were two of the same
+        kind of thing. See `QuietLink`, and the owner's sentence in it.
+      */}
       <div className="inventory-screen__actions">
         <Button
+          block
           tone="primary"
           icon="plus"
           onClick={() => {
@@ -41,9 +48,9 @@ export const InventoryScreen = (): JSX.Element => {
         >
           {t("inventory.addSpace")}
         </Button>
-        <Link className="button button--secondary" to={ROUTES.labels}>
+        <QuietLink to={ROUTES.labels} icon="tags">
           {t("label.sheet")}
-        </Link>
+        </QuietLink>
       </div>
 
       {tree.isPending ? <Loading label={t("inventory.loading")} /> : null}

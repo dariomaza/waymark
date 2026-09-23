@@ -8,6 +8,15 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  /*
+    Not every button is a `<button>`. A way SOMEWHERE stays a `<Link>` — it is
+    a URL, it belongs in the history — and a browser underlines an `<a>`, so
+    without this the shape is a bordered rectangle with underlined words inside
+    it: neither a link nor a button. It belongs to the shape rather than to any
+    one screen, which is why it is here and not in three stylesheets that each
+    happen to draw one.
+  */
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;

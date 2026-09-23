@@ -173,8 +173,13 @@ describe("a sheet of labels for a whole storage room", () => {
   /**
    * `?within=` means the same here as it does on a search (ADR 11): a box is
    * not inside itself. The room is one tick away if somebody wants it.
+   *
+   * Nothing in the app builds this address any more — the line in a box's menu
+   * that used to is gone. It is still honoured, because it is a URL: somebody
+   * who bookmarked one, or was sent one across a house, should land where they
+   * expected rather than on the whole inventory unticked.
    */
-  it("arrives from a unit with everything inside it already picked", async () => {
+  it("still honours a scoped address, for somebody who already has one", async () => {
     renderApp({ route: "/labels?within=garage" });
 
     expect(labelsOn(await theSheet()).map((label) => label.dataset["labelFor"])).toEqual([
@@ -185,7 +190,26 @@ describe("a sheet of labels for a whole storage room", () => {
     expect(screen.getByRole("checkbox", { name: /^garage$/i })).not.toBeChecked();
   });
 
-  it("is reachable from the unit whose contents are being labelled", async () => {
+  /**
+   * # It is NOT offered from inside one box, and what that costs
+   *
+   * The owner, after a week with it: "tampoco tiene sentido que en las
+   * acciones de un espacio puedas ver todas las etiquetas, con ver la del
+   * propio espacio es suficiente".
+   *
+   * He is describing a category error. A box's menu is everything that can be
+   * done TO that box, and a sheet of every label in the house is not about the
+   * box at all — it only ever arrived there scoped to it, which is a different
+   * errand wearing the same words. `units.showLabel` stays, because THAT one
+   * is the box's own label.
+   *
+   * What it costs is one press and nothing else, and this is where that is
+   * checked rather than asserted: the way that shortcut used to save was
+   * "labels for everything in the garage", and the sheet's own screen does
+   * that in one press from the home screen ("takes a whole subtree in one
+   * press", above). So nothing a person could do has become impossible.
+   */
+  it("is not offered from inside a box, whose own label is offered instead", async () => {
     apiServer.use(
       http.get(`${API_URL}/storage-units/garage`, () =>
         HttpResponse.json({
@@ -199,18 +223,13 @@ describe("a sheet of labels for a whole storage room", () => {
 
     renderApp({ route: "/units/garage" });
 
-    // Behind the room's own menu now: labelling everything a room holds is a
-    // job you come back to, not the thing the screen is for (ADR 21).
     await userEvent.click(
       await screen.findByRole("button", { name: "More actions for Garage" }),
     );
-    await userEvent.click(await screen.findByRole("link", { name: /label sheet/i }));
 
-    expect(labelsOn(await theSheet()).map((label) => label.dataset["labelFor"])).toEqual([
-      "wardrobe",
-      "box3",
-      "box4",
-    ]);
+    const menu = within(await screen.findByRole("dialog", { name: "More actions for Garage" }));
+    expect(menu.getByRole("link", { name: /show the label/i })).toBeVisible();
+    expect(menu.queryByRole("link", { name: /label sheet/i })).toBeNull();
   });
 
   it("is reachable from the home screen, for a room that is not open yet", async () => {
@@ -219,6 +238,30 @@ describe("a sheet of labels for a whole storage room", () => {
     await userEvent.click(await screen.findByRole("link", { name: /label sheet/i }));
 
     expect(await screen.findByText(/tick the spaces you want labels for/i)).toBeVisible();
+  });
+
+  /**
+   * # The small control, and the one thing about it worth asserting
+   *
+   * The owner: "lo mejor sería el botón principal en grande y lo de las
+   * etiquetas en pequeñito con un icono al lado". Adding a room is what this
+   * screen is FOR; a sheet of labels is a different errand that starts here,
+   * and two identical rectangles said they were the same kind of thing.
+   *
+   * Which control is lime and which has no border is appearance, and this
+   * codebase does not assert class names (ADR 21 says so and accepts the gap).
+   * The picture is not appearance: it is the difference between the shape this
+   * control had before — a word in a rectangle — and the shape it has now,
+   * where the rectangle is gone and the picture is what says "pressable" in
+   * its place. So that is what is pinned, and it is enough to fail if somebody
+   * puts the rectangle back.
+   */
+  it("wears a picture beside its word, now that it has no rectangle to wear", async () => {
+    renderApp({ route: "/" });
+
+    const toTheSheet = await screen.findByRole("link", { name: /label sheet/i });
+
+    expect(toTheSheet.querySelector("svg")).toBeVisible();
   });
 });
 

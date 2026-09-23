@@ -32,6 +32,7 @@ describe("the icon set both clients draw", () => {
       "things",
       "box",
       "tag",
+      "tags",
       "camera",
       "image",
       "plus",

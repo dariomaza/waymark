@@ -19,6 +19,7 @@ import {
   ScanQrCode,
   Search,
   Tag,
+  Tags,
   Trash2,
   X,
   type LucideIcon,
@@ -96,6 +97,20 @@ export const ICON_NAMES = [
   /** One container. Distinct from `things` on purpose: one box, not many. */
   "box",
   "tag",
+  /**
+   * Several labels at once: a SHEET of them, which is a different errand from
+   * sticking one on a box. Distinct from `tag` the way `things` is distinct
+   * from `box` — many, not one.
+   *
+   * It was deliberately absent while the sheet was a line in a menu, on the
+   * grounds that nothing in the set meant "a page of labels" and a shape
+   * somebody has to learn by pressing it is worse than the words. What changed
+   * is that the control lost its rectangle: a quiet line of small text with no
+   * picture beside it reads as a caption rather than as a way somewhere, so
+   * here the shape is carrying its share of the meaning rather than repeating
+   * the word.
+   */
+  "tags",
   /** Taking a new photograph. */
   "camera",
   /** A photograph that already exists — the library, not the shutter. */
@@ -148,6 +163,7 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "waypoints">, LucideIcon> = {
   things: Boxes,
   box: Box,
   tag: Tag,
+  tags: Tags,
   camera: Camera,
   image: Image,
   plus: Plus,
