@@ -46,10 +46,7 @@ export const EmptyUnitSheet = ({
     <Sheet title={t("sheet.empty", { name: unit.name })} onClose={onClose}>
       {needsTarget ? (
         <>
-          <Text style={styles.text}>
-            A root unit has no parent to empty into. Everything inside {unit.name} has to
-            go somewhere else.
-          </Text>
+          <Text style={styles.text}>{t("units.emptyRootNote", { name: unit.name })}</Text>
           <OptionList
             label={t("units.moveEverythingInto")}
             value={target}
@@ -63,7 +60,7 @@ export const EmptyUnitSheet = ({
         </>
       ) : (
         <Text style={styles.text}>
-          Everything inside {unit.name} moves up into {parent.name}. Nothing is deleted.
+          {t("units.emptyIntoNote", { name: unit.name, parent: parent.name })}
         </Text>
       )}
 

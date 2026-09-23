@@ -36,7 +36,7 @@ export const ItemDetail = ({
       />
       <ScreenTitle>{item.name}</ScreenTitle>
       {item.quantity > 1 ? (
-        <Text style={styles.quiet}>Quantity {item.quantity}</Text>
+        <Text style={styles.quiet}>{t("items.quantityIs", { count: item.quantity })}</Text>
       ) : null}
       {item.description === null ? null : (
         <Text style={styles.description}>{item.description}</Text>

@@ -28,10 +28,7 @@ const ExpoCameraView = ({ onCode }: CodeScannerViewProps): JSX.Element => {
   if (!permission.granted) {
     return (
       <View style={styles.frame}>
-        <Text style={styles.message}>
-          Waymark needs permission to use the camera to read a label. The code printed
-          under the symbol works just as well.
-        </Text>
+        <Text style={styles.message}>{t("scan.cameraNeeded")}</Text>
         <Button
           tone="primary"
           onPress={() => {

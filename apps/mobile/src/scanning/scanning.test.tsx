@@ -69,7 +69,7 @@ describe("scanning a label", () => {
     expect(screen.getByRole("button", { name: "Go to your inventory" })).toBeOnTheScreen();
   });
 
-  it("refuses a QR that is not an Waymark label at all", async () => {
+  it("refuses a QR that is not a Waymark label at all", async () => {
     theApiKnowsTheHouse();
     const camera = fakeScanner();
 
@@ -80,7 +80,7 @@ describe("scanning a label", () => {
       camera.scan("https://example.com/something-else");
     });
 
-    expect(await screen.findByText(/not an waymark label/i)).toBeOnTheScreen();
+    expect(await screen.findByText(/not a waymark label/i)).toBeOnTheScreen();
   });
 
   /**

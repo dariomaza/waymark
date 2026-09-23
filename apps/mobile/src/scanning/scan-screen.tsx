@@ -54,10 +54,7 @@ export const ScanScreen = (): JSX.Element => {
       <scanner.View onCode={open} />
 
       {unknownCode === null ? null : (
-        <Callout tone="wrong">
-          That is not an Waymark label. A label points at this app and ends in a ten
-          character code.
-        </Callout>
+        <Callout tone="wrong">{t("scan.notALabel")}</Callout>
       )}
 
       <View style={styles.byHand}>

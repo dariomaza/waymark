@@ -244,6 +244,10 @@ export const ES: Dictionary = {
   "scan.opening": "Abriendo esa caja",
   "scan.lookupFailed": "No se ha podido consultar esa etiqueta",
   "scan.goToInventory": "Ir a su inventario",
+  "scan.cameraNeeded":
+    "Waymark necesita permiso para usar la cámara y leer una etiqueta. El código impreso bajo el símbolo sirve igual de bien.",
+  "scan.notALabel":
+    "Eso no es una etiqueta de Waymark. Una etiqueta apunta a esta aplicación y termina en un código de diez caracteres.",
 
   // ---------------------------------------------------------------------
   // Finding something again
@@ -304,6 +308,14 @@ export const ES: Dictionary = {
     other: "Borrar {name} también borra sus fotos. Esto no se puede deshacer.",
   },
   "items.tagsLabel": "Etiquetas: {tags}",
+  // "Cantidad: 8" and not "Cantidad 8": Spanish wants the colon where English
+  // is happy with a space.
+  "items.quantityIs": "Cantidad: {count}",
+
+  "units.deleteUndone": "Borrar {name} no se puede deshacer.",
+  "units.emptyRootNote":
+    "Una unidad raíz no tiene unidad superior en la que vaciarse. Todo lo que hay dentro de {name} tiene que ir a otro sitio.",
+  "units.emptyIntoNote": "Todo lo que hay dentro de {name} sube a {parent}. No se borra nada.",
 
   "units.emptyIntoAndDelete": "Vaciarla en {name} y borrarla",
   "units.select": "Seleccionar {name}",

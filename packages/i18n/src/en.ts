@@ -262,6 +262,15 @@ export const EN = {
   "scan.opening": "Opening that box",
   "scan.lookupFailed": "That label could not be looked up",
   "scan.goToInventory": "Go to your inventory",
+  /**
+   * Saying no to the camera is a normal answer, so this is a sentence with a
+   * way forward rather than a dead screen: the code printed under the symbol
+   * is typed in instead, which is why it is printed there.
+   */
+  "scan.cameraNeeded":
+    "Waymark needs permission to use the camera to read a label. The code printed under the symbol works just as well.",
+  "scan.notALabel":
+    "That is not a Waymark label. A label points at this app and ends in a ten character code.",
 
   // ---------------------------------------------------------------------
   // Finding something again
@@ -321,6 +330,22 @@ export const EN = {
     other: "Deleting {name} also deletes its photos. This cannot be undone.",
   },
   "items.tagsLabel": "Tags: {tags}",
+  /**
+   * The count beside a thing on its own screen. `items.quantity` is the form
+   * FIELD's name; this is the sentence, and Spanish needs a preposition where
+   * English gets away with juxtaposition.
+   */
+  "items.quantityIs": "Quantity {count}",
+
+  "units.deleteUndone": "Deleting {name} cannot be undone.",
+  /**
+   * A root has no parent to empty into, so the API answers `MISSING_EMPTY_TARGET`
+   * rather than guessing (ADR 3). Saying so before the refusal is friendlier
+   * than showing it, and it is the same rule either way.
+   */
+  "units.emptyRootNote":
+    "A root unit has no parent to empty into. Everything inside {name} has to go somewhere else.",
+  "units.emptyIntoNote": "Everything inside {name} moves up into {parent}. Nothing is deleted.",
 
   "units.emptyIntoAndDelete": "Empty it into {name} and delete",
   "units.select": "Select {name}",
