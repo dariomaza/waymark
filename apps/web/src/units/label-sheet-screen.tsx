@@ -122,8 +122,11 @@ export const LabelSheetScreen = (): JSX.Element => {
           <div className="label-sheet-screen__controls">
             <p className="label-sheet-screen__count">
               {sheet.length === 0
-                ? `Nothing picked yet.`
-                : `${plural(sheet.length, "label")} on ${plural(pages, "page")}.`}
+                ? t("label.nothingPicked")
+                : t("label.countOnPages", {
+                    labels: t("label.labelCount", { count: sheet.length }),
+                    pages: t("label.pageCount", { count: pages }),
+                  })}
             </p>
             <Button
               tone="primary"
@@ -133,7 +136,7 @@ export const LabelSheetScreen = (): JSX.Element => {
               }}
             >
               {symbols.waitingFor === 0
-                ? `Print`
+                ? t("action.print")
                 : t("label.printWaiting", { count: symbols.waitingFor })}
             </Button>
             <Button
@@ -155,17 +158,11 @@ export const LabelSheetScreen = (): JSX.Element => {
 
           {symbols.failure === null ? null : (
             <Callout tone="wrong">
-              A symbol could not be fetched, so the sheet is incomplete and
-              printing is off. {t(describeFailure(symbols.failure))}
+              {t("label.symbolMissing")} {t(describeFailure(symbols.failure))}
             </Callout>
           )}
 
-          <p className="label-sheet-screen__hint">
-            Plain A4 and scissors — no special label paper. In the print dialog,
-            turn headers and footers OFF and leave the margins at default: the
-            page already carries its own. What you see below is the page at its
-            real size.
-          </p>
+          <p className="label-sheet-screen__hint">{t("label.printingHint")}</p>
 
           <div className="label-sheet-screen__picker">
             <UnitChecklist
@@ -177,10 +174,7 @@ export const LabelSheetScreen = (): JSX.Element => {
           </div>
 
           {sheet.length === 0 ? (
-            <EmptyNote>
-              Tick the units you want labels for, or take a whole room with
-              &ldquo;everything inside&rdquo;.
-            </EmptyNote>
+            <EmptyNote>{t("label.pickUnits")}</EmptyNote>
           ) : (
             <LabelSheet units={sheet} />
           )}
@@ -189,6 +183,3 @@ export const LabelSheetScreen = (): JSX.Element => {
     </main>
   );
 };
-
-const plural = (count: number, noun: string): string =>
-  `${String(count)} ${noun}${count === 1 ? "" : "s"}`;

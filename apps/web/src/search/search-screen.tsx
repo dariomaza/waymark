@@ -81,10 +81,7 @@ export const SearchScreen = (): JSX.Element => {
       {within === null ? null : <ScopeNote within={within} />}
 
       {query.trim() === "" ? (
-        <EmptyNote>
-          Type what you are looking for. A word from its name, a tag, or the box
-          it might be in.
-        </EmptyNote>
+        <EmptyNote explains={t("search.fieldHint")}>{t("search.prompt")}</EmptyNote>
       ) : null}
 
       {results.isFetching && results.data === undefined ? (

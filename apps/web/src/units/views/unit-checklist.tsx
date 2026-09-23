@@ -63,7 +63,7 @@ export const UnitChecklist = ({
                 onPickInside(entry.unit.id);
               }}
             >
-              Everything inside {entry.unit.name}
+              {t("units.everythingInside", { name: entry.unit.name })}
             </Button>
           ) : null}
         </li>

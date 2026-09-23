@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type JSX } from "react";
 
 import { useApi } from "../api/api-context.js";
+import { useTranslate } from "../app/language-context.js";
 import "./authenticated-image.css";
 
 export interface AuthenticatedImageProps {
@@ -31,6 +32,8 @@ export const AuthenticatedImage = ({
   alt,
   className,
 }: AuthenticatedImageProps): JSX.Element => {
+  const t = useTranslate();
+
   const api = useApi();
 
   const bytes = useQuery({
@@ -48,7 +51,7 @@ export const AuthenticatedImage = ({
       <span
         className={["photo photo--placeholder", className ?? ""].filter(Boolean).join(" ")}
         role="img"
-        aria-label={bytes.isError ? `${alt} (could not be loaded)` : alt}
+        aria-label={bytes.isError ? t("photos.couldNotLoad", { name: alt }) : alt}
       />
     );
   }

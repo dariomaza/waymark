@@ -91,19 +91,12 @@ export const ScanScreen = (): JSX.Element => {
         <video className="scan__video" ref={video} muted playsInline aria-label={t("scan.camera")} />
       ) : (
         <Callout tone="blocked" title={t("scan.cameraFailed")}>
-          <p>
-            Waymark needs permission to use the camera, and the page has to be
-            served over HTTPS. Either way, the code printed under the symbol works
-            just as well.
-          </p>
+          <p>{t("scan.cameraBlocked")}</p>
         </Callout>
       )}
 
       {unknownCode === null ? null : (
-        <Callout tone="wrong">
-          That is not an Waymark label. A label points at this app and ends in a
-          ten character code.
-        </Callout>
+        <Callout tone="wrong">{t("scan.notALabel")}</Callout>
       )}
 
       <form className="scan__by-hand" onSubmit={openTyped}>

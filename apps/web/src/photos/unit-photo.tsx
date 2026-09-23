@@ -40,7 +40,7 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
   return (
     <section className="unit-photo">
       {photo === null ? null : (
-        <AuthenticatedImage src={photo.url} alt={`Photo of ${unit.name}`} />
+        <AuthenticatedImage src={photo.url} alt={t("photos.photoOf", { name: unit.name })} />
       )}
 
       {photo === null ? null : (

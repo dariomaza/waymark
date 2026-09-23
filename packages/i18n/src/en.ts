@@ -29,6 +29,14 @@ export const EN = {
   "shell.signedInAs": "Signed in as {username}",
   "shell.signOut": "Sign out",
 
+  /**
+   * What the app promises with no signal, and what it refuses to promise.
+   * Reads are cached; a write is never queued (ADR 13), so the second half of
+   * this sentence is the honest part and it does not get shortened away.
+   */
+  "shell.offline":
+    "Offline. You can look at what is already loaded; nothing you change will be saved until the connection is back.",
+
   /** What the app is doing while the keystore is being read on a cold start. */
   "shell.opening": "Opening Waymark",
   "shell.checkingSession": "Checking your session",
@@ -37,20 +45,6 @@ export const EN = {
 
   /** The name of the landmark itself, announced before the links inside it. */
   "nav.label": "Main",
-
-  /**
-   * The fifth destination, and the only one that is not a place to look for a
-   * thing. The word drawn under the avatar; the name announced beside it is
-   * `nav.youNamed`, because "DM" read aloud is two letters.
-   */
-  "nav.you": "You",
-  "nav.youNamed": "You, signed in as {username}",
-  "account.title": "You",
-  /**
-   * Nothing on this screen is the inventory's, so it says what IS its own:
-   * the account, the language, and the way out.
-   */
-  "account.lede": "Your account and the language this app speaks.",
 
   /**
    * "Places" and "Things", not "Inventory" and "Items".
@@ -141,6 +135,7 @@ export const EN = {
   "action.clear": "Clear",
   "action.clearSelection": "Clear selection",
   "action.optional": "Optional.",
+  "action.print": "Print",
 
   // ---------------------------------------------------------------------
   // Signing in
@@ -158,33 +153,6 @@ export const EN = {
   "login.password": "Password",
   "login.submit": "Sign in",
   "login.submitting": "Signing in…",
-  /**
-   * The accessible name of the control that unmasks the password, and it does
-   * NOT flip to "Hide password" when the password is showing.
-   *
-   * The control is a switch, so the state is announced with it — "Show
-   * password, on" — and a name that moved as well would be saying the same
-   * fact twice in two vocabularies. What flips is the WORD drawn beside it,
-   * which is an affordance for eyes rather than a statement of fact.
-   */
-  "login.showPassword": "Show password",
-  "login.show": "Show",
-  "login.hide": "Hide",
-
-  /**
-   * The second door, and it says what it DOES rather than what it is: "Use
-   * biometrics" is a category, and the thing somebody is about to put on the
-   * sensor is a finger.
-   */
-  "login.withBiometrics": "Sign in with a fingerprint",
-  /**
-   * Sentences the operating system draws, not this app — so they have to make
-   * sense inside a system dialog with a fingerprint icon above them, and they
-   * have to name the app, because that dialog belongs to Android and not to
-   * the screen behind it.
-   */
-  "login.unlockPrompt": "Unlock your Waymark session",
-  "login.sealPrompt": "Confirm it is you, so this phone can remember your Waymark session",
 
   // ---------------------------------------------------------------------
   // The inventory, and the units in it
@@ -221,6 +189,11 @@ export const EN = {
   "units.moveInto": "Move it into",
   "units.moveIt": "Move it",
   "units.nowhereRoot": "Nowhere — make it a root",
+  /**
+   * A kind is a word for a shelf, not a rule about what may sit on it. ADR 1
+   * makes every unit the same thing; this says so where somebody picks one.
+   */
+  "units.kindHint": "A label, never a rule: anything can go inside anything.",
 
   // ---------------------------------------------------------------------
   // Things
@@ -303,15 +276,6 @@ export const EN = {
   "scan.opening": "Opening that box",
   "scan.lookupFailed": "That label could not be looked up",
   "scan.goToInventory": "Go to your inventory",
-  /**
-   * Saying no to the camera is a normal answer, so this is a sentence with a
-   * way forward rather than a dead screen: the code printed under the symbol
-   * is typed in instead, which is why it is printed there.
-   */
-  "scan.cameraNeeded":
-    "Waymark needs permission to use the camera to read a label. The code printed under the symbol works just as well.",
-  "scan.notALabel":
-    "That is not a Waymark label. A label points at this app and ends in a ten character code.",
 
   // ---------------------------------------------------------------------
   // Finding something again
@@ -371,23 +335,14 @@ export const EN = {
     other: "Deleting {name} also deletes its photos. This cannot be undone.",
   },
   "items.tagsLabel": "Tags: {tags}",
-  /**
-   * The count beside a thing on its own screen. `items.quantity` is the form
-   * FIELD's name; this is the sentence, and Spanish needs a preposition where
-   * English gets away with juxtaposition.
-   */
   "items.quantityIs": "Quantity {count}",
 
   "units.deleteUndone": "Deleting {name} cannot be undone.",
-  /**
-   * A root has no parent to empty into, so the API answers `MISSING_EMPTY_TARGET`
-   * rather than guessing (ADR 3). Saying so before the refusal is friendlier
-   * than showing it, and it is the same rule either way.
-   */
-  "units.emptyRootNote":
+  /** A root has nothing above it, so emptying it has to be told where to go. */
+  "units.rootNeedsTarget":
     "A root unit has no parent to empty into. Everything inside {name} has to go somewhere else.",
-  "units.emptyIntoNote": "Everything inside {name} moves up into {parent}. Nothing is deleted.",
-
+  "units.emptyMovesUp": "Everything inside {name} moves up into {parent}. Nothing is deleted.",
+  "units.everythingInside": "Everything inside {name}",
   "units.emptyIntoAndDelete": "Empty it into {name} and delete",
   "units.select": "Select {name}",
   "units.qrCodeFor": "QR code for {name}",
@@ -396,6 +351,19 @@ export const EN = {
 
   "label.printWaiting": "Print ({count} still loading)",
   "label.pageOf": "Page {page} of {total}",
+  "label.anyCamera":
+    "Scanning this with any camera opens the box in Waymark. Nobody has to install anything first.",
+  "label.symbolMissing":
+    "A symbol could not be fetched, so the sheet is incomplete and printing is off.",
+  "label.printingHint":
+    "Plain A4 and scissors — no special label paper. In the print dialog, turn headers and footers OFF and leave the margins at default: the page already carries its own. What you see below is the page at its real size.",
+  "label.pickUnits":
+    "Tick the units you want labels for, or take a whole room with “everything inside”.",
+  "label.nothingPicked": "Nothing picked yet.",
+  /** Two counts, each agreeing with its own noun. Same shape as `units.contentsBoth`. */
+  "label.labelCount": { one: "{count} label", other: "{count} labels" },
+  "label.pageCount": { one: "{count} page", other: "{count} pages" },
+  "label.countOnPages": "{labels} on {pages}.",
 
   "photos.coverOf": "Cover photo of {name}",
   "photos.numberedOf": "Photo {index} of {name}",
@@ -404,6 +372,28 @@ export const EN = {
   "photos.deleteNumbered": "Delete photo {index}",
   "photos.cameraPermission":
     "Waymark needs permission to use the camera before it can take a photo.",
+  "photos.photoOf": "Photo of {name}",
+  /**
+   * A picture that did not arrive still has to say WHICH picture it was. The
+   * name goes in rather than being read out before a bare "could not be
+   * loaded", which on a gallery is the same four words twelve times.
+   */
+  "photos.couldNotLoad": "{name} (could not be loaded)",
+  "photos.retryNamed": "Try {photoId} again",
+  "photos.requeued": {
+    one: "1 photo is back in the queue.",
+    other: "{count} photos are back in the queue.",
+  },
+
+  /**
+   * Two reasons for one symptom, because on a phone they are told apart by
+   * what the person does next: grant the permission, or stop using an origin
+   * that is not HTTPS. Either way the typed code below is the way through.
+   */
+  "scan.cameraBlocked":
+    "Waymark needs permission to use the camera, and the page has to be served over HTTPS. Either way, the code printed under the symbol works just as well.",
+  "scan.notALabel":
+    "That is not a Waymark label. A label points at this app and ends in a ten character code.",
 
   "scan.noSuchCode":
     "No unit in this inventory carries the code {code}. The label may belong to another house, or the unit may have been deleted.",

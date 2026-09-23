@@ -103,7 +103,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                           reorder.mutate(withCoverFirst(order, photo.id));
                         }}
                       >
-                        Make photo {index + 1} the cover
+                        {t("photos.makeCover", { index: index + 1 })}
                       </Button>
                       <Button
                         tone="quiet"
@@ -111,7 +111,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                           reorder.mutate(movedEarlier(order, photo.id));
                         }}
                       >
-                        Move photo {index + 1} earlier
+                        {t("photos.moveEarlier", { index: index + 1 })}
                       </Button>
                     </>
                   )}
@@ -121,7 +121,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                       remove.mutate(photo.id);
                     }}
                   >
-                    Delete photo {index + 1}
+                    {t("photos.deleteNumbered", { index: index + 1 })}
                   </Button>
                 </div>
               </li>

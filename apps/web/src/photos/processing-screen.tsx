@@ -72,7 +72,7 @@ export const PhotoProcessingScreen = (): JSX.Element => {
                 reprocess.mutate(toPhotoId(photoId));
               }}
             >
-              Try {photoId} again
+              {t("photos.retryNamed", { photoId })}
             </Button>
           )}
         />
@@ -85,9 +85,7 @@ export const PhotoProcessingScreen = (): JSX.Element => {
       */}
       {retryAll.isSuccess ? (
         <Callout tone="note">
-          {retryAll.data.requeued === 1
-            ? `1 photo is back in the queue.`
-            : `${String(retryAll.data.requeued)} photos are back in the queue.`}
+          {t("photos.requeued", { count: retryAll.data.requeued })}
         </Callout>
       ) : null}
 

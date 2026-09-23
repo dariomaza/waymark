@@ -46,10 +46,7 @@ export const EmptyUnitDialog = ({
     <Sheet title={t("sheet.empty", { name: unit.name })} onClose={onClose}>
       {needsTarget ? (
         <>
-          <p>
-            A root unit has no parent to empty into. Everything inside {unit.name} has
-            to go somewhere else.
-          </p>
+          <p>{t("units.rootNeedsTarget", { name: unit.name })}</p>
           <SelectField
             id="empty-target"
             label={t("units.moveEverythingInto")}
@@ -68,10 +65,7 @@ export const EmptyUnitDialog = ({
           />
         </>
       ) : (
-        <p>
-          Everything inside {unit.name} moves up into {parent.name}. Nothing is
-          deleted.
-        </p>
+        <p>{t("units.emptyMovesUp", { name: unit.name, parent: parent.name })}</p>
       )}
 
       {empty.isError ? (

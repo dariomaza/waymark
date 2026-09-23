@@ -30,6 +30,8 @@ export const ES: Dictionary = {
   "language.label": "Idioma",
   "shell.signedInAs": "Sesión iniciada como {username}",
   "shell.signOut": "Cerrar sesión",
+  "shell.offline":
+    "Sin conexión. Puede consultar lo que ya está cargado; nada de lo que cambie se guardará hasta que vuelva la conexión.",
 
   "shell.opening": "Abriendo Waymark",
   "shell.checkingSession": "Comprobando la sesión",
@@ -40,12 +42,6 @@ export const ES: Dictionary = {
   // "Things": these are the words somebody uses out loud in a garage, not the
   // database's `Inventario` and `Artículos`.
   "nav.label": "Principal",
-  // "Tú" and not "Usted": this is the label on your own face in the bar, not
-  // the app addressing anybody.
-  "nav.you": "Tú",
-  "nav.youNamed": "Tú, sesión iniciada como {username}",
-  "account.title": "Tú",
-  "account.lede": "Su cuenta y el idioma en el que habla esta aplicación.",
   "nav.places": "Lugares",
   "nav.things": "Cosas",
   "nav.search": "Buscar",
@@ -125,6 +121,7 @@ export const ES: Dictionary = {
   "action.clear": "Quitar",
   "action.clearSelection": "Quitar la selección",
   "action.optional": "Opcional.",
+  "action.print": "Imprimir",
 
   // ---------------------------------------------------------------------
   // Signing in
@@ -136,13 +133,6 @@ export const ES: Dictionary = {
   "login.password": "Contraseña",
   "login.submit": "Iniciar sesión",
   "login.submitting": "Iniciando sesión…",
-  "login.showPassword": "Mostrar la contraseña",
-  "login.show": "Mostrar",
-  "login.hide": "Ocultar",
-
-  "login.withBiometrics": "Iniciar sesión con la huella",
-  "login.unlockPrompt": "Desbloquee su sesión de Waymark",
-  "login.sealPrompt": "Confirme que es usted para que este teléfono recuerde su sesión de Waymark",
 
   // ---------------------------------------------------------------------
   // The inventory, and the units in it
@@ -179,6 +169,7 @@ export const ES: Dictionary = {
   "units.emptyIt": "Vaciarla",
   "units.moveInto": "Moverla a",
   "units.moveIt": "Moverla",
+  "units.kindHint": "Una etiqueta, nunca una regla: cualquier cosa puede ir dentro de cualquier cosa.",
   "units.nowhereRoot": "A ningún sitio — que sea una unidad raíz",
 
   // ---------------------------------------------------------------------
@@ -257,10 +248,6 @@ export const ES: Dictionary = {
   "scan.opening": "Abriendo esa caja",
   "scan.lookupFailed": "No se ha podido consultar esa etiqueta",
   "scan.goToInventory": "Ir a su inventario",
-  "scan.cameraNeeded":
-    "Waymark necesita permiso para usar la cámara y leer una etiqueta. El código impreso bajo el símbolo sirve igual de bien.",
-  "scan.notALabel":
-    "Eso no es una etiqueta de Waymark. Una etiqueta apunta a esta aplicación y termina en un código de diez caracteres.",
 
   // ---------------------------------------------------------------------
   // Finding something again
@@ -321,15 +308,14 @@ export const ES: Dictionary = {
     other: "Borrar {name} también borra sus fotos. Esto no se puede deshacer.",
   },
   "items.tagsLabel": "Etiquetas: {tags}",
-  // "Cantidad: 8" and not "Cantidad 8": Spanish wants the colon where English
-  // is happy with a space.
-  "items.quantityIs": "Cantidad: {count}",
+  "items.quantityIs": "Cantidad {count}",
 
   "units.deleteUndone": "Borrar {name} no se puede deshacer.",
-  "units.emptyRootNote":
-    "Una unidad raíz no tiene unidad superior en la que vaciarse. Todo lo que hay dentro de {name} tiene que ir a otro sitio.",
-  "units.emptyIntoNote": "Todo lo que hay dentro de {name} sube a {parent}. No se borra nada.",
-
+  "units.rootNeedsTarget":
+    "Una unidad raíz no tiene nada por encima en lo que vaciarse. Todo lo que hay dentro de {name} tiene que ir a otro sitio.",
+  "units.emptyMovesUp":
+    "Todo lo que hay dentro de {name} sube a {parent}. No se borra nada.",
+  "units.everythingInside": "Todo lo que hay dentro de {name}",
   "units.emptyIntoAndDelete": "Vaciarla en {name} y borrarla",
   "units.select": "Seleccionar {name}",
   "units.qrCodeFor": "Código QR de {name}",
@@ -338,6 +324,18 @@ export const ES: Dictionary = {
 
   "label.printWaiting": "Imprimir ({count} aún cargando)",
   "label.pageOf": "Página {page} de {total}",
+  "label.anyCamera":
+    "Escanear esto con cualquier cámara abre la caja en Waymark. Nadie tiene que instalar nada antes.",
+  "label.symbolMissing":
+    "No se ha podido obtener un símbolo, así que la hoja está incompleta y la impresión está desactivada.",
+  "label.printingHint":
+    "Papel A4 normal y tijeras: no hace falta papel de etiquetas. En el diálogo de impresión, desactive los encabezados y los pies de página y deje los márgenes por defecto: la página ya lleva los suyos. Lo que ve debajo es la página a su tamaño real.",
+  "label.pickUnits":
+    "Marque las unidades de las que quiere etiquetas, o tome una habitación entera con «todo lo que hay dentro».",
+  "label.nothingPicked": "Todavía no hay nada seleccionado.",
+  "label.labelCount": { one: "{count} etiqueta", other: "{count} etiquetas" },
+  "label.pageCount": { one: "{count} página", other: "{count} páginas" },
+  "label.countOnPages": "{labels} en {pages}.",
 
   "photos.coverOf": "Foto de portada de {name}",
   "photos.numberedOf": "Foto {index} de {name}",
@@ -346,6 +344,18 @@ export const ES: Dictionary = {
   "photos.deleteNumbered": "Borrar la foto {index}",
   "photos.cameraPermission":
     "Waymark necesita permiso para usar la cámara antes de poder hacer una foto.",
+  "photos.photoOf": "Foto de {name}",
+  "photos.couldNotLoad": "{name} (no se ha podido cargar)",
+  "photos.retryNamed": "Volver a intentar {photoId}",
+  "photos.requeued": {
+    one: "1 foto ha vuelto a la cola.",
+    other: "{count} fotos han vuelto a la cola.",
+  },
+
+  "scan.cameraBlocked":
+    "Waymark necesita permiso para usar la cámara, y la página tiene que servirse por HTTPS. En cualquier caso, el código impreso debajo del símbolo funciona igual de bien.",
+  "scan.notALabel":
+    "Eso no es una etiqueta de Waymark. Una etiqueta apunta a esta aplicación y termina en un código de diez caracteres.",
 
   "scan.noSuchCode":
     "Ninguna unidad de este inventario lleva el código {code}. La etiqueta puede ser de otra casa, o la unidad puede haberse borrado.",

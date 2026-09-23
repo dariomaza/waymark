@@ -77,10 +77,7 @@ export const LabelScreen = (): JSX.Element => {
             <p className="label__code">{unit.data.unit.publicId}</p>
           </article>
 
-          <p className="label-screen__hint">
-            Scanning this with any camera opens the box in Waymark. Nobody has to
-            install anything first.
-          </p>
+          <p className="label-screen__hint">{t("label.anyCamera")}</p>
         </>
       ) : null}
     </main>

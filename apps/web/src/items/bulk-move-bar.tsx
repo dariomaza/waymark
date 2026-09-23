@@ -29,7 +29,7 @@ export const BulkMoveBar = ({ itemIds, onDone }: BulkMoveBarProps): JSX.Element 
           setOpen(true);
         }}
       >
-        Move {count} {count === 1 ? "item" : "items"}
+        {t("items.moveCount", { count })}
       </Button>
       <Button onClick={onDone}>{t("action.clearSelection")}</Button>
 

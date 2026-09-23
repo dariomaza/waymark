@@ -30,8 +30,7 @@ export const OfflineNote = (): JSX.Element | null => {
 
   return (
     <p className="offline-note" role="status" aria-label={t("shell.connection")}>
-      Offline. You can look at what is already loaded; nothing you change will be
-      saved until the connection is back.
+      {t("shell.offline")}
     </p>
   );
 };

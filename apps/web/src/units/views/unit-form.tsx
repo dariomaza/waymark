@@ -85,7 +85,7 @@ export const UnitForm = ({
         <SelectField
           id="unit-kind"
           label={t("units.kind")}
-          hint="A label, never a rule: anything can go inside anything."
+          hint={t("units.kindHint")}
           value={kind}
           options={kindChoices(t).map((choice) => ({
             value: choice.kind,

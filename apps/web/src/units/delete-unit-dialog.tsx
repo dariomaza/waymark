@@ -56,7 +56,7 @@ export const DeleteUnitDialog = ({
     <Sheet title={t("sheet.delete", { name: unit.name })} onClose={onClose}>
       {stillFull === null ? (
         <>
-          <p>Deleting {unit.name} cannot be undone.</p>
+          <p>{t("units.deleteUndone", { name: unit.name })}</p>
           {remove.isError ? (
             <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}

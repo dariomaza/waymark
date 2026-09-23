@@ -68,7 +68,7 @@ describe("reading a label with the camera", () => {
       scanner: aCameraThatReads("https://example.com/something-else"),
     });
 
-    expect(await screen.findByText(/not an waymark label/i)).toBeVisible();
+    expect(await screen.findByText(/not a waymark label/i)).toBeVisible();
   });
 
   it("offers the code by hand when the camera cannot be used", async () => {

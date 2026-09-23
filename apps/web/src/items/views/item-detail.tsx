@@ -30,7 +30,9 @@ export const ItemDetail = ({
       <header className="item-detail__head">
         <h2>{item.name}</h2>
         {item.quantity > 1 ? (
-          <p className="item-detail__quantity">Quantity {item.quantity}</p>
+          <p className="item-detail__quantity">
+            {t("items.quantityIs", { count: item.quantity })}
+          </p>
         ) : null}
       </header>
 
