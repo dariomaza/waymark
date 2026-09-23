@@ -115,8 +115,15 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                       </Button>
                     </>
                   )}
+                  {/*
+                    The two ordering controls above keep their words on
+                    purpose: nothing in the icon set means "make this the
+                    cover" or "move this one earlier", and a shape somebody
+                    has to learn by pressing it is worse than the sentence.
+                  */}
                   <Button
                     tone="quiet"
+                    icon="trash"
                     onClick={() => {
                       remove.mutate(photo.id);
                     }}

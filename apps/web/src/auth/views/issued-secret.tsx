@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";
-import { CopyButton } from "../../ui/molecules/copy-button.js";
+import { CopyableValue } from "../../ui/molecules/copyable-value.js";
 import { useTranslate } from "../../app/language-context.js";
 import { mcpSettings } from "../mcp-settings.js";
 import "./issued-secret.css";
@@ -93,13 +93,18 @@ export const IssuedSecret = ({
       <p className="issued-secret__warning">{t("tokens.secretOnce")}</p>
 
       {/*
-        A `<code>` in a block that wraps rather than scrolls sideways: a
-        credential with its last eight characters off the right-hand edge of a
-        phone is one somebody copies wrongly by hand.
+        The secret and the control that takes it are one block, so the control
+        cannot end up anywhere but beside the string it is about — which is
+        where it was NOT, before: a full-width button below the warning, the
+        secret and the note, in the accent tone, as loud as signing in.
       */}
-      <code className="issued-secret__value" aria-label={t("tokens.secretLabel", { name })}>
-        {secret}
-      </code>
+      <CopyableValue
+        value={secret}
+        valueLabel={t("tokens.secretLabel", { name })}
+        copyLabel={t("tokens.copyAction")}
+        copiedLabel={t("tokens.copied")}
+        failedLabel={t("tokens.copyFailed")}
+      />
 
       {/*
         What the credential is FOR, and the scheme it travels under. `Machine`
@@ -109,14 +114,14 @@ export const IssuedSecret = ({
       */}
       <p className="issued-secret__how">{t("tokens.secretHow")}</p>
 
+      {/*
+        One button here now, and it is the one that takes the panel away.
+        "I have stored it" keeps its words for the reason every rare and
+        irreversible act in this app does: there is no shape that means it,
+        and an icon somebody has to learn by pressing it is worse than a
+        sentence somebody reads once.
+      */}
       <div className="issued-secret__actions">
-        <CopyButton
-          value={secret}
-          tone="primary"
-          label={t("tokens.copyAction")}
-          copiedLabel={t("tokens.copied")}
-          failedLabel={t("tokens.copyFailed")}
-        />
         <Button tone="secondary" onClick={onDismiss}>
           {t("tokens.storedAction")}
         </Button>
@@ -129,16 +134,11 @@ export const IssuedSecret = ({
       */}
       <div className="issued-secret__pair">
         <p className="issued-secret__pair-note">{t("tokens.pairNote")}</p>
-        <code
+        <CopyableValue
           className="issued-secret__pair-value"
-          aria-label={t("tokens.pairLabel", { name })}
-        >
-          {mcpSettings(endpoint, secret)}
-        </code>
-        <CopyButton
           value={mcpSettings(endpoint, secret)}
-          tone="quiet"
-          label={t("tokens.pairCopy")}
+          valueLabel={t("tokens.pairLabel", { name })}
+          copyLabel={t("tokens.pairCopy")}
           copiedLabel={t("tokens.pairCopied")}
           failedLabel={t("tokens.copyFailed")}
         />

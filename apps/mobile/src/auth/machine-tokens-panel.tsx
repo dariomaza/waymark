@@ -236,6 +236,7 @@ export const MachineTokensPanel = (): JSX.Element => {
       ) : (
         <Button
           tone="secondary"
+          icon="plus"
           label={t("tokens.newAction")}
           onPress={() => {
             setComposing(true);

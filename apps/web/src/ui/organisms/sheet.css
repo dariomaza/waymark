@@ -108,3 +108,14 @@
 .sheet__buttons .button {
   flex: 1;
 }
+
+/*
+ * The way out, as a picture. 48 by 48 like everything else a thumb has to
+ * find — the `.button` floor already guarantees it, and this only stops the
+ * horizontal padding from making a square control oblong now that there is no
+ * word inside it to need the room.
+ */
+.sheet__close {
+  padding: 0;
+  width: 48px;
+}

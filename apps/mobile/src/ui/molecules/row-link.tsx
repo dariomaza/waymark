@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../atoms/icon.js";
 import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
 
 export interface RowLinkProps {
@@ -31,7 +32,20 @@ export const RowLink = ({
       <Text style={styles.title}>{title}</Text>
       {detail === undefined ? null : <Text style={styles.detail}>{detail}</Text>}
     </Pressable>
-    {trailing === undefined ? null : <View>{trailing}</View>}
+    {/*
+      There is more behind this row. It is hidden from assistive technology
+      because the row is already a link and a screen reader says so — the
+      chevron is for the eye, which otherwise has to learn by tapping that a
+      row is a door and not a line of text.
+
+      It sits OUTSIDE the pressable rather than inside it, so it cannot end up
+      inside the row's accessible name.
+    */}
+    {trailing === undefined ? (
+      <Icon name="chevronRight" size={18} color={colors.inkMuted} />
+    ) : (
+      <View>{trailing}</View>
+    )}
   </View>
 );
 

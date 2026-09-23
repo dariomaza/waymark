@@ -68,9 +68,15 @@ export const AccountPanel = ({
 
       {machineTokens}
 
+      {/*
+        The door, in front of the word. Signing out is not destructive and it
+        is not reversible either — somebody who meant to close this and hit it
+        has to sign in again — so it keeps its sentence and gains a shape.
+      */}
       <Button
         tone="danger"
         block
+        icon="signOut"
         disabled={busy}
         label={t("shell.signOut")}
         onPress={onSignOut}

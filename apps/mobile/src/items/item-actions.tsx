@@ -30,6 +30,7 @@ export const ItemActions = ({
   return (
     <>
       <Button
+        icon="pencil"
         onPress={() => {
           setOpen("edit");
         }}
@@ -37,14 +38,20 @@ export const ItemActions = ({
         {t("action.edit")}
       </Button>
       <Button
+        icon="move"
         onPress={() => {
           setOpen("move");
         }}
       >
         {t("action.move")}
       </Button>
+      {/*
+        The bin is IN FRONT OF the word and never instead of it. Deleting is
+        the one act nobody should perform from a picture they half recognised.
+      */}
       <Button
         tone="danger"
+        icon="trash"
         onPress={() => {
           setOpen("delete");
         }}

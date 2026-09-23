@@ -117,6 +117,27 @@ describe("a sheet that is open", () => {
     });
   });
 
+  /**
+   * # The way out is a picture, and it is still called Close
+   *
+   * An X in the corner of a panel is one of the few shapes that needs no
+   * caption anywhere in the world, and the word was costing a button's width
+   * beside a title on a phone. What it may not cost is the NAME: an icon-only
+   * control with nothing for a screen reader to read is a control somebody
+   * can see and nobody else can find.
+   *
+   * So the assertion is both halves at once — no text, and a real name — and
+   * it is made against the sheet every question in this app is asked with
+   * rather than against a fixture.
+   */
+  it("closes with a picture that is still called Close", async () => {
+    const sheet = await openTheMoveSheet();
+
+    const close = within(sheet).getByRole("button", { name: /close/i });
+    expect(close).toHaveAccessibleName("Close");
+    expect(close).toHaveTextContent("");
+  });
+
   it("hands the focus back to the button that opened it", async () => {
     const sheet = await openTheMoveSheet();
     const opener = screen.getByRole("button", { name: /^move$/i });

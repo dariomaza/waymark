@@ -111,7 +111,7 @@ export const ScanScreen = (): JSX.Element => {
             setTyped(event.target.value);
           }}
         />
-        <Button type="submit" tone="primary">
+        <Button type="submit" tone="primary" icon="search">
           {t("scan.openUnit")}
         </Button>
       </form>

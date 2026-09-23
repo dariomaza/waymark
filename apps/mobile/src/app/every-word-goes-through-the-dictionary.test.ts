@@ -45,18 +45,26 @@ import * as ts from "typescript";
  * `label`, `title` and `hint` are this app's own; `accessibilityLabel` and its
  * relatives are React Native's. `children` is here for the spelling
  * `<Foo children="..." />`, which is the same sentence written sideways.
+ *
+ * `CopyableValue` names four things — what the string IS, what the control
+ * does, what it is called once it has worked, and what it says when the phone
+ * refuses — and every one of them is read or heard.
  */
 const SPOKEN_PROPS = new Set([
   "accessibilityHint",
   "accessibilityLabel",
   "alt",
   "children",
+  "copiedLabel",
+  "copyLabel",
   "explains",
+  "failedLabel",
   "hint",
   "label",
   "placeholder",
   "tabBarAccessibilityLabel",
   "title",
+  "valueLabel",
 ]);
 
 /**

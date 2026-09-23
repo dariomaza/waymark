@@ -63,6 +63,7 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
         />
         {photo === null ? null : (
           <Button
+            icon="trash"
             disabled={remove.isPending}
             onClick={() => {
               remove.mutate();

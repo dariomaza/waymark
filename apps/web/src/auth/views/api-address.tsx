@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 
-import { CopyButton } from "../../ui/molecules/copy-button.js";
+import { CopyableValue } from "../../ui/molecules/copyable-value.js";
 import { useTranslate } from "../../app/language-context.js";
 import "./api-address.css";
 
@@ -40,17 +40,19 @@ export const ApiAddress = ({ endpoint }: ApiAddressProps): JSX.Element => {
   return (
     <div className="api-address">
       <p className="api-address__title">{t("tokens.addressTitle")}</p>
-      <code className="api-address__value" aria-label={t("tokens.addressLabel")}>
-        {endpoint}
-      </code>
-      <p className="api-address__note">{t("tokens.addressNote")}</p>
-      <CopyButton
+      {/*
+        The control travels WITH the address rather than sitting under the
+        note about it. It used to be a full-width button below both, wider
+        than the forty characters it was about.
+      */}
+      <CopyableValue
         value={endpoint}
-        tone="quiet"
-        label={t("tokens.addressCopy")}
+        valueLabel={t("tokens.addressLabel")}
+        copyLabel={t("tokens.addressCopy")}
         copiedLabel={t("tokens.addressCopied")}
         failedLabel={t("tokens.copyFailed")}
       />
+      <p className="api-address__note">{t("tokens.addressNote")}</p>
     </div>
   );
 };

@@ -24,9 +24,16 @@
 }
 
 .row-link__text {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* Quiet, because it is a hint about the row and not a control on it. */
+.row-link__target .icon {
+  flex: none;
+  color: var(--color-ink-muted);
 }
 
 .row-link__title {

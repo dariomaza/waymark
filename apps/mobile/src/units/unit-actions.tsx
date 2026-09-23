@@ -42,7 +42,14 @@ export const UnitActions = ({
 
   return (
     <>
+      {/*
+        Six controls stacked down a phone, and until now six identical
+        word-buttons — which is a wall a thumb has to READ to use. The
+        pictures are what make one of them findable at a glance; the words
+        stay, because no shape means "empty this box but keep it".
+      */}
       <Button
+        icon="plus"
         onPress={() => {
           setOpen("add");
         }}
@@ -50,6 +57,7 @@ export const UnitActions = ({
         {t("units.addInside")}
       </Button>
       <Button
+        icon="pencil"
         onPress={() => {
           setOpen("edit");
         }}
@@ -57,6 +65,7 @@ export const UnitActions = ({
         {t("action.edit")}
       </Button>
       <Button
+        icon="move"
         onPress={() => {
           setOpen("move");
         }}
@@ -73,6 +82,7 @@ export const UnitActions = ({
       <Button onPress={onShowLabel}>{t("units.showLabelPhone")}</Button>
       <Button
         tone="danger"
+        icon="trash"
         onPress={() => {
           setOpen("delete");
         }}

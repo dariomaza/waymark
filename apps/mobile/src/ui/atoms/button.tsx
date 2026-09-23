@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon, type IconName } from "./icon.js";
 import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
 
 /**
@@ -17,12 +18,28 @@ export interface ButtonProps {
   readonly block?: boolean;
   readonly disabled?: boolean;
   readonly onPress: () => void;
-  readonly children: ReactNode;
+  readonly children?: ReactNode;
   /**
    * When the label a person hears should differ from the one they read —
-   * "Delete photo 2" beside a thumbnail that only says "Delete".
+   * "Delete photo 2" beside a thumbnail that only says "Delete". It is also
+   * the whole accessible name of a button that has dropped its word for an
+   * icon, and then it is not optional.
    */
   readonly label?: string | undefined;
+  /**
+   * A shape in FRONT of the word, never instead of it.
+   *
+   * A screen of eight identical word-buttons gives the eye nothing to aim at,
+   * and a hand reaching for "Move" reads all eight to find it. A picture is
+   * what makes one of them findable without reading — which is the whole of
+   * what it is for here, and why it is hidden from assistive technology: the
+   * word is already there, and announcing both says the same thing twice.
+   *
+   * A button MAY drop its word, but only by taking a `label` instead — an
+   * icon with no accessible name is a control nobody using a screen reader
+   * can press on purpose. See the sheet's close control.
+   */
+  readonly icon?: IconName;
 }
 
 export const Button = ({
@@ -32,6 +49,7 @@ export const Button = ({
   onPress,
   children,
   label,
+  icon,
 }: ButtonProps): JSX.Element => (
   <Pressable
     role="button"
@@ -47,8 +65,13 @@ export const Button = ({
       pressed ? styles.pressed : null,
     ]}
   >
-    <View>
-      <Text style={[styles.label, textStyles[tone]]}>{children}</Text>
+    <View style={styles.row}>
+      {icon === undefined ? null : (
+        <Icon name={icon} size={18} color={iconColors[tone]} />
+      )}
+      {children === undefined ? null : (
+        <Text style={[styles.label, textStyles[tone]]}>{children}</Text>
+      )}
     </View>
   </Pressable>
 );
@@ -64,6 +87,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  row: { flexDirection: "row", alignItems: "center", gap: space.s2 },
   block: { alignSelf: "stretch" },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.7 },
@@ -80,3 +104,16 @@ const textStyles = StyleSheet.create({
   danger: { color: colors.danger },
   quiet: { color: colors.inkMuted },
 });
+
+/**
+ * The drawing takes the same ink as the word beside it. `currentColor` does
+ * not exist here, so what the web gets from the cascade has to be stated —
+ * and stated from the same table, or the two would drift the first time a
+ * tone changed.
+ */
+const iconColors: Record<ButtonTone, string> = {
+  primary: colors.accentInk,
+  secondary: colors.ink,
+  danger: colors.danger,
+  quiet: colors.inkMuted,
+};

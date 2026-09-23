@@ -82,6 +82,7 @@ export const MachineTokenRow = ({
         <View style={styles.actions}>
           <Button
             tone="secondary"
+            icon="rotate"
             label={t("tokens.rotateAction")}
             onPress={() => {
               onAsk("rotate");

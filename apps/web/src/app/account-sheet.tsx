@@ -109,8 +109,15 @@ export const AccountSheet = ({ username }: AccountSheetProps): JSX.Element => {
 
             <MachineTokensPanel />
 
+            {/*
+              The door, in front of the word. Signing out is not destructive
+              and it is not reversible either — somebody who meant to close
+              the sheet and hit this has to sign in again — so it keeps its
+              sentence and gains a shape to aim at.
+            */}
             <Button
               tone="danger"
+              icon="signOut"
               onClick={() => {
                 signOut.mutate();
               }}

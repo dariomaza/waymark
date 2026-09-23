@@ -47,6 +47,7 @@ export const InventoryScreen = (): JSX.Element => {
         <>
           <Button
             tone="primary"
+            icon="plus"
             onPress={() => {
               setAdding(true);
             }}
