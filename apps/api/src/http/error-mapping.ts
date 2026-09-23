@@ -13,7 +13,9 @@ import {
 import {
   CorruptStorageUnitHierarchy,
   UnknownMachineTokenScope,
+  UnknownPasskeyCeremony,
   UnknownPhotoProcessingStatus,
+  UnknownSessionOpener,
   UnknownStorageUnitKind,
 } from "../persistence/persistence-errors.js";
 
@@ -43,6 +45,8 @@ export interface MappedDomainError {
  * | `UnknownStorageUnitKind`       | 500    | Same: a column holds something the domain says cannot exist.        |
  * | `UnknownPhotoProcessingStatus` | 500    | Same, for a photo row that contradicts itself.                      |
  * | `UnknownMachineTokenScope`     | 500    | Same, for a credential row whose scope is not a scope.              |
+ * | `UnknownSessionOpener`         | 500    | Same, for a session that was opened by nothing recognisable.        |
+ * | `UnknownPasskeyCeremony`       | 500    | Same, for a challenge row naming a ceremony that does not exist.    |
  *
  * ## The rule behind 404, 409 and 422
  *
@@ -187,6 +191,20 @@ const MAPPINGS = new Map<unknown, Mapper>([
     (): MappedDomainError => ({
       status: 500,
       code: "UNKNOWN_MACHINE_TOKEN_SCOPE",
+    }),
+  ],
+  [
+    UnknownSessionOpener,
+    (): MappedDomainError => ({
+      status: 500,
+      code: "UNKNOWN_SESSION_OPENER",
+    }),
+  ],
+  [
+    UnknownPasskeyCeremony,
+    (): MappedDomainError => ({
+      status: 500,
+      code: "UNKNOWN_PASSKEY_CEREMONY",
     }),
   ],
   [

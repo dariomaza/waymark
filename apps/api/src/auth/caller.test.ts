@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { callerMayWrite, callerName, type Caller } from "./caller.js";
 import { MachineTokenScope } from "./machine-token.js";
+import { SessionOpener } from "./session.js";
 
 const NOW = new Date("2026-04-01T10:00:00.000Z");
 
@@ -20,6 +21,7 @@ const aPerson: Caller = {
     userId: "user-1",
     createdAt: NOW,
     expiresAt: new Date(NOW.getTime() + 1000),
+    createdWith: SessionOpener.Password,
   },
 };
 
