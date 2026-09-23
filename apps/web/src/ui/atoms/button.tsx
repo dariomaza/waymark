@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, JSX } from "react";
 
+import { Icon, type IconName } from "./icon.js";
 import "./button.css";
 
 /**
@@ -15,6 +16,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly tone?: ButtonTone;
   /** Grows to the full width of its container. */
   readonly block?: boolean;
+  /**
+   * A shape in FRONT of the word, never instead of it.
+   *
+   * A screen of eight identical word-buttons gives the eye nothing to aim at,
+   * and a hand reaching for "Move" reads all eight to find it. A picture is
+   * what makes one of them findable without reading — which is the whole of
+   * what it is for here, and why it is hidden from assistive technology: the
+   * word is already there, and announcing both says the same thing twice.
+   *
+   * A button MAY drop its word, but only by taking an `aria-label` instead —
+   * an icon with no accessible name is a control nobody using a screen reader
+   * can press on purpose. See the sheet's close control.
+   */
+  readonly icon?: IconName;
 }
 
 export const Button = ({
@@ -22,6 +37,8 @@ export const Button = ({
   block = false,
   type = "button",
   className,
+  icon,
+  children,
   ...rest
 }: ButtonProps): JSX.Element => (
   <button
@@ -32,5 +49,8 @@ export const Button = ({
       .filter(Boolean)
       .join(" ")}
     {...rest}
-  />
+  >
+    {icon === undefined ? null : <Icon name={icon} size={18} />}
+    {children}
+  </button>
 );
