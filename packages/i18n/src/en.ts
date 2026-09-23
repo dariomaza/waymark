@@ -500,6 +500,22 @@ export const EN = {
   "tokens.lapsesOn": "Lapses {when}",
   "tokens.neverLapses": "Never lapses",
 
+  /**
+   * # The other half of a credential
+   *
+   * A secret is worthless without the address it is presented to, and that
+   * address is NOT a secret: it can be read again, cached and copied freely,
+   * which is why it lives on the list rather than only on the panel that
+   * appears once. Somebody coming back a month later to rotate a token needs
+   * it then, and the secret panel is long gone by then.
+   */
+  "tokens.addressTitle": "Where to point it",
+  "tokens.addressNote":
+    "This is the Waymark a program calls. It is not a secret, so take it as often as you need it.",
+  "tokens.addressLabel": "The address of this Waymark",
+  "tokens.addressCopy": "Copy the address",
+  "tokens.addressCopied": "Address copied",
+
   "tokens.newAction": "New token",
   "tokens.newTitle": "New machine token",
   "tokens.nameLabel": "What is it for",
@@ -517,8 +533,32 @@ export const EN = {
   "tokens.secretTitle": "This is the only time you will see this",
   "tokens.secretOnce":
     "Waymark kept a hash of it, not the secret, so it cannot show it to you again. Copy it now — if it gets away from you, rotate the token and take a new one.",
-  "tokens.secretHow": "Send it as: Authorization: Machine <token>",
+  /**
+   * # What the credential IS, in the sentence beside it
+   *
+   * `Machine` is a scheme of its own (ADR 17) and the mistake anybody wiring
+   * this up at one in the morning will make is `Bearer` — which does not fail
+   * as "wrong scheme", it fails as a 401 that looks exactly like a bad
+   * credential. So the scheme is named, and so is the one it is not.
+   */
+  "tokens.secretHow":
+    "It is how a program says who it is: send it as Authorization: Machine <token>. The scheme is Machine, not Bearer.",
   "tokens.secretLabel": "The secret for {name}",
+  /**
+   * # The pair, offered in the shape the thing that consumes it reads
+   *
+   * `apps/mcp` reads `WAYMARK_API_URL` and `WAYMARK_MACHINE_TOKEN` and nothing
+   * else, so those two lines are exactly what somebody is about to go and
+   * type. A whole config file would have been the presumptuous version of
+   * this: it needs absolute paths into a checkout this browser cannot know,
+   * and it differs per MCP client. Two assignments are the most this app can
+   * assemble and still be certain every character of it is true.
+   */
+  "tokens.pairNote": "Both settings at once, for the Waymark MCP server:",
+  "tokens.pairLabel": "The address and the secret for {name}",
+  "tokens.pairCopy": "Copy both settings",
+  "tokens.pairCopied": "Both copied",
+
   "tokens.copyAction": "Copy",
   "tokens.copied": "Copied",
   "tokens.copyFailed": "This browser would not copy it. Select it and copy it by hand.",

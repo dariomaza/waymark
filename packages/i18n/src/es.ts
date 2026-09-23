@@ -407,6 +407,13 @@ export const ES: Dictionary = {
   "tokens.lapsesOn": "Caduca el {when}",
   "tokens.neverLapses": "No caduca",
 
+  "tokens.addressTitle": "Dónde apuntarlo",
+  "tokens.addressNote":
+    "Esta es la dirección de Waymark a la que llama un programa. No es un secreto, así que cógela cuando la necesites.",
+  "tokens.addressLabel": "La dirección de este Waymark",
+  "tokens.addressCopy": "Copiar la dirección",
+  "tokens.addressCopied": "Dirección copiada",
+
   "tokens.newAction": "Nuevo token",
   "tokens.newTitle": "Nuevo token de máquina",
   "tokens.nameLabel": "Para qué es",
@@ -418,8 +425,14 @@ export const ES: Dictionary = {
   "tokens.secretTitle": "Esta es la única vez que vas a ver esto",
   "tokens.secretOnce":
     "Waymark guarda un hash, no el secreto, así que no puede volver a enseñártelo. Cópialo ahora: si lo pierdes, rota el token y coge uno nuevo.",
-  "tokens.secretHow": "Envíalo así: Authorization: Machine <token>",
+  "tokens.secretHow":
+    "Así es como un programa dice quién es: envíalo como Authorization: Machine <token>. El esquema es Machine, no Bearer.",
   "tokens.secretLabel": "El secreto de {name}",
+  "tokens.pairNote": "Los dos ajustes juntos, para el servidor MCP de Waymark:",
+  "tokens.pairLabel": "La dirección y el secreto de {name}",
+  "tokens.pairCopy": "Copiar los dos ajustes",
+  "tokens.pairCopied": "Copiados los dos",
+
   "tokens.copyAction": "Copiar",
   "tokens.copied": "Copiado",
   "tokens.copyFailed": "Este navegador no lo ha copiado. Selecciónalo y cópialo a mano.",
