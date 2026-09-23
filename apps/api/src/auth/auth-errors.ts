@@ -71,19 +71,25 @@ export class InvalidMachineToken extends AuthError {
  */
 export class ReadOnlyMachineToken extends AuthError {
   constructor(
-    readonly name: string,
+    /**
+     * `tokenName`, never `name`: `AuthError` sets `Error.name` to the class
+     * name so one `instanceof` and one field tell a refusal apart in a log, and
+     * a parameter property called `name` would quietly overwrite it with
+     * "mcp-server".
+     */
+    readonly tokenName: string,
     readonly method: string,
   ) {
     super(
-      `The machine token "${name}" is read-only and may not ${method} anything`,
+      `The machine token "${tokenName}" is read-only and may not ${method} anything`,
     );
   }
 }
 
 /** Raised by the admin CLI, never by an HTTP route: there is no self-service. */
 export class MachineTokenNameAlreadyTaken extends AuthError {
-  constructor(readonly name: string) {
-    super(`A machine token named "${name}" already exists`);
+  constructor(readonly tokenName: string) {
+    super(`A machine token named "${tokenName}" already exists`);
   }
 }
 
@@ -95,9 +101,9 @@ export class MachineTokenNameAlreadyTaken extends AuthError {
  * revoking it in a hurry is a thing that can go wrong.
  */
 export class InvalidMachineTokenName extends AuthError {
-  constructor(readonly name: string) {
+  constructor(readonly tokenName: string) {
     super(
-      `"${name}" is not a usable machine token name: use lower case letters, ` +
+      `"${tokenName}" is not a usable machine token name: use lower case letters, ` +
         "digits, and any of . _ -",
     );
   }
