@@ -52,6 +52,10 @@ what it forbids:
 - A cancelled or failed ceremony leaves the person on a working form and does
   not re-prompt. There is no automatic ceremony on load and no conditional
   mediation: the prompt happens because somebody pressed a button.
+- A cancelled ceremony and a FAILED one are two different things and are said
+  differently. A dismissal is a quiet note; a failure names the device as the
+  place it happened and carries the browser's own word for it. Neither one is
+  ever described as a problem on the server — see below.
 - Removing every passkey is allowed and needs no warning, because the account
   is not reachable only through them.
 
@@ -198,7 +202,9 @@ The RP ID and the expected origin are what stop a passkey minted for another
 site being presented here, and what stop one minted here being usable
 elsewhere. Getting them wrong is the failure this ADR is most afraid of,
 because a wrong RP ID does not fail at boot: it fails at 1am, on a phone, with
-a browser-side `SecurityError` that says nothing useful.
+a browser-side `SecurityError` that nothing on the server ever sees. (What the
+person reads when that happens is no longer nothing: see *A failed ceremony
+says whose failure it was*.)
 
 **So there is no `WAYMARK_RP_ID` and there is no `WAYMARK_WEBAUTHN_ORIGIN`.**
 Both are derived from `WAYMARK_PUBLIC_BASE_URL`, which this API already has,
@@ -386,6 +392,61 @@ Not stored, on purpose:
 browser uses to draw the right prompt, and leaving it out makes the ceremony
 slower on some platforms for no gain.
 
+### A failed ceremony says whose failure it was
+
+The first version of this feature recognised exactly one thing a browser could
+do other than hand back a credential: a dismissed prompt. Everything else — and
+"everything else" is the whole of WebAuthn's documented failure space — was
+re-thrown raw, landed in `describeFailure`, matched none of the API's failure
+kinds, and became **"Waymark had a problem answering. Try again in a moment."**
+
+That sentence was read on a real phone. The server logs for the same minute
+show `POST /auth/passkeys/options` answering **200** twice and the finishing
+`POST /auth/passkeys` never arriving, which is what a `DOMException` inside the
+browser looks like from the outside. The app blamed the one component that had
+done nothing wrong, and it sent its owner to wait for a server that was already
+answering.
+
+So a ceremony that failed on the device is now **a type of its own**,
+`PasskeyCeremonyFailed`, beside `PasskeyCancelled` and with the same standing:
+neither of them is an HTTP failure, because neither of them ever reached HTTP.
+It carries the `DOMException` name the browser raised and `@simplewebauthn`'s
+code when the library had one, and those two strings are carried all the way
+into the sentence a person reads.
+
+Three rules hold that sentence together:
+
+1. **It is the device's failure and it says so.** "Your device could not finish
+   the passkey, so Waymark was never asked" is what happened. Nothing about the
+   server appears in it.
+2. **It says the password still works and nothing was lost.** That is this
+   ADR's first sentence, repeated at the only moment somebody could doubt it.
+3. **It carries the reason verbatim, untranslated.** `NotSupportedError
+   (ERROR_AUTHENTICATOR_NO_SUPPORTED_PUBKEYCREDPARAMS_ALG)` goes into the
+   sentence as it is, in both languages, exactly as `failure.asTheApiPutIt`
+   already passes the API's own prose through. It is a token the specification
+   defines in English; translating it would invent a name for a thing that has
+   no other name, and the person who has to report the failure has no console.
+
+Three names get a better sentence than the general one, because each has a
+different next step: `InvalidStateError` means this device already holds a
+passkey for this account, `NotSupportedError` means it cannot make the kind we
+ask for, and `SecurityError` means the address the app is served from does not
+match what the server issued the options for — which is the RP ID failure this
+file spends a section being afraid of, and it is now legible from the screen.
+
+**A dismissal is deliberately untouched by all of this.** `NotAllowedError`,
+`AbortError` and `ERROR_CEREMONY_ABORTED` still become `PasskeyCancelled`,
+still draw a quiet note rather than an alert, and still leave the password form
+alone. A wet thumb is not a failure and must never be shown as one.
+
+The same reasoning applies once more, one level out: `describeFailure` used to
+answer `failure.server` for **any** throwable that was not an `ApiError`,
+because `failureKindOf` reasonably reports `SERVER` when there is no HTTP
+status to read. That reading is fine for sorting statuses and wrong as a thing
+to say out loud, so the sentence for "this never reached the API" is now its
+own and says so. Every failure the API actually made keeps the sentence it had.
+
 ## Consequences
 
 - The owner opens the PWA on his phone, presses one button, touches the
@@ -396,6 +457,9 @@ slower on some platforms for no gain.
   provably interchangeable. `packages/domain` is untouched, which is the
   sentence ADR 5 and ADR 17 both end on: authentication is not inventory.
 - Two dependencies are added, and this file is the argument for them.
+- A ceremony that fails on the device is named, and what the browser called it
+  reaches the person who has to report it. No client screen describes a
+  browser's failure as a problem on the server any more.
 - `WAYMARK_PUBLIC_BASE_URL` now decides one more thing, and a deployment that
   sets it to a plain-HTTP non-loopback address stops booting.
 - There is no new configuration variable, and therefore no new pair of
