@@ -165,9 +165,20 @@ export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => 
       >
         <div className="sheet__head">
           <h3 id={titleId}>{title}</h3>
-          <Button tone="quiet" onClick={onClose}>
-            {t("action.close")}
-          </Button>
+          {/*
+            An X in the corner, and no word. It is one of the few shapes that
+            needs no caption anywhere in the world, and the word was taking a
+            button's width beside a title on a phone. The NAME is not dropped
+            with it: `aria-label` carries the same dictionary word the button
+            used to print, so a screen reader still says "Close, button".
+          */}
+          <Button
+            tone="quiet"
+            className="sheet__close"
+            icon="close"
+            aria-label={t("action.close")}
+            onClick={onClose}
+          />
         </div>
         <div className="sheet__body">{children}</div>
       </div>

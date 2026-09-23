@@ -46,7 +46,14 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
 
   return (
     <>
+      {/*
+        Seven controls in a row, and until now seven identical word-buttons —
+        which is a wall a hand has to READ to use. The pictures are what make
+        one of them findable at a glance; the words stay, because no shape
+        means "empty this box but keep it".
+      */}
       <Button
+        icon="plus"
         onClick={() => {
           setOpen("create");
         }}
@@ -54,6 +61,7 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
         {t("units.addInside")}
       </Button>
       <Button
+        icon="pencil"
         onClick={() => {
           setOpen("edit");
         }}
@@ -61,6 +69,7 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
         {t("action.edit")}
       </Button>
       <Button
+        icon="move"
         onClick={() => {
           setOpen("move");
         }}
@@ -76,6 +85,7 @@ export const UnitActions = ({ unit, path }: UnitActionsProps): JSX.Element => {
       </Button>
       <Button
         tone="danger"
+        icon="trash"
         onClick={() => {
           setOpen("delete");
         }}

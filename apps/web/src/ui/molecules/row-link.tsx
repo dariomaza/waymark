@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { Link } from "react-router-dom";
 
+import { Icon } from "../atoms/icon.js";
 import "./row-link.css";
 
 export interface RowLinkProps {
@@ -32,6 +33,13 @@ export const RowLink = ({
         <span className="row-link__title">{title}</span>
         {meta === undefined ? null : <span className="row-link__meta">{meta}</span>}
       </span>
+      {/*
+        There is more behind this row. It is hidden from assistive technology
+        because the row is already a link and a screen reader says so — the
+        chevron is for the eye, which otherwise has to learn by tapping that
+        a row is a door and not a line of text.
+      */}
+      <Icon name="chevronRight" size={18} />
     </Link>
     {trailing === undefined ? null : <div className="row-link__trailing">{trailing}</div>}
   </div>

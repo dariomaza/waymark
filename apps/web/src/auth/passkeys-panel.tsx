@@ -160,6 +160,7 @@ export const PasskeysPanel = (): JSX.Element => {
       ) : (
         <Button
           tone="secondary"
+          icon="plus"
           onClick={() => {
             setComposing(true);
           }}

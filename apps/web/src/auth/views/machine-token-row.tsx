@@ -87,6 +87,7 @@ export const MachineTokenRow = ({
         <div className="machine-token__actions">
           <Button
             tone="secondary"
+            icon="rotate"
             onClick={() => {
               onAsk("rotate");
             }}
