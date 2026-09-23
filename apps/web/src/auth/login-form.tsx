@@ -4,6 +4,7 @@ import { useState, type FormEvent, type JSX } from "react";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { TextField } from "../ui/atoms/text-field.js";
+import { PasswordField } from "../ui/molecules/password-field.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface LoginFormProps {
@@ -54,11 +55,10 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
         }}
       />
 
-      <TextField
+      <PasswordField
         id="password"
         label={t("login.password")}
         name="password"
-        type="password"
         autoComplete="current-password"
         required
         value={password}

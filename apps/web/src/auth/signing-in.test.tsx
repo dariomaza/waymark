@@ -153,6 +153,85 @@ describe("a session that is over", () => {
 });
 
 /**
+ * # A password you cannot look at is a password you mistype
+ *
+ * This form is used one-handed, standing up, on a phone keyboard, and a
+ * refused sign-in tells you nothing about WHICH character went wrong. The
+ * control that fixes that is not decoration.
+ *
+ * It is a toggle rather than two buttons, and the state is carried by
+ * `aria-pressed` rather than by swapping the word. "Show password" that never
+ * says whether the password is currently shown is half a control: somebody
+ * who cannot see the input has no way to know which of the two worlds they
+ * are in, and pressing it to find out is exactly the thing they cannot do.
+ */
+describe("looking at what you typed", () => {
+  it("hides the password until somebody asks to see it", async () => {
+    renderApp({ route: "/" });
+
+    expect(await screen.findByLabelText(/password/i)).toHaveAttribute("type", "password");
+  });
+
+  it("shows it when the control is pressed, and hides it again", async () => {
+    const user = userEvent.setup();
+    renderApp({ route: "/" });
+
+    const password = await screen.findByLabelText(/password/i);
+    const reveal = screen.getByRole("button", { name: /show password/i });
+
+    await user.click(reveal);
+    expect(password).toHaveAttribute("type", "text");
+
+    await user.click(reveal);
+    expect(password).toHaveAttribute("type", "password");
+  });
+
+  it("says whether the password is showing, and not merely what pressing it does", async () => {
+    const user = userEvent.setup();
+    renderApp({ route: "/" });
+
+    const reveal = await screen.findByRole("button", { name: /show password/i });
+    expect(reveal).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(reveal);
+
+    expect(reveal).toHaveAttribute("aria-pressed", "true");
+  });
+
+  /**
+   * The control sits in the tab order right after the field it is about, and
+   * answers the keyboard rather than only the thumb.
+   */
+  it("is reached by Tab from the password, and worked by the keyboard", async () => {
+    const user = userEvent.setup();
+    renderApp({ route: "/" });
+
+    const password = await screen.findByLabelText(/password/i);
+    password.focus();
+    await user.tab();
+
+    const reveal = screen.getByRole("button", { name: /show password/i });
+    expect(reveal).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+
+    expect(password).toHaveAttribute("type", "text");
+  });
+
+  /** A button inside a form that submits it is how a reveal becomes a sign-in. */
+  it("does not submit the form", async () => {
+    const user = userEvent.setup();
+    respondsToLoginWith("never-issued");
+
+    renderApp({ route: "/" });
+
+    await user.click(await screen.findByRole("button", { name: /show password/i }));
+
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+/**
  * The sign-in screen is the one screen somebody sees before they have any
  * chance to change the language, which makes it the screen where the browser's
  * own preference has to be honoured rather than merely offered.
@@ -168,6 +247,15 @@ describe("signing in, in Spanish", () => {
     expect(await screen.findByRole("textbox", { name: "Usuario" })).toBeVisible();
     expect(screen.getByLabelText("Contraseña")).toBeVisible();
     expect(screen.getByRole("button", { name: "Iniciar sesión" })).toBeVisible();
+  });
+
+  /** The reveal is copy too, and the one control on this screen with a state. */
+  it("names the reveal in Spanish", async () => {
+    renderApp({ route: "/" });
+
+    expect(
+      await screen.findByRole("button", { name: "Mostrar la contraseña" }),
+    ).toBeVisible();
   });
 
   /**

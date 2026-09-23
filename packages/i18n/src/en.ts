@@ -151,6 +151,12 @@ export const EN = {
   "login.note": "Accounts are created on the server. There is no sign-up.",
   "login.username": "Username",
   "login.password": "Password",
+  /**
+   * The name does not change with the state; `aria-pressed` carries that. A
+   * label that flips to "Hide password" says what the next press does and
+   * never says which world you are in now.
+   */
+  "login.showPassword": "Show password",
   "login.submit": "Sign in",
   "login.submitting": "Signing in…",
 

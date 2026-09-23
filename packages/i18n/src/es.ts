@@ -131,6 +131,7 @@ export const ES: Dictionary = {
   "login.note": "Las cuentas se crean en el servidor. No hay registro.",
   "login.username": "Usuario",
   "login.password": "Contraseña",
+  "login.showPassword": "Mostrar la contraseña",
   "login.submit": "Iniciar sesión",
   "login.submitting": "Iniciando sesión…",
 
