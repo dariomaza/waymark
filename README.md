@@ -918,7 +918,7 @@ exists under a test runner: the keystore, the camera, and the photo library.
 pnpm --filter @waymark/mobile start           # Metro, then press `a`
 pnpm --filter @waymark/mobile test
 pnpm --filter @waymark/mobile typecheck
-pnpm --filter @waymark/mobile prebuild        # generates android/ from app.json
+pnpm --filter @waymark/mobile prebuild        # generates android/ from the config
 ```
 
 `EXPO_PUBLIC_WAYMARK_API_URL` says where the API is, as a PHONE sees it. It
@@ -931,11 +931,21 @@ Android 9 and up refuse plain HTTP by default, so a LAN address needs
 `usesCleartextTraffic` for development or the tunnel's HTTPS hostname for
 anything else.
 
-The `https` intent filter in `app.json` carries a placeholder host,
-`waymark.example`. Set it to the host in `WAYMARK_PUBLIC_BASE_URL` to make the
-stock camera open labels in this app rather than in the browser; leaving it
-alone keeps the labels working exactly as they do today, through the web PWA.
-The `waymark://u/<code>` scheme works either way.
+The `https` intent filter is **derived from that same variable**, in
+`app.config.ts`, and that is why this app has a `.ts` config beside its
+`app.json` at all. A label encodes `<WAYMARK_PUBLIC_BASE_URL>/u/<publicId>`
+(ADR 12) and one container serves the API and the web client on one origin
+(ADR 16), so the host printed on a sticker IS the host of the API address the
+build was given. It used to be the placeholder `waymark.example`, which meant
+the stock camera opened a browser for everybody.
+
+A build told an `https:` address claims `/u` on that host, and the stock
+camera offers this app. A build told anything else — including the
+`http://127.0.0.1:3000` default — claims **no host at all**, which leaves
+labels opening the web PWA exactly as they do today. Claiming nothing is the
+right answer there: Android verifies no other scheme, and an APK that claimed
+somebody else's hostname would be worse than one that claims none. The
+`waymark://u/<code>` scheme needs no host and works either way.
 
 ## MCP server
 
@@ -1214,9 +1224,9 @@ Native has neither a print dialog nor a page.
 
 The Android app is verified as far as this repository can verify anything that
 runs on a phone: it typechecks, its tests pass, `expo prebuild` generates the
-native project from `app.json`, and `expo export` produces an Android Hermes
-bundle. It has never been run on a device or an emulator, and there is no
-signed APK — that needs a device, an emulator or EAS credentials.
+native project from `app.config.ts`, and `expo export` produces an Android
+Hermes bundle. It has never been run on a device or an emulator, and there is
+no signed APK — that needs a device, an emulator or EAS credentials.
 
 The MCP server is verified the same way, and with the same honesty about where
 that stops. Its tools are driven through the real protocol against a stubbed
