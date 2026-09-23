@@ -131,6 +131,17 @@ things are. It is unpaginated for the reason ADR 1, ADR 11 and ADR 12 already
 gave: a homelab inventory is small enough to read whole, and the honest answer
 to one that is not is search, which takes a limit.
 
+**A machine token is a smaller key, not a role** (ADR 17). An MCP server needs
+a credential, and a person's password in an environment file is not one: it
+cannot be revoked without signing that person out of their own phone. ADR 5
+refused roles and permissions, and a `read` scope is on its face the check it
+refused — so ADR 17 says that plainly rather than waving it away. What makes it
+worth paying is that ADR 5's reasons are about PEOPLE and all of them still
+hold: no owner column, no query scoped by anybody, and every authenticated human
+may still do everything. The thing holding a machine token is not a person,
+cannot be told to be careful, and cannot be asked afterwards what it was
+thinking.
+
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no
 Android Studio in the build path. Native Kotlin would mean two independent
@@ -174,7 +185,9 @@ field, so choosing one is spelled as a reorder.
 
 ## HTTP API
 
-Everything but `GET /health` and `POST /auth/login` needs a session.
+Everything but `GET /health` and `POST /auth/login` needs a session — or a
+machine token (ADR 17), which is a credential for a program rather than a
+person and travels under its own `Authorization` scheme.
 
 These paths are the API's half of the origin (ADR 16). Anything else that no
 route matches is the web client's, and is answered with the app shell — but
@@ -186,8 +199,8 @@ JSON, and a write to a path nothing serves is JSON.
 | -------- | --------------------------- | -------------------------------------------- |
 | `GET`    | `/health`                   | `{ status }`                                 |
 | `POST`   | `/auth/login`               | `{ token, expiresAt, user }`                 |
-| `GET`    | `/auth/me`                  | `{ user }`                                   |
-| `POST`   | `/auth/logout`              | `204`                                        |
+| `GET`    | `/auth/me`                  | `{ user }`, or `{ machineToken }` for a machine |
+| `POST`   | `/auth/logout`              | `204` — a session only; a machine token gets 403 |
 | `GET`    | `/search`                   | `{ query, terms, items, storageUnits }`      |
 | `GET`    | `/storage-units`            | `{ tree }` — the whole forest, nested        |
 | `POST`   | `/storage-units`            | `201 { unit }`                               |
@@ -240,12 +253,22 @@ an inventory too large to list is search rather than a page.
 | `InvalidQuantity`               | 422    | Valid JSON, value the domain refuses.                |
 | `TooManyItemPhotos`             | 409    | Refused by the current contents of the item.         |
 | `PhotoNotOnItem`                | 422    | The request names a photo the item does not hold.    |
+| `InvalidMachineToken`           | 401    | Unknown, revoked, expired, or not shaped like one.   |
+| `ReadOnlyMachineToken`          | 403    | Authenticated, and not allowed to change anything.   |
 
 409 means "fix the world, then retry": the same bytes succeed once somebody
 empties the box or moves the target out of the subtree. 422 means "fix the
 request": nothing anybody else does will make these exact bytes work. A test
 walks every `DomainError` the domain exports and fails if one has no entry in
 the table, so an unmapped error can never become an accidental 500.
+
+A read-only machine token refused a write is deliberately **neither** of those
+two codes. The request bytes are correct and the world is correct — the
+identical call succeeds the moment a read-write token makes it — so both "fix
+the world" and "fix the request" would be advice the caller cannot act on. What
+has to change is the CREDENTIAL, and 403 is what RFC 9110 has for "understood,
+authenticated, refused to authorize". 401 would be wrong too: it means
+"authenticate", and this caller already did (ADR 17).
 
 ## Search
 
@@ -498,6 +521,62 @@ edits the same house.
 - **Login is rate limited per caller**, read from `CF-Connecting-IP` because the
   socket peer is always the Cloudflare Tunnel. The header is believed only from
   a configured proxy address, so it cannot be forged from the LAN.
+
+### Machine tokens
+
+A **machine token** is a credential for a program rather than a person
+(ADR 17). An MCP server reading the inventory so an assistant can answer "which
+box is the drill in" needs a way in, and the alternative was a household
+member's password in an environment file: it cannot be revoked without changing
+that person's password, nothing records that a machine is using it, and it can
+do everything that person can.
+
+```sh
+pnpm --filter @waymark/api machine-token create --name mcp-server --scope read
+pnpm --filter @waymark/api machine-token create --name filer --scope read-write --expires-in-days 90
+pnpm --filter @waymark/api machine-token list
+pnpm --filter @waymark/api machine-token revoke --name mcp-server
+```
+
+```
+Authorization: Machine wmk_hhKABz-fSeDJwWCfiNRkmB9BoSGcv6wrPAhTya7CW28
+```
+
+- **Created from a shell, like an account.** There is no route that mints one,
+  and for a stronger version of the reason there is no sign-up: an endpoint
+  that issues a LONG-LIVED credential on an internet-facing inventory is a door
+  that does not close by itself. The secret is printed once and never again.
+- **Its own `Authorization` scheme**, `Machine`, not a prefix inside `Bearer`
+  and not a second header. The scheme is read once and the request goes to
+  exactly one authenticator, so a leak of either credential cannot be replayed
+  as the other — a session token presented as `Machine` never reaches the
+  session table, and a machine token presented as `Bearer` never reaches the
+  machine token table. Neither is a lookup that missed; neither lookup happens.
+- **Scoped `read` or `read-write`.** A read-only token is refused every write,
+  in the hook that authenticated it, before the body is parsed and before any
+  use case runs — so a refusal cannot have changed anything. It is a **403**,
+  and the reasoning is above and in ADR 17. Two values, and a third would be
+  the role system ADR 5 refused.
+- **Stored as SHA-256, not scrypt**, which is the opposite of what accounts get
+  and is deliberate. A KDF is slow to make GUESSING expensive, and there is
+  nothing to guess: the secret is 256 uniform random bits, so an attacker
+  holding the hash faces 2^256 either way, and being long-lived changes the
+  window rather than the search space. The cost, meanwhile, lands on every
+  request a machine makes rather than on one login a month. Caching verified
+  tokens would hide that cost and was rejected: a cache of verified credentials
+  is a second copy of revocation state, and revocation here is immediate.
+- **Revoked one at a time, by name**, touching no human account and no other
+  token. A misspelled name exits non-zero rather than reporting success.
+- **Records when it was last used**, at most once an hour. A credential nobody
+  can see being used is one nobody will ever revoke — and a machine is the one
+  caller that reads in a loop, so stamping every request would turn an
+  inventory walk into forty writes on a single SQLite file.
+- **Outside the login limiter entirely.** It does not log in. That limiter
+  exists to make password guessing expensive (ADR 7); a machine token cannot be
+  guessed and is the one caller that legitimately makes hundreds of requests a
+  minute, so counting it would throttle the integration and catch nobody.
+- `GET /auth/me` answers `{ machineToken }` for one, carrying its name, scope
+  and last use — and never its hash, which no route returns.
 
 ## Web client
 
@@ -822,7 +901,11 @@ signed APK — that needs a device, an emulator or EAS credentials.
 
 Every repository port is covered by a shared contract suite that runs twice:
 once against the in-memory repositories the domain is tested with, once against
-the Prisma adapters on a real SQLite file. The fake and the real adapter are
+the Prisma adapters on a real SQLite file. `MachineTokenRepository` is covered
+the same way, by a suite that lives beside the port in `apps/api` rather than in
+`packages/domain-contract-tests` — that package depends on `@waymark/domain` and
+nothing else, and `apps/api` already depends on IT, so moving an auth port's
+contract in there would close a cycle. The fake and the real adapter are
 therefore proven interchangeable, which is the only thing that makes the ports
 worth the indirection.
 
@@ -849,5 +932,6 @@ pnpm typecheck
 
 pnpm --filter @waymark/api prisma:migrate
 pnpm --filter @waymark/api create-user
+pnpm --filter @waymark/api machine-token create --name mcp-server --scope read
 pnpm --filter @waymark/api dev
 ```
