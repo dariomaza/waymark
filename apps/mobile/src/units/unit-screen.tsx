@@ -4,7 +4,9 @@ import { unitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
 
 import type { RootStackParamList } from "../app/navigation.js";
+import { BulkMoveBar } from "../items/bulk-move-bar.js";
 import { CreateItemSheet } from "../items/create-item-sheet.js";
+import { useItemSelection } from "../items/use-item-selection.js";
 import { ItemCover } from "../photos/item-cover.js";
 import { UnitPhoto } from "../photos/unit-photo.js";
 import { Button } from "../ui/atoms/button.js";
@@ -31,6 +33,7 @@ export const UnitScreen = (): JSX.Element => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const id = unitId(route.params.id);
   const unit = useStorageUnit(id);
+  const selection = useItemSelection();
   const [addingItem, setAddingItem] = useState(false);
 
   return (
@@ -75,6 +78,22 @@ export const UnitScreen = (): JSX.Element => {
                 >
                   {t("units.addItem")}
                 </Button>
+                {unit.data.items.length === 0 || selection.picking ? null : (
+                  /*
+                   * The way in that does not need a gesture. Long-pressing a
+                   * card is what Android has meant by "start picking" for as
+                   * long as it has had lists, and it is still invisible — so
+                   * the box says it in words, and the bar that appears
+                   * teaches the gesture for next time.
+                   */
+                  <Button
+                    onPress={() => {
+                      selection.start();
+                    }}
+                  >
+                    {t("items.selectSeveral")}
+                  </Button>
+                )}
                 <UnitActions
                   unit={unit.data.unit}
                   path={unit.data.path}
@@ -87,6 +106,21 @@ export const UnitScreen = (): JSX.Element => {
                 />
               </>
             }
+            picking={{
+              on: selection.picking,
+              isSelected: (item) => selection.isSelected(item.id),
+              toggle: (item) => {
+                selection.toggle(item.id);
+              },
+              label: (item) => t("units.select", { name: item.name }),
+            }}
+            {...(selection.picking
+              ? {
+                  belowItems: (
+                    <BulkMoveBar itemIds={selection.selected} onDone={selection.clear} />
+                  ),
+                }
+              : {})}
           />
 
           {addingItem ? (

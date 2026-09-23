@@ -193,6 +193,19 @@ export const ES: Dictionary = {
   "items.moveIt": "Moverla",
   "items.moveThemInto": "Moverlas a",
   "items.moveThem": "Moverlas",
+
+  /**
+   * # Picking several things, said on a phone
+   *
+   * The web client can afford a tick box beside every row for ever. A grid of
+   * photographs three across cannot, so on a phone picking is a MODE — and a
+   * mode nobody can see is a mode nobody uses. These two sentences are what
+   * makes it visible: a button that starts it in words, and a line that tells
+   * whoever took the button the gesture they will reach for next time.
+   */
+  "items.selectSeveral": "Seleccionar varias",
+  "items.pickingHint":
+    "Toca las cosas que quieres mover. Mantener una pulsada también lo inicia.",
   "items.name": "Nombre",
   "items.quantity": "Cantidad",
   "items.tags": "Etiquetas",
