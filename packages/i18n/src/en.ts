@@ -424,4 +424,48 @@ export const EN = {
   "search.field.tag": "tag",
   "search.field.description": "description",
 
+  /**
+   * The fifth destination, and the only one that is not a place to look for a
+   * thing. The word drawn under the avatar; the name announced beside it is
+   * `nav.youNamed`, because "DM" read aloud is two letters.
+   */
+  "nav.you": "You",
+  "nav.youNamed": "You, signed in as {username}",
+  "account.title": "You",
+  /**
+   * Nothing on this screen is the inventory's, so it says what IS its own:
+   * the account, the language, and the way out.
+   */
+  "account.lede": "Your account and the language this app speaks.",
+  "login.show": "Show",
+  "login.hide": "Hide",
+  /**
+   * The second door, and it says what it DOES rather than what it is: "Use
+   * biometrics" is a category, and the thing somebody is about to put on the
+   * sensor is a finger.
+   */
+  "login.withBiometrics": "Sign in with a fingerprint",
+  /**
+   * Sentences the operating system draws, not this app — so they have to make
+   * sense inside a system dialog with a fingerprint icon above them, and they
+   * have to name the app, because that dialog belongs to Android and not to
+   * the screen behind it.
+   */
+  "login.unlockPrompt": "Unlock your Waymark session",
+  "login.sealPrompt": "Confirm it is you, so this phone can remember your Waymark session",
+  /**
+   * Saying no to the camera is a normal answer, so this is a sentence with a
+   * way forward rather than a dead screen: the code printed under the symbol
+   * is typed in instead, which is why it is printed there.
+   */
+  "scan.cameraNeeded":
+    "Waymark needs permission to use the camera to read a label. The code printed under the symbol works just as well.",
+  /**
+   * A root has no parent to empty into, so the API answers `MISSING_EMPTY_TARGET`
+   * rather than guessing (ADR 3). Saying so before the refusal is friendlier
+   * than showing it, and it is the same rule either way.
+   */
+  "units.emptyRootNote":
+    "A root unit has no parent to empty into. Everything inside {name} has to go somewhere else.",
+  "units.emptyIntoNote": "Everything inside {name} moves up into {parent}. Nothing is deleted.",
 } as const;

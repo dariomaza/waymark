@@ -373,4 +373,18 @@ export const ES: Dictionary = {
   "search.field.tag": "una etiqueta",
   "search.field.description": "la descripción",
 
+  "nav.you": "Tú",
+  "nav.youNamed": "Tú, sesión iniciada como {username}",
+  "account.title": "Tú",
+  "account.lede": "Su cuenta y el idioma en el que habla esta aplicación.",
+  "login.show": "Mostrar",
+  "login.hide": "Ocultar",
+  "login.withBiometrics": "Iniciar sesión con la huella",
+  "login.unlockPrompt": "Desbloquee su sesión de Waymark",
+  "login.sealPrompt": "Confirme que es usted para que este teléfono recuerde su sesión de Waymark",
+  "scan.cameraNeeded":
+    "Waymark necesita permiso para usar la cámara y leer una etiqueta. El código impreso bajo el símbolo sirve igual de bien.",
+  "units.emptyRootNote":
+    "Una unidad raíz no tiene unidad superior en la que vaciarse. Todo lo que hay dentro de {name} tiene que ir a otro sitio.",
+  "units.emptyIntoNote": "Todo lo que hay dentro de {name} sube a {parent}. No se borra nada.",
 };
