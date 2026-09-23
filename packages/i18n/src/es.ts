@@ -90,8 +90,9 @@ export const ES: Dictionary = {
   "failure.notFound": "Esto ya no está aquí. Puede que se haya borrado o movido.",
   "failure.sessionEnded": "La sesión ha terminado. Inicia sesión de nuevo.",
   "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
-  "failure.refused": "Waymark ha rechazado esa petición.",
   "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
+  "failure.unexpected":
+    "Algo ha fallado en la aplicación antes de preguntar a Waymark, así que no ha cambiado nada de lo que estabas viendo. Inténtalo otra vez y avísanos si sigue pasando.",
   "failure.asTheApiPutIt": "{reason}",
 
   // ---------------------------------------------------------------------
@@ -529,5 +530,14 @@ export const ES: Dictionary = {
   "passkeys.badName": "Ponle un nombre corto al dispositivo, como Pixel 8.",
   "passkeys.alreadyGone": "Esa passkey no está. Puede que ya se haya quitado.",
   "passkeys.tooMany": "Demasiados intentos. Espera un momento o usa tu contraseña.",
+
+  "passkeys.deviceFailed":
+    "Tu dispositivo no ha podido terminar la passkey, así que no se le ha pedido nada a Waymark. No ha cambiado nada y tu contraseña sigue funcionando. Tu dispositivo ha dicho: {reason}.",
+  "passkeys.deviceHasOneAlready":
+    "Este dispositivo ya tiene una passkey de esta cuenta, así que no ha creado otra. No ha cambiado nada y tu contraseña sigue funcionando. Tu dispositivo ha dicho: {reason}.",
+  "passkeys.deviceCannotMakeOne":
+    "Este dispositivo no puede crear el tipo de passkey que pide Waymark. No ha cambiado nada y tu contraseña sigue funcionando. Tu dispositivo ha dicho: {reason}.",
+  "passkeys.deviceRefusedTheAddress":
+    "Tu dispositivo ha rechazado la dirección desde la que se sirve esta aplicación, así que no ha querido usar una passkey aquí. No ha cambiado nada y tu contraseña sigue funcionando. Tu dispositivo ha dicho: {reason}.",
 
 };

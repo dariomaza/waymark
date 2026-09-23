@@ -66,22 +66,108 @@ export class PasskeyCancelled extends Error {
   }
 }
 
+/**
+ * The device could not finish, and this is the browser's word for why.
+ *
+ * It is the other half of `PasskeyCancelled`, and it was missing. Everything
+ * that was not a dismissal used to be re-thrown raw, and `@waymark/i18n` has
+ * no answer for a `DOMException` — so the whole of the browser's failure space
+ * arrived on screen as "Waymark had a problem answering", which was false
+ * every single time: the ceremony never got as far as asking Waymark
+ * anything. That sentence was read on a phone, in a garage, about a server
+ * that had answered 200 twice.
+ *
+ * ## Why the two strings are the entire type
+ *
+ * There is nothing else to know. `reason` is the `DOMException` name the
+ * browser raised — `NotSupportedError`, `InvalidStateError`, `SecurityError` —
+ * which is the specification's own vocabulary for what went wrong, and `code`
+ * is `@simplewebauthn`'s reading of it when it had one. Together they are
+ * what a maintainer would ask for and what a person with no console can read
+ * out loud, so they are carried all the way to the sentence rather than
+ * flattened into one here (see `passkeyCeremonyFailureMessage`).
+ *
+ * `cause` keeps the original for whoever has a console open.
+ */
+export class PasskeyCeremonyFailed extends Error {
+  readonly reason: string;
+  readonly code: string | null;
+
+  constructor(cause: unknown) {
+    const reason = nameOf(cause);
+    const code = codeOf(cause);
+
+    super(`The passkey ceremony failed: ${reason}`, { cause });
+    this.name = "PasskeyCeremonyFailed";
+    this.reason = reason;
+    this.code = code;
+  }
+}
+
+/**
+ * Deliberately not `UnknownError`, which is a real `DOMException` name with a
+ * meaning of its own: a browser that threw something which is not an `Error`
+ * at all is a different fact, and reporting it as the spec's name would send
+ * somebody reading the wrong paragraph.
+ */
+const NO_NAME_GIVEN = "UnknownFailure";
+
+/**
+ * Read off the thrown thing rather than off an `Error`, on purpose.
+ *
+ * A `DOMException` is an `Error` in a browser and is NOT one in every
+ * environment this code is read in — jsdom's is a class of its own — and the
+ * library hands the browser's exception straight back whenever it has no
+ * reading of its own. Insisting on `instanceof Error` there would lose exactly
+ * the name this whole change exists to carry, in exactly the cases nobody
+ * anticipated, which is the shape of the bug being fixed.
+ */
+const nameOf = (cause: unknown): string => {
+  const name =
+    typeof cause === "object" && cause !== null
+      ? (cause as { name?: unknown }).name
+      : undefined;
+
+  return typeof name === "string" && name !== "" ? name : NO_NAME_GIVEN;
+};
+
+const codeOf = (cause: unknown): string | null => {
+  // A browser can throw anything, including `null`, and reading a property off
+  // that is a second failure on top of the first one.
+  const code =
+    typeof cause === "object" && cause !== null
+      ? (cause as { code?: unknown }).code
+      : undefined;
+
+  return typeof code === "string" ? code : null;
+};
+
 /** Recognised by the library, which is why it is worth its bytes. */
 const WAS_DISMISSED = "ERROR_CEREMONY_ABORTED";
 
-const cancelledIfDismissed = (cause: unknown): never => {
+/**
+ * Every way out of a ceremony that is not a credential, sorted into the two
+ * that exist: somebody changed their mind, or the device could not do it.
+ *
+ * Nothing leaves here raw any more. A throwable this function did not
+ * recognise is precisely the one that was being described by a sentence about
+ * the server, and it is now described by a sentence about the device with the
+ * browser's own word in it.
+ */
+const refusalFrom = (cause: unknown): never => {
+  const name = nameOf(cause);
+
   if (
-    cause instanceof Error &&
-    ((cause as { code?: string }).code === WAS_DISMISSED ||
-      // A browser the library does not recognise still raises the standard
-      // `NotAllowedError`, which is what a dismissed prompt has always been.
-      cause.name === "NotAllowedError" ||
-      cause.name === "AbortError")
+    codeOf(cause) === WAS_DISMISSED ||
+    // A browser the library does not recognise still raises the standard
+    // `NotAllowedError`, which is what a dismissed prompt has always been.
+    name === "NotAllowedError" ||
+    name === "AbortError"
   ) {
     throw new PasskeyCancelled();
   }
 
-  throw cause;
+  throw new PasskeyCeremonyFailed(cause);
 };
 
 export const browserPasskeyPlatform: PasskeyPlatform = {
@@ -108,7 +194,7 @@ export const browserPasskeyPlatform: PasskeyPlatform = {
         optionsJSON: options as never,
       })) as unknown as PasskeyCredential;
     } catch (cause) {
-      return cancelledIfDismissed(cause);
+      return refusalFrom(cause);
     }
   },
 
@@ -126,7 +212,7 @@ export const browserPasskeyPlatform: PasskeyPlatform = {
         useBrowserAutofill: false,
       })) as unknown as PasskeyCredential;
     } catch (cause) {
-      return cancelledIfDismissed(cause);
+      return refusalFrom(cause);
     }
   },
 };

@@ -1,10 +1,14 @@
-import { describeFailure, passkeyFailureMessage } from "@waymark/i18n";
+import {
+  describeFailure,
+  passkeyCeremonyFailureMessage,
+  passkeyFailureMessage,
+} from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { useTranslate } from "../app/language-context.js";
-import { PasskeyCancelled } from "./passkey-platform.js";
+import { PasskeyCancelled, PasskeyCeremonyFailed } from "./passkey-platform.js";
 import { usePasskeySignIn, usePasskeySupport } from "./passkey-queries.js";
 import { sessionStore } from "./session-store.js";
 import "./passkey-sign-in.css";
@@ -59,6 +63,19 @@ export const PasskeySignIn = (): JSX.Element | null => {
 
   const cancelled = signIn.error instanceof PasskeyCancelled;
 
+  /**
+   * Sorted by who refused. A ceremony the device could not finish never
+   * reached the API at all, so it gets the browser's own word for what
+   * happened instead of a sentence about a server that was never asked — and
+   * that sentence still says the password below is untouched, because it is.
+   */
+  const said =
+    signIn.error === null || cancelled
+      ? null
+      : signIn.error instanceof PasskeyCeremonyFailed
+        ? passkeyCeremonyFailureMessage(signIn.error)
+        : (passkeyFailureMessage(signIn.error) ?? describeFailure(signIn.error));
+
   return (
     <div className="passkey-sign-in">
       <p className="passkey-sign-in__or">{t("login.or")}</p>
@@ -81,15 +98,13 @@ export const PasskeySignIn = (): JSX.Element | null => {
         {signIn.isPending ? t("passkeys.signingIn") : t("passkeys.signInAction")}
       </Button>
 
-      {signIn.error === null ? null : cancelled ? (
+      {cancelled ? (
         <Callout tone="note">
           <p>{t("passkeys.cancelled")}</p>
         </Callout>
-      ) : (
+      ) : said === null ? null : (
         <Callout tone="wrong">
-          <p>
-            {t(passkeyFailureMessage(signIn.error) ?? describeFailure(signIn.error))}
-          </p>
+          <p>{t(said)}</p>
         </Callout>
       )}
     </div>

@@ -1,4 +1,8 @@
-import { describeFailure, passkeyFailureMessage } from "@waymark/i18n";
+import {
+  describeFailure,
+  passkeyCeremonyFailureMessage,
+  passkeyFailureMessage,
+} from "@waymark/i18n";
 import { useId, useState, type FormEvent, type JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";
@@ -6,7 +10,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { TextField } from "../ui/atoms/text-field.js";
 import { useTranslate } from "../app/language-context.js";
-import { PasskeyCancelled } from "./passkey-platform.js";
+import { PasskeyCancelled, PasskeyCeremonyFailed } from "./passkey-platform.js";
 import {
   useAddPasskey,
   usePasskeys,
@@ -56,16 +60,25 @@ export const PasskeysPanel = (): JSX.Element => {
   const [asking, setAsking] = useState<string | null>(null);
 
   /**
-   * One place for every refusal this panel can meet. The ones it has real
-   * answers for come back as translated sentences; everything else falls
-   * through to the API's own words, which beats a Spanish sentence invented
-   * here for a refusal nobody has met yet.
+   * One place for every refusal this panel can meet, sorted by WHO refused.
+   *
+   * A ceremony that failed on the device never reached the API, so it is
+   * described by the browser's own word for it rather than by an HTTP status
+   * that does not exist — the hole this panel used to fall into, which ended
+   * with somebody being told Waymark had a problem answering a request it was
+   * never sent. The refusals the API made keep the sentences they had.
    *
    * A dismissed prompt is not in here at all: nothing was refused, so it is
    * drawn as a note rather than as a failure.
    */
   const cancelled = add.error instanceof PasskeyCancelled;
   const refusal = cancelled ? null : (add.error ?? remove.error ?? null);
+  const said =
+    refusal === null
+      ? null
+      : refusal instanceof PasskeyCeremonyFailed
+        ? passkeyCeremonyFailureMessage(refusal)
+        : (passkeyFailureMessage(refusal) ?? describeFailure(refusal));
 
   const onAdd = (event: FormEvent): void => {
     event.preventDefault();
@@ -91,9 +104,9 @@ export const PasskeysPanel = (): JSX.Element => {
         </Callout>
       ) : null}
 
-      {refusal === null ? null : (
+      {said === null ? null : (
         <Callout tone="wrong">
-          <p>{t(passkeyFailureMessage(refusal) ?? describeFailure(refusal))}</p>
+          <p>{t(said)}</p>
         </Callout>
       )}
 

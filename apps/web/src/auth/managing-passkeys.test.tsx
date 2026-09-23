@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { renderApp, screen, userEvent, waitFor, within } from "../testing/render-app.js";
-import { PasskeyCancelled, type PasskeyPlatform } from "./passkey-platform.js";
+import {
+  PasskeyCancelled,
+  PasskeyCeremonyFailed,
+  type PasskeyPlatform,
+} from "./passkey-platform.js";
 import { sessionStore } from "./session-store.js";
 
 /**
@@ -111,6 +115,14 @@ describe("adding a device", () => {
     signedIn();
     listing();
   });
+
+  const answersTheCeremony = (): void => {
+    apiServer.use(
+      http.post(`${API_URL}/auth/passkeys/options`, () =>
+        HttpResponse.json({ ceremonyId: "c1", options: { challenge: "x" } }),
+      ),
+    );
+  };
 
   const addDevice = async (name = "Pixel 8"): Promise<void> => {
     await openTheAccountSheet();
@@ -219,6 +231,58 @@ describe("adding a device", () => {
     await addDevice();
 
     expect(await screen.findByRole("status")).toHaveTextContent(/no passkey was used/i);
+  });
+
+  /**
+   * # The false sentence, and what replaces it
+   *
+   * This is the failure the owner actually met: the API answered the options
+   * request 200, `startRegistration` threw inside the browser, the finishing
+   * request was never made, and the panel said "Waymark had a problem
+   * answering". Every word of that was about a server that had already
+   * answered.
+   */
+  it("blames the device rather than Waymark when the ceremony failed here", async () => {
+    answersTheCeremony();
+    renderApp({
+      route: "/",
+      passkeys: aPlatform({
+        register: async () => {
+          throw new PasskeyCeremonyFailed(
+            new DOMException("the authenticator gave up", "UnknownError"),
+          );
+        },
+      }),
+    });
+
+    await addDevice();
+
+    const said = await screen.findByRole("alert");
+    expect(said).not.toHaveTextContent(/waymark had a problem answering/i);
+    expect(said).toHaveTextContent(/your device/i);
+    expect(said).toHaveTextContent(/password still works/i);
+    expect(said).toHaveTextContent(/UnknownError/);
+  });
+
+  /** A device that already holds one has not failed at all, and is told so. */
+  it("says this device already holds one when the authenticator says so", async () => {
+    answersTheCeremony();
+    renderApp({
+      route: "/",
+      passkeys: aPlatform({
+        register: async () => {
+          throw new PasskeyCeremonyFailed(
+            new DOMException("previously registered", "InvalidStateError"),
+          );
+        },
+      }),
+    });
+
+    await addDevice();
+
+    const said = await screen.findByRole("alert");
+    expect(said).toHaveTextContent(/already holds a passkey/i);
+    expect(said).toHaveTextContent(/InvalidStateError/);
   });
 
   /**

@@ -10,6 +10,7 @@ import {
   missingTargetMessage,
   moveRefusedMessage,
   notEmptyMessage,
+  passkeyCeremonyFailureMessage,
   passkeyFailureMessage,
   tooManyPhotosMessage,
 } from "./refusals.js";
@@ -196,9 +197,33 @@ describe("a failure no screen expected", () => {
     expect(es(describeFailure(refused))).toBe("That shelf is already gone");
   });
 
-  it("falls back to a sentence of its own for anything that is not an ApiError", () => {
-    expect(es(describeFailure(new TypeError("undefined is not a function")))).toBe(
+  /**
+   * The sentence that sent somebody looking in the wrong place. A throwable
+   * that is not an `ApiError` never reached the API — it is a browser, a
+   * device or this app's own code — and answering "Waymark had a problem"
+   * blames the one part of the system that was never asked.
+   */
+  it("does not blame the server for something that never reached it", () => {
+    const said = describeFailure(new TypeError("undefined is not a function"));
+
+    expect(en(said)).not.toMatch(/waymark had a problem/iu);
+    expect(en(said)).toMatch(/before waymark was asked/iu);
+    expect(es(said)).toMatch(/antes de preguntar a waymark/iu);
+  });
+
+  /** And the server still gets the blame when the server is what failed. */
+  it("still says the server had a problem when the server answered with one", () => {
+    const said = describeFailure(new ApiError(500, "SERVER_ERROR", "boom"));
+
+    expect(en(said)).toBe("Waymark had a problem answering. Try again in a moment.");
+    expect(es(said)).toBe(
       "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
+    );
+  });
+
+  it("speaks to the owner as tú, never as usted", () => {
+    expect(es(describeFailure(new TypeError("undefined is not a function")))).not.toMatch(
+      /\busted\b/iu,
     );
   });
 });
@@ -363,5 +388,108 @@ describe("what a passkey refusal becomes", () => {
 
   it("stays null for something that is not an API error at all", () => {
     expect(passkeyFailureMessage(new Error("the wifi went"))).toBeNull();
+  });
+});
+
+/**
+ * # A ceremony the device itself could not finish
+ *
+ * This is the half that was missing, and it was missing in the worst
+ * direction: the browser raised a `DOMException`, nothing was ever sent, and
+ * the screen said Waymark had a problem answering. Somebody stood in a garage
+ * being told to wait for a server that had already answered 200 twice.
+ *
+ * Every sentence here has to do three things — put the failure on the device,
+ * say the password still works, and carry the browser's own word for what went
+ * wrong so it can be reported by somebody who cannot read a console.
+ */
+describe("what a ceremony the device refused becomes", () => {
+  const failure = (reason: string, code: string | null = null) => ({ reason, code });
+
+  it("blames the device rather than Waymark, in both languages", () => {
+    const said = passkeyCeremonyFailureMessage(failure("UnknownError"));
+
+    expect(en(said)).toMatch(/your device/iu);
+    expect(en(said)).not.toMatch(/waymark had a problem/iu);
+    expect(es(said)).toMatch(/tu dispositivo/iu);
+    expect(es(said)).not.toMatch(/waymark ha tenido un problema/iu);
+  });
+
+  it("says nothing was lost and the password still works, in both languages", () => {
+    const said = passkeyCeremonyFailureMessage(failure("UnknownError"));
+
+    expect(en(said)).toMatch(/password still works/iu);
+    expect(es(said)).toMatch(/contraseña sigue funcionando/iu);
+  });
+
+  /**
+   * The browser's word for it, passed through untranslated — the same bargain
+   * `failure.asTheApiPutIt` makes with the API's own prose. A person can read
+   * it out over the phone; a Spanish sentence invented here for a token the
+   * specification defines in English would be a guess.
+   */
+  it("carries the browser's own name for the failure, verbatim", () => {
+    const said = passkeyCeremonyFailureMessage(failure("UnknownError"));
+
+    expect(en(said)).toContain("UnknownError");
+    expect(es(said)).toContain("UnknownError");
+  });
+
+  it("carries the library's code beside it when there is one", () => {
+    const said = passkeyCeremonyFailureMessage(
+      failure("ConstraintError", "ERROR_AUTHENTICATOR_MISSING_DISCOVERABLE_CREDENTIAL_SUPPORT"),
+    );
+
+    expect(en(said)).toContain("ConstraintError");
+    expect(en(said)).toContain("ERROR_AUTHENTICATOR_MISSING_DISCOVERABLE_CREDENTIAL_SUPPORT");
+  });
+
+  it("says this device already holds one when the authenticator says so", () => {
+    const said = passkeyCeremonyFailureMessage(
+      failure("InvalidStateError", "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED"),
+    );
+
+    expect(en(said)).toMatch(/already holds a passkey/iu);
+    expect(es(said)).toMatch(/ya tiene una passkey/iu);
+    expect(en(said)).toContain("InvalidStateError");
+  });
+
+  it("says the device cannot make the kind of passkey we ask for", () => {
+    const said = passkeyCeremonyFailureMessage(
+      failure("NotSupportedError", "ERROR_AUTHENTICATOR_NO_SUPPORTED_PUBKEYCREDPARAMS_ALG"),
+    );
+
+    expect(en(said)).toMatch(/cannot make the kind of passkey/iu);
+    expect(es(said)).toMatch(/no puede crear el tipo de passkey/iu);
+    expect(en(said)).toContain("NotSupportedError");
+  });
+
+  it("says the address does not match what the server expects", () => {
+    const said = passkeyCeremonyFailureMessage(failure("SecurityError", "ERROR_INVALID_RP_ID"));
+
+    expect(en(said)).toMatch(/address/iu);
+    expect(es(said)).toMatch(/dirección/iu);
+    expect(en(said)).toContain("SecurityError");
+  });
+
+  it("gives each recognised name a sentence of its own", () => {
+    const sentences = new Set(
+      ["UnknownError", "InvalidStateError", "NotSupportedError", "SecurityError"].map(
+        (reason) => en(passkeyCeremonyFailureMessage(failure(reason))),
+      ),
+    );
+
+    expect(sentences.size).toBe(4);
+  });
+
+  it("speaks to the owner as tú, never as usted", () => {
+    for (const reason of [
+      "UnknownError",
+      "InvalidStateError",
+      "NotSupportedError",
+      "SecurityError",
+    ]) {
+      expect(es(passkeyCeremonyFailureMessage(failure(reason)))).not.toMatch(/\busted\b/iu);
+    }
   });
 });

@@ -109,8 +109,18 @@ export const EN = {
   "failure.notFound": "That is not here any more. It may have been deleted or moved.",
   "failure.sessionEnded": "Your session has ended. Sign in again.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
-  "failure.refused": "Waymark refused that request.",
   "failure.server": "Waymark had a problem answering. Try again in a moment.",
+  /**
+   * For a throwable that never reached the API at all.
+   *
+   * It exists because `failure.server` used to answer for this too, and that
+   * sentence is a lie about the one part of the system that was never asked —
+   * the browser threw, nothing was sent, and somebody was told to wait for a
+   * server that had already answered. What is true instead is small: it
+   * happened here, nothing on the far side moved, and trying again is free.
+   */
+  "failure.unexpected":
+    "Something went wrong in the app before Waymark was asked, so nothing you were looking at has changed. Try again, and say so if it keeps happening.",
   /**
    * The API's own sentence about the exact situation, passed through. It
    * arrives in English and stays that way — see `describeFailure`.
@@ -685,5 +695,34 @@ export const EN = {
   "passkeys.badName": "Give the device a short name, like Pixel 8.",
   "passkeys.alreadyGone": "That passkey is not there. It may already have been removed.",
   "passkeys.tooMany": "Too many attempts. Wait a moment, or use your password.",
+
+  /**
+   * # When the DEVICE could not finish, which the API never hears about
+   *
+   * Everything above this comment is a refusal the API made. These four are
+   * the other half: the browser raised a `DOMException` and nothing was ever
+   * sent, which is exactly the case that used to be shown as "Waymark had a
+   * problem answering" — a sentence that was false in the worst direction,
+   * because it sent somebody to wait for a server that had already answered.
+   *
+   * Each one says the same three things, because each is true and each is
+   * what somebody needs: it happened on the device, the password still works
+   * and nothing was lost, and here is the browser's own word for it.
+   *
+   * `{reason}` is that word — `NotSupportedError`, and the library's code
+   * beside it when there is one. It is NOT translated, for the reason
+   * `failure.asTheApiPutIt` is not: it is a token the specification defines in
+   * English, it is what a search engine and a maintainer both recognise, and a
+   * Spanish rendering of it would be a name for a thing that has no such name.
+   * It is carried so that somebody with no console can still say what happened.
+   */
+  "passkeys.deviceFailed":
+    "Your device could not finish the passkey, so Waymark was never asked. Nothing changed, and your password still works. Your device said: {reason}.",
+  "passkeys.deviceHasOneAlready":
+    "This device already holds a passkey for this account, so it made no second one. Nothing changed, and your password still works. Your device said: {reason}.",
+  "passkeys.deviceCannotMakeOne":
+    "This device cannot make the kind of passkey Waymark asks for. Nothing changed, and your password still works. Your device said: {reason}.",
+  "passkeys.deviceRefusedTheAddress":
+    "Your device refused the address this app is served from, so it would not use a passkey here. Nothing changed, and your password still works. Your device said: {reason}.",
 
 } as const;
