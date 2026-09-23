@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
-import { PasskeyCancelled, type PasskeyPlatform } from "./passkey-platform.js";
+import {
+  PasskeyCancelled,
+  PasskeyCeremonyFailed,
+  type PasskeyPlatform,
+} from "./passkey-platform.js";
 import { sessionStore } from "./session-store.js";
 
 /**
@@ -294,6 +298,69 @@ describe("a passkey that did not work", () => {
 
     expect(screen.getByRole("button", { name: /sign in/i })).toBeVisible();
     expect(sessionStore.read()).toBeNull();
+  });
+
+  /**
+   * # The sentence this whole file exists to stop being shown
+   *
+   * The browser throws, nothing is ever sent, and the screen used to answer
+   * "Waymark had a problem answering" — about a server that was never asked.
+   * What a person needs instead is where the failure was, that they have lost
+   * nothing, and the word the browser used, because that word is the only
+   * thing they can report from a phone in a garage.
+   */
+  it("blames the device, not Waymark, when the browser could not finish", async () => {
+    renderApp({
+      route: "/",
+      passkeys: aPlatform({
+        assert: async () => {
+          throw new PasskeyCeremonyFailed(
+            new DOMException("the authenticator gave up", "UnknownError"),
+          );
+        },
+      }),
+    });
+
+    await userEvent.click(await passkeyButton());
+
+    const said = await screen.findByRole("alert");
+    expect(said).toHaveTextContent(/your device/i);
+    expect(said).not.toHaveTextContent(/waymark had a problem answering/i);
+  });
+
+  it("says the reason out loud, so it can be reported by somebody with no console", async () => {
+    renderApp({
+      route: "/",
+      passkeys: aPlatform({
+        assert: async () => {
+          throw new PasskeyCeremonyFailed(
+            new DOMException("the authenticator gave up", "UnknownError"),
+          );
+        },
+      }),
+    });
+
+    await userEvent.click(await passkeyButton());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/UnknownError/);
+  });
+
+  it("leaves a working password form behind after the device failed", async () => {
+    renderApp({
+      route: "/",
+      passkeys: aPlatform({
+        assert: async () => {
+          throw new PasskeyCeremonyFailed(new DOMException("no", "SecurityError"));
+        },
+      }),
+    });
+
+    await userEvent.click(await passkeyButton());
+    const said = await screen.findByRole("alert");
+
+    expect(said).toHaveTextContent(/password still works/i);
+    expect(screen.getByLabelText(/^password$/iu)).toBeEnabled();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeEnabled();
   });
 
   it("says the app could not be reached, rather than blaming the device", async () => {
