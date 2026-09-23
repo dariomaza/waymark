@@ -41,9 +41,9 @@
  * the same width, and the last of them deleted the thing — see ADR 21 for why
  * that is a layout question rather than a colour one.
  *
- * `10rem` rather than `8rem`: "Editar" fits either way, but the basis existed
- * to promise two per row, and 8rem could not keep that promise for any of the
- * longer Spanish labels it shared a row with.
+ * `10rem` rather than `8rem`: the basis existed to promise two per row, and
+ * with three long Spanish labels sharing it that promise was worth nothing.
+ * Two is a promise a row can keep.
  */
 .item-detail__actions {
   display: flex;
