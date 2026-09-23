@@ -157,6 +157,14 @@ export const EN = {
   "action.clearSelection": "Clear selection",
   "action.optional": "Optional.",
   "action.print": "Print",
+  /**
+   * The overflow control, and the panel it opens: one name for both, so the
+   * thing a screen reader announces and the thing a heading says cannot drift
+   * apart. It names the SUBJECT because an icon with three dots in it says
+   * nothing on its own — "More actions, button" is a control nobody can tell
+   * from the next one down the page.
+   */
+  "action.more": "More actions for {name}",
 
   // ---------------------------------------------------------------------
   // Signing in

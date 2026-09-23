@@ -131,6 +131,7 @@ export const ES: Dictionary = {
   "action.clearSelection": "Quitar la selección",
   "action.optional": "Opcional.",
   "action.print": "Imprimir",
+  "action.more": "Más acciones para {name}",
 
   // ---------------------------------------------------------------------
   // Signing in
@@ -302,7 +303,7 @@ export const ES: Dictionary = {
   "units.showLabelPhone": "Ver la etiqueta",
   "label.sheet": "Hoja de etiquetas",
   "label.printFromWeb":
-    "Imprima esto desde el cliente web, que sirve el mismo símbolo como SVG.",
+    "Imprime esto desde el cliente web, que sirve el mismo símbolo como SVG.",
 
   // ---------------------------------------------------------------------
   // Odds and ends of the frame

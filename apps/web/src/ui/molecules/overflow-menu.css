@@ -1,0 +1,50 @@
+/**
+ * The control: a 48×48 square and nothing else.
+ *
+ * `.button` already guarantees the floor in both directions; what this adds is
+ * the removal of the horizontal padding a word used to need, so a control with
+ * no word in it is a square rather than an oblong. The same two lines the
+ * sheet's Close control needs, for the same reason.
+ *
+ * `flex: 0 0 auto` because it sits at the end of a heading line beside a name
+ * that may be long: the NAME wraps, the control does not shrink. A tap target
+ * that gives ground to a long title is a tap target that stops being 48 wide
+ * on exactly the screens where that matters most.
+ */
+.overflow-menu__trigger {
+  padding: 0;
+  width: 48px;
+  flex: 0 0 auto;
+}
+
+.overflow-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/**
+ * Full width, one per row, and deliberately NOT the two-per-row the action row
+ * uses. This is a list to be read down rather than a set of peers to be
+ * scanned, and a thumb walking it should never have to choose between two
+ * targets side by side — one of which, at the bottom, deletes something.
+ */
+.overflow-menu__line .button {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+/**
+ * The gap and the rule are the rule from ADR 21 made visible: nothing that
+ * destroys anything sits within a thumb's width of anything that does not.
+ * Distance is the only guard a touch screen has — there is no hover to hesitate
+ * in and no cursor to aim with.
+ */
+.overflow-menu__line--apart {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+}

@@ -43,6 +43,7 @@ describe("the icon set both clients draw", () => {
       "move",
       "rotate",
       "chevronRight",
+      "more",
       "key",
       "signOut",
       "globe",
