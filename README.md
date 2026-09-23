@@ -154,6 +154,31 @@ fresh install, and a machine token is refused all four operations. A credential
 that can issue its own successor cannot be revoked, and revocation is the whole
 of what ADR 17 promised.
 
+**A passkey is an additional door, never a replacement** (ADR 19). The owner
+signs in on a phone, and Chrome on Android hands a web page the fingerprint
+reader through WebAuthn — so it does. What makes this safe to add is the rule
+it is built around: the password form is on the sign-in screen at all times,
+in full, with no "use password instead" link in front of it, and the passkey
+button appears only when the platform can actually serve one. A wet thumb, a
+cut finger or a freshly rebooted phone must never be why somebody cannot get
+into their own garage.
+
+It is the one place this codebase's instinct against dependencies is wrong.
+Verifying an attestation and an assertion means CBOR, a COSE key, a client
+data hash and a signature over exactly the right bytes, and a subtle mistake
+there does not fail — it silently accepts something it should not. So
+`@simplewebauthn` does that, and ADR 19 is the argument for it.
+
+Three things follow, and each is a rule rather than a preference. A passkey is
+registered only from a session a PASSWORD opened, because a credential that
+can issue its own successor outlives every password change made to stop it —
+ADR 18's sentence about machine tokens with one word changed. The RP ID and
+the expected origin are derived from `WAYMARK_PUBLIC_BASE_URL` rather than
+configured beside it, so there is no second setting to disagree with the
+first, and a base URL no browser will run WebAuthn against stops the process
+at boot. And removing every passkey is allowed, with no warning and no rule
+against it, because there is no state in which one is the only way in.
+
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no
 Android Studio in the build path. Native Kotlin would mean two independent
@@ -190,6 +215,7 @@ field, so choosing one is spelled as a reorder.
 - TypeScript everywhere
 - Fastify, Prisma, SQLite (FTS5 for search)
 - sharp for image ingestion, qrcode for label symbols
+- `@simplewebauthn/server` and `@simplewebauthn/browser` for passkeys (ADR 19)
 - React + Vite (PWA), `@zxing/browser` for scanning
 - Expo / React Native, React Navigation, `expo-camera` for scanning
 - Python + rembg (sidecar only)
@@ -197,9 +223,12 @@ field, so choosing one is spelled as a reorder.
 
 ## HTTP API
 
-Everything but `GET /health` and `POST /auth/login` needs a session — or a
-machine token (ADR 17), which is a credential for a program rather than a
-person and travels under its own `Authorization` scheme.
+Everything but `GET /health`, `POST /auth/login` and the two
+`POST /auth/passkey-login` routes needs a session — or a machine token
+(ADR 17), which is a credential for a program rather than a person and travels
+under its own `Authorization` scheme. The passkey sign-in routes are
+unauthenticated for the same reason the login is: they are how a session
+begins. They take no username, and they answer the same thing to everybody.
 
 These paths are the API's half of the origin (ADR 16). Anything else that no
 route matches is the web client's, and is answered with the app shell — but
@@ -213,6 +242,12 @@ JSON, and a write to a path nothing serves is JSON.
 | `POST`   | `/auth/login`               | `{ token, expiresAt, user }`                 |
 | `GET`    | `/auth/me`                  | `{ user }`, or `{ machineToken }` for a machine |
 | `POST`   | `/auth/logout`              | `204` — a session only; a machine token gets 403 |
+| `POST`   | `/auth/passkey-login/options` | `{ ceremonyId, options }` — no session, no username |
+| `POST`   | `/auth/passkey-login`       | `{ token, expiresAt, user }` — the same session a password opens |
+| `GET`    | `/auth/passkeys`            | `{ passkeys }` — your own devices, never anybody else's |
+| `POST`   | `/auth/passkeys/options`    | `{ ceremonyId, options }` — needs a password-backed session |
+| `POST`   | `/auth/passkeys`            | `201 { passkey }` — needs a password-backed session |
+| `DELETE` | `/auth/passkeys/:id`        | `204` — one device, any session                |
 | `GET`    | `/search`                   | `{ query, terms, items, storageUnits }`      |
 | `GET`    | `/storage-units`            | `{ tree }` — the whole forest, nested        |
 | `POST`   | `/storage-units`            | `201 { unit }`                               |
@@ -518,6 +553,10 @@ One shared inventory. Users are credentials, not tenants: there is no owner
 column, no per-user scoping and no roles. Everybody who can log in sees and
 edits the same house.
 
+There are three kinds of credential: a password, a passkey (ADR 19) and a
+machine token (ADR 17). The first two open the same session for a person; the
+third is not a person at all.
+
 - **No sign-up, ever.** Accounts are created from a shell on the server with
   `pnpm --filter @waymark/api create-user`. The password is never an argument;
   it is prompted for with echo off, or piped on standard input.
@@ -533,6 +572,73 @@ edits the same house.
 - **Login is rate limited per caller**, read from `CF-Connecting-IP` because the
   socket peer is always the Cloudflare Tunnel. The header is believed only from
   a configured proxy address, so it cannot be forged from the LAN.
+
+### Passkeys
+
+A **passkey** is a second way to open the same session (ADR 19), and the rule
+it is built around outranks everything else in this section: **the password
+form is always present and always usable.** A passkey is an addition beside
+it, never a replacement, and never behind a "use password instead" link.
+
+```
+POST   /auth/passkey-login/options   →  { ceremonyId, options }
+POST   /auth/passkey-login           →  { token, expiresAt, user }
+GET    /auth/passkeys                →  { passkeys }
+POST   /auth/passkeys/options        →  { ceremonyId, options }
+POST   /auth/passkeys                →  201 { passkey }
+DELETE /auth/passkeys/:id            →  204
+```
+
+- **It opens the very same opaque session a password does** (ADR 6). Same
+  token, same thirty sliding days, same `DELETE` to revoke. There is no second
+  kind of session and nothing downstream can tell the difference — except one
+  column, `Session.createdWith`, which exists for exactly one rule below.
+- **Registering one needs a password-backed session.** A session a passkey
+  opened may list devices and remove them, and may not add one. It is ADR 18's
+  argument about machine tokens with one word changed: a credential that can
+  issue its own successor outlives every password change made to stop it.
+  Somebody adding their laptop after signing in on their phone types their
+  password once, which is the whole cost.
+- **Removing is deliberately easier than adding.** Any session may remove any
+  of its own devices, because the person who has just realised a phone is gone
+  is holding the other phone, not sitting at a keyboard with their password to
+  hand. Nothing is at risk in that direction: removing every passkey cannot
+  lock anybody out, because the password form never leaves the sign-in screen.
+- **Several per person.** A phone and a laptop are two authenticators, and a
+  lost phone must not be a lost account.
+- **User verification is required**, on both ceremonies and in the signed
+  bytes. A passkey that silently accepted mere presence would be a passkey in
+  name only, and the whole point here is the fingerprint. What it costs is an
+  old security key with no PIN and no sensor, which is refused with a sentence
+  saying so — beside a password form that still works.
+- **Sign-in asks for no username.** Credentials are discoverable, the options
+  carry an empty `allowCredentials`, and the assertion says who you are. The
+  second reason is the stronger one: the options route is unauthenticated, and
+  a username-first flow would have to tell an anonymous caller which usernames
+  exist and which devices they own.
+- **The RP ID and the expected origin are derived** from
+  `WAYMARK_PUBLIC_BASE_URL` — its hostname and its origin. There is no
+  `WAYMARK_RP_ID`, because two settings that can disagree is one more state
+  than this feature has, and the extra state is a deployment that boots
+  perfectly and refuses every fingerprint. A base URL that is neither `https:`
+  nor a loopback host is refused at boot, by name, because no browser will run
+  WebAuthn against it.
+- **Challenges are rows: single-use, two minutes, bound to their ceremony.**
+  Spending one is a `DELETE` that returns what it deleted, so two requests
+  racing the same ceremony cannot both be served, and the ceremony is part of
+  the `WHERE` so a registration challenge cannot finish a sign-in.
+- **A signature counter that goes backwards is refused, and the device is not
+  deleted.** Most authenticators keep no counter at all and always report
+  zero, so zero-against-zero means "this one does not count"; anything else
+  that fails to climb is treated as a clone and the sign-in is refused, with
+  the device named so the person can remove it themselves.
+- **What is stored is what verification needs**: the credential id, the public
+  key, the counter, the transports, the name the person typed and when it was
+  last used. No attestation is requested and no AAGUID is kept, because those
+  identify the make and model of somebody's device and there is nothing here
+  to do with the answer.
+- **A machine token is refused all four managed routes**, including the list.
+  A passkey is a person's thumb, and a machine token has no person behind it.
 
 ### Machine tokens
 
@@ -635,7 +741,7 @@ cross-origin one, so `WAYMARK_ALLOWED_ORIGINS` is empty in a normal
 deployment and exists only for a browser client served from somewhere else.
 
 ```
-src/auth       Signing in, the session, and the gate every other screen sits behind.
+src/auth       Signing in, passkeys, the session, and the gate every other screen sits behind.
 src/units      The tree, one unit, create / edit / move / empty / delete, labels.
 src/items      One item, adding, editing, bulk move, delete, and everything you own.
 src/search     The screen the product is named after.
