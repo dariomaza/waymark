@@ -20,5 +20,5 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["index.tsx", "src/**/*.ts", "src/**/*.tsx"]
+  "include": ["app.config.ts", "index.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }
