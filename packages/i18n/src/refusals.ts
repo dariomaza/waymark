@@ -153,6 +153,56 @@ export const machineTokenFailureMessage = (error: unknown): Message | null => {
   }
 };
 
+/**
+ * # What a refused passkey means, as a sentence somebody can act on
+ *
+ * Each of these is a different NEXT STEP, which is the entire reason they are
+ * not one apology: press the button again, use your password, remove that
+ * device, name it something shorter. A screen that showed one sentence for all
+ * of them would be telling somebody standing in a garage to guess.
+ *
+ * `null` for anything else, so a screen can tell the refusals it handles from
+ * every other — the same bargain every function in this file makes.
+ *
+ * What is NOT here is a cancelled prompt. Nothing was refused: somebody
+ * dismissed a dialog, which never reaches the API and is the client's own
+ * `passkeys.cancelled`.
+ */
+export const passkeyFailureMessage = (error: unknown): Message | null => {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  switch (error.code) {
+    case ApiErrorCode.PASSKEY_CEREMONY_EXPIRED:
+      return message("passkeys.ceremonyExpired");
+    case ApiErrorCode.INVALID_PASSKEY:
+      return message("passkeys.notRecognised");
+    case ApiErrorCode.CLONED_PASSKEY:
+      /**
+       * The one refusal here that names something. `details.label` is the
+       * device, and "remove that one" is useless without knowing which.
+       */
+      return message("passkeys.cloned", {
+        name: detailText(error, "label") ?? "",
+      });
+    case ApiErrorCode.PASSKEY_DID_NOT_VERIFY_THE_USER:
+      return message("passkeys.needsVerification");
+    case ApiErrorCode.PASSKEY_ALREADY_REGISTERED:
+      return message("passkeys.alreadyRegistered");
+    case ApiErrorCode.PASSKEY_NEEDS_A_PASSWORD:
+      return message("passkeys.needsAPassword");
+    case ApiErrorCode.INVALID_PASSKEY_LABEL:
+      return message("passkeys.badName");
+    case ApiErrorCode.PASSKEY_NOT_FOUND:
+      return message("passkeys.alreadyGone");
+    case ApiErrorCode.TOO_MANY_PASSKEY_ATTEMPTS:
+      return message("passkeys.tooMany");
+    default:
+      return null;
+  }
+};
+
 /** A string out of `details`, read without trusting the wire. */
 const detailText = (error: ApiError, key: string): string | null => {
   const value = error.details[key];

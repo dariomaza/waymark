@@ -129,7 +129,7 @@ export const ES: Dictionary = {
   // Signing in
   // ---------------------------------------------------------------------
   "login.title": "Iniciar sesión en Waymark",
-  "login.tagline": "Encuentre el camino de vuelta.",
+  "login.tagline": "Encuentra el camino de vuelta.",
   "login.note": "Las cuentas se crean en el servidor. No hay registro.",
   "login.username": "Usuario",
   "login.password": "Contraseña",
@@ -444,5 +444,52 @@ export const ES: Dictionary = {
     "Usa minúsculas, dígitos y . _ - — tiene que poder escribirse en una shell.",
   "tokens.alreadyGone":
     "No hay ningún token de máquina con ese nombre. Puede que ya se haya revocado.",
+
+  // ---------------------------------------------------------------------
+  // Passkeys: una puerta más, nunca un reemplazo (ADR 19)
+  // ---------------------------------------------------------------------
+  "passkeys.title": "Passkeys",
+  "passkeys.explains":
+    "Entra con tu huella, tu cara o el bloqueo de pantalla, en un dispositivo que ya has demostrado que es tuyo. Tu contraseña sigue funcionando igual que ahora.",
+  "passkeys.loading": "Cargando tus passkeys",
+  "passkeys.none": "Todavía no hay ninguna passkey.",
+
+  "passkeys.signInAction": "Entrar con una passkey",
+  "passkeys.signingIn": "Esperando a tu dispositivo…",
+
+  "passkeys.addAction": "Añadir este dispositivo",
+  "passkeys.adding": "Esperando a tu dispositivo…",
+  "passkeys.nameLabel": "Qué dispositivo es",
+  "passkeys.nameHint":
+    "Como lo llamarías en voz alta: Pixel 8, Portátil del trabajo. Es como los distinguirás después.",
+  "passkeys.addConfirm": "Añádelo",
+
+  "passkeys.addedOn": "Añadido el {when}",
+  "passkeys.lastUsedOn": "Usada por última vez el {when}",
+  "passkeys.neverUsed": "Sin usar",
+
+  "passkeys.removeAction": "Quitar",
+  "passkeys.removeTitle": "¿Quitar {name}?",
+  "passkeys.removeWarning":
+    "{name} deja de poder entrar inmediatamente. Tu contraseña sigue funcionando, así que esto no te puede dejar fuera.",
+  "passkeys.removeConfirm": "Quítala",
+  "passkeys.removing": "Quitando…",
+
+  "passkeys.cancelled": "No se ha usado ninguna passkey. Tu contraseña sigue ahí.",
+  "passkeys.unsupported":
+    "Este navegador no puede usar una passkey. Entra con tu contraseña.",
+  "passkeys.ceremonyExpired": "Se ha tardado demasiado. Inténtalo otra vez.",
+  "passkeys.notRecognised":
+    "Waymark no ha reconocido esa passkey. Entra con tu contraseña y vuelve a añadir este dispositivo.",
+  "passkeys.cloned":
+    "La passkey {name} puede haberse copiado, así que se ha rechazado. Quítala y vuelve a añadir el dispositivo. Tu contraseña sigue funcionando.",
+  "passkeys.needsVerification":
+    "Ese dispositivo no puede comprobar que eres tú. Una passkey necesita una huella, una cara o un PIN.",
+  "passkeys.alreadyRegistered": "Este dispositivo ya tiene una passkey de Waymark.",
+  "passkeys.needsAPassword":
+    "Para añadir una passkey hace falta tu contraseña. Cierra la sesión, entra con ella y añade este dispositivo.",
+  "passkeys.badName": "Ponle un nombre corto al dispositivo, como Pixel 8.",
+  "passkeys.alreadyGone": "Esa passkey no está. Puede que ya se haya quitado.",
+  "passkeys.tooMany": "Demasiados intentos. Espera un momento o usa tu contraseña.",
 
 };

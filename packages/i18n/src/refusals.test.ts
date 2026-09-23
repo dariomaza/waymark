@@ -10,6 +10,7 @@ import {
   missingTargetMessage,
   moveRefusedMessage,
   notEmptyMessage,
+  passkeyFailureMessage,
   tooManyPhotosMessage,
 } from "./refusals.js";
 import { translator } from "./translate.js";
@@ -274,5 +275,93 @@ describe("what a machine-token refusal becomes", () => {
     const said = machineTokenFailureMessage(refusal("MACHINE_TOKEN_NAME_ALREADY_TAKEN"));
 
     expect(translator("en")(said)).not.toContain("undefined");
+  });
+});
+
+/**
+ * # A refused passkey, and the fact that every one of these is a different act
+ *
+ * The point of separate sentences is separate NEXT STEPS. A person whose
+ * prompt timed out presses the button again; a person whose device cannot
+ * check a fingerprint uses their password; a person holding a device that may
+ * have been copied removes it. One sentence for all three would be telling
+ * somebody in a garage to guess.
+ */
+describe("what a passkey refusal becomes", () => {
+  const refusal = (code: string, details: Record<string, unknown> = {}) =>
+    new ApiError(401, code, "the API's own words", details);
+
+  it("tells somebody whose prompt timed out to try again, in both languages", () => {
+    const said = passkeyFailureMessage(refusal("PASSKEY_CEREMONY_EXPIRED"));
+
+    expect(en(said)).toMatch(/try again/iu);
+    expect(es(said)).toMatch(/inténtalo/iu);
+  });
+
+  /**
+   * The one refusal that names something, because "remove that one" is useless
+   * without knowing which one.
+   */
+  it("names the device that may have been copied", () => {
+    const said = passkeyFailureMessage(
+      refusal("CLONED_PASSKEY", { label: "Pixel 8" }),
+    );
+
+    expect(en(said)).toContain("Pixel 8");
+    expect(es(said)).toContain("Pixel 8");
+  });
+
+  /**
+   * The rule that outranks the rest, said out loud to the person it applies
+   * to: whatever went wrong with the thumb, the password is still there.
+   */
+  it("says the password still works, in both languages", () => {
+    const said = passkeyFailureMessage(
+      refusal("CLONED_PASSKEY", { label: "Pixel 8" }),
+    );
+
+    expect(en(said)).toMatch(/password still works/iu);
+    expect(es(said)).toMatch(/contraseña sigue funcionando/iu);
+  });
+
+  it("explains what a device has to be able to do", () => {
+    const said = passkeyFailureMessage(refusal("PASSKEY_DID_NOT_VERIFY_THE_USER"));
+
+    expect(en(said)).toMatch(/fingerprint/iu);
+    expect(es(said)).toMatch(/huella/iu);
+  });
+
+  it("says a passkey is added with a password, not with another passkey", () => {
+    const said = passkeyFailureMessage(refusal("PASSKEY_NEEDS_A_PASSWORD"));
+
+    expect(en(said)).toMatch(/password/iu);
+    expect(es(said)).toMatch(/contraseña/iu);
+  });
+
+  it("speaks to the owner as tú, never as usted", () => {
+    const said = passkeyFailureMessage(refusal("PASSKEY_NEEDS_A_PASSWORD"));
+
+    expect(es(said)).not.toMatch(/\busted\b/iu);
+  });
+
+  it.each([
+    ["INVALID_PASSKEY"],
+    ["PASSKEY_ALREADY_REGISTERED"],
+    ["INVALID_PASSKEY_LABEL"],
+    ["PASSKEY_NOT_FOUND"],
+    ["TOO_MANY_PASSKEY_ATTEMPTS"],
+  ])("has a sentence of its own for %s", (code) => {
+    const said = passkeyFailureMessage(refusal(code));
+
+    expect(said).not.toBeNull();
+    expect(es(said)).not.toBe(en(said));
+  });
+
+  it("stays null for a refusal it has no answer for", () => {
+    expect(passkeyFailureMessage(refusal("STORAGE_UNIT_NOT_EMPTY"))).toBeNull();
+  });
+
+  it("stays null for something that is not an API error at all", () => {
+    expect(passkeyFailureMessage(new Error("the wifi went"))).toBeNull();
   });
 });
