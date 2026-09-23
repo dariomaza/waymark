@@ -89,6 +89,18 @@ export const ApiErrorCode = {
   TOO_MANY_ITEM_PHOTOS: "TOO_MANY_ITEM_PHOTOS",
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
   INVALID_SESSION: "INVALID_SESSION",
+  /** The machine token is unknown, revoked, expired, or was never one (401). */
+  INVALID_MACHINE_TOKEN: "INVALID_MACHINE_TOKEN",
+  /**
+   * A read-only machine token was asked to change something (403, ADR 17).
+   *
+   * It is deliberately neither of ADR 8's two codes: the request bytes are
+   * correct and the world is correct, and the identical call succeeds the
+   * moment a read-write token makes it. What has to change is the CREDENTIAL,
+   * which is a third kind of thing to tell somebody, and `details` carries
+   * `machineTokenName` and `requiredScope` so a consumer can say which.
+   */
+  READ_ONLY_MACHINE_TOKEN: "READ_ONLY_MACHINE_TOKEN",
   TOO_MANY_LOGIN_ATTEMPTS: "TOO_MANY_LOGIN_ATTEMPTS",
   VALIDATION_FAILED: "VALIDATION_FAILED",
 } as const;

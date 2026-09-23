@@ -3,8 +3,9 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { ApiError, FailureKind, failureKindOf } from "./api-error.js";
-import { createWaymarkClient, PHOTO_FIELD_NAME } from "./waymark-client.js";
+import { ApiError, ApiErrorCode, FailureKind, failureKindOf } from "./api-error.js";
+import { isMachineCaller, MachineTokenScope } from "./contract.js";
+import { AuthScheme, createWaymarkClient, PHOTO_FIELD_NAME } from "./waymark-client.js";
 import { anItem, aPhoto, aStorageUnit } from "./testing/fixtures.js";
 
 /**
@@ -52,10 +53,130 @@ describe("the Waymark API client", () => {
       }),
     );
 
-    const { user } = await clientWith().me();
+    const caller = await clientWith().me();
 
     expect(seen).toEqual(["Bearer a-live-token"]);
-    expect(user.username).toBe("dario");
+    expect(caller).toEqual({ user: { id: "u1", username: "dario" } });
+  });
+
+  /**
+   * # The third consumer
+   *
+   * `apps/web` and `apps/mobile` hold a person's session. `apps/mcp` holds a
+   * machine token (ADR 17), which travels under its own `Authorization`
+   * scheme so that neither credential can ever be replayed as the other.
+   *
+   * That difference is one word in one header, so it belongs here rather than
+   * in a second HTTP module written for the MCP server.
+   */
+  describe("carrying a machine token instead of a session", () => {
+    it("presents it under the Machine scheme, never as a bearer", async () => {
+      const seen: (string | null)[] = [];
+      apiServer.use(
+        http.get(`${API_URL}/storage-units`, ({ request }) => {
+          seen.push(request.headers.get("authorization"));
+          return HttpResponse.json({ tree: [] });
+        }),
+      );
+
+      await clientWith({
+        scheme: AuthScheme.Machine,
+        token: () => "wmk_a-machine-token",
+      }).tree();
+
+      expect(seen).toEqual(["Machine wmk_a-machine-token"]);
+    });
+
+    it("still says Bearer when no scheme is asked for", async () => {
+      const seen: (string | null)[] = [];
+      apiServer.use(
+        http.get(`${API_URL}/storage-units`, ({ request }) => {
+          seen.push(request.headers.get("authorization"));
+          return HttpResponse.json({ tree: [] });
+        }),
+      );
+
+      await clientWith().tree();
+
+      expect(seen).toEqual(["Bearer a-live-token"]);
+    });
+
+    it("reads what a machine token is and what it may do", async () => {
+      apiServer.use(
+        http.get(`${API_URL}/auth/me`, () =>
+          HttpResponse.json({
+            machineToken: {
+              id: "mt1",
+              name: "mcp-server",
+              scope: "read",
+              createdAt: "2026-09-23T09:00:00.000Z",
+              expiresAt: null,
+              lastUsedAt: null,
+            },
+          }),
+        ),
+      );
+
+      const caller = await clientWith({
+        scheme: AuthScheme.Machine,
+        token: () => "wmk_a-machine-token",
+      }).me();
+
+      expect(isMachineCaller(caller)).toBe(true);
+      expect(isMachineCaller(caller) && caller.machineToken.scope).toBe(
+        MachineTokenScope.Read,
+      );
+    });
+
+    it("does not call a session answer a machine one", async () => {
+      apiServer.use(
+        http.get(`${API_URL}/auth/me`, () =>
+          HttpResponse.json({ user: { id: "u1", username: "dario" } }),
+        ),
+      );
+
+      expect(isMachineCaller(await clientWith().me())).toBe(false);
+    });
+
+    it("refuses a write with 403 and the scope a caller would need", async () => {
+      apiServer.use(
+        http.post(`${API_URL}/items`, () =>
+          HttpResponse.json(
+            {
+              error: {
+                code: "READ_ONLY_MACHINE_TOKEN",
+                message: 'The machine token "mcp-server" is read-only',
+                details: {
+                  machineTokenName: "mcp-server",
+                  method: "POST",
+                  requiredScope: "read-write",
+                },
+              },
+            },
+            { status: 403 },
+          ),
+        ),
+      );
+
+      const error = await clientWith({
+        scheme: AuthScheme.Machine,
+        token: () => "wmk_a-machine-token",
+      })
+        .createItem({
+          storageUnitId: unitId("u1"),
+          name: "Soldering iron",
+          description: null,
+          quantity: 1,
+          tags: [],
+        })
+        .catch((caught: unknown) => caught);
+
+      expect(error).toMatchObject({
+        status: 403,
+        code: ApiErrorCode.READ_ONLY_MACHINE_TOKEN,
+        details: { requiredScope: "read-write" },
+      });
+    });
   });
 
   it("sends no authorization header at all when there is no session", async () => {

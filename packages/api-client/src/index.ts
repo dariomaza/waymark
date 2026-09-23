@@ -39,7 +39,9 @@ export {
   OFFLINE_STATUS,
 } from "./api-error.js";
 export { initialsOf } from "./initials.js";
+export { looksLikeMachineToken, MACHINE_TOKEN_PREFIX } from "./machine-token.js";
 export {
+  AuthScheme,
   createWaymarkClient,
   PHOTO_FIELD_NAME,
   type AppendPhoto,
@@ -56,8 +58,10 @@ export {
   subtreeOf,
   type FlatUnit,
 } from "./storage-unit-tree.js";
+export { isMachineCaller, MachineTokenScope, mayWriteWith } from "./contract.js";
 export type {
   AbandonedPhotoView,
+  CallerResponse,
   CreateItemInput,
   CreateStorageUnitInput,
   Credentials,
@@ -72,6 +76,8 @@ export type {
   ItemSearchResultView,
   ItemView,
   ImageProcessorStatusView,
+  MachineCallerResponse,
+  MachineTokenView,
   MovedItemsResponse,
   PhotoProcessingResponse,
   PhotoView,
@@ -91,5 +97,6 @@ export type {
   StorageUnitWithPhotoView,
   UpdateItemInput,
   UpdateStorageUnitInput,
+  UserCallerResponse,
   UserView,
 } from "./contract.js";

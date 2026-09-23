@@ -2,6 +2,7 @@ import type { ItemId, PhotoId, UnitId } from "@waymark/domain";
 
 import { ApiError, OFFLINE_STATUS } from "./api-error.js";
 import type {
+  CallerResponse,
   Credentials,
   CreateItemInput,
   CreateStorageUnitInput,
@@ -26,7 +27,6 @@ import type {
   StorageUnitTreeResponse,
   UpdateItemInput,
   UpdateStorageUnitInput,
-  UserView,
 } from "./contract.js";
 
 /**
@@ -55,11 +55,43 @@ export type AppendPhoto<TFile> = (
   file: TFile,
 ) => void;
 
+/**
+ * # Which `Authorization` scheme this client's credential travels under
+ *
+ * There are two kinds of caller and two schemes, and the scheme is what tells
+ * them apart at the transport, before anything is looked up (ADR 17). A
+ * session presented as `Machine` never reaches the session table and a machine
+ * token presented as `Bearer` never reaches the machine token table — neither
+ * is a lookup that missed, neither lookup happens — so a leak of one cannot be
+ * replayed as the other.
+ *
+ * It is a property of the CLIENT rather than of the moment, which is why it is
+ * one option read once and not a second thing `token()` has to return. A
+ * browser and a phone hold a person's session and will never hold anything
+ * else; an MCP server holds a machine token and can never obtain a session,
+ * because there is no password for it to log in with. What changes request to
+ * request is the token's VALUE — a session is refreshed — and that is exactly
+ * what `token()` is read per request for.
+ */
+export const AuthScheme = {
+  /** A person's session token (ADR 6): `apps/web`, `apps/mobile`. */
+  Session: "Bearer",
+  /** A machine token (ADR 17): `apps/mcp`. */
+  Machine: "Machine",
+} as const;
+
+export type AuthScheme = (typeof AuthScheme)[keyof typeof AuthScheme];
+
 export interface WaymarkClientOptions<TFile> {
   /** Absolute; a client and the API never live on the same origin. */
   readonly baseUrl: string;
   /** Read per request, so a refreshed session takes effect immediately. */
   readonly token: () => string | null;
+  /**
+   * Defaults to a session bearer, because two of the three consumers hold one
+   * and a default that is wrong for them would be a silent 401 in a browser.
+   */
+  readonly scheme?: AuthScheme | undefined;
   /**
    * Called when a token this client PRESENTED was refused, which is the only
    * thing that means "the session is over". A rejected password is a 401 too,
@@ -87,7 +119,17 @@ export interface WaymarkClientOptions<TFile> {
  */
 export interface WaymarkClient<TFile> {
   login(credentials: Credentials): Promise<SessionView>;
-  me(): Promise<{ readonly user: UserView }>;
+  /**
+   * Who is calling, which is two shapes because there are two kinds of caller
+   * (ADR 17). A client that holds a session gets `{ user }` and may narrow to
+   * it; one that holds a machine token gets `{ machineToken }`, which is how
+   * it learns its own scope without attempting a write to find out.
+   *
+   * Both clients that hold a session use this as a liveness probe and read
+   * neither key, which is why widening it cost them nothing.
+   */
+  me(): Promise<CallerResponse>;
+  /** A session only. A machine token is refused 403: it is revoked from a shell. */
   logout(): Promise<void>;
 
   tree(): Promise<StorageUnitTreeResponse>;
@@ -170,7 +212,7 @@ export const createWaymarkClient = <TFile>(
     const token = options.token();
     const headers = new Headers(init.headers);
     if (token !== null) {
-      headers.set("authorization", `Bearer ${token}`);
+      headers.set("authorization", `${options.scheme ?? AuthScheme.Session} ${token}`);
     }
 
     let response: Response;
@@ -236,7 +278,7 @@ export const createWaymarkClient = <TFile>(
     },
 
     async me() {
-      return readJson<{ user: UserView }>("/auth/me");
+      return readJson<CallerResponse>("/auth/me");
     },
 
     async logout() {

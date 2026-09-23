@@ -113,6 +113,74 @@ export interface SessionView {
   readonly user: UserView;
 }
 
+/**
+ * What a machine token may do. Two values, and the API says there will not be
+ * a third: anything finer is the role system ADR 5 refused.
+ *
+ * Mirrored here by hand like every other view. A client cannot import it from
+ * `apps/api`, and it does not belong in `@waymark/domain` either — ADR 17 is
+ * emphatic that the domain package knows nothing about any of this.
+ */
+export const MachineTokenScope = {
+  Read: "read",
+  ReadWrite: "read-write",
+} as const;
+
+export type MachineTokenScope =
+  (typeof MachineTokenScope)[keyof typeof MachineTokenScope];
+
+/** Whether a credential with this scope may change anything. */
+export const mayWriteWith = (scope: MachineTokenScope): boolean =>
+  scope === MachineTokenScope.ReadWrite;
+
+/**
+ * A machine token as `GET /auth/me` describes it: what this credential is,
+ * what it may do, and when it was last used.
+ *
+ * There is no `tokenHash` and no secret, and there never can be — the secret
+ * was printed once by the admin CLI and was never stored.
+ */
+export interface MachineTokenView {
+  readonly id: string;
+  /** What the token is FOR, in a human's words. What revoking it names. */
+  readonly name: string;
+  readonly scope: MachineTokenScope;
+  readonly createdAt: string;
+  /** `null` when it never lapses, which is the normal case. */
+  readonly expiresAt: string | null;
+  /** `null` until it is first presented. Coarse by design: at most hourly. */
+  readonly lastUsedAt: string | null;
+}
+
+/**
+ * # Who is calling, in the caller's own terms
+ *
+ * `GET /auth/me` answers two shapes because there are two kinds of caller and
+ * they are not the same kind of thing (ADR 17). A session answers `{ user }`,
+ * exactly as it always has. A machine answers `{ machineToken }`.
+ *
+ * Folding a machine into `{ user }` with a made-up username would have been a
+ * lie a client could act on: it is not a user, it has no account, and
+ * `POST /auth/logout` would then look available to it.
+ */
+export interface UserCallerResponse {
+  readonly user: UserView;
+}
+
+export interface MachineCallerResponse {
+  readonly machineToken: MachineTokenView;
+}
+
+export type CallerResponse = UserCallerResponse | MachineCallerResponse;
+
+/**
+ * Narrows the two shapes apart on the one key that is only ever present in
+ * one of them, rather than on a discriminator the API does not send.
+ */
+export const isMachineCaller = (
+  caller: CallerResponse,
+): caller is MachineCallerResponse => "machineToken" in caller;
+
 export interface StorageUnitTreeResponse {
   readonly tree: readonly StorageUnitTreeView[];
 }
