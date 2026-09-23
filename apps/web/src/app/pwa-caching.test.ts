@@ -77,6 +77,22 @@ describe("what the service worker holds", () => {
     expect(cacheNameFor("/auth/login")).toBeNull();
   });
 
+  /**
+   * The list of credentials, and the two answers that carry a live secret
+   * (ADR 18).
+   *
+   * A stale list is worse here than anywhere else in the app: it is read by
+   * somebody deciding which credential to kill, so a revoked token still
+   * showing — or a new one missing — is a decision made against a screen that
+   * is confidently out of date. The two `POST`s were never cacheable, and this
+   * pins the `GET` that could have been.
+   */
+  it("never caches a credential, nor the answer that carries a secret", () => {
+    expect(cacheNameFor("/auth/machine-tokens")).toBeNull();
+    expect(cacheNameFor("/auth/machine-tokens/mcp-server")).toBeNull();
+    expect(cacheNameFor("/auth/machine-tokens/mcp-server/rotate")).toBeNull();
+  });
+
   it("bounds every cache it does keep, because this runs on a phone", () => {
     for (const entry of RUNTIME_CACHING) {
       expect(entry.options.expiration.maxEntries).toBeGreaterThan(0);

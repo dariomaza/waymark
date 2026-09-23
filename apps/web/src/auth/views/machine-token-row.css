@@ -1,0 +1,49 @@
+.machine-token {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+}
+
+.machine-token__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.machine-token__name {
+  font-weight: 650;
+  /* A credential's name is a literal somebody types into a shell. */
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  /* It cannot wrap mid-name and it cannot push the scope off the row. */
+  overflow-wrap: anywhere;
+}
+
+.machine-token__scope {
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+/*
+ * Three short facts, wrapping rather than truncating: on a narrow phone the
+ * one that would be cut off is the one somebody came to read.
+ */
+.machine-token__facts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+}
+
+.machine-token__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

@@ -1,0 +1,39 @@
+.machine-tokens {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  /* Its own block inside the account sheet, not another loose row of it. */
+  border-top: 1px solid var(--color-line);
+  padding-top: var(--space-4);
+  width: 100%;
+}
+
+.machine-tokens__title {
+  font-size: var(--text-m);
+  margin: 0;
+}
+
+.machine-tokens__explains,
+.machine-tokens__none {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+}
+
+.machine-tokens__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.machine-tokens__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.machine-tokens__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

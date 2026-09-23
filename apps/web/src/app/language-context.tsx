@@ -85,6 +85,20 @@ const useLanguageContext = (): LanguageContextValue => {
  */
 export const useTranslate = (): Translate => useLanguageContext().t;
 
+/**
+ * Which language is on screen, for the things the dictionary cannot say.
+ *
+ * A date is the case this exists for. `toLocaleDateString` needs a locale, and
+ * putting "3 Apr 2026" into a phrase would mean the dictionary carried a date
+ * format — which is a second copy of something the platform already knows how
+ * to do in every language there is.
+ *
+ * It is deliberately NOT a way around `useTranslate`. A component reaching for
+ * this to pick between two hardcoded sentences has written a dictionary in an
+ * `if`.
+ */
+export const useLanguage = (): Language => useLanguageContext().language;
+
 /** For the one control that is ABOUT the language rather than written in it. */
 export const useLanguageChoice = (): Pick<LanguageContextValue, "language" | "choose"> =>
   useLanguageContext();

@@ -429,12 +429,14 @@ export const ES: Dictionary = {
   "tokens.rotateTitle": "¿Rotar {name}?",
   "tokens.rotateWarning":
     "El secreto que {name} usa ahora deja de funcionar en cuanto lo hagas. Lo que lo tenga recibirá un rechazo en cada petición hasta que pongas el nuevo secreto en su sitio.",
+  "tokens.rotateConfirm": "Rótalo",
   "tokens.rotating": "Rotando…",
 
   "tokens.revokeAction": "Revocar",
   "tokens.revokeTitle": "¿Revocar {name}?",
   "tokens.revokeWarning":
     "{name} deja de funcionar en su siguiente petición. No se toca ningún otro token ni ninguna cuenta.",
+  "tokens.revokeConfirm": "Revócalo",
   "tokens.revoking": "Revocando…",
 
   "tokens.nameTaken": "Ya existe un token de máquina que se llama {name}.",

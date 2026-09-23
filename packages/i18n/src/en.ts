@@ -532,12 +532,14 @@ export const EN = {
    */
   "tokens.rotateWarning":
     "The secret {name} is using now stops working the moment you do this. Whatever is holding it will be refused every request until you put the new secret in place.",
+  "tokens.rotateConfirm": "Rotate it",
   "tokens.rotating": "Rotating…",
 
   "tokens.revokeAction": "Revoke",
   "tokens.revokeTitle": "Revoke {name}?",
   "tokens.revokeWarning":
     "{name} stops working on its very next request. No other token and no account is touched.",
+  "tokens.revokeConfirm": "Revoke it",
   "tokens.revoking": "Revoking…",
 
   "tokens.nameTaken": "There is already a machine token called {name}.",

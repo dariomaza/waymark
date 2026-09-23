@@ -1,5 +1,6 @@
 import { useState, type JSX } from "react";
 
+import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
 import { useSignOut } from "../auth/use-session.js";
 import { Avatar } from "../ui/atoms/avatar.js";
 import { Button } from "../ui/atoms/button.js";
@@ -85,6 +86,19 @@ export const AccountSheet = ({ username }: AccountSheetProps): JSX.Element => {
 
           <div className="account__controls">
             <LanguageSwitcher />
+
+            {/*
+              Credentials for programs (ADR 18). They belong here rather than
+              on a screen of their own for the same reason the language does:
+              this is the surface for everything that is YOURS rather than the
+              inventory's, and a machine token is a key you hold.
+
+              It is the tallest thing in this sheet by a long way, which is
+              what made the sheet's own scrolling worth fixing first: on a
+              short phone this list pushes Sign out past the bottom, and
+              `sheet.css` now scrolls the body rather than losing it.
+            */}
+            <MachineTokensPanel />
 
             <Button
               tone="danger"
