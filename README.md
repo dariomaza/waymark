@@ -144,6 +144,16 @@ may still do everything. The thing holding a machine token is not a person,
 cannot be told to be careful, and cannot be asked afterwards what it was
 thinking.
 
+**A person issues machine tokens; a machine never does** (ADR 18). They can be
+listed, made, rotated and revoked from the account sheet now, because a
+credential nobody can SEE is a credential nobody revokes — `lastUsedAt` existed
+to make an abandoned one visible and was visible only to whoever could reach a
+shell. ADR 17's "there is no route" is amended rather than overturned: still no
+sign-up, still nothing unauthenticated, still the CLI for the first token on a
+fresh install, and a machine token is refused all four operations. A credential
+that can issue its own successor cannot be revoked, and revocation is the whole
+of what ADR 17 promised.
+
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no
 Android Studio in the build path. Native Kotlin would mean two independent
@@ -540,14 +550,28 @@ pnpm --filter @waymark/api machine-token list
 pnpm --filter @waymark/api machine-token revoke --name mcp-server
 ```
 
+The same four operations live behind the avatar in the web client, under
+**Machine tokens**. The secret is shown exactly once, with the sentence saying
+so beside it rather than after it, and it can be copied — because the
+alternative is somebody transcribing 43 random characters by eye and reaching
+for a screenshot instead. What that cannot control is written down in ADR 18.
+
 ```
 Authorization: Machine wmk_hhKABz-fSeDJwWCfiNRkmB9BoSGcv6wrPAhTya7CW28
 ```
 
-- **Created from a shell, like an account.** There is no route that mints one,
-  and for a stronger version of the reason there is no sign-up: an endpoint
-  that issues a LONG-LIVED credential on an internet-facing inventory is a door
-  that does not close by itself. The secret is printed once and never again.
+- **Created from a shell, or from the account sheet by a person** (ADR 18).
+  The CLI is how the FIRST token is made on a fresh install, before there is an
+  account to sign in with, and it is the way in if the web client will not
+  load. Both drive the same use cases. ADR 17 said there would never be a route
+  for this and was right about the danger — an endpoint that issues a
+  LONG-LIVED credential on an internet-facing inventory is a door that does not
+  close by itself — but that sentence never said WHO. These routes are behind
+  the session ADR 6 built: password backed, rate limited, revocable in one
+  DELETE. The cost is named in ADR 18: a stolen session can now mint a
+  credential that outlives it. What pays for it is that every credential is now
+  visible, with its last use, to everybody who could have minted one. The
+  secret is shown once and never again either way.
 - **Its own `Authorization` scheme**, `Machine`, not a prefix inside `Bearer`
   and not a second header. The scheme is read once and the request goes to
   exactly one authenticator, so a leak of either credential cannot be replayed
@@ -577,6 +601,28 @@ Authorization: Machine wmk_hhKABz-fSeDJwWCfiNRkmB9BoSGcv6wrPAhTya7CW28
   exists to make password guessing expensive (ADR 7); a machine token cannot be
   guessed and is the one caller that legitimately makes hundreds of requests a
   minute, so counting it would throttle the integration and catch nobody.
+- **A machine token may not manage machine tokens**, with either scope
+  (ADR 18). A `read` one never reaches those routes at all: three of the four
+  are writes, so the scope hook refuses them before the body is parsed, which
+  is what makes "a read key cannot mint a writing one" structural rather than
+  remembered. A `read-write` one passes that hook and is refused anyway, with
+  403 `MACHINE_TOKEN_CANNOT_MANAGE_MACHINE_TOKENS`, because a credential that
+  can issue its own successor cannot be revoked — kill `mcp-server` and whoever
+  holds it still has the `mcp-server-2` it minted last Tuesday. Listing is
+  refused too, and that one no scope would have caught: a `GET` sails through
+  the hook, and enumerating every credential in the house is reconnaissance.
+  `POST /auth/logout` already refused a machine caller for the same family of
+  reason.
+- **Rotation is one operation, never a revoke and a create.** Revoke-then-
+  create leaves a window in which the name holds nothing, and a crash inside it
+  destroys a live credential with nothing to replace it; create-then-revoke
+  cannot be written, because the name is unique and the name is what revocation
+  is keyed by. So it is one `UPDATE ... WHERE name = ?`. It keeps the id, the
+  name and the SCOPE — rotation must not be a way to widen a key — and it
+  resets `lastUsedAt`, which otherwise would report traffic belonging to a
+  secret that no longer exists. There is no grace period: a request already
+  authenticated finishes, every one after it is a 401 until the new secret is
+  in place, and the screen says so before the button.
 - `GET /auth/me` answers `{ machineToken }` for one, carrying its name, scope
   and last use — and never its hash, which no route returns.
 
