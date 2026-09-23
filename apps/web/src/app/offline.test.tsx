@@ -75,6 +75,12 @@ describe("signing out on a shared phone", () => {
     });
     apiServer.use(
       http.post(`${API_URL}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
+      // Opening the account sheet asks for both kinds of credential a person
+      // manages there: the machine tokens and the passkeys (ADR 19).
+      http.get(`${API_URL}/auth/machine-tokens`, () =>
+        HttpResponse.json({ machineTokens: [] }),
+      ),
+      http.get(`${API_URL}/auth/passkeys`, () => HttpResponse.json({ passkeys: [] })),
     );
 
     renderApp({ route: "/" });

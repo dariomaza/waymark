@@ -32,12 +32,22 @@ const knowsTheSession = (): void => {
     http.get(`${API_URL}/auth/me`, () =>
       HttpResponse.json({ user: { id: "u1", username: "dario" } }),
     ),
+    /*
+     * The account sheet holds both kinds of credential a person manages
+     * (ADR 18, ADR 19), and asks for each list the moment it opens. Declared
+     * here because `setup.ts` is emphatic about it: a request no test declared
+     * is a test that does not know what it depends on.
+     */
+    http.get(`${API_URL}/auth/machine-tokens`, () =>
+      HttpResponse.json({ machineTokens: [] }),
+    ),
+    http.get(`${API_URL}/auth/passkeys`, () => HttpResponse.json({ passkeys: [] })),
   );
 };
 
 const signIn = async (password: string): Promise<void> => {
   await userEvent.type(await screen.findByRole("textbox", { name: /username/i }), "dario");
-  await userEvent.type(screen.getByLabelText(/password/i), password);
+  await userEvent.type(screen.getByLabelText(/^password$/iu), password);
   await userEvent.click(screen.getByRole("button", { name: /sign in/i }));
 };
 
@@ -172,14 +182,14 @@ describe("looking at what you typed", () => {
   it("hides the password until somebody asks to see it", async () => {
     renderApp({ route: "/" });
 
-    expect(await screen.findByLabelText(/password/i)).toHaveAttribute("type", "password");
+    expect(await screen.findByLabelText(/^password$/iu)).toHaveAttribute("type", "password");
   });
 
   it("shows it when the control is pressed, and hides it again", async () => {
     const user = userEvent.setup();
     renderApp({ route: "/" });
 
-    const password = await screen.findByLabelText(/password/i);
+    const password = await screen.findByLabelText(/^password$/iu);
     const reveal = screen.getByRole("button", { name: /show password/i });
 
     await user.click(reveal);
@@ -209,7 +219,7 @@ describe("looking at what you typed", () => {
     const user = userEvent.setup();
     renderApp({ route: "/" });
 
-    const password = await screen.findByLabelText(/password/i);
+    const password = await screen.findByLabelText(/^password$/iu);
     password.focus();
     await user.tab();
 
@@ -248,7 +258,7 @@ describe("looking at what you typed", () => {
  */
 describe("what the keyboard is allowed to do to a password", () => {
   const passwordField = async (): Promise<HTMLElement> =>
-    await screen.findByLabelText(/password/i);
+    await screen.findByLabelText(/^password$/iu);
 
   /** A capital first letter nobody typed, on a string where case matters. */
   it("never capitalises the first character", async () => {

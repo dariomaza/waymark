@@ -9,6 +9,7 @@ import {
 } from "@waymark/domain";
 
 import type { MachineToken } from "../auth/machine-token.js";
+import type { Passkey } from "../auth/passkey.js";
 import type { StorageUnitTreeNode } from "./storage-unit-tree.js";
 
 /**
@@ -293,4 +294,38 @@ export const machineTokenView = (token: MachineToken): MachineTokenView => ({
   createdAt: token.createdAt.toISOString(),
   expiresAt: token.expiresAt === null ? null : token.expiresAt.toISOString(),
   lastUsedAt: token.lastUsedAt === null ? null : token.lastUsedAt.toISOString(),
+});
+
+/**
+ * # A passkey, as its owner reads it in a list
+ *
+ * The same discipline `machineTokenView` keeps, pointed at a credential that
+ * belongs to a person rather than to the house — so the omissions are about
+ * privacy as much as about secrecy.
+ *
+ * What is left out and could not be added later without a reason: the public
+ * key and the credential id, because nothing on a screen has any use for
+ * either and a credential id in a response is a stable identifier for a
+ * device; the signature counter, which is bookkeeping and would invite
+ * somebody to draw a graph of how often a person signs in; and the transports,
+ * which describe how a browser reaches the device.
+ *
+ * What is kept is what the only decision this list supports needs: which
+ * device is this, and is anything still using it.
+ */
+export interface PasskeyView {
+  readonly id: string;
+  /** What the person called the device. */
+  readonly label: string;
+  readonly createdAt: string;
+  /** `null` until it has opened a session. */
+  readonly lastUsedAt: string | null;
+}
+
+export const passkeyView = (passkey: Passkey): PasskeyView => ({
+  id: passkey.id,
+  label: passkey.label,
+  createdAt: passkey.createdAt.toISOString(),
+  lastUsedAt:
+    passkey.lastUsedAt === null ? null : passkey.lastUsedAt.toISOString(),
 });

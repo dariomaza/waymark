@@ -2,6 +2,7 @@ import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@waymark/domain";
 import { z } from "zod";
 
 import { MACHINE_TOKEN_SCOPES } from "../auth/machine-token.js";
+import { PASSKEY_LABEL_MAX_LENGTH as MAX_PASSKEY_LABEL_LENGTH } from "../auth/passkey.js";
 
 /**
  * # Where validation stops and the domain begins
@@ -52,6 +53,13 @@ const MAX_SEARCH_QUERY_LENGTH = 200;
  */
 export const MAX_SEARCH_LIMIT = 100;
 const MAX_USERNAME_LENGTH = 100;
+/**
+ * A credential id is base64url of whatever the authenticator chose. The
+ * specification allows up to 1023 bytes, so this is that with room for the
+ * encoding — generous enough that no real authenticator meets it, small enough
+ * that the field cannot become a way to fill a column.
+ */
+const MAX_CREDENTIAL_ID_LENGTH = 1_400;
 const MAX_PASSWORD_LENGTH = 1_024;
 
 const id = z.string().min(1).max(MAX_ID_LENGTH);
@@ -246,6 +254,52 @@ export const rotateMachineTokenBodySchema = z.strictObject({
 /** The name in the path, for a rotation and for a revocation. */
 export const machineTokenNameParamsSchema = z.strictObject({
   name: machineTokenName,
+});
+
+/**
+ * # The one place this layer takes something it does not read
+ *
+ * A WebAuthn credential is a nested object of base64url strings that only
+ * `@simplewebauthn/server` knows how to judge, and judging it is the whole
+ * reason that library is a dependency (ADR 19). Re-describing its shape here
+ * would be a second, worse copy of a specification — one that would refuse a
+ * browser sending a field this schema had not heard of, which is exactly what
+ * a browser does when the standard grows.
+ *
+ * So what is checked is what this layer is for: the envelope is an object, the
+ * ceremony id is a short string, and the credential is present. Everything
+ * inside it goes to the verifier, whose refusals are already a 401.
+ *
+ * `z.looseObject` rather than `strictObject`, and only here: the credential is
+ * the one body in this API that a PLATFORM composes rather than this project's
+ * own client, so an unknown key is a browser that has learned something new
+ * rather than a caller that has misunderstood the product.
+ */
+const ceremonyId = z.string().min(1).max(MAX_ID_LENGTH);
+
+const webAuthnCredential = z.looseObject({
+  id: z.string().min(1).max(MAX_CREDENTIAL_ID_LENGTH),
+});
+
+export const finishPasskeyRegistrationBodySchema = z.strictObject({
+  ceremonyId,
+  /**
+   * What the person calls the device. Trimmed and capped here for shape; that
+   * it is not blank is `isUsablePasskeyLabel`'s to say, so the refusal carries
+   * the sentence a person can act on.
+   */
+  label: z.string().max(MAX_PASSKEY_LABEL_LENGTH),
+  credential: webAuthnCredential,
+});
+
+export const finishPasskeyLoginBodySchema = z.strictObject({
+  ceremonyId,
+  credential: webAuthnCredential,
+});
+
+/** The id of one passkey, for removing it. */
+export const passkeyIdParamsSchema = z.strictObject({
+  id,
 });
 
 export interface ValidationIssue {

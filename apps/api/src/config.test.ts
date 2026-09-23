@@ -97,6 +97,60 @@ describe("loadConfig", () => {
     expect(config.publicBaseUrl).toBe("https://home.example/waymark");
   });
 
+  /**
+   * # The base URL now decides one more thing (ADR 19)
+   *
+   * A passkey's RP ID and expected origin are derived from it rather than
+   * configured beside it, so a base URL no browser will run WebAuthn against
+   * is a deployment where every fingerprint fails — at 1am, with a
+   * browser-side error that names nothing. It is refused here instead, by
+   * name, in the one place this project already refuses a misconfiguration.
+   */
+  describe("the relying party a passkey is minted for", () => {
+    it("derives it from the public base URL, with no variable of its own", () => {
+      const config = loadConfig({
+        WAYMARK_PUBLIC_BASE_URL: "https://waymark.idemcloud.uk",
+      });
+
+      expect(config.relyingParty).toEqual({
+        id: "waymark.idemcloud.uk",
+        name: "Waymark",
+        origin: "https://waymark.idemcloud.uk",
+      });
+    });
+
+    it("derives it from a checkout's loopback default too", () => {
+      const config = loadConfig({});
+
+      expect(config.relyingParty).toEqual({
+        id: "localhost",
+        name: "Waymark",
+        origin: "http://localhost:5173",
+      });
+    });
+
+    it("keeps the id free of the path a base URL may carry", () => {
+      const config = loadConfig({
+        WAYMARK_PUBLIC_BASE_URL: "https://home.example/waymark",
+      });
+
+      expect(config.relyingParty.id).toBe("home.example");
+      expect(config.relyingParty.origin).toBe("https://home.example");
+    });
+
+    it("refuses plain HTTP on a real host, rather than booting into silence", () => {
+      expect(() =>
+        loadConfig({ WAYMARK_PUBLIC_BASE_URL: "http://192.168.1.10:5173" }),
+      ).toThrow(InvalidConfiguration);
+    });
+
+    it("says which variable is wrong and why, because that is the whole point", () => {
+      expect(() =>
+        loadConfig({ WAYMARK_PUBLIC_BASE_URL: "http://waymark.idemcloud.uk" }),
+      ).toThrow(/WAYMARK_PUBLIC_BASE_URL.*secure context/isu);
+    });
+  });
+
   it("stores photos on a plain directory next to the process by default", () => {
     const config = loadConfig({});
 

@@ -6,6 +6,8 @@ import { Route, Routes } from "react-router-dom";
 import { ApiProvider } from "../api/api-context.js";
 import type { WebApiClient } from "../api/web-client.js";
 import { LoginScreen } from "../auth/login-screen.js";
+import { defaultPasskeyPlatform, PasskeyProvider } from "../auth/passkey-context.js";
+import type { PasskeyPlatform } from "../auth/passkey-platform.js";
 import { RequireSession } from "../auth/require-session.js";
 import { AllItemsScreen } from "../items/all-items-screen.js";
 import { ItemScreen } from "../items/item-screen.js";
@@ -37,6 +39,12 @@ export interface AppProps {
    * that is a port and not a stubbed module.
    */
   readonly scanner?: QrScanner;
+  /**
+   * The fingerprint prompt. Injected for the same reason the camera is: jsdom
+   * has no `navigator.credentials`, and what is being stood in for is a piece
+   * of hardware and a platform dialog rather than this app's own code.
+   */
+  readonly passkeys?: PasskeyPlatform;
 }
 
 /**
@@ -52,16 +60,18 @@ export interface AppProps {
  * the tests mount a `MemoryRouter` at the URL under test, and everything in
  * between is the same app.
  */
-export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
+export const App = ({ client, scanner, passkeys }: AppProps = {}): JSX.Element => {
   const [queries] = useState(createQueryClient);
   const [api] = useState(() => client ?? createDefaultClient());
   const [camera] = useState(() => scanner ?? defaultScanner());
+  const [authenticators] = useState(() => passkeys ?? defaultPasskeyPlatform());
 
   return (
     <LanguageProvider>
       <QueryClientProvider client={queries}>
         <ApiProvider client={api}>
           <ScannerProvider scanner={camera}>
+            <PasskeyProvider platform={authenticators}>
             <Routes>
               <Route path={ROUTES.login} element={<LoginScreen />} />
 
@@ -85,6 +95,7 @@ export const App = ({ client, scanner }: AppProps = {}): JSX.Element => {
 
               <Route path="*" element={<NotFoundScreen />} />
             </Routes>
+            </PasskeyProvider>
           </ScannerProvider>
         </ApiProvider>
       </QueryClientProvider>

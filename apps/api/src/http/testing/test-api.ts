@@ -14,9 +14,12 @@ import { CreateUser } from "../../auth/create-user.js";
 import { FixedWindowRateLimiter } from "../../auth/login-rate-limiter.js";
 import type { MachineTokenScope } from "../../auth/machine-token.js";
 import { ScryptPasswordHasher } from "../../auth/password-hasher.js";
+import { relyingPartyFor, type RelyingParty } from "../../auth/relying-party.js";
 import { RevokeMachineToken } from "../../auth/revoke-machine-token.js";
 import { PrismaItemRepository } from "../../persistence/prisma-item-repository.js";
 import { PrismaMachineTokenRepository } from "../../persistence/prisma-machine-token-repository.js";
+import { PrismaPasskeyRepository } from "../../persistence/prisma-passkey-repository.js";
+import { PrismaPasskeyChallengeRepository } from "../../persistence/prisma-passkey-challenge-repository.js";
 import { PrismaPhotoRepository } from "../../persistence/prisma-photo-repository.js";
 import { PrismaSearchRepository } from "../../persistence/prisma-search-repository.js";
 import { PrismaSessionRepository } from "../../persistence/prisma-session-repository.js";
@@ -54,6 +57,12 @@ export const TEST_USERNAME = "dario";
 export const TEST_PASSWORD = "a-real-password";
 
 export const LOGIN_ATTEMPT_LIMIT = 5;
+/**
+ * Generous next to the login limit, because a passkey ceremony is not a guess
+ * and a test that registers a device, signs in and lists twice should never
+ * meet a limiter it was not written about.
+ */
+export const PASSKEY_CEREMONY_LIMIT = 100;
 export const LOGIN_WINDOW_MS = 15 * 60_000;
 
 /**
@@ -98,6 +107,12 @@ export interface TestApiOptions {
 
 export interface TestApi {
   readonly database: TestDatabase;
+  /**
+   * Who a passkey minted here is for, derived from `TEST_PUBLIC_BASE_URL`
+   * exactly as the deployment derives it — so a test points its software
+   * authenticator at this rather than at a string it wrote out again.
+   */
+  readonly relyingParty: RelyingParty;
   /** A real temporary directory; nothing about the filesystem is faked. */
   readonly photoRoot: string;
   app: FastifyInstance;
@@ -143,6 +158,8 @@ export const createTestApi = async (
 
   const users = new PrismaUserRepository(database.client);
   const machineTokens = new PrismaMachineTokenRepository(database.client);
+  const passkeys = new PrismaPasskeyRepository(database.client);
+  const passkeyChallenges = new PrismaPasskeyChallengeRepository(database.client);
   const sessions = new PrismaSessionRepository(database.client);
   const storageUnits = new PrismaStorageUnitRepository(database.client);
   const items = new PrismaItemRepository(database.client);
@@ -182,6 +199,7 @@ export const createTestApi = async (
 
   const api: TestApi = {
     database,
+    relyingParty: relyingPartyFor(TEST_PUBLIC_BASE_URL),
     photoRoot,
     app: undefined as unknown as FastifyInstance,
     clock: new FakeClock(TEST_START),
@@ -205,6 +223,8 @@ export const createTestApi = async (
         users,
         sessions,
         machineTokens,
+        passkeys,
+        passkeyChallenges,
         hasher,
         ids,
         publicIds,
@@ -225,6 +245,13 @@ export const createTestApi = async (
         rateLimiter: new FixedWindowRateLimiter({
           clock: api.clock,
           limit: LOGIN_ATTEMPT_LIMIT,
+          windowMs: LOGIN_WINDOW_MS,
+        }),
+        // A counter of its own, exactly as the deployment has (ADR 19), so a
+        // test that exhausts one cannot silently be relying on the other.
+        passkeyRateLimiter: new FixedWindowRateLimiter({
+          clock: api.clock,
+          limit: PASSKEY_CEREMONY_LIMIT,
           windowMs: LOGIN_WINDOW_MS,
         }),
         security: {

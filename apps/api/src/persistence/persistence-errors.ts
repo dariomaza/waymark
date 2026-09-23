@@ -82,3 +82,47 @@ export class UnknownMachineTokenScope extends DomainError {
     );
   }
 }
+
+/**
+ * Raised when a passkey challenge's `ceremony` column holds something outside
+ * `PasskeyCeremony`.
+ *
+ * Same reasoning as `UnknownMachineTokenScope`, and for the same reason it
+ * must not fall back: the ceremony is what binds a challenge to the act it was
+ * issued for, so a value nobody recognises has to stop the request rather than
+ * be guessed into one of the two — and the dangerous guess here is the one
+ * that lets a registration challenge finish a sign-in.
+ *
+ * In practice this is unreachable while `consume` names the ceremony in its
+ * `WHERE`: a row with a nonsense value matches neither query. It is here for
+ * the same belt-and-braces reason the others are, and because "unreachable"
+ * is a property of today's queries rather than of the column.
+ */
+export class UnknownPasskeyCeremony extends DomainError {
+  constructor(
+    readonly challengeId: string,
+    readonly value: string,
+  ) {
+    super(
+      `Stored passkey challenge ${challengeId} names an impossible ceremony: "${value}"`,
+    );
+  }
+}
+
+/**
+ * Raised when a session's `createdWith` column holds something outside
+ * `SessionOpener`.
+ *
+ * The same reasoning as `UnknownMachineTokenScope`, pointed at the column that
+ * decides whether the session holding it may register a passkey (ADR 19).
+ * Falling back would be a guess about an authorization decision, and the
+ * permissive value is the one a fallback would most naturally pick.
+ */
+export class UnknownSessionOpener extends DomainError {
+  constructor(
+    readonly sessionId: string,
+    readonly value: string,
+  ) {
+    super(`Stored session ${sessionId} was opened by nothing recognisable: "${value}"`);
+  }
+}

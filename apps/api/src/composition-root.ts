@@ -18,6 +18,8 @@ import {
 import { RembgImageProcessor } from "./photos/rembg-image-processor.js";
 import { PrismaItemRepository } from "./persistence/prisma-item-repository.js";
 import { PrismaMachineTokenRepository } from "./persistence/prisma-machine-token-repository.js";
+import { PrismaPasskeyRepository } from "./persistence/prisma-passkey-repository.js";
+import { PrismaPasskeyChallengeRepository } from "./persistence/prisma-passkey-challenge-repository.js";
 import { PrismaPhotoRepository } from "./persistence/prisma-photo-repository.js";
 import { PrismaSearchRepository } from "./persistence/prisma-search-repository.js";
 import { PrismaSessionRepository } from "./persistence/prisma-session-repository.js";
@@ -47,6 +49,18 @@ export interface ComposedApp {
  * request timeout leaves room for the read, the compositing and the write.
  */
 const LEASE_FACTOR = 2;
+
+/**
+ * How many passkey ceremonies one caller may start in a login window.
+ *
+ * Unreachable by a person — somebody presses that button once, three times if
+ * the prompt keeps closing — and low enough that an anonymous caller cannot
+ * turn the sign-in screen into a way to write rows to a SQLite file. It is not
+ * configurable, because it is not a policy anybody would want to tune: the
+ * thing an operator tightens when they are worried is `WAYMARK_LOGIN_ATTEMPT_LIMIT`,
+ * which is about guessing, and a passkey cannot be guessed (ADR 19).
+ */
+const PASSKEY_CEREMONY_LIMIT = 30;
 
 export const composeApp = (
   prisma: PrismaClient,
@@ -94,6 +108,8 @@ export const composeApp = (
       users: new PrismaUserRepository(prisma),
       sessions: new PrismaSessionRepository(prisma),
       machineTokens: new PrismaMachineTokenRepository(prisma),
+      passkeys: new PrismaPasskeyRepository(prisma),
+      passkeyChallenges: new PrismaPasskeyChallengeRepository(prisma),
       hasher: new ScryptPasswordHasher(),
       ids: new UuidIdGenerator(),
       publicIds: new Base32PublicIdGenerator(),
@@ -111,6 +127,20 @@ export const composeApp = (
       rateLimiter: new FixedWindowRateLimiter({
         clock,
         limit: config.login.limit,
+        windowMs: config.login.windowMs,
+      }),
+      /**
+       * A second instance of the same machinery, with its own counters, and
+       * that separateness is the whole point (ADR 19). Ten mistyped passwords
+       * must not be able to take the fingerprint away, and a passkey assertion
+       * cannot be guessed, so the two windows have nothing to say to each
+       * other. It shares the configured WINDOW because an operator tightening
+       * one door meant both, and it has a limit of its own because what it
+       * bounds is a ceremony row rather than a guess.
+       */
+      passkeyRateLimiter: new FixedWindowRateLimiter({
+        clock,
+        limit: PASSKEY_CEREMONY_LIMIT,
         windowMs: config.login.windowMs,
       }),
       security: config.security,

@@ -56,6 +56,7 @@ export {
   missingTargetMessage,
   moveRefusedMessage,
   notEmptyMessage,
+  passkeyFailureMessage,
   tooManyPhotosMessage,
   type FieldComplaint,
 } from "./refusals.js";

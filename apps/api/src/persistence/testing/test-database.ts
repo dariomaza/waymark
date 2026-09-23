@@ -54,6 +54,11 @@ export const createTestDatabase = async (): Promise<TestDatabase> => {
       await client.$executeRawUnsafe(`DELETE FROM "Photo"`);
       await client.$executeRawUnsafe(`DELETE FROM "StorageUnit"`);
       await client.$executeRawUnsafe(`DELETE FROM "Session"`);
+      // Both cascade from `User`, and both are emptied first anyway: a case
+      // that started with the previous case's credentials in the table would
+      // be a case that proves something about the wrong house.
+      await client.$executeRawUnsafe(`DELETE FROM "PasskeyChallenge"`);
+      await client.$executeRawUnsafe(`DELETE FROM "Passkey"`);
       await client.$executeRawUnsafe(`DELETE FROM "User"`);
       // No foreign key to anything, so the order here does not matter — but it
       // has to be emptied, or a contract case would inherit the previous one's

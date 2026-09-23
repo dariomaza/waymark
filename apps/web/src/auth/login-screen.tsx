@@ -5,6 +5,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import "./login-screen.css";
 
 import { LoginForm } from "./login-form.js";
+import { PasskeySignIn } from "./passkey-sign-in.js";
 import { useSession, useSignIn } from "./use-session.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -32,13 +33,23 @@ export const LoginScreen = (): JSX.Element => {
 
   return (
     <main className="login-screen">
-      <LoginForm
-        onSubmit={(credentials) => {
-          signIn.mutate(credentials);
-        }}
-        busy={signIn.isPending}
-        failure={t(loginFailureMessage(signIn.error))}
-      />
+      {/*
+        The order on this screen is the decision, not an accident (ADR 19).
+        The password form comes first and is complete; the passkey is under
+        it, past a rule with "or" in it, in a quieter tone. It is an
+        ADDITIONAL door, so it is drawn as one — and it draws nothing at all
+        on a device that cannot serve it.
+      */}
+      <div className="login-screen__card">
+        <LoginForm
+          onSubmit={(credentials) => {
+            signIn.mutate(credentials);
+          }}
+          busy={signIn.isPending}
+          failure={t(loginFailureMessage(signIn.error))}
+        />
+        <PasskeySignIn />
+      </div>
     </main>
   );
 };

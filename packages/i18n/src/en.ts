@@ -170,6 +170,8 @@ export const EN = {
   "login.showPassword": "Show password",
   "login.submit": "Sign in",
   "login.submitting": "Signing in…",
+  /** The rule between the password form and the second door under it. */
+  "login.or": "or",
 
   // ---------------------------------------------------------------------
   // The inventory, and the units in it
@@ -587,5 +589,77 @@ export const EN = {
     "Use lower case letters, digits, and any of . _ - — it has to be typeable in a shell.",
   "tokens.alreadyGone":
     "There is no machine token by that name. It may already have been revoked.",
+
+  // ---------------------------------------------------------------------
+  // Passkeys: an additional door, never a replacement (ADR 19)
+  // ---------------------------------------------------------------------
+
+  /**
+   * # The word, and why it is the standard one
+   *
+   * "Passkey" is what the browser's own prompt says, what the phone's settings
+   * call it, and what every other site says. A friendlier invention here would
+   * mean somebody holding two names for one thing — the same argument
+   * `tokens.title` makes about not renaming a machine token.
+   */
+  "passkeys.title": "Passkeys",
+  "passkeys.explains":
+    "Sign in with your fingerprint, your face or your screen lock, on a device you have already proved is yours. Your password keeps working exactly as it does now.",
+  "passkeys.loading": "Loading your passkeys",
+  "passkeys.none": "No passkeys yet.",
+
+  /**
+   * The button on the sign-in screen. It appears only when the platform can
+   * actually serve one, so it never offers something that will fail.
+   */
+  "passkeys.signInAction": "Use a passkey",
+  "passkeys.signingIn": "Waiting for your device…",
+
+  "passkeys.addAction": "Add this device",
+  "passkeys.adding": "Waiting for your device…",
+  "passkeys.nameLabel": "What is this device",
+  "passkeys.nameHint":
+    "Whatever you would call it out loud — Pixel 8, Work laptop. It is how you tell them apart later.",
+  "passkeys.addConfirm": "Add it",
+
+  "passkeys.addedOn": "Added {when}",
+  "passkeys.lastUsedOn": "Last used {when}",
+  /** The answer that makes a device nobody uses visible. */
+  "passkeys.neverUsed": "Never used",
+
+  "passkeys.removeAction": "Remove",
+  "passkeys.removeTitle": "Remove {name}?",
+  /**
+   * There is no "you must keep one" rule and this sentence says why, because
+   * somebody about to remove their last one deserves to know they are not
+   * locking themselves out (ADR 19).
+   */
+  "passkeys.removeWarning":
+    "{name} stops being able to sign in straight away. Your password still works, so this cannot lock you out.",
+  "passkeys.removeConfirm": "Remove it",
+  "passkeys.removing": "Removing…",
+
+  /**
+   * # What a refused ceremony says
+   *
+   * Each of these is a different thing to DO, which is the whole reason they
+   * are separate sentences rather than one apology.
+   */
+  "passkeys.cancelled": "No passkey was used. Your password is still there.",
+  "passkeys.unsupported":
+    "This browser cannot use a passkey. Sign in with your password.",
+  "passkeys.ceremonyExpired": "That took too long. Try again.",
+  "passkeys.notRecognised":
+    "Waymark did not recognise that passkey. Sign in with your password, then add this device again.",
+  "passkeys.cloned":
+    "The passkey {name} may have been copied, so it was refused. Remove it and add the device again. Your password still works.",
+  "passkeys.needsVerification":
+    "That device cannot check that it is you. A passkey needs a fingerprint, a face or a PIN.",
+  "passkeys.alreadyRegistered": "This device already has a passkey for Waymark.",
+  "passkeys.needsAPassword":
+    "Adding a passkey needs your password. Sign out, sign in with it, and add this device.",
+  "passkeys.badName": "Give the device a short name, like Pixel 8.",
+  "passkeys.alreadyGone": "That passkey is not there. It may already have been removed.",
+  "passkeys.tooMany": "Too many attempts. Wait a moment, or use your password.",
 
 } as const;

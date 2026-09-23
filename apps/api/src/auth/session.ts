@@ -6,7 +6,74 @@ export interface Session {
   readonly userId: string;
   readonly createdAt: Date;
   readonly expiresAt: Date;
+  /**
+   * Which door this session was opened through (ADR 19).
+   *
+   * There is still only ONE kind of session: the token, its lifetime, its
+   * renewal and its revocation are identical whichever value this holds, and
+   * nothing in the inventory can tell. It exists for a single rule, on a
+   * single route — a passkey may be registered only from a password-backed
+   * session — and it is the same argument ADR 18 makes about a machine token
+   * that could mint a machine token: a credential able to issue its own
+   * successor outlives every password change made to stop it.
+   */
+  readonly createdWith: SessionOpener;
 }
+
+/**
+ * The two ways a session can come into existence, and there is no third:
+ * a password (ADR 6) or a passkey (ADR 19). A machine token opens no session
+ * at all — it IS the credential, presented on every request.
+ */
+export const SessionOpener = {
+  Password: "password",
+  Passkey: "passkey",
+} as const;
+
+export type SessionOpener = (typeof SessionOpener)[keyof typeof SessionOpener];
+
+export const SESSION_OPENERS: readonly SessionOpener[] = [
+  SessionOpener.Password,
+  SessionOpener.Passkey,
+];
+
+/**
+ * SQLite has no enum type, so the column is a string and the value is checked
+ * on the way OUT of the database rather than trusted — exactly as
+ * `MachineTokenScope` is, and for a sharper version of the same reason: the
+ * permissive value here is `password`, so a row nobody recognises must stop
+ * the request rather than fall back into the one that may mint a credential.
+ */
+export const isSessionOpener = (candidate: string): candidate is SessionOpener =>
+  (SESSION_OPENERS as readonly string[]).includes(candidate);
+
+export interface NewSession {
+  readonly id: string;
+  readonly tokenHash: string;
+  readonly userId: string;
+  readonly now: Date;
+  readonly openedWith: SessionOpener;
+  readonly ttlMs?: number | undefined;
+}
+
+/**
+ * What a session IS, written once.
+ *
+ * Both doors build one — a password through `Login`, a passkey through
+ * `FinishPasskeyAuthentication` — and they must build the SAME thing, because
+ * ADR 6's whole claim is that there is one mechanism. Two constructors would
+ * be two places for the expiry to drift apart, and the drift would be
+ * invisible: both would work, and one of them would last a different number of
+ * days for no reason anybody could see.
+ */
+export const openSession = (opened: NewSession): Session => ({
+  id: opened.id,
+  tokenHash: opened.tokenHash,
+  userId: opened.userId,
+  createdAt: opened.now,
+  expiresAt: new Date(opened.now.getTime() + (opened.ttlMs ?? SESSION_TTL_MS)),
+  createdWith: opened.openedWith,
+});
 
 /**
  * ## How long a session lives: 30 days, sliding

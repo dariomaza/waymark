@@ -1,5 +1,10 @@
 import { isIP } from "node:net";
 
+import {
+  relyingPartyFor,
+  webAuthnObjectionTo,
+  type RelyingParty,
+} from "./auth/relying-party.js";
 import { LOOPBACK_PROXIES } from "./http/client-ip.js";
 import type { SecurityConfig } from "./http/build-app.js";
 
@@ -50,6 +55,15 @@ export interface ApiConfig {
    * `storageUnitUrl` can append without thinking about it.
    */
   readonly publicBaseUrl: string;
+  /**
+   * Who a passkey is minted for, derived from `publicBaseUrl` and never
+   * configured beside it (ADR 19).
+   *
+   * It is a field rather than something computed at the point of use so that
+   * the derivation happens once, at boot, where its refusal can stop the
+   * process — which is the entire behaviour this value exists to have.
+   */
+  readonly relyingParty: RelyingParty;
   /**
    * The built web client this process also serves, or `null` for an API on
    * its own.
@@ -172,6 +186,7 @@ export const loadConfig = (env: NodeJS.ProcessEnv): ApiConfig => ({
   port: readPort(env["PORT"]),
   databaseUrl: env["DATABASE_URL"],
   publicBaseUrl: readPublicBaseUrl(env["WAYMARK_PUBLIC_BASE_URL"]),
+  relyingParty: readRelyingParty(env["WAYMARK_PUBLIC_BASE_URL"]),
   webRoot: readWebRoot(env["WAYMARK_WEB_ROOT"]),
   security: {
     trustedProxies: readTrustedProxies(env["WAYMARK_TRUSTED_PROXIES"]),
@@ -356,6 +371,39 @@ const readPublicBaseUrl = (raw: string | undefined): string => {
   }
 
   return candidate.replace(/\/+$/u, "");
+};
+
+/**
+ * Who a passkey is minted for (ADR 19), read off the base URL rather than out
+ * of a variable of its own.
+ *
+ * There is deliberately no `WAYMARK_RP_ID`. Two settings that can disagree is
+ * one more state than this feature has, and the extra state here is the worst
+ * kind: an RP ID pointing at the wrong host boots cleanly, serves every
+ * screen, and refuses every fingerprint with a browser-side error that names
+ * nothing. Derivation makes that state unreachable.
+ *
+ * The refusal is the other half. WebAuthn runs only in a secure context, so a
+ * base URL that is neither https nor loopback is one no browser will ever run
+ * a ceremony against — and this is the same file that already says of itself
+ * that a misconfiguration which looks like a working deployment leaves
+ * "failing to start" as the only honest response.
+ *
+ * The consequence is named rather than hidden: a deployment on
+ * `http://192.168.1.10:5173` used to boot and now does not. It could never
+ * install the PWA either, because a service worker needs the same secure
+ * context, so what it loses is a configuration that was already half broken
+ * and what it gains is being told which variable to change.
+ */
+const readRelyingParty = (raw: string | undefined): RelyingParty => {
+  const publicBaseUrl = readPublicBaseUrl(raw);
+
+  const objection = webAuthnObjectionTo(publicBaseUrl);
+  if (objection !== null) {
+    throw new InvalidConfiguration("WAYMARK_PUBLIC_BASE_URL", objection);
+  }
+
+  return relyingPartyFor(publicBaseUrl);
 };
 
 /**

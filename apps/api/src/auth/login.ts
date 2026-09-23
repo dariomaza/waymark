@@ -5,7 +5,7 @@ import type { Clock, IdGenerator } from "@waymark/domain";
 import { InvalidCredentials, TooManyLoginAttempts } from "./auth-errors.js";
 import type { RateLimiter } from "./login-rate-limiter.js";
 import type { PasswordHasher } from "./password-hasher.js";
-import { SESSION_TTL_MS, type Session } from "./session.js";
+import { openSession, SessionOpener, type Session } from "./session.js";
 import type { SessionRepository } from "./session-repository.js";
 import { issueSessionToken } from "./session-token.js";
 import { normalizeUsername, type User } from "./user.js";
@@ -66,15 +66,17 @@ export class Login {
 
     const now = this.deps.clock.now();
     const { token, tokenHash } = issueSessionToken();
-    const session: Session = {
+    // `openSession` rather than an object literal, because a passkey opens one
+    // too (ADR 19) and the two must be the same thing. `password` is what this
+    // door is, and it is the value that may later register a passkey.
+    const session: Session = openSession({
       id: this.deps.ids.next(),
       tokenHash,
       userId: user.id,
-      createdAt: now,
-      expiresAt: new Date(
-        now.getTime() + (this.deps.sessionTtlMs ?? SESSION_TTL_MS),
-      ),
-    };
+      now,
+      openedWith: SessionOpener.Password,
+      ttlMs: this.deps.sessionTtlMs,
+    });
 
     await this.deps.sessions.save(session);
 

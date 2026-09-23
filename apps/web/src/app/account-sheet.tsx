@@ -1,6 +1,7 @@
 import { useState, type JSX } from "react";
 
 import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
+import { PasskeysPanel } from "../auth/passkeys-panel.js";
 import { useSignOut } from "../auth/use-session.js";
 import { Avatar } from "../ui/atoms/avatar.js";
 import { Button } from "../ui/atoms/button.js";
@@ -98,6 +99,14 @@ export const AccountSheet = ({ username }: AccountSheetProps): JSX.Element => {
               short phone this list pushes Sign out past the bottom, and
               `sheet.css` now scrolls the body rather than losing it.
             */}
+            {/*
+              The devices that can open this account (ADR 19). Above the
+              machine tokens, because these are about the person holding the
+              phone and those are about programs — and this sheet is ordered
+              from "you" outwards.
+            */}
+            <PasskeysPanel />
+
             <MachineTokensPanel />
 
             <Button

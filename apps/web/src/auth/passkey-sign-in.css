@@ -1,0 +1,28 @@
+.passkey-sign-in {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/*
+ * A rule with the word in the middle of it, rather than a heading. It has to
+ * read as "and also", never as "instead": the form above is the thing this
+ * screen is for, and this is the second door beside it.
+ */
+.passkey-sign-in__or {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+  text-transform: lowercase;
+}
+
+.passkey-sign-in__or::before,
+.passkey-sign-in__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-line);
+}

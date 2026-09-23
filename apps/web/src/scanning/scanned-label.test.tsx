@@ -69,7 +69,7 @@ describe("a label scanned with the phone's own camera", () => {
       await screen.findByRole("textbox", { name: /username/i }),
       "dario",
     );
-    await userEvent.type(screen.getByLabelText(/password/i), "correct horse");
+    await userEvent.type(screen.getByLabelText(/^password$/iu), "correct horse");
     await userEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     // Not the home screen. The box that was scanned, which is the only reason
