@@ -40,6 +40,12 @@ export const ES: Dictionary = {
   // "Things": these are the words somebody uses out loud in a garage, not the
   // database's `Inventario` and `Artículos`.
   "nav.label": "Principal",
+  // "Tú" and not "Usted": this is the label on your own face in the bar, not
+  // the app addressing anybody.
+  "nav.you": "Tú",
+  "nav.youNamed": "Tú, sesión iniciada como {username}",
+  "account.title": "Tú",
+  "account.lede": "Su cuenta y el idioma en el que habla esta aplicación.",
   "nav.places": "Lugares",
   "nav.things": "Cosas",
   "nav.search": "Buscar",

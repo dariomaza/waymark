@@ -16,6 +16,13 @@ export interface TabParamList extends Record<string, object | undefined> {
   Inventory: undefined;
   Search: { readonly within?: string } | undefined;
   Items: undefined;
+  /**
+   * The one destination that is not a place to look for a thing: who is
+   * signed in, the language, and the way out. The ROUTE keeps the plain name
+   * the other four do — these are the app's internal addresses, and renaming
+   * one to rename a label is how deep links break.
+   */
+  Account: undefined;
 }
 
 export interface RootStackParamList extends Record<string, object | undefined> {

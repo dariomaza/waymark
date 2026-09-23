@@ -39,6 +39,20 @@ export const EN = {
   "nav.label": "Main",
 
   /**
+   * The fifth destination, and the only one that is not a place to look for a
+   * thing. The word drawn under the avatar; the name announced beside it is
+   * `nav.youNamed`, because "DM" read aloud is two letters.
+   */
+  "nav.you": "You",
+  "nav.youNamed": "You, signed in as {username}",
+  "account.title": "You",
+  /**
+   * Nothing on this screen is the inventory's, so it says what IS its own:
+   * the account, the language, and the way out.
+   */
+  "account.lede": "Your account and the language this app speaks.",
+
+  /**
    * "Places" and "Things", not "Inventory" and "Items".
    *
    * The two words a person uses standing in a garage are where and what.

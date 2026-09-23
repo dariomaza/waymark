@@ -61,11 +61,28 @@ describe("the frame every signed-in screen sits in", () => {
     });
 
     /**
-     * The code is what fits in a bar; the language's own name is what makes it
-     * a label somebody can act on, because "ES" read aloud is two letters.
+     * And nothing else. The language used to sit here as two permanently
+     * visible buttons on every screen, for a choice made roughly once; it now
+     * lives behind the avatar with the rest of what belongs to a person rather
+     * than to an inventory. See `account/who-you-are.test.tsx`.
      */
-    it("offers a language, and reflects the one chosen", async () => {
+    it("carries nothing that belongs to a person rather than to the inventory", async () => {
       await renderApp({ session: aSession() });
+
+      await screen.findByRole("header", { name: "Waymark" });
+
+      expect(screen.queryByRole("radio", { name: "Español" })).toBeNull();
+    });
+
+    /**
+     * The code is what fits in a control; the language's own name is what
+     * makes it a label somebody can act on, because "ES" read aloud is two
+     * letters.
+     */
+    it("offers a language on the account screen, and reflects the one chosen", async () => {
+      await renderApp({ session: aSession() });
+
+      await openTheAccountScreen();
 
       const spanish = await screen.findByRole("radio", { name: "Español" });
       const english = screen.getByRole("radio", { name: "English" });
@@ -78,6 +95,16 @@ describe("the frame every signed-in screen sits in", () => {
     });
   });
 });
+
+/**
+ * The language control moved behind the avatar, so every test about it now
+ * goes the way a thumb does: tap the circle with your initial in it.
+ */
+const openTheAccountScreen = async (username = "dario"): Promise<void> => {
+  await fireEvent.press(
+    await screen.findByRole("button", { name: new RegExp(`signed in as ${username}|como ${username}`, "i") }),
+  );
+};
 
 /**
  * # The switcher means something now
@@ -95,6 +122,7 @@ describe("the language the interface is in", () => {
   it("changes every word on screen the moment the choice changes", async () => {
     await renderApp({ session: aSession() });
 
+    await openTheAccountScreen();
     await fireEvent.press(await screen.findByRole("radio", { name: "Español" }));
 
     expect(screen.getByRole("button", { name: "Lugares" })).toBeOnTheScreen();
@@ -123,6 +151,8 @@ describe("the language the interface is in", () => {
   it("reflects the stored choice in the switcher itself", async () => {
     await renderApp({ session: aSession(), language: "es" });
 
+    await openTheAccountScreen();
+
     expect(await screen.findByRole("radio", { name: "Español" })).toBeSelected();
     expect(screen.getByRole("radio", { name: "English" })).not.toBeSelected();
   });
@@ -137,6 +167,8 @@ describe("the language the interface is in", () => {
   /** The group a screen reader announces before the two options inside it. */
   it("names the language control itself in the chosen language", async () => {
     await renderApp({ session: aSession(), language: "es" });
+
+    await openTheAccountScreen();
 
     expect(await screen.findByLabelText("Idioma")).toBeOnTheScreen();
   });

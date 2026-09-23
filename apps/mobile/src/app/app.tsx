@@ -11,6 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { useState, type JSX } from "react";
 import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AccountScreen } from "../account/account-screen.js";
 import { ApiProvider, useApi } from "../api/api-context.js";
 import { LoginScreen } from "../auth/login-screen.js";
 import { SessionProvider } from "../auth/session-context.js";
@@ -28,6 +29,7 @@ import { ScanScreen } from "../scanning/scan-screen.js";
 import { ScannedLabelScreen } from "../scanning/scanned-label-screen.js";
 import { ScannerProvider } from "../scanning/scanner-context.js";
 import { SearchScreen } from "../search/search-screen.js";
+import { Avatar } from "../ui/atoms/avatar.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Icon, type IconName } from "../ui/atoms/icon.js";
@@ -41,7 +43,6 @@ import { UnitScreen } from "../units/unit-screen.js";
 import { createDefaultClient } from "./create-client.js";
 import { createLanguageStore } from "./language.js";
 import { LanguageProvider, useTranslate } from "./language-context.js";
-import { LanguageSwitcher } from "./language-switcher.js";
 import { linking, type RootStackParamList, type TabParamList } from "./navigation.js";
 
 export interface AppProps {
@@ -239,9 +240,14 @@ const ConfirmedSession = ({
         * so it is one bar that never redraws between screens — the same frame
         * the web client's shell puts around every signed-in route. Each
         * screen keeps drawing its own title; this one says which product you
-        * are in and carries the one setting there is.
+        * are in, and nothing else.
+        *
+        * It used to carry the language too. Two permanently visible buttons,
+        * on every screen, for a choice made roughly once — they now live
+        * behind the avatar in the bottom bar, with the rest of what belongs
+        * to a person rather than to an inventory.
         */}
-      <AppBar title="Waymark" actions={<LanguageSwitcher />} />
+      <AppBar title="Waymark" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={Tabs} />
         <Stack.Screen name="Unit" component={UnitScreen} />
@@ -263,6 +269,8 @@ const ConfirmedSession = ({
  */
 const Tabs = (): JSX.Element => {
   const t = useTranslate();
+  const state = useSessionState();
+  const username = state.status === "known" ? (state.session?.user.username ?? "") : "";
 
   return (
     <Tab.Navigator
@@ -320,6 +328,32 @@ const Tabs = (): JSX.Element => {
           title: t("nav.things"),
           tabBarAccessibilityLabel: t("nav.things"),
           tabBarIcon: tabIcon("things"),
+        }}
+      />
+      {/*
+        * The fifth destination, and the only one that is not a place to look
+        * for a thing.
+        *
+        * It is drawn as the person's initial rather than as a ninth icon,
+        * because no shape in any vocabulary means "your account" — a
+        * silhouette means "a person", which is the wrong person — and a
+        * circle with your own initial in it is the one thing every product
+        * has already taught everybody to read.
+        *
+        * The word under it is still "You". The NAME announced beside it is
+        * the whole sentence, because "DM" read aloud is two letters and a
+        * screen reader landing here should learn who is signed in rather than
+        * be given the abbreviation to work out.
+        */}
+      <Tab.Screen
+        name="Account"
+        component={AccountScreen}
+        options={{
+          title: t("nav.you"),
+          tabBarAccessibilityLabel: t("nav.youNamed", { username }),
+          tabBarIcon: ({ color }: { readonly color: string }) => (
+            <Avatar name={username} color={color} size={24} />
+          ),
         }}
       />
     </Tab.Navigator>
