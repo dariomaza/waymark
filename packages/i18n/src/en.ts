@@ -144,6 +144,18 @@ export const EN = {
   "login.password": "Password",
   "login.submit": "Sign in",
   "login.submitting": "Signing in…",
+  /**
+   * The accessible name of the control that unmasks the password, and it does
+   * NOT flip to "Hide password" when the password is showing.
+   *
+   * The control is a switch, so the state is announced with it — "Show
+   * password, on" — and a name that moved as well would be saying the same
+   * fact twice in two vocabularies. What flips is the WORD drawn beside it,
+   * which is an affordance for eyes rather than a statement of fact.
+   */
+  "login.showPassword": "Show password",
+  "login.show": "Show",
+  "login.hide": "Hide",
 
   // ---------------------------------------------------------------------
   // The inventory, and the units in it

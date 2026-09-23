@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
+import { PasswordField } from "../../ui/atoms/password-field.js";
 import { ScreenTitle } from "../../ui/atoms/screen-title.js";
 import { TextField } from "../../ui/atoms/text-field.js";
 import { colors, space, text } from "../../ui/styles/tokens.js";
@@ -51,13 +52,10 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
         returnKeyType="next"
       />
 
-      <TextField
+      <PasswordField
         label={t("login.password")}
-        autoComplete="current-password"
-        secureTextEntry
         value={password}
         onChangeText={setPassword}
-        returnKeyType="go"
         onSubmitEditing={submit}
       />
 
