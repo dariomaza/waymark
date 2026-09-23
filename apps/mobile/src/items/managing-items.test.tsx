@@ -141,6 +141,23 @@ describe("looking after items", () => {
     });
   });
 
+  /**
+   * # A bin a thumb cannot reach by accident
+   *
+   * The three things you can do to an item used to be three controls of the
+   * same size in one column, and the last of them deleted it. On a phone held
+   * one-handed in a garage that is a 48pt target beside the one somebody meant
+   * to press, with no hover to hesitate in and no cursor to aim with —
+   * distance is the only guard a touch screen has (ADR 21).
+   */
+  it("keeps the bin off the screen until it is asked for", async () => {
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    expect(await screen.findByRole("button", { name: "Edit" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Move" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+  });
+
   it("deletes an item, and says its photos go with it", async () => {
     const withPhotos = anItem({
       id: "drill",
@@ -163,6 +180,11 @@ describe("looking after items", () => {
 
     await renderApp({ session: aSession(), screen: atTheDrill });
 
+    // Behind the thing's own menu: nothing that destroys anything sits within
+    // a thumb of the thing the screen is for (ADR 21).
+    await fireEvent.press(
+      await screen.findByRole("button", { name: "More actions for Cordless drill" }),
+    );
     await fireEvent.press(await screen.findByRole("button", { name: "Delete" }));
 
     expect(

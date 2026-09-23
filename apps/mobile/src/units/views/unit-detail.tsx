@@ -19,7 +19,15 @@ export interface UnitDetailProps {
   readonly childUnits: readonly StorageUnitView[];
   readonly items: readonly ItemView[];
   readonly photo: ReactNode;
+  /** What this screen is FOR: the primary action, and at most one secondary. */
   readonly actions: ReactNode;
+  /**
+   * Everything that can be done TO this unit, behind one control beside its
+   * name. In the HEADING and not in the column below, because renaming a box
+   * or throwing it away is about the box rather than about the screen — and
+   * because a column of peers is what this redesign exists to end (ADR 21).
+   */
+  readonly menu: ReactNode;
   /**
    * The cover photo for one item, when it has one.
    *
@@ -79,6 +87,7 @@ export const UnitDetail = ({
   items,
   photo,
   actions,
+  menu,
   itemPhoto,
   onOpenUnit,
   onOpenItem,
@@ -132,7 +141,12 @@ export const UnitDetail = ({
               onOpenUnit(step.id);
             }}
           />
-          <ScreenTitle>{unit.name}</ScreenTitle>
+          <View style={styles.title}>
+            <View style={styles.titleText}>
+              <ScreenTitle>{unit.name}</ScreenTitle>
+            </View>
+            {menu}
+          </View>
           <Text style={styles.kind}>{kindLabel(t, unit.kind)}</Text>
           {unit.description === null ? null : (
             <Text style={styles.description}>{unit.description}</Text>
@@ -197,6 +211,14 @@ export const UnitDetail = ({
 
 const styles = StyleSheet.create({
   head: { gap: space.s3 },
+  /*
+   * `flex-start`, not `center`: a long name wraps to two lines and the control
+   * stays level with the first of them, which is where the eye already is.
+   * `flex: 1` on the title is what lets the name wrap rather than push the
+   * control off the edge.
+   */
+  title: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
+  titleText: { flex: 1 },
   kind: { color: colors.inkMuted, fontSize: text.s },
   description: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },

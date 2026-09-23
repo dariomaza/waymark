@@ -1,113 +1,68 @@
 import type { StorageUnitView } from "@waymark/api-client";
 import { useState, type JSX } from "react";
 
+import { CreateItemSheet } from "../items/create-item-sheet.js";
 import { Button } from "../ui/atoms/button.js";
 import { CreateUnitSheet } from "./create-unit-sheet.js";
-import { DeleteUnitSheet } from "./delete-unit-sheet.js";
-import { EditUnitSheet } from "./edit-unit-sheet.js";
-import { EmptyUnitSheet } from "./empty-unit-sheet.js";
-import { MoveUnitSheet } from "./move-unit-sheet.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
-  /** Root first, ending at this unit; the step before last is its parent. */
-  readonly path: readonly StorageUnitView[];
-  readonly onShowLabel: () => void;
-  readonly onDeleted: () => void;
 }
 
-type OpenSheet = "add" | "edit" | "move" | "empty" | "delete" | null;
-
 /**
- * What can be done to a unit.
+ * What a box is FOR: putting something in it.
  *
- * Edit and Move are separate buttons, not one "manage" screen: they are
- * separate acts, and only one of them can make the inventory lie about where
- * something is (ADR 14).
+ * Two controls, and they are the only two on this screen that are not behind
+ * the menu — because they are the two reasons somebody opens a box's screen
+ * with an intention rather than a question. Everything else that can be done
+ * to this unit is in `UnitMenu`, beside its name (ADR 21).
+ *
+ * The primary is "Add an item" and not "Add a space inside": a shelf holds
+ * things a hundred times for every time it grows a drawer. The second is a
+ * secondary rather than a peer, which is the difference between a hierarchy
+ * and a column — one lime rectangle and one outlined one, so a thumb lands on
+ * the right one without reading either.
+ *
+ * The two shapes say what KIND of thing is about to be added, which is the
+ * only thing separating the two sentences: a plus for a thing, a box for a
+ * box. Two identical pluses would leave the eye to the words again.
  */
-export const UnitActions = ({
-  unit,
-  path,
-  onShowLabel,
-  onDeleted,
-}: UnitActionsProps): JSX.Element => {
+export const UnitActions = ({ unit }: UnitActionsProps): JSX.Element => {
   const t = useTranslate();
 
-  const [open, setOpen] = useState<OpenSheet>(null);
-  const parent = path.at(-2) ?? null;
+  const [open, setOpen] = useState<"item" | "unit" | null>(null);
+
   const close = (): void => {
     setOpen(null);
   };
 
   return (
     <>
-      {/*
-        Six controls stacked down a phone, and until now six identical
-        word-buttons — which is a wall a thumb has to READ to use. The
-        pictures are what make one of them findable at a glance; the words
-        stay, because no shape means "empty this box but keep it".
-      */}
       <Button
+        tone="primary"
         icon="plus"
         onPress={() => {
-          setOpen("add");
+          setOpen("item");
+        }}
+      >
+        {t("units.addItem")}
+      </Button>
+      <Button
+        icon="box"
+        onPress={() => {
+          setOpen("unit");
         }}
       >
         {t("units.addInside")}
       </Button>
-      <Button
-        icon="pencil"
-        onPress={() => {
-          setOpen("edit");
-        }}
-      >
-        {t("action.edit")}
-      </Button>
-      <Button
-        icon="move"
-        onPress={() => {
-          setOpen("move");
-        }}
-      >
-        {t("action.move")}
-      </Button>
-      <Button
-        onPress={() => {
-          setOpen("empty");
-        }}
-      >
-        {t("action.empty")}
-      </Button>
-      <Button onPress={onShowLabel}>{t("units.showLabel")}</Button>
-      <Button
-        tone="danger"
-        icon="trash"
-        onPress={() => {
-          setOpen("delete");
-        }}
-      >
-        {t("action.delete")}
-      </Button>
 
-      {open === "add" ? (
+      {open === "item" ? (
+        <CreateItemSheet storageUnitId={unit.id} unitName={unit.name} onClose={close} />
+      ) : null}
+
+      {open === "unit" ? (
         <CreateUnitSheet parentId={unit.id} parentName={unit.name} onClose={close} />
-      ) : null}
-      {open === "edit" ? <EditUnitSheet unit={unit} onClose={close} /> : null}
-      {open === "move" ? <MoveUnitSheet unit={unit} onClose={close} /> : null}
-      {open === "empty" ? (
-        <EmptyUnitSheet unit={unit} parent={parent} onClose={close} />
-      ) : null}
-      {open === "delete" ? (
-        <DeleteUnitSheet
-          unit={unit}
-          parent={parent}
-          onClose={close}
-          onDeleted={() => {
-            close();
-            onDeleted();
-          }}
-        />
       ) : null}
     </>
   );

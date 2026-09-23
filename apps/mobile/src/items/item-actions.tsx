@@ -2,27 +2,30 @@ import type { ItemView } from "@waymark/api-client";
 import { useState, type JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";
-import { DeleteItemSheet } from "./delete-item-sheet.js";
 import { EditItemSheet } from "./edit-item-sheet.js";
 import { MoveItemSheet } from "./move-item-sheet.js";
 import { useTranslate } from "../app/language-context.js";
 
-type OpenSheet = "edit" | "move" | "delete" | null;
-
 /**
- * Edit and Move are separate buttons, because they are separate acts and only
+ * What an item's screen is FOR: correcting what it says, and saying where it
+ * has gone.
+ *
+ * Edit and Move are separate controls because they are separate acts, and only
  * one of them can make the inventory lie about where something is (ADR 14).
+ *
+ * Editing is the primary, because it is the superset: every field an item has
+ * is behind it. Moving is the secondary rather than a third peer, and stays
+ * visible rather than joining the menu, because a thing that has moved and has
+ * not been recorded as moved is the one failure this product exists to prevent
+ * — it should cost one tap.
+ *
+ * Deleting is not here. It is behind the menu beside the item's name, where a
+ * thumb aiming at Edit cannot land on it (ADR 21).
  */
-export const ItemActions = ({
-  item,
-  onDeleted,
-}: {
-  readonly item: ItemView;
-  readonly onDeleted: () => void;
-}): JSX.Element => {
+export const ItemActions = ({ item }: { readonly item: ItemView }): JSX.Element => {
   const t = useTranslate();
 
-  const [open, setOpen] = useState<OpenSheet>(null);
+  const [open, setOpen] = useState<"edit" | "move" | null>(null);
   const close = (): void => {
     setOpen(null);
   };
@@ -30,6 +33,7 @@ export const ItemActions = ({
   return (
     <>
       <Button
+        tone="primary"
         icon="pencil"
         onPress={() => {
           setOpen("edit");
@@ -45,32 +49,9 @@ export const ItemActions = ({
       >
         {t("action.move")}
       </Button>
-      {/*
-        The bin is IN FRONT OF the word and never instead of it. Deleting is
-        the one act nobody should perform from a picture they half recognised.
-      */}
-      <Button
-        tone="danger"
-        icon="trash"
-        onPress={() => {
-          setOpen("delete");
-        }}
-      >
-        {t("action.delete")}
-      </Button>
 
       {open === "edit" ? <EditItemSheet item={item} onClose={close} /> : null}
       {open === "move" ? <MoveItemSheet item={item} onClose={close} /> : null}
-      {open === "delete" ? (
-        <DeleteItemSheet
-          item={item}
-          onClose={close}
-          onDeleted={() => {
-            close();
-            onDeleted();
-          }}
-        />
-      ) : null}
     </>
   );
 };

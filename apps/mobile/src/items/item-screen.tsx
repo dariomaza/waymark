@@ -9,6 +9,7 @@ import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { ItemActions } from "./item-actions.js";
+import { ItemMenu } from "./item-menu.js";
 import { useItem } from "./item-queries.js";
 import { ItemDetail } from "./views/item-detail.js";
 import { useTranslate } from "../app/language-context.js";
@@ -44,8 +45,9 @@ export const ItemScreen = (): JSX.Element => {
           onOpenUnit={(unitId) => {
             navigation.navigate("Unit", { id: unitId });
           }}
-          actions={
-            <ItemActions
+          actions={<ItemActions item={item.data.item} />}
+          menu={
+            <ItemMenu
               item={item.data.item}
               onDeleted={() => {
                 navigation.goBack();

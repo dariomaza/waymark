@@ -78,7 +78,10 @@ export const Button = ({
 
 const styles = StyleSheet.create({
   base: {
+    // Both directions. A button that has dropped its word for a picture has
+    // nothing but its padding left to keep it wide enough to hit.
     minHeight: TAP_TARGET,
+    minWidth: TAP_TARGET,
     paddingHorizontal: space.s4,
     paddingVertical: space.s3,
     borderRadius: radius.m,
