@@ -450,9 +450,15 @@ describe("looking after a storage unit", () => {
       expect(menu.getByRole("button", { name })).toBeVisible();
     }
 
-    for (const name of [/show the label/i, /label sheet/i]) {
-      expect(menu.getByRole("link", { name })).toBeVisible();
-    }
+    expect(menu.getByRole("link", { name: /show the label/i })).toBeVisible();
+
+    /*
+      And NOT a sheet of every label in the house. The owner: "tampoco tiene
+      sentido que en las acciones de un espacio puedas ver todas las etiquetas,
+      con ver la del propio espacio es suficiente". Printing a sheet is a job
+      you do for the whole house, from the screen that shows the whole house.
+    */
+    expect(menu.queryByRole("link", { name: /label sheet/i })).toBeNull();
   });
 
   /**

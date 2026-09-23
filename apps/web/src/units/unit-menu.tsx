@@ -8,7 +8,7 @@ import { DeleteUnitDialog } from "./delete-unit-dialog.js";
 import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
-import { ROUTES, labelsWithinPath, unitLabelPath, unitPath } from "../app/routes.js";
+import { ROUTES, unitLabelPath, unitPath } from "../app/routes.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface UnitMenuProps {
@@ -29,7 +29,7 @@ type OpenDialog = "add" | "edit" | "move" | "empty" | "delete" | null;
  * where a phone has put a subject's own menu for as long as phones have had
  * menus. ADR 21 is the rule, and this is the first place it is kept.
  *
- * Seven lines, in the order somebody reaches for them:
+ * Six lines, in the order somebody reaches for them:
  *
  * 1. **Add a space inside** — the one line here that makes something, and the
  *    one that used to stand in the row outside. It was demoted because a shelf
@@ -37,8 +37,11 @@ type OpenDialog = "add" | "edit" | "move" | "empty" | "delete" | null;
  *    owner wanted the row to say searching instead; it is first IN here
  *    because of that same count — of everything left behind this control, it
  *    is what gets reached for most.
- * 2. **Show the label**, **Label sheet** — two ways of looking at what is
- *    here, and neither of them changes anything.
+ * 2. **Show the label** — this box's own label, looking at something and
+ *    changing nothing. A SHEET of labels used to sit beside it, scoped to this
+ *    unit, and it was a category error: a page of labels for everything a box
+ *    holds is not an act on the box. It is on the home screen, where the whole
+ *    house is.
  * 3. **Edit** and **Move** — two acts, not one "manage", because editing
  *    changes what the unit SAYS about itself and is a `PATCH` that cannot
  *    carry a parent, while moving changes where it IS and is guarded by the
@@ -80,15 +83,15 @@ export const UnitMenu = ({ unit, path }: UnitMenuProps): JSX.Element => {
         setOpen("add");
       },
     },
-    { label: t("units.showLabel"), icon: "tag", to: unitLabelPath(unit.id) },
     /*
-      One label and a sheet of them are two different jobs: sticking a label on
-      THIS box, and labelling everything it holds in one afternoon. `?within=`
-      means the same as it does on a search — what is inside, not the unit
-      itself (ADR 11). No icon: nothing in the set means "a page of labels",
-      and a shape somebody has to learn by pressing it is worse than the words.
+      This box's OWN label, and only that. A sheet of every label in the house
+      used to sit on the next line, scoped to this unit, and it was a category
+      error: this menu is what can be done TO this box, and a page of labels
+      for everything it holds is a different errand that happened to be wearing
+      the same words. It lives on the home screen now, which is where the
+      whole house is.
     */
-    { label: t("label.sheet"), to: labelsWithinPath(unit.id) },
+    { label: t("units.showLabel"), icon: "tag", to: unitLabelPath(unit.id) },
     {
       label: t("action.edit"),
       icon: "pencil",

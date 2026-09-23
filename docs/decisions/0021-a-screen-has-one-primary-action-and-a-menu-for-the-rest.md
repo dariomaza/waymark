@@ -114,7 +114,7 @@ Concretely, in both clients:
 | `units.addInside` | peer | unit's menu (see the amendment below) |
 | `units.searchInside` | peer (link) | **secondary**, in the row |
 | `units.showLabel` | peer (link) | unit's menu |
-| `label.sheet` | peer (link) | unit's menu |
+| `label.sheet` | peer (link) | home screen only (see below) |
 | `action.edit` | peer | unit's menu |
 | `action.move` | peer | unit's menu |
 | `action.empty` | peer | unit's menu, destructive group |
@@ -211,6 +211,30 @@ offer the same pair — a URL in one and a navigation in the other, which is eac
 platform's own business. **Intent is what the two clients owe each other;
 mechanism is not.**
 
+### Amended: what belongs in a subject's menu at all
+
+The rule says an action belonging to a THING goes in that thing's menu. It does
+not say what to do with something that is not an action on the thing, and one
+line slipped through on that silence. The owner found it:
+
+> tampoco tiene sentido que en las acciones de un espacio puedas ver todas las
+> etiquetas, con ver la del propio espacio es suficiente
+
+`label.sheet` was a page of labels for everything a box HOLDS, scoped with
+`?within=`. `units.showLabel` is the box's own label. The two were adjacent
+lines wearing almost the same words, and only the second is about the box. A
+sheet is a job you do for the whole house, standing at a printer, so it lives
+on the home screen and nowhere else.
+
+**A subject's menu holds what is done TO the subject. A different errand that
+happens to mention the subject is not that, however convenient the shortcut.**
+
+Nothing became unreachable. The shortcut saved was "labels for everything in
+the garage", and the sheet's own screen does that in one press — the subtree
+control beside each room, which has its own test. The narrowed address is still
+honoured for anybody holding one; nothing builds it any more, so
+`labelsWithinPath` is gone.
+
 ### Why the overflow opens a sheet, and not an ARIA `menu`
 
 A true `role="menu"` is a roving `tabindex` and a set of arrow-key behaviours
@@ -266,6 +290,12 @@ Named, because a decision that lists no cost has not been made.
   whole screen to offer seven lines. On a desktop browser that is heavier than
   the interaction deserves. It was accepted because this app's screen is a
   phone in a garage and the desktop is where it is merely also usable.
+- **The overflow is now the only way to a shortcut somebody had.** Printing
+  labels for everything in one room was two presses from that room and is now
+  two presses from the home screen, by way of the subtree control. Equal in
+  count, further in distance for somebody standing in front of the room — and
+  charged deliberately, because the alternative is a box's menu that offers
+  things which are not about the box.
 - **One menu with one line in it.** The item screen's overflow holds only
   `delete`. That looks like ceremony and is not: the rule is not "hide the
   rarely used", it is that nothing destructive may sit where a thumb reaching

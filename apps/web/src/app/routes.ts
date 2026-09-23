@@ -37,6 +37,11 @@ export const ROUTES = {
   /**
    * Not under `/units/:id`, because a sheet is about a SET of units rather
    * than about one. `?within=` narrows it; nothing at all is the whole house.
+   *
+   * Nothing in the app builds the narrowed form any more. A box's menu used to,
+   * and it was the wrong place for it — printing a sheet is a job you do for
+   * the whole house. The screen still reads the parameter, because an address
+   * somebody bookmarked or was sent should keep landing where they expected.
    */
   labels: "/labels",
   /** `GET /items` is the API's; this is the screen that draws its answer. */
@@ -65,6 +70,3 @@ export const scannedLabelPath = (publicId: string): string => `/u/${publicId}`;
 /** A search already scoped to a subtree, which is what ADR 11 means by `within`. */
 export const findWithinPath = (unitId: string): string =>
   `${ROUTES.find}?within=${unitId}`;
-
-export const labelsWithinPath = (unitId: string): string =>
-  `${ROUTES.labels}?within=${unitId}`;
