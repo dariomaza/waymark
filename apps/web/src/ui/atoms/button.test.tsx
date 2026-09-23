@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -42,5 +45,70 @@ describe("a button carrying a picture", () => {
     const button = screen.getByRole("button");
     expect(button).toHaveAccessibleName("Close");
     expect(button).toHaveTextContent("");
+  });
+});
+
+/**
+ * # A link wearing the button's clothes
+ *
+ * `.button` is not worn only by `<button>`. Three places hand it to a `<Link>`
+ * — the home screen, a label's way back to its unit, and every line in the
+ * overflow that goes somewhere — because a way somewhere stays a link: it is a
+ * URL, it belongs in the history, and turning it into a button would take that
+ * away for the sake of one shared shape.
+ *
+ * A browser underlines an `<a>`, and this class never said otherwise. What the
+ * owner saw on his phone was a bordered rectangle with underlined words inside
+ * it, which reads as neither a link nor a button. Four other classes in this
+ * codebase each turn the underline off on their own — `row-link`, `item-card`,
+ * `search-hit`, `bottom-nav` — and the one that most looks like a button was
+ * the only one that forgot.
+ *
+ * The CASCADE is asserted and not the source text. A test that greps its own
+ * stylesheet for `text-decoration: none` passes just as happily for a rule
+ * sitting inside a media query that never matches, or for a declaration a
+ * later rule overrides — so the stylesheet is handed to the DOM and the
+ * question is put to the browser instead.
+ */
+describe("a link wearing the button's clothes", () => {
+  // Read rather than imported: this config leaves CSS out of the module graph
+  // (see `vite.config.ts`), so an `import "./button.css"` is a no-op here.
+  const BUTTON_CSS = readFileSync(join(process.cwd(), "src/ui/atoms/button.css"), "utf8");
+
+  const drawnWith = (markup: string): CSSStyleDeclaration => {
+    document.head.innerHTML = `<style>${BUTTON_CSS}</style>`;
+    document.body.innerHTML = markup;
+
+    const link = document.querySelector("a");
+    if (link === null) {
+      throw new Error("that markup has no link in it");
+    }
+
+    return globalThis.getComputedStyle(link);
+  };
+
+  /**
+   * The control, and the reason the next test cannot be green for the wrong
+   * reason: if this harness did not apply a browser's own underline in the
+   * first place, an assertion that the underline is gone would prove nothing.
+   */
+  it("is underlined by the browser when nothing says otherwise", () => {
+    expect(drawnWith(`<a href="/labels">Label sheet</a>`).textDecoration).toBe("underline");
+  });
+
+  it("carries no underline, because it is drawn as a button", () => {
+    expect(
+      drawnWith(`<a class="button button--secondary" href="/labels">Label sheet</a>`)
+        .textDecoration,
+    ).toBe("none");
+  });
+
+  /** Every variant, because the reset belongs to the shape and not to a tone. */
+  it("drops it in every tone, since the shape is what wears the clothes", () => {
+    for (const tone of ["primary", "secondary", "danger", "quiet"]) {
+      expect(
+        drawnWith(`<a class="button button--${tone}" href="/x">Go</a>`).textDecoration,
+      ).toBe("none");
+    }
   });
 });
