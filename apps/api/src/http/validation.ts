@@ -1,6 +1,8 @@
 import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@waymark/domain";
 import { z } from "zod";
 
+import { MACHINE_TOKEN_SCOPES } from "../auth/machine-token.js";
+
 /**
  * # Where validation stops and the domain begins
  *
@@ -192,6 +194,58 @@ export const listItemsQuerySchema = z.strictObject({});
 export const moveItemsBodySchema = z.strictObject({
   itemIds: z.array(id).max(MAX_BATCH_SIZE),
   targetUnitId: id,
+});
+
+/**
+ * # What a machine token route checks here, and what it deliberately leaves alone
+ *
+ * The SCOPE is checked here, for the same reason `kind` is: `MachineTokenScope`
+ * is a TypeScript union, and the only runtime guard on it — `isMachineTokenScope`
+ * — is pointed at rows coming OUT of the database. Nothing was checking a scope
+ * coming IN, because until now nothing but the CLI's own parser could send one.
+ * An unchecked `"admin"` would be stored and become a 500 on a completely
+ * unrelated request months later.
+ *
+ * The NAME's shape is not checked here. "Lower case, digits, and any of . _ -"
+ * is a rule about a name somebody has to type into a shell correctly in a
+ * hurry, it lives in `CreateMachineToken` beside the reason for it, and
+ * restating it here is how the two get to disagree. This layer asks only
+ * whether it is a string of a sane length — exactly the bargain the `quantity`
+ * comment at the top of this file describes.
+ */
+const machineTokenName = z.string().min(1).max(MAX_NAME_LENGTH);
+
+const machineTokenScope = z.enum(
+  MACHINE_TOKEN_SCOPES as unknown as [string, ...string[]],
+);
+
+/**
+ * `expiresInDays` is a number and nothing more. Whether it is a whole number of
+ * at least one is the CLI parser's rule and the use case's, not a shape.
+ */
+export const createMachineTokenBodySchema = z.strictObject({
+  name: machineTokenName,
+  scope: machineTokenScope,
+  expiresInDays: z.number().optional(),
+});
+
+/**
+ * A rotation takes an expiry and nothing else.
+ *
+ * There is no `scope` key, and `strictObject` means one sent anyway is REFUSED
+ * rather than ignored. That matters more than it reads: a rotation that
+ * silently dropped a scope would let somebody believe they had turned a read
+ * key into a writing one, and a rotation that honoured it would be an
+ * escalation path wearing the word "maintenance". Refusing the key is the only
+ * answer that is true either way.
+ */
+export const rotateMachineTokenBodySchema = z.strictObject({
+  expiresInDays: z.number().optional(),
+});
+
+/** The name in the path, for a rotation and for a revocation. */
+export const machineTokenNameParamsSchema = z.strictObject({
+  name: machineTokenName,
 });
 
 export interface ValidationIssue {

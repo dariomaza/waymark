@@ -40,7 +40,9 @@ import {
   AuthError,
   InvalidCredentials,
   InvalidMachineToken,
+  InvalidMachineTokenName,
   InvalidSession,
+  MachineTokenNameAlreadyTaken,
   ReadOnlyMachineToken,
   TooManyLoginAttempts,
 } from "../auth/auth-errors.js";
@@ -49,6 +51,9 @@ import type { MachineTokenRepository } from "../auth/machine-token-repository.js
 import type { RateLimiter } from "../auth/login-rate-limiter.js";
 import { Login } from "../auth/login.js";
 import { Logout } from "../auth/logout.js";
+import { CreateMachineToken } from "../auth/create-machine-token.js";
+import { RevokeMachineToken } from "../auth/revoke-machine-token.js";
+import { RotateMachineToken } from "../auth/rotate-machine-token.js";
 import type { PasswordHasher } from "../auth/password-hasher.js";
 import type { SessionRepository } from "../auth/session-repository.js";
 import type { UserRepository } from "../auth/user-repository.js";
@@ -70,6 +75,7 @@ import { StorageUnitViews } from "./storage-unit-views.js";
 import { errorBody, HttpError } from "./http-error.js";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
+import { machineTokenRoutes } from "./routes/machine-token-routes.js";
 import { photoRoutes } from "./routes/photo-routes.js";
 import { qrRoutes } from "./routes/qr-routes.js";
 import { searchRoutes } from "./routes/search-routes.js";
@@ -272,6 +278,23 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     ...(deps.sessionTtlMs === undefined ? {} : { sessionTtlMs: deps.sessionTtlMs }),
   });
   const logout = new Logout({ sessions: deps.sessions });
+  /**
+   * The same three use cases the admin CLI drives, built once here so the
+   * account screen and the shell cannot drift into two behaviours. ADR 18 put
+   * routes in front of them; nothing about the use cases themselves changed.
+   */
+  const createMachineToken = new CreateMachineToken({
+    machineTokens: deps.machineTokens,
+    ids: deps.ids,
+    clock: deps.clock,
+  });
+  const rotateMachineToken = new RotateMachineToken({
+    machineTokens: deps.machineTokens,
+    clock: deps.clock,
+  });
+  const revokeMachineToken = new RevokeMachineToken({
+    machineTokens: deps.machineTokens,
+  });
   const authenticateMachine = new AuthenticateMachineToken({
     machineTokens: deps.machineTokens,
     clock: deps.clock,
@@ -385,6 +408,12 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     }
 
     void scope.register(authenticatedAuthRoutes, { login, logout });
+    void scope.register(machineTokenRoutes, {
+      machineTokens: deps.machineTokens,
+      createMachineToken,
+      rotateMachineToken,
+      revokeMachineToken,
+    });
     void scope.register(storageUnitRoutes, {
       storageUnits: deps.storageUnits,
       items: deps.items,
@@ -664,6 +693,42 @@ const sendAuthError = async (
       .code(401)
       .header("www-authenticate", "Bearer")
       .send(errorBody("INVALID_SESSION", error.message));
+  }
+
+  /**
+   * 409: fix the WORLD, then retry (ADR 8). The request bytes are perfectly
+   * good and the same call succeeds the moment that name is free, which is
+   * something the caller changes by revoking the other token or choosing
+   * another word — not by editing this request.
+   *
+   * Both of these used to be unreachable over HTTP, because only the admin CLI
+   * could raise them. ADR 18 put a route in front of `CreateMachineToken`, so
+   * they are now refusals a browser has to be able to read.
+   */
+  if (error instanceof MachineTokenNameAlreadyTaken) {
+    return reply
+      .code(409)
+      .send(
+        errorBody("MACHINE_TOKEN_NAME_ALREADY_TAKEN", error.message, {
+          machineTokenName: error.tokenName,
+        }),
+      );
+  }
+
+  /**
+   * 422: fix the REQUEST, then retry (ADR 8). The name is the argument that
+   * revokes this credential later, so one needing shell quoting to type is a
+   * thing that goes wrong in a hurry — and the field that has to change is in
+   * the body the caller just sent.
+   */
+  if (error instanceof InvalidMachineTokenName) {
+    return reply
+      .code(422)
+      .send(
+        errorBody("INVALID_MACHINE_TOKEN_NAME", error.message, {
+          machineTokenName: error.tokenName,
+        }),
+      );
   }
 
   if (error instanceof InvalidMachineToken) {
