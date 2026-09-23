@@ -201,7 +201,7 @@ describe("searching for where something is, in Spanish", () => {
 
     renderApp({ route: "/find" });
     await userEvent.type(
-      await screen.findByRole("searchbox", { name: "Busque una cosa o una caja" }),
+      await screen.findByRole("searchbox", { name: "Busca una cosa o una caja" }),
       "destornillador",
     );
 
@@ -221,7 +221,7 @@ describe("searching for where something is, in Spanish", () => {
 
     renderApp({ route: "/find" });
     await userEvent.type(
-      await screen.findByRole("searchbox", { name: "Busque una cosa o una caja" }),
+      await screen.findByRole("searchbox", { name: "Busca una cosa o una caja" }),
       "cables",
     );
 
@@ -247,7 +247,7 @@ describe("searching for where something is, in Spanish", () => {
 
     renderApp({ route: "/find" });
     await userEvent.type(
-      await screen.findByRole("searchbox", { name: "Busque una cosa o una caja" }),
+      await screen.findByRole("searchbox", { name: "Busca una cosa o una caja" }),
       "cables",
     );
 

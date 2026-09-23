@@ -30,14 +30,14 @@ export const ES: Dictionary = {
   "language.label": "Idioma",
   "shell.signedInAs": "Sesión iniciada como {username}",
   "shell.signOut": "Cerrar sesión",
-  "shell.account": "Su cuenta",
-  "shell.accountOf": "Su cuenta, sesión iniciada como {username}",
+  "shell.account": "Tu cuenta",
+  "shell.accountOf": "Tu cuenta, sesión iniciada como {username}",
   "shell.offline":
-    "Sin conexión. Puede consultar lo que ya está cargado; nada de lo que cambie se guardará hasta que vuelva la conexión.",
+    "Sin conexión. Puedes consultar lo que ya está cargado; nada de lo que cambies se guardará hasta que vuelva la conexión.",
 
   "shell.opening": "Abriendo Waymark",
   "shell.checkingSession": "Comprobando la sesión",
-  "session.unconfirmed": "Waymark no ha podido confirmar la sesión",
+  "session.unconfirmed": "Waymark no ha podido confirmar tu sesión",
   "session.signInAgain": "Iniciar sesión de nuevo",
 
   // "Lugares" and "Cosas" for the same reason the English says "Places" and
@@ -66,14 +66,14 @@ export const ES: Dictionary = {
   "units.notEmpty":
     "{name} todavía contiene {contents}. No se borra una caja que sigue llena.",
   "units.cyclicMove":
-    "{name} no puede ir dentro de sí mismo, ni dentro de nada que ya esté dentro de él. Elija un destino fuera.",
+    "{name} no puede ir dentro de sí mismo, ni dentro de nada que ya esté dentro de él. Elige un destino fuera.",
   "units.missingTarget":
-    "Esta unidad no tiene una unidad superior donde vaciarse. Elija dónde deben ir sus contenidos.",
+    "Esta unidad no tiene una unidad superior donde vaciarse. Elige dónde deben ir sus contenidos.",
 
   "items.moveRefused":
     "No se ha movido nada. {reason} Un movimiento es todo o nada, así que el resto se ha quedado donde estaba.",
 
-  "photos.tooMany": "Esta cosa ya tiene {limit} fotos. Borre una para hacer sitio.",
+  "photos.tooMany": "Esta cosa ya tiene {limit} fotos. Borra una para hacer sitio.",
   "photos.removalPending":
     "El recorte del fondo sigue pendiente. Se muestra la original, y se seguirá mostrando tanto si se recorta el fondo como si no.",
   "photos.removalFailed":
@@ -81,17 +81,17 @@ export const ES: Dictionary = {
 
   "login.wrongCredentials": "El usuario o la contraseña no son correctos.",
   "login.tooManyAttempts":
-    "Demasiados intentos desde esta conexión. Espere unos minutos e inténtelo de nuevo.",
-  "login.missingCredentials": "Escriba el usuario y la contraseña.",
-  "login.unavailable": "Waymark no ha podido iniciar la sesión. Inténtelo de nuevo en un momento.",
+    "Demasiados intentos desde esta conexión. Espera unos minutos e inténtalo de nuevo.",
+  "login.missingCredentials": "Escribe el usuario y la contraseña.",
+  "login.unavailable": "Waymark no ha podido iniciar la sesión. Inténtalo de nuevo en un momento.",
 
   "failure.offline":
-    "La aplicación no ha podido conectar con Waymark. Compruebe la conexión e inténtelo de nuevo.",
+    "La aplicación no ha podido conectar con Waymark. Comprueba la conexión e inténtalo de nuevo.",
   "failure.notFound": "Esto ya no está aquí. Puede que se haya borrado o movido.",
-  "failure.sessionEnded": "La sesión ha terminado. Inicie sesión de nuevo.",
-  "failure.rateLimited": "Demasiadas peticiones. Espere un momento e inténtelo de nuevo.",
+  "failure.sessionEnded": "La sesión ha terminado. Inicia sesión de nuevo.",
+  "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
   "failure.refused": "Waymark ha rechazado esa petición.",
-  "failure.server": "Waymark ha tenido un problema al responder. Inténtelo de nuevo en un momento.",
+  "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
   "failure.asTheApiPutIt": "{reason}",
 
   // ---------------------------------------------------------------------
@@ -118,7 +118,7 @@ export const ES: Dictionary = {
   "action.delete": "Borrar",
   "action.empty": "Vaciar",
   "action.close": "Cerrar",
-  "action.tryAgain": "Inténtelo de nuevo",
+  "action.tryAgain": "Inténtalo de nuevo",
   "action.selectAll": "Seleccionar todo",
   "action.clear": "Quitar",
   "action.clearSelection": "Quitar la selección",
@@ -140,13 +140,13 @@ export const ES: Dictionary = {
   // ---------------------------------------------------------------------
   // The inventory, and the units in it
   // ---------------------------------------------------------------------
-  "inventory.title": "Su inventario",
-  "inventory.loading": "Cargando su inventario",
-  "inventory.failed": "No se ha podido cargar su inventario",
+  "inventory.title": "Tu inventario",
+  "inventory.loading": "Cargando tu inventario",
+  "inventory.failed": "No se ha podido cargar tu inventario",
   "inventory.addRoom": "Añadir una habitación",
   "inventory.addUnit": "Añadir una unidad",
   "inventory.emptyLine":
-    "Todavía no hay nada guardado. Añada una habitación, un estante o una caja para empezar.",
+    "Todavía no hay nada guardado. Añade una habitación, un estante o una caja para empezar.",
   "inventory.emptyTitle": "Todavía no hay nada registrado",
   "inventory.emptyExplains": "Empiece por una habitación y siga con los muebles que hay en ella.",
 
@@ -159,14 +159,14 @@ export const ES: Dictionary = {
   "units.items": "Cosas",
   "units.checklistLabel": "Unidades",
   "units.isEmpty": "Esta está vacía",
-  "units.isEmptyExplains": "Lo que guarde aquí aparecerá al escanear su etiqueta.",
+  "units.isEmptyExplains": "Lo que guardes aquí aparecerá al escanear su etiqueta.",
   "units.name": "Nombre",
   "units.kind": "Tipo",
   "units.description": "Descripción",
   "units.delete": "Borrar esta unidad",
   "units.notEmptyTitle": "Esta no está vacía",
   "units.moveEverythingInto": "Mover todo a",
-  "units.chooseUnit": "Elija una unidad…",
+  "units.chooseUnit": "Elige una unidad…",
   "units.emptyThereAndDelete": "Vaciarla ahí y borrarla",
   "units.leaveItAlone": "Dejarla como está",
   "units.emptyIt": "Vaciarla",
@@ -183,9 +183,9 @@ export const ES: Dictionary = {
   "items.loadingAll": "Cargando todo lo que tiene",
   "items.listFailed": "No se ha podido cargar esa lista",
   "items.everyItem": "Todas las cosas",
-  "items.emptyTitle": "Todavía no ha guardado nada",
+  "items.emptyTitle": "Todavía no has guardado nada",
   "items.emptyExplains":
-    "Abra un lugar y añada la primera; aparecerá aquí y al escanear la etiqueta de ese lugar.",
+    "Abre un lugar y añade la primera; aparecerá aquí y al escanear la etiqueta de ese lugar.",
   "items.loading": "Cargando esta cosa",
   "items.failed": "No se ha podido cargar esa cosa",
   "items.delete": "Borrar esta cosa",
@@ -250,20 +250,20 @@ export const ES: Dictionary = {
   "scan.finding": "Buscando esa caja",
   "scan.opening": "Abriendo esa caja",
   "scan.lookupFailed": "No se ha podido consultar esa etiqueta",
-  "scan.goToInventory": "Ir a su inventario",
+  "scan.goToInventory": "Ir a tu inventario",
 
   // ---------------------------------------------------------------------
   // Finding something again
   // ---------------------------------------------------------------------
   "search.title": "Buscar",
   "search.everywhere": "Buscar en todo",
-  "search.field": "Busque una cosa o una caja",
+  "search.field": "Busca una cosa o una caja",
   "search.hint": "Los acentos no importan. Tienen que coincidir todas las palabras.",
   "search.fieldHint": "Una palabra de su nombre, una etiqueta o la caja donde puede estar.",
   "search.searching": "Buscando",
-  "search.prompt": "Escriba lo que está buscando",
+  "search.prompt": "Escribe lo que estás buscando",
   "search.noneExplains":
-    "Tienen que coincidir todas las palabras, así que cuantas menos escriba, más encontrará.",
+    "Tienen que coincidir todas las palabras, así que cuantas menos escribas, más encontrarás.",
   "search.items": "Cosas",
   "search.units": "Unidades de almacenaje",
   "search.itemsFound": "Cosas encontradas",
@@ -288,7 +288,7 @@ export const ES: Dictionary = {
   // ---------------------------------------------------------------------
   "shell.notFoundTitle": "No hay nada en esta dirección",
   "shell.notFoundBody": "Puede que el enlace sea antiguo o esté mal escrito.",
-  "shell.backToInventory": "Volver a su inventario",
+  "shell.backToInventory": "Volver a tu inventario",
   "shell.connection": "Conexión",
   "shell.breadcrumb": "Ruta de navegación",
 
@@ -376,7 +376,7 @@ export const ES: Dictionary = {
   "nav.you": "Tú",
   "nav.youNamed": "Tú, sesión iniciada como {username}",
   "account.title": "Tú",
-  "account.lede": "Su cuenta y el idioma en el que habla esta aplicación.",
+  "account.lede": "Tu cuenta y el idioma en el que habla esta aplicación.",
   "login.show": "Mostrar",
   "login.hide": "Ocultar",
   "login.withBiometrics": "Iniciar sesión con la huella",

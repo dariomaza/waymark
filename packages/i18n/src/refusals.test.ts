@@ -86,7 +86,7 @@ describe("a move the tree cannot take", () => {
       "Attic cannot go inside itself, or inside anything already inside it. Pick somewhere outside it.",
     );
     expect(es(cyclicMoveMessage(cyclic, "Desván"))).toBe(
-      "Desván no puede ir dentro de sí mismo, ni dentro de nada que ya esté dentro de él. Elija un destino fuera.",
+      "Desván no puede ir dentro de sí mismo, ni dentro de nada que ya esté dentro de él. Elige un destino fuera.",
     );
   });
 
@@ -103,7 +103,7 @@ describe("a root unit with nowhere to empty into", () => {
       "This unit has no parent to empty into. Choose where its contents should go.",
     );
     expect(es(missingTargetMessage(error))).toBe(
-      "Esta unidad no tiene una unidad superior donde vaciarse. Elija dónde deben ir sus contenidos.",
+      "Esta unidad no tiene una unidad superior donde vaciarse. Elige dónde deben ir sus contenidos.",
     );
   });
 });
@@ -139,7 +139,7 @@ describe("an item that already holds all the photos it can", () => {
       "This item already holds 10 photos. Delete one to make room.",
     );
     expect(es(tooManyPhotosMessage(full, 10))).toBe(
-      "Esta cosa ya tiene 10 fotos. Borre una para hacer sitio.",
+      "Esta cosa ya tiene 10 fotos. Borra una para hacer sitio.",
     );
   });
 });
@@ -158,7 +158,7 @@ describe("a sign-in that did not work", () => {
     expect(en(offline)).toBe("The app could not reach Waymark. Check the connection and try again.");
     expect(es(wrong)).toBe("El usuario o la contraseña no son correctos.");
     expect(es(offline)).toBe(
-      "La aplicación no ha podido conectar con Waymark. Compruebe la conexión e inténtelo de nuevo.",
+      "La aplicación no ha podido conectar con Waymark. Comprueba la conexión e inténtalo de nuevo.",
     );
   });
 
@@ -177,7 +177,7 @@ describe("a failure no screen expected", () => {
       "Esto ya no está aquí. Puede que se haya borrado o movido.",
     );
     expect(es(describeFailure(new ApiError(401, "INVALID_SESSION", "gone")))).toBe(
-      "La sesión ha terminado. Inicie sesión de nuevo.",
+      "La sesión ha terminado. Inicia sesión de nuevo.",
     );
   });
 
@@ -197,7 +197,7 @@ describe("a failure no screen expected", () => {
 
   it("falls back to a sentence of its own for anything that is not an ApiError", () => {
     expect(es(describeFailure(new TypeError("undefined is not a function")))).toBe(
-      "Waymark ha tenido un problema al responder. Inténtelo de nuevo en un momento.",
+      "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
     );
   });
 });

@@ -221,12 +221,12 @@ describe("the frame every signed-in screen sits in", () => {
       renderApp({ route: "/" });
 
       const avatar = await screen.findByRole("button", {
-        name: "Su cuenta, sesión iniciada como dario",
+        name: "Tu cuenta, sesión iniciada como dario",
       });
 
       await user.click(avatar);
 
-      expect(await screen.findByRole("dialog", { name: "Su cuenta" })).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: "Tu cuenta" })).toBeVisible();
     });
 
     /**
@@ -245,7 +245,7 @@ describe("the frame every signed-in screen sits in", () => {
 
       expect(await screen.findByRole("link", { name: "Lugares" })).toBeVisible();
 
-      await user.click(screen.getByRole("button", { name: /su cuenta/i }));
+      await user.click(screen.getByRole("button", { name: /tu cuenta/i }));
 
       expect(await screen.findByRole("radio", { name: /español/i })).toBeChecked();
     });
