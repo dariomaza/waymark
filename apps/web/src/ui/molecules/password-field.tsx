@@ -47,7 +47,30 @@ export const PasswordField = ({ id, label, ...rest }: PasswordFieldProps): JSX.E
 
   return (
     <div className="password-field">
-      <TextField id={id} label={label} type={shown ? "text" : "password"} {...rest} />
+      <TextField
+        id={id}
+        label={label}
+        type={shown ? "text" : "password"}
+        /*
+         * Three separate refusals, not one habit copied from the username.
+         *
+         * A masked field is one most mobile keyboards already treat as a
+         * special case, which is why the omission never showed. The reveal
+         * above ends that: with `type="text"` the keyboard sees prose, and
+         * capitalises the first letter of a string where case is the whole
+         * point, offers to correct a password into a dictionary word it can
+         * spell, and underlines it as a mistake.
+         *
+         * `spellCheck` is the one that is not cosmetic. A spell checker is a
+         * service, and more than one browser has sent the contents of a
+         * checked field away to be looked up — which here is the password
+         * leaving the device.
+         */
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+        {...rest}
+      />
       <Button
         tone="quiet"
         className="password-field__reveal"

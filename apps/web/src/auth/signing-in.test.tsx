@@ -232,6 +232,77 @@ describe("looking at what you typed", () => {
 });
 
 /**
+ * # The keyboard must not have opinions about a password
+ *
+ * The username field has said this since it was written. The password field
+ * said only `autoComplete`, and got away with it because a masked field is
+ * one most mobile keyboards already treat as a special case. The reveal above
+ * ends that: the moment the type flips to `text`, the phone's keyboard treats
+ * it as prose and capitalises, corrects and spell-checks it.
+ *
+ * Each of the three is here for its own reason, and the fourth is deliberately
+ * NOT turned off — see the last test.
+ */
+describe("what the keyboard is allowed to do to a password", () => {
+  const passwordField = async (): Promise<HTMLElement> =>
+    await screen.findByLabelText(/password/i);
+
+  /** A capital first letter nobody typed, on a string where case matters. */
+  it("never capitalises the first character", async () => {
+    renderApp({ route: "/" });
+
+    expect(await passwordField()).toHaveAttribute("autocapitalize", "none");
+  });
+
+  /** A password silently rewritten into a dictionary word is unrecoverable. */
+  it("is never autocorrected", async () => {
+    renderApp({ route: "/" });
+
+    expect(await passwordField()).toHaveAttribute("autocorrect", "off");
+  });
+
+  /**
+   * Not cosmetic. A spell checker is a service, and several browsers send the
+   * contents of a checked field away to one — which for this field is the
+   * password leaving the device to be looked up in a dictionary.
+   */
+  it("is never spell-checked", async () => {
+    renderApp({ route: "/" });
+
+    expect(await passwordField()).toHaveAttribute("spellcheck", "false");
+  });
+
+  it("keeps all three once the password is showing, which is when they matter most", async () => {
+    const user = userEvent.setup();
+    renderApp({ route: "/" });
+
+    await user.click(await screen.findByRole("button", { name: /show password/i }));
+
+    const password = await passwordField();
+    expect(password).toHaveAttribute("type", "text");
+    expect(password).toHaveAttribute("autocapitalize", "none");
+    expect(password).toHaveAttribute("autocorrect", "off");
+    expect(password).toHaveAttribute("spellcheck", "false");
+  });
+
+  /**
+   * The fourth attribute is not a fourth "off".
+   *
+   * `autoComplete="current-password"` is what lets the phone's own password
+   * manager fill this form, which is the security control this product
+   * actually relies on (ADR 6 keeps the token opaque and revocable; nothing
+   * here replaces a keychain). Turning it off in the name of tidiness would
+   * make people type a long password by hand on a phone, which is how a long
+   * password becomes a short one.
+   */
+  it("still lets the phone's password manager fill it", async () => {
+    renderApp({ route: "/" });
+
+    expect(await passwordField()).toHaveAttribute("autocomplete", "current-password");
+  });
+});
+
+/**
  * The sign-in screen is the one screen somebody sees before they have any
  * chance to change the language, which makes it the screen where the browser's
  * own preference has to be honoured rather than merely offered.
