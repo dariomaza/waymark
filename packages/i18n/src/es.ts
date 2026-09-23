@@ -136,6 +136,7 @@ export const ES: Dictionary = {
   "login.showPassword": "Mostrar la contraseña",
   "login.submit": "Iniciar sesión",
   "login.submitting": "Iniciando sesión…",
+  "login.or": "o",
 
   // ---------------------------------------------------------------------
   // The inventory, and the units in it

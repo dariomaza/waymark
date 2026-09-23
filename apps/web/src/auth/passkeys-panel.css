@@ -1,0 +1,39 @@
+.passkeys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  /* Its own block inside the account sheet, not another loose row of it. */
+  border-top: 1px solid var(--color-line);
+  padding-top: var(--space-4);
+  width: 100%;
+}
+
+.passkeys__title {
+  font-size: var(--text-m);
+  margin: 0;
+}
+
+.passkeys__explains,
+.passkeys__none {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+}
+
+.passkeys__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.passkeys__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.passkeys__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

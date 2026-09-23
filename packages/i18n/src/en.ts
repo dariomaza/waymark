@@ -170,6 +170,8 @@ export const EN = {
   "login.showPassword": "Show password",
   "login.submit": "Sign in",
   "login.submitting": "Signing in…",
+  /** The rule between the password form and the second door under it. */
+  "login.or": "or",
 
   // ---------------------------------------------------------------------
   // The inventory, and the units in it
