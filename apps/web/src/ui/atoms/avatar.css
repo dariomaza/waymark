@@ -1,0 +1,15 @@
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-size: var(--text-s);
+  font-weight: 650;
+  /* Two letters from a long name must not push the circle into an oval. */
+  flex: none;
+  line-height: 1;
+}

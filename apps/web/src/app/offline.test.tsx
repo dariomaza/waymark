@@ -79,6 +79,9 @@ describe("signing out on a shared phone", () => {
 
     renderApp({ route: "/" });
 
+    // The way out lives behind the avatar now, with everything else that is
+    // about the person rather than about the inventory.
+    await userEvent.click(await screen.findByRole("button", { name: /your account/i }));
     await userEvent.click(await screen.findByRole("button", { name: /sign out/i }));
 
     await waitFor(() => {

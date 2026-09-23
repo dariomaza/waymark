@@ -1,11 +1,10 @@
 import type { JSX } from "react";
 import { Outlet } from "react-router-dom";
 
-import { useSession, useSignOut } from "../auth/use-session.js";
-import { Button } from "../ui/atoms/button.js";
+import { useSession } from "../auth/use-session.js";
 import { Icon } from "../ui/atoms/icon.js";
+import { AccountSheet } from "./account-sheet.js";
 import { useTranslate } from "./language-context.js";
-import { LanguageSwitcher } from "./language-switcher.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { BottomNav } from "../ui/organisms/bottom-nav.js";
 import { OfflineNote } from "./offline-note.js";
@@ -21,7 +20,6 @@ import { ROUTES } from "./routes.js";
  */
 export const AppShell = (): JSX.Element => {
   const session = useSession();
-  const signOut = useSignOut();
   const t = useTranslate();
 
   return (
@@ -29,26 +27,16 @@ export const AppShell = (): JSX.Element => {
       <AppBar
         title="Waymark"
         leading={<Icon name="waypoints" size={24} />}
-        actions={
-          <>
-            <LanguageSwitcher />
-            <Button
-              tone="quiet"
-              onClick={() => {
-                signOut.mutate();
-              }}
-            >
-              {t("shell.signOut")}
-            </Button>
-          </>
-        }
+        /*
+          * `null` cannot happen here: this shell is only ever drawn inside
+          * `RequireSession`, which sends anybody without a session to the
+          * login screen before it renders. It is written out rather than
+          * asserted away because the alternative is an avatar with no letter
+          * in it, which is a circle that means nothing.
+          */
+        actions={session === null ? undefined : <AccountSheet username={session.user.username} />}
       />
       <OfflineNote />
-      {session === null ? null : (
-        <p className="app-shell__who">
-          {t("shell.signedInAs", { username: session.user.username })}
-        </p>
-      )}
       <Outlet />
 
       <BottomNav

@@ -4,14 +4,6 @@
   flex-direction: column;
 }
 
-.app-shell__who {
-  margin: 0;
-  padding: var(--space-1) var(--space-4);
-  font-size: var(--text-s);
-  color: var(--color-ink-muted);
-  background: var(--color-surface-sunken);
-}
-
 /* Every screen shares one gutter, and it is the same on a phone and a laptop. */
 .screen {
   flex: 1;

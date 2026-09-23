@@ -30,6 +30,17 @@ export const EN = {
   "shell.signOut": "Sign out",
 
   /**
+   * The title of the one surface that is about the person rather than about
+   * the boxes, and the avatar's own accessible name.
+   *
+   * The name is in the label rather than printed above every screen. Somebody
+   * who cannot see the letter in the circle still gets told who is signed in,
+   * and nobody pays a row of the inventory for it.
+   */
+  "shell.account": "Your account",
+  "shell.accountOf": "Your account, signed in as {username}",
+
+  /**
    * What the app promises with no signal, and what it refuses to promise.
    * Reads are cached; a write is never queued (ADR 13), so the second half of
    * this sentence is the honest part and it does not get shortened away.

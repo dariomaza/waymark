@@ -141,6 +141,9 @@ describe("a session that is over", () => {
 
     renderApp({ route: "/" });
 
+    await userEvent.click(
+      await screen.findByRole("button", { name: /your account/i }),
+    );
     await userEvent.click(await screen.findByRole("button", { name: /sign out/i }));
 
     expect(
