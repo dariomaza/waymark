@@ -1,10 +1,16 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { anItem, anItemHit, aStorageUnit } from "@waymark/api-client/testing";
+import { anItem, anItemHit, aStorageUnit, withPhoto } from "@waymark/api-client/testing";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { aConfiguredServer, API_URL, A_TOKEN, stubbedApi } from "./testing/api.js";
+import {
+  aConfiguredServer,
+  aMachineToken,
+  API_URL,
+  A_TOKEN,
+  stubbedApi,
+} from "./testing/api.js";
 import { MACHINE_TOKEN_VARIABLE } from "./configuration.js";
 import { createWaymarkMcpServer } from "./server.js";
 import { readConfiguration } from "./configuration.js";
@@ -135,5 +141,87 @@ describe("the MCP server", () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toMatch(/refused/iu);
     expect(textOf(result)).not.toContain(A_TOKEN);
+  });
+});
+
+/**
+ * The two-call dance, driven the way a model would drive it.
+ *
+ * This is the test that matters most in this file: it proves that a tool
+ * marked as a write does not write when it is first called, that the only
+ * thing that makes it write is a value this server issued, and that a
+ * read-only credential is answered in words rather than with a 403.
+ */
+describe("a write, over the protocol", () => {
+  const BOX = aStorageUnit({ id: "box-3", parentId: "garage", name: "Box 3" });
+  const GARAGE = aStorageUnit({ id: "garage", name: "Garage" });
+
+  const inventoryAnswering = (scope: "read" | "read-write", added: unknown[]): void => {
+    apiServer.use(
+      http.get(`${API_URL}/auth/me`, () => HttpResponse.json(aMachineToken(scope))),
+      http.get(`${API_URL}/storage-units/box-3`, () =>
+        HttpResponse.json({
+          unit: withPhoto(BOX),
+          path: [GARAGE, BOX],
+          children: [],
+          items: [],
+        }),
+      ),
+      http.post(`${API_URL}/items`, async ({ request }) => {
+        added.push(await request.json());
+
+        return HttpResponse.json({ item: anItem({ id: "iron" }) }, { status: 201 });
+      }),
+    );
+  };
+
+  it("previews, then adds only when the code it issued comes back", async () => {
+    const added: unknown[] = [];
+    inventoryAnswering("read-write", added);
+    const client = await connected(aConfiguredServer());
+    const adding = { storageUnitId: "box-3", name: "Soldering iron" };
+
+    const preview = await client.callTool({ name: "waymark_add_item", arguments: adding });
+    expect(added).toEqual([]);
+    expect(textOf(preview)).toContain("Garage > Box 3");
+
+    const code = /confirmation: "([^"]+)"/u.exec(textOf(preview))?.[1] ?? "";
+    const done = await client.callTool({
+      name: "waymark_add_item",
+      arguments: { ...adding, confirmation: code },
+    });
+
+    expect(done.isError).toBeFalsy();
+    expect(added).toHaveLength(1);
+  });
+
+  it("refuses the word a guess would reach for, and adds nothing", async () => {
+    const added: unknown[] = [];
+    inventoryAnswering("read-write", added);
+    const client = await connected(aConfiguredServer());
+
+    const result = await client.callTool({
+      name: "waymark_add_item",
+      arguments: { storageUnitId: "box-3", name: "Soldering iron", confirmation: "yes" },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(added).toEqual([]);
+  });
+
+  it("tells a read-only token it cannot write, instead of surfacing a 403", async () => {
+    const added: unknown[] = [];
+    inventoryAnswering("read", added);
+    const client = await connected(aConfiguredServer());
+
+    const result = await client.callTool({
+      name: "waymark_add_item",
+      arguments: { storageUnitId: "box-3", name: "Soldering iron" },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("read-only");
+    expect(textOf(result)).not.toContain("403");
+    expect(added).toEqual([]);
   });
 });

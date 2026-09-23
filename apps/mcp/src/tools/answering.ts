@@ -1,14 +1,44 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
+import type { WriteConfirmations } from "../confirming.js";
+import type { WriteAbility } from "../credential.js";
 import { sentenceFor } from "../failures.js";
 import { withoutSecret } from "../redacting.js";
 import type { McpApiClient } from "../waymark.js";
 
 /**
+ * Everything a tool needs once this server is usable: a way to reach Waymark,
+ * the pending confirmations, and what the credential may do.
+ *
+ * The confirmations are held here, once per process, because a code minted by
+ * one call has to be claimable by the next.
+ */
+export interface Waymark {
+  readonly client: McpApiClient;
+  readonly confirmations: WriteConfirmations;
+  readonly writeAbility: () => Promise<WriteAbility>;
+}
+
+/**
+ * A refusal this server made itself, rather than one the API made.
+ *
+ * A read-only credential and a confirmation that does not match are both
+ * "nothing happened, and here is why" — the same shape as an API refusal, so
+ * they travel the same way and come out with `isError` set. Thrown rather than
+ * returned so that a tool cannot continue past one by forgetting to check.
+ */
+export class ToolRefusal extends Error {
+  constructor(readonly sentence: string) {
+    super(sentence);
+    this.name = "ToolRefusal";
+  }
+}
+
+/**
  * What every tool is given: a way to reach Waymark, or the reason there is
  * not one.
  *
- * `client` is `null` when this server started without usable configuration.
+ * `waymark` is `null` when this server started without usable configuration.
  * The tools are still registered in that case, deliberately: a client that
  * lists no tools tells an assistant that Waymark is not available, and an
  * assistant that is told that will say so and stop. A tool that answers "there
@@ -16,9 +46,9 @@ import type { McpApiClient } from "../waymark.js";
  * person who is at that moment asking where something is.
  */
 export interface ToolContext {
-  readonly client: McpApiClient | null;
+  readonly waymark: Waymark | null;
   readonly baseUrl: string;
-  /** The sentence to answer with while `client` is `null`. */
+  /** The sentence to answer with while `waymark` is `null`. */
   readonly problem: string | null;
   /** Kept only so it can be scrubbed out of anything on its way to a reader. */
   readonly secret: string | null;
@@ -45,15 +75,19 @@ export interface ToolContext {
 export const respond = async (
   context: ToolContext,
   doing: string,
-  run: (client: McpApiClient) => Promise<string>,
+  run: (waymark: Waymark) => Promise<string>,
 ): Promise<CallToolResult> => {
-  if (context.client === null) {
+  if (context.waymark === null) {
     return refusal(context, context.problem ?? "This server is not configured.");
   }
 
   try {
-    return answer(context, await run(context.client));
+    return answer(context, await run(context.waymark));
   } catch (error) {
+    if (error instanceof ToolRefusal) {
+      return refusal(context, error.sentence);
+    }
+
     return refusal(context, sentenceFor(error, { baseUrl: context.baseUrl, doing }));
   }
 };

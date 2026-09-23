@@ -2,7 +2,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 import type { ConfigurationResult } from "./configuration.js";
+import { WriteConfirmations } from "./confirming.js";
+import { writeAbilityOf } from "./credential.js";
+import { addItemToUnit } from "./tools/add-item.js";
 import { respond, type ToolContext } from "./tools/answering.js";
+import { moveItemsToUnit } from "./tools/move-items.js";
 import { listEverything } from "./tools/items.js";
 import { searchInventory } from "./tools/search.js";
 import { storageUnitTree } from "./tools/tree.js";
@@ -42,25 +46,36 @@ export const createWaymarkMcpServer = (configuration: ConfigurationResult): McpS
   registerUnit(server, context);
   registerTree(server, context);
   registerItems(server, context);
+  registerAddItem(server, context);
+  registerMoveItems(server, context);
 
   return server;
 };
 
-const contextOf = (configuration: ConfigurationResult): ToolContext =>
-  configuration.ok
-    ? {
-        client: createMcpApiClient(configuration.configuration),
-        baseUrl: configuration.configuration.baseUrl,
-        problem: null,
-        secret: configuration.configuration.token,
-      }
-    : {
-        client: null,
+const contextOf = (configuration: ConfigurationResult): ToolContext => {
+  if (!configuration.ok) {
+    return {
+        waymark: null,
         // There is no address to name when the configuration is what failed.
         baseUrl: "",
         problem: configuration.problem,
         secret: null,
-      };
+    };
+  }
+
+  const client = createMcpApiClient(configuration.configuration);
+
+  return {
+    waymark: {
+      client,
+      confirmations: new WriteConfirmations(),
+      writeAbility: writeAbilityOf(client),
+    },
+    baseUrl: configuration.configuration.baseUrl,
+    problem: null,
+    secret: configuration.configuration.token,
+  };
+};
 
 const registerSearch = (server: McpServer, context: ToolContext): void => {
   server.registerTool(
@@ -99,7 +114,7 @@ const registerSearch = (server: McpServer, context: ToolContext): void => {
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async (args) =>
-      respond(context, "search the inventory", async (client) =>
+      respond(context, "search the inventory", async ({ client }) =>
         searchInventory(client, args),
       ),
   );
@@ -123,7 +138,7 @@ const registerUnit = (server: McpServer, context: ToolContext): void => {
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async (args) =>
-      respond(context, `look inside storage unit ${args.storageUnitId}`, async (client) =>
+      respond(context, `look inside storage unit ${args.storageUnitId}`, async ({ client }) =>
         inspectStorageUnit(client, args),
       ),
   );
@@ -142,7 +157,10 @@ const registerTree = (server: McpServer, context: ToolContext): void => {
         "items: use waymark_search to find a thing.",
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
-    async () => respond(context, "read the storage unit tree", storageUnitTree),
+    async () =>
+      respond(context, "read the storage unit tree", async ({ client }) =>
+        storageUnitTree(client),
+      ),
   );
 };
 
@@ -159,6 +177,107 @@ const registerItems = (server: McpServer, context: ToolContext): void => {
         "stays cheap however large the inventory gets.",
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
-    async () => respond(context, "list every item", listEverything),
+    async () =>
+      respond(context, "list every item", async ({ client }) => listEverything(client)),
+  );
+};
+
+/**
+ * # The two tools that change something
+ *
+ * Both are registered as writes and both describe themselves as two calls,
+ * because the description is the only thing a model reads before deciding how
+ * to use one. `confirming.ts` holds the argument for why the second call
+ * carries a code rather than a `true`.
+ */
+const CONFIRMATION_FIELD = z
+  .string()
+  .optional()
+  .describe(
+    "Leave this out on the first call. This tool then changes NOTHING and " +
+      "describes what it would do, ending with a code. Show that description " +
+      "to the person, and only if they agree, call again with the same " +
+      "arguments and that code here. The code cannot be guessed, invented or " +
+      "worked out from anything: it is only ever issued by this tool, it " +
+      "belongs to that exact change, it works once, and it lapses. Do not put " +
+      "a word such as 'yes' or 'true' here — it will be refused and nothing " +
+      "will happen.",
+  );
+
+const registerAddItem = (server: McpServer, context: ToolContext): void => {
+  server.registerTool(
+    "waymark_add_item",
+    {
+      title: "Add an item to a storage unit (confirmed)",
+      description:
+        "Record something as being in a storage unit. This is a two-step " +
+        "tool: called without a confirmation it changes nothing and answers " +
+        "with what it WOULD do, in the unit's real name and full path, plus " +
+        "a code. Calling it again with that code is what actually adds the " +
+        "item.",
+      inputSchema: {
+        storageUnitId: z
+          .string()
+          .describe("The storage unit to put it in, by id, as a search or the tree gave it."),
+        name: z.string().min(1).describe("What the thing is called."),
+        description: z.string().optional().describe("Anything worth remembering about it."),
+        quantity: z.number().int().min(1).optional().describe("How many. One if left out."),
+        tags: z
+          .array(z.string())
+          .optional()
+          .describe(
+            "Labels that make it findable later, such as 'cables' or " +
+              "'tools'. Searching a tag finds the item.",
+          ),
+        confirmation: CONFIRMATION_FIELD,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async (args) =>
+      respond(context, `add "${args.name}" to the inventory`, async (waymark) =>
+        addItemToUnit(waymark, args),
+      ),
+  );
+};
+
+const registerMoveItems = (server: McpServer, context: ToolContext): void => {
+  server.registerTool(
+    "waymark_move_items",
+    {
+      title: "Move items into another storage unit (confirmed)",
+      description:
+        "Move one or more items into a different storage unit, all or " +
+        "nothing. This is a two-step tool: called without a confirmation it " +
+        "moves nothing and answers with every item by name, where each one " +
+        "is now, where they would go, and a code. Calling it again with that " +
+        "code is what actually moves them. Moving is the one thing that can " +
+        "make the inventory wrong about where something is, so the " +
+        "description is worth reading out.",
+      inputSchema: {
+        itemIds: z
+          .array(z.string())
+          .min(1)
+          .describe("The items to move, by id, as a search gave them."),
+        targetStorageUnitId: z.string().describe("The storage unit they should end up in."),
+        confirmation: CONFIRMATION_FIELD,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async (args) =>
+      respond(
+        context,
+        `move ${args.itemIds.length} item(s) into storage unit ${args.targetStorageUnitId}`,
+        async (waymark) => moveItemsToUnit(waymark, args),
+      ),
   );
 };

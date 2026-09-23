@@ -2,6 +2,9 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { readConfiguration } from "../configuration.js";
+import { WriteConfirmations } from "../confirming.js";
+import { writeAbilityOf } from "../credential.js";
+import type { Waymark } from "../tools/answering.js";
 import { createWaymarkMcpServer } from "../server.js";
 import { createMcpApiClient, type McpApiClient } from "../waymark.js";
 
@@ -47,3 +50,33 @@ export const aConfiguredServer = (
   },
 ): ReturnType<typeof createWaymarkMcpServer> =>
   createWaymarkMcpServer(readConfiguration(environment));
+
+/**
+ * A machine token as `GET /auth/me` describes one. Its scope is the whole
+ * point: a `read` token must make the write tools refuse in words, before
+ * anything is previewed and long before the API has to say 403.
+ */
+export const aMachineToken = (
+  scope: "read" | "read-write",
+  name = "mcp-server",
+): Record<string, unknown> => ({
+  machineToken: {
+    id: "mt1",
+    name,
+    scope,
+    createdAt: "2026-09-23T09:00:00.000Z",
+    expiresAt: null,
+    lastUsedAt: null,
+  },
+});
+
+/** The whole of what a tool is handed, wired to the stubbed API. */
+export const aWaymark = (): Waymark => {
+  const client = aClient();
+
+  return {
+    client,
+    confirmations: new WriteConfirmations(),
+    writeAbility: writeAbilityOf(client),
+  };
+};
