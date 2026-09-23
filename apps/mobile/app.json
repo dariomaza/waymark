@@ -6,9 +6,14 @@
     "orientation": "portrait",
     "scheme": "waymark",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "backgroundColor": "#101011",
     "android": {
-      "package": "dev.dariomaza.waymark"
+      "package": "dev.dariomaza.waymark",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#101011"
+      }
     },
     "plugins": [
       "expo-system-ui",
@@ -32,6 +37,15 @@
           "photosPermission": "Waymark uses your photos so you can put a picture of a thing on it.",
           "cameraPermission": "Waymark uses the camera to photograph a thing or a box.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#101011"
         }
       ]
     ],

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Waymark's mark: three waypoints on a descending path.
+
+  The SAME drawing as `src/ui/atoms/icon.tsx` and `apps/web/src/ui/atoms/
+  icon.tsx` — the one shape in the product still drawn by hand rather than
+  taken from lucide (ADR 20). In the app it is four stroked elements in a
+  24-unit box:
+
+      <circle cx="5"  cy="5.6"  r="2.4" />
+      <circle cx="12" cy="11.6" r="2.4" />
+      <circle cx="19" cy="18.4" r="2.4" />
+      <path d="M6.8 7.2l3.4 2.8M13.7 13.3l3.6 3.4" />
+
+  with fill="none", stroke-width="1.7", and round caps and joins.
+
+  # Why this file is not those four lines
+
+  Two things stop it, and both are ImageMagick's internal SVG renderer, which
+  is the only one on this machine — there is no librsvg delegate, so `magick`
+  falls back to MSVG.
+
+  MSVG draws fills and silently DROPS every stroke. A stroked source rasterises
+  to an empty square, with no error. So the strokes are written out as the
+  shapes they cover: each ring is the annulus between r 2.4+0.85 and r
+  2.4-0.85, and each segment is the capsule swept by a 1.7-wide pen — the quad
+  of the sweep, plus a circle of r 0.85 at each end, which is what "round cap"
+  means. Half the stroke is 0.85, and every number here is one of the four
+  elements above plus or minus it.
+
+  MSVG also flattens arcs in USER units rather than at the raster resolution,
+  so a 24-unit circle comes out as a visible dodecagon however many pixels it
+  is rendered into. Hence the ×100 coordinate system: the app's `5` is `500`
+  and its `2.4` is `240`, every number reads as the same number with the point
+  moved, and the curves come out round.
+
+  Nothing here is a redrawing. If the mark changes in the app, these are
+  re-derived from it — never traced off a picture of it.
+
+  The bounding box is x 175..2225, y 235..2165, centred on (1200, 1200): the
+  centre of the box, so centring this square centres the mark.
+  `render-icons.sh` beside this file turns it into the PNGs Android asks for.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 2400 2400">
+  <!--
+    The path between the markers, drawn first so a cap that rests against a
+    ring's edge is tucked under the ring rather than laid over it.
+
+    It stops AT each ring's edge instead of running under it, which is what
+    makes this a route between the markers rather than a line with beads
+    threaded on it: (680, 720) is 240 from the first ring's centre.
+  -->
+  <polygon fill="#c8f04a" points="625.97,785.61 965.97,1065.61 1074.03,934.39 734.03,654.39" />
+  <circle fill="#c8f04a" cx="680" cy="720" r="85" />
+  <circle fill="#c8f04a" cx="1020" cy="1000" r="85" />
+
+  <polygon fill="#c8f04a" points="1311.64,1391.80 1671.64,1731.80 1788.36,1608.20 1428.36,1268.20" />
+  <circle fill="#c8f04a" cx="1370" cy="1330" r="85" />
+  <circle fill="#c8f04a" cx="1730" cy="1670" r="85" />
+
+  <!--
+    Rings and not dots, because a filled shape at this weight reads as a bullet
+    point rather than as a marker. `evenodd` is what keeps the hole a HOLE: the
+    adaptive icon's foreground is transparent, and a hole painted in the
+    background colour is a hole that stops matching the day somebody changes
+    that colour.
+  -->
+  <path fill="#c8f04a" fill-rule="evenodd" d="M175 560a325 325 0 1 0 650 0 325 325 0 1 0-650 0ZM345 560a155 155 0 1 0 310 0 155 155 0 1 0-310 0Z" />
+  <path fill="#c8f04a" fill-rule="evenodd" d="M875 1160a325 325 0 1 0 650 0 325 325 0 1 0-650 0ZM1045 1160a155 155 0 1 0 310 0 155 155 0 1 0-310 0Z" />
+  <path fill="#c8f04a" fill-rule="evenodd" d="M1575 1840a325 325 0 1 0 650 0 325 325 0 1 0-650 0ZM1745 1840a155 155 0 1 0 310 0 155 155 0 1 0-310 0Z" />
+</svg>

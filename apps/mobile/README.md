@@ -70,6 +70,26 @@ whether an install is an upgrade — is kept by EAS and incremented on every
 build, because an APK that will not install over the previous one reports only
 "App not installed", with no reason.
 
+## The icon, and how to redraw it
+
+Everything on the launcher and the launch screen comes from one file:
+`assets/waypoints.svg`, the product's mark — three waypoints on a descending
+path, the same drawing as the one in the top bar. `app.json` names PNGs rather
+than that SVG, because Android wants bitmaps and an EAS worker has no
+rasteriser, so the PNGs are **generated and committed**:
+
+```sh
+cd assets && sh render-icons.sh      # needs ImageMagick 7 (`brew install imagemagick`)
+```
+
+Nobody edits `icon.png`, `adaptive-icon.png` or `splash-icon.png` by hand.
+Change the mark, run that, commit all four files. The head of the SVG says why
+its geometry is written as fills rather than as the strokes the app draws, and
+the head of the script says how each size is chosen — in particular why the
+adaptive icon's mark is only half the width of its canvas, which is the
+difference between a logo and a clipped logo on a launcher that masks icons to
+a circle.
+
 ## Checking it without building
 
 ```sh
