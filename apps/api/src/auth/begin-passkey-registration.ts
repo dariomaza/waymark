@@ -103,6 +103,28 @@ export class BeginPasskeyRegistration {
         residentKey: "required",
         requireResidentKey: true,
         userVerification: "required",
+        /*
+         * The credential belongs to the device in front of you.
+         *
+         * Without this the browser answers with the whole menu — this device,
+         * another phone over a QR code, a security key on a keyring — behind a
+         * button the web client only shows when it has already checked there
+         * is a fingerprint reader or a screen lock here. Asking for what the
+         * button promised is what makes pressing it open the sensor instead of
+         * a chooser.
+         *
+         * Note what this still cannot say: `userVerification` above is
+         * satisfied by a fingerprint, a face OR the screen-lock PIN, and which
+         * one appears is the authenticator's decision. WebAuthn has no way to
+         * demand a biometric specifically, so "unlock with your fingerprint"
+         * is a description of the common case and never a guarantee.
+         *
+         * The cost, stated: a hardware key on a keyring can no longer be
+         * registered. Both of the things this inventory is actually reached
+         * from — the phone in a pocket, the laptop on a desk — are platform
+         * authenticators.
+         */
+        authenticatorAttachment: "platform",
       },
     });
 

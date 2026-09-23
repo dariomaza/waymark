@@ -34,6 +34,21 @@ what it forbids:
 - The passkey button appears only when the platform can actually serve one —
   `browserSupportsWebAuthn()` and a platform authenticator that answers yes —
   so nothing on that screen offers something that will fail.
+- Registration asks for `authenticatorAttachment: "platform"`, which is the
+  same thing that button was shown on the strength of. The first version of
+  this feature left it open, and the two halves disagreed: the client checked
+  for a fingerprint reader and the ceremony then let the browser offer the
+  whole menu — this device, another phone over a QR code, a security key on a
+  keyring. Pressing a button that says it will read your fingerprint and
+  getting a device chooser is the feature failing at the only moment anybody
+  sees it. The cost is that a hardware key cannot be registered at all; the
+  phone in a pocket and the laptop on a desk, which is what this inventory is
+  reached from, are both platform authenticators.
+- What none of this can promise is a *biometric*. `userVerification:
+  "required"` is satisfied by a fingerprint, a face or the screen-lock PIN,
+  and which one appears is the authenticator's decision — WebAuthn has no flag
+  for "a sensor, not a PIN". Copy that says "unlock with your fingerprint"
+  describes the common case and must never be read as a guarantee.
 - A cancelled or failed ceremony leaves the person on a working form and does
   not re-prompt. There is no automatic ceremony on load and no conditional
   mediation: the prompt happens because somebody pressed a button.

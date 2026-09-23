@@ -126,6 +126,31 @@ describe("adding a passkey", () => {
     });
 
     /**
+     * The credential is made by THIS device, and by nothing else.
+     *
+     * The web client only offers the button when
+     * `platformAuthenticatorIsAvailable()` says there is a sensor or a screen
+     * lock behind it — so the ceremony has to ask for the same thing the
+     * button was promised on. Left open, a browser answers the request with
+     * the whole menu: this device, another phone over a QR code, a security
+     * key on a keyring. That menu is a fine thing to offer somebody who asked
+     * for it, and a confusing thing to put in front of somebody who pressed a
+     * button that said it would read their fingerprint.
+     *
+     * The cost is named: a hardware key on a keyring cannot be registered at
+     * all. This is a household inventory reached from the phone in your
+     * pocket and the laptop on your desk, and both of those ARE platform
+     * authenticators.
+     */
+    it("asks for a passkey this very device holds, not one from a keyring", async () => {
+      const started = await begin.execute(DARIO);
+
+      expect(started.options.authenticatorSelection?.authenticatorAttachment).toBe(
+        "platform",
+      );
+    });
+
+    /**
      * Asking for attestation would collect the make and model of somebody's
      * device, and there is nothing here to do with the answer: a household
      * inventory has no authenticator allowlist and will not grow one.
