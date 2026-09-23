@@ -21,6 +21,7 @@ import { useSessionState, useSignOut } from "../auth/use-session.js";
 import { AllItemsScreen } from "../items/all-items-screen.js";
 import { ItemScreen } from "../items/item-screen.js";
 import { expoPhotoSource } from "../photos/expo-photo-source.js";
+import { PhotoProcessingScreen } from "../photos/processing-screen.js";
 import { PhotoSourceProvider } from "../photos/photo-source-context.js";
 import type { PhotoSource } from "../photos/photo-source.js";
 import type { CodeScanner } from "../scanning/code-scanner.js";
@@ -267,6 +268,11 @@ const ConfirmedSession = ({
         <Stack.Screen name="Label" component={LabelScreen} />
         {/* The address printed on every box. See the screen. */}
         <Stack.Screen name="ScannedLabel" component={ScannedLabelScreen} />
+        {/*
+          * Reached from the note under a photo whose background removal
+          * failed, which is the moment the question it answers gets asked.
+          */}
+        <Stack.Screen name="Processing" component={PhotoProcessingScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
