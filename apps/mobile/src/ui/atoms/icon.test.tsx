@@ -87,6 +87,26 @@ describe("the icon set both clients draw", () => {
   });
 
   /**
+   * # Every name draws something
+   *
+   * The map is twenty-two entries pointing at another package's exports, and
+   * the failure mode it invites is an entry that resolves to nothing: a
+   * renamed export, a bad import, an alias that moved. Every other assertion
+   * in this file passes happily for an empty drawing — right box, right
+   * weight, right name, nothing inside it. The person who finds out is the
+   * owner, looking at a gap where a button used to have a picture.
+   */
+  it("draws at least one shape for every name", async () => {
+    for (const name of ICON_NAMES) {
+      const drawn = (await render(<Icon name={name} />)).toJSON() as {
+        readonly children?: readonly unknown[] | null;
+      } | null;
+
+      expect(drawn?.children ?? []).not.toHaveLength(0);
+    }
+  });
+
+  /**
    * The mark is OURS, and stays ours.
    *
    * lucide ships a `waypoints` of its own. Taking it would have made the thing

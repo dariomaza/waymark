@@ -85,6 +85,25 @@ describe("the icon set both clients draw", () => {
     expect(container.querySelectorAll("svg circle")).toHaveLength(3);
   });
 
+  /**
+   * # Every name draws something
+   *
+   * The map is twenty-one entries pointing at another package's exports, and
+   * the failure mode it invites is an entry that resolves to nothing: a
+   * renamed export, a bad import, an alias that moved. Every other assertion
+   * in this file passes happily for an empty `<svg>` — right box, right
+   * weight, right name, nothing inside it — and so does every screen that
+   * uses it. The person who finds out is the owner, looking at a gap where a
+   * button used to have a picture.
+   */
+  it("draws at least one shape for every name", () => {
+    for (const name of ICON_NAMES) {
+      const { container } = render(<Icon name={name} />);
+
+      expect(container.querySelectorAll("svg > *").length).toBeGreaterThan(0);
+    }
+  });
+
   /** A caller asking for 20 gets 20: the set is used at three sizes. */
   it("draws at the size it is asked for", () => {
     const { container } = render(<Icon name="copy" size={20} />);
