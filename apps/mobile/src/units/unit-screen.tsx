@@ -65,7 +65,18 @@ export const UnitScreen = (): JSX.Element => {
           onOpenItem={(itemId) => {
             navigation.navigate("Item", { id: itemId });
           }}
-          actions={<UnitActions unit={unit.data.unit} />}
+          actions={
+            <UnitActions
+              unit={unit.data.unit}
+              onSearchInside={() => {
+                // The search tab, already narrowed to this subtree (ADR 11).
+                navigation.navigate("Tabs", {
+                  screen: "Search",
+                  params: { within: unit.data.unit.id },
+                });
+              }}
+            />
+          }
           menu={
             <UnitMenu
               unit={unit.data.unit}

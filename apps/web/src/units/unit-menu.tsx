@@ -3,17 +3,12 @@ import { useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { OverflowMenu, type OverflowAction } from "../ui/molecules/overflow-menu.js";
+import { CreateUnitDialog } from "./create-unit-dialog.js";
 import { DeleteUnitDialog } from "./delete-unit-dialog.js";
 import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
-import {
-  ROUTES,
-  labelsWithinPath,
-  findWithinPath,
-  unitLabelPath,
-  unitPath,
-} from "../app/routes.js";
+import { ROUTES, labelsWithinPath, unitLabelPath, unitPath } from "../app/routes.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface UnitMenuProps {
@@ -22,7 +17,7 @@ export interface UnitMenuProps {
   readonly path: readonly StorageUnitView[];
 }
 
-type OpenDialog = "edit" | "move" | "empty" | "delete" | null;
+type OpenDialog = "add" | "edit" | "move" | "empty" | "delete" | null;
 
 /**
  * # Everything that can be done TO a storage unit
@@ -36,16 +31,25 @@ type OpenDialog = "edit" | "move" | "empty" | "delete" | null;
  *
  * Seven lines, in the order somebody reaches for them:
  *
- * 1. **Search inside**, **Show the label**, **Label sheet** — three ways of
- *    looking at what is here, and none of them changes anything.
- * 2. **Edit** and **Move** — two acts, not one "manage", because editing
+ * 1. **Add a space inside** — the one line here that makes something, and the
+ *    one that used to stand in the row outside. It was demoted because a shelf
+ *    holds things a hundred times for every time it grows a drawer, and the
+ *    owner wanted the row to say searching instead; it is first IN here
+ *    because of that same count — of everything left behind this control, it
+ *    is what gets reached for most.
+ * 2. **Show the label**, **Label sheet** — two ways of looking at what is
+ *    here, and neither of them changes anything.
+ * 3. **Edit** and **Move** — two acts, not one "manage", because editing
  *    changes what the unit SAYS about itself and is a `PATCH` that cannot
  *    carry a parent, while moving changes where it IS and is guarded by the
  *    subtree invariant (ADR 2, ADR 14). One control for both would hide the
  *    second behind the first.
- * 3. **Empty** and **Delete** — the two that take something away, last, behind
+ * 4. **Empty** and **Delete** — the two that take something away, last, behind
  *    a rule, as far from the screen's primary action as this menu goes. A
  *    thumb reaching for "Add an item" cannot land on either.
+ *
+ * Searching is NOT here any more: it is the screen's secondary action now, in
+ * the row, where the owner asked for it.
  *
  * A container: it owns which sheet is open and nothing else. Each sheet owns
  * its own request and its own refusal, which is why the not-empty conflict can
@@ -64,7 +68,18 @@ export const UnitMenu = ({ unit, path }: UnitMenuProps): JSX.Element => {
   };
 
   const actions: readonly OverflowAction[] = [
-    { label: t("units.searchInside"), icon: "search", to: findWithinPath(unit.id) },
+    /*
+      A box for a box, the same shape the row used to carry it with: what is
+      about to be added is a container and not a thing, and that distinction is
+      the only one separating this line from "Add an item" outside.
+    */
+    {
+      label: t("units.addInside"),
+      icon: "box",
+      onSelect: () => {
+        setOpen("add");
+      },
+    },
     { label: t("units.showLabel"), icon: "tag", to: unitLabelPath(unit.id) },
     /*
       One label and a sheet of them are two different jobs: sticking a label on
@@ -117,6 +132,8 @@ export const UnitMenu = ({ unit, path }: UnitMenuProps): JSX.Element => {
   return (
     <>
       <OverflowMenu label={t("action.more", { name: unit.name })} actions={actions} />
+
+      {open === "add" ? <CreateUnitDialog parentId={unit.id} onClose={close} /> : null}
 
       {open === "edit" ? <EditUnitDialog unit={unit} onClose={close} /> : null}
 

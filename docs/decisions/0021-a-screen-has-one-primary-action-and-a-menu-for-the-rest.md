@@ -111,8 +111,8 @@ Concretely, in both clients:
 | Action | Before | After |
 | --- | --- | --- |
 | `units.addItem` | peer, `primary` | **primary**, in the row |
-| `units.addInside` | peer | **secondary**, in the row |
-| `units.searchInside` | peer (link) | unit's menu |
+| `units.addInside` | peer | unit's menu (see the amendment below) |
+| `units.searchInside` | peer (link) | **secondary**, in the row |
 | `units.showLabel` | peer (link) | unit's menu |
 | `label.sheet` | peer (link) | unit's menu |
 | `action.edit` | peer | unit's menu |
@@ -133,6 +133,37 @@ that also starts it is unchanged.
 The home screen needed no change. It already had exactly one primary and one
 secondary, which is some evidence that the rule was latent in the codebase and
 only the detail screens had drifted.
+
+### Amended: which second control a box gets
+
+The rule above survives this unchanged — one primary, at most one secondary —
+but the first pair chosen under it was wrong, and the owner said so after a
+week with it on his phone:
+
+> dentro de un espacio, quiero que las acciones principales sean buscar y
+> añadir un objeto
+
+He is right, and the original reasoning contains its own refutation. "A shelf
+holds things a hundred times for every time it grows a drawer" is the argument
+that made adding an ITEM the primary; applied once more it says that the
+second-commonest reason to open a box's screen is not growing a drawer either.
+Somebody who has walked to a shelf and opened it is putting something in it or
+looking for something in it. So `units.searchInside` is the secondary and
+`units.addInside` is the first line of the menu.
+
+This is a swap and not a widening: the row still holds two controls, and the
+count that made nine unusable is unchanged. It is worth naming as an amendment
+rather than a silent edit, because it shows what this rule can and cannot do —
+it decides HOW MANY controls a screen shows and says nothing about WHICH, and
+only the person using the app knows that second part.
+
+The phone answers the same sentence by GAINING something. `apps/mobile` had no
+scoped search anywhere: its search tab has read a `within` parameter all along
+and nothing in the app ever passed one, so the browser's version was behind a
+menu and the phone's existed only in the navigator's types. The two clients now
+offer the same pair — a URL in one and a navigation in the other, which is each
+platform's own business. **Intent is what the two clients owe each other;
+mechanism is not.**
 
 ### Why the overflow opens a sheet, and not an ARIA `menu`
 
