@@ -5,10 +5,19 @@ import { ICON_NAMES, Icon } from "./icon.js";
 /**
  * The drawings themselves are not asserted path by path — a test that repeats
  * the `d` attribute only proves the file was copied. What is asserted is what
- * makes nine separate drawings read as ONE set, and what a screen reader is
- * told about a picture.
+ * makes separate drawings read as ONE set, and what a screen reader is told
+ * about a picture.
  */
 describe("the icon set both clients draw", () => {
+  /**
+   * The list is pinned rather than counted, because the failure this guards
+   * against is a name quietly disappearing while the total stays the same.
+   *
+   * It is the same list, in the same order, that the web client draws in
+   * `apps/web/src/ui/atoms/icon.tsx` — plus `eyeOff`, which exists here
+   * because THIS reveal flips its icon and the browser's deliberately does
+   * not.
+   */
   it("carries every symbol this product has, and no library", () => {
     expect([...ICON_NAMES]).toEqual([
       "waypoints",
@@ -21,7 +30,19 @@ describe("the icon set both clients draw", () => {
       "box",
       "tag",
       "camera",
+      "image",
       "plus",
+      "check",
+      "close",
+      "copy",
+      "pencil",
+      "trash",
+      "move",
+      "rotate",
+      "chevronRight",
+      "key",
+      "signOut",
+      "globe",
     ]);
   });
 
