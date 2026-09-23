@@ -472,14 +472,47 @@ describe("what a ceremony the device refused becomes", () => {
     expect(en(said)).toContain("SecurityError");
   });
 
+  /**
+   * Met in the wild, on an OPPO Find X9, registering a first passkey from the
+   * installed PWA. Chromium raises this one when it could not talk to
+   * Android's credential manager at all — the passkey provider, not the
+   * fingerprint. The device is fine and so is Waymark, and the person needs to
+   * go and look at a setting no sentence about "your device" would send them
+   * to.
+   */
+  it("sends somebody to the password manager when the credential store could not be reached", () => {
+    const said = passkeyCeremonyFailureMessage(failure("NotReadableError"));
+
+    expect(en(said)).toMatch(/password manager/iu);
+    expect(es(said)).toMatch(/gestor de contraseñas/iu);
+    expect(en(said)).toContain("NotReadableError");
+  });
+
+  /**
+   * On the KEY, and not on the rendered sentence.
+   *
+   * The rendered version of this test could not fail. Every sentence here
+   * carries `{reason}` — the browser's own word for the failure — so two
+   * different names render differently even when they came from the SAME
+   * template, and a `Set` of the renderings is five items whatever the
+   * `switch` does. Collapsing all four named branches into the default left
+   * it green while the four tests above it went red, which is the whole
+   * evidence anybody needs about which of them was doing work.
+   *
+   * The key is the thing being chosen, so the key is the thing to assert.
+   */
   it("gives each recognised name a sentence of its own", () => {
-    const sentences = new Set(
-      ["UnknownError", "InvalidStateError", "NotSupportedError", "SecurityError"].map(
-        (reason) => en(passkeyCeremonyFailureMessage(failure(reason))),
-      ),
+    const keys = new Set(
+      [
+        "UnknownError",
+        "InvalidStateError",
+        "NotSupportedError",
+        "SecurityError",
+        "NotReadableError",
+      ].map((reason) => passkeyCeremonyFailureMessage(failure(reason)).key),
     );
 
-    expect(sentences.size).toBe(4);
+    expect(keys.size).toBe(5);
   });
 
   it("speaks to the owner as tú, never as usted", () => {

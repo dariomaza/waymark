@@ -263,6 +263,14 @@ export const passkeyCeremonyFailureMessage = (
       // rather than a device's, and the one worth saying out loud, because
       // ADR 19 derives both from `WAYMARK_PUBLIC_BASE_URL`.
       return message("passkeys.deviceRefusedTheAddress", { reason });
+    case "NotReadableError":
+      // Chromium raises this when it could not talk to the platform's
+      // credential store at all — Android's credential manager, and whichever
+      // password manager is set as the provider behind it. Nothing was asked
+      // of the fingerprint, so a sentence about the device would send somebody
+      // to look at their thumb. The setting is the thing to look at, and it is
+      // somewhere no error text can reach, so the sentence has to name it.
+      return message("passkeys.deviceCouldNotReachItsStore", { reason });
     default:
       return message("passkeys.deviceFailed", { reason });
   }

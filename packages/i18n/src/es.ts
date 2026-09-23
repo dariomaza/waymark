@@ -539,5 +539,7 @@ export const ES: Dictionary = {
     "Este dispositivo no puede crear el tipo de passkey que pide Waymark. No ha cambiado nada y tu contraseña sigue funcionando. Tu dispositivo ha dicho: {reason}.",
   "passkeys.deviceRefusedTheAddress":
     "Tu dispositivo ha rechazado la dirección desde la que se sirve esta aplicación, así que no ha querido usar una passkey aquí. No ha cambiado nada y tu contraseña sigue funcionando. Tu dispositivo ha dicho: {reason}.",
+  "passkeys.deviceCouldNotReachItsStore":
+    "Tu teléfono no ha podido acceder al sitio donde guarda las passkeys, así que no se ha creado ninguna. Revisa qué gestor de contraseñas tienes configurado para guardarlas y vuelve a intentarlo. No ha cambiado nada y tu contraseña sigue funcionando. Tu dispositivo ha dicho: {reason}.",
 
 };

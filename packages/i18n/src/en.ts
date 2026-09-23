@@ -724,5 +724,15 @@ export const EN = {
     "This device cannot make the kind of passkey Waymark asks for. Nothing changed, and your password still works. Your device said: {reason}.",
   "passkeys.deviceRefusedTheAddress":
     "Your device refused the address this app is served from, so it would not use a passkey here. Nothing changed, and your password still works. Your device said: {reason}.",
+  /**
+   * The one sentence here that names a setting.
+   *
+   * This failure is the phone's credential store being unreachable, not the
+   * fingerprint refusing — so "your device could not" would send somebody to
+   * press their thumb harder. Where the passkey would have been KEPT is the
+   * thing to go and look at, and nothing in this app can look at it for them.
+   */
+  "passkeys.deviceCouldNotReachItsStore":
+    "Your phone could not reach the place it keeps passkeys, so nothing was created. Check which password manager is set to hold your passkeys, then try again. Nothing changed, and your password still works. Your device said: {reason}.",
 
 } as const;
