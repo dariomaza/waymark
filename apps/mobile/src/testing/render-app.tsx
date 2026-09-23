@@ -4,7 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { NavigationState, PartialState } from "@react-navigation/native";
 
 import { App, createQueryClient } from "../app/app.js";
-import { inMemorySecureStorage } from "../auth/secure-storage.js";
+import { inMemorySecureStorage, type SecureStorage } from "../auth/secure-storage.js";
 import type { Session } from "../auth/session-store.js";
 import type { CodeScanner } from "../scanning/code-scanner.js";
 import type { PhotoSource } from "../photos/photo-source.js";
@@ -45,6 +45,17 @@ export interface RenderAppOptions {
    * deliberately.
    */
   readonly language?: Language;
+  /**
+   * The keystore itself, for the tests that are ABOUT the keystore.
+   *
+   * Everything else hands over a session and a language and lets this build
+   * one. A test about sealing, unlocking or a cancelled prompt needs to stand
+   * the phone up itself — what it holds sealed, whether it has a biometric at
+   * all, and what the person at the prompt says — and then watch what was
+   * asked of it. Passing one in means seeding the language too, because this
+   * is then not the thing doing the seeding.
+   */
+  readonly storage?: SecureStorage;
 }
 
 const SESSION_KEY = "waymark.session";
@@ -92,6 +103,7 @@ export const renderApp = async ({
   scanner,
   photos,
   language,
+  storage,
 }: RenderAppOptions = {}): Promise<RenderResult> => {
   const state: PartialState<NavigationState> | undefined =
     screen === undefined
@@ -112,10 +124,13 @@ export const renderApp = async ({
     <App
       baseUrl={API_URL}
       queries={queries}
-      storage={inMemorySecureStorage({
-        ...(session === undefined ? {} : { [SESSION_KEY]: JSON.stringify(session) }),
-        [LANGUAGE_KEY]: language ?? "en",
-      })}
+      storage={
+        storage ??
+        inMemorySecureStorage({
+          ...(session === undefined ? {} : { [SESSION_KEY]: JSON.stringify(session) }),
+          [LANGUAGE_KEY]: language ?? "en",
+        })
+      }
       {...(state === undefined ? {} : { initialState: state })}
       scanner={scanner ?? fakeScanner()}
       photos={photos ?? fakePhotoSource()}

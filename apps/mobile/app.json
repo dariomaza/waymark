@@ -31,6 +31,13 @@
     "plugins": [
       "expo-system-ui",
       [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false,
+          "configureAndroidBackup": true
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "Waymark uses the camera to read the QR code on a storage unit's label.",

@@ -134,6 +134,10 @@ export const ES: Dictionary = {
   "login.show": "Mostrar",
   "login.hide": "Ocultar",
 
+  "login.withBiometrics": "Iniciar sesión con la huella",
+  "login.unlockPrompt": "Desbloquee su sesión de Waymark",
+  "login.sealPrompt": "Confirme que es usted para que este teléfono recuerde su sesión de Waymark",
+
   // ---------------------------------------------------------------------
   // The inventory, and the units in it
   // ---------------------------------------------------------------------

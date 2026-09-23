@@ -1,5 +1,5 @@
 import type { Credentials } from "@waymark/api-client";
-import { useState, type JSX } from "react";
+import { useState, type JSX, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
@@ -15,6 +15,16 @@ export interface LoginFormProps {
   readonly busy: boolean;
   /** Already turned into a sentence; this component decides nothing. */
   readonly failure: string | null;
+  /**
+   * The other way in, when there is one.
+   *
+   * Handed in rather than decided here, because whether a fingerprint can open
+   * anything on this phone is a fact about the keystore and this component
+   * knows what a session is as little as it knows what a client is. It sits
+   * BELOW the password, which is the order of the two doors: the one that
+   * always works is the one that is always first.
+   */
+  readonly biometrics?: ReactNode;
 }
 
 /**
@@ -22,7 +32,12 @@ export interface LoginFormProps {
  * and that is the whole of it: no client, no navigation, no idea what a
  * session is.
  */
-export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Element => {
+export const LoginForm = ({
+  onSubmit,
+  busy,
+  failure,
+  biometrics,
+}: LoginFormProps): JSX.Element => {
   const t = useTranslate();
 
   const [username, setUsername] = useState("");
@@ -62,6 +77,8 @@ export const LoginForm = ({ onSubmit, busy, failure }: LoginFormProps): JSX.Elem
       <Button tone="primary" block disabled={busy} onPress={submit} label={t("login.submit")}>
         {busy ? t("login.submitting") : t("login.submit")}
       </Button>
+
+      {biometrics}
     </View>
   );
 };

@@ -157,6 +157,21 @@ export const EN = {
   "login.show": "Show",
   "login.hide": "Hide",
 
+  /**
+   * The second door, and it says what it DOES rather than what it is: "Use
+   * biometrics" is a category, and the thing somebody is about to put on the
+   * sensor is a finger.
+   */
+  "login.withBiometrics": "Sign in with a fingerprint",
+  /**
+   * Sentences the operating system draws, not this app — so they have to make
+   * sense inside a system dialog with a fingerprint icon above them, and they
+   * have to name the app, because that dialog belongs to Android and not to
+   * the screen behind it.
+   */
+  "login.unlockPrompt": "Unlock your Waymark session",
+  "login.sealPrompt": "Confirm it is you, so this phone can remember your Waymark session",
+
   // ---------------------------------------------------------------------
   // The inventory, and the units in it
   // ---------------------------------------------------------------------

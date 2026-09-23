@@ -20,19 +20,62 @@ export type Session = SessionView;
  */
 export type SessionState =
   | { readonly status: "unknown" }
-  | { readonly status: "known"; readonly session: Session | null };
+  | {
+      readonly status: "known";
+      readonly session: Session | null;
+      /**
+       * Whether a fingerprint could open a session this phone is already
+       * holding.
+       *
+       * It is part of the SNAPSHOT rather than a question the login screen
+       * asks, because the answer comes from the same one startup read as the
+       * session itself. A screen that asked separately would be a second trip
+       * to the keystore for a fact the first trip already had.
+       */
+      readonly sealed: boolean;
+    };
 
 export interface SessionStore {
   /** The snapshot React renders from. Synchronous on purpose. */
   read(): SessionState;
   /** The token for the next request, or `null`. Never a stale one. */
   token(): string | null;
-  save(session: Session): void;
+  /**
+   * The prompt is handed IN because it is copy, and copy belongs to the
+   * language on screen rather than to a store built before the language was
+   * read. On Android the sealing write raises the system prompt itself.
+   */
+  save(session: Session, sealPrompt: string): void;
   clear(): void;
+  /**
+   * Puts the system's prompt on screen and, if somebody proves who they are,
+   * settles the session it was holding.
+   *
+   * Rejects when the prompt is dismissed. Resolves `null` when the keystore
+   * has nothing to give — which is what a key invalidated by a changed
+   * fingerprint looks like — and takes the note away with it, so a door that
+   * can never open again stops being offered.
+   */
+  unlockSealed(prompt: string): Promise<Session | null>;
   subscribe(listener: () => void): () => void;
 }
 
-const STORAGE_KEY = "waymark.session";
+export const SESSION_KEY = "waymark.session";
+
+/**
+ * The note beside the sealed token: when the session it holds stops being one.
+ *
+ * Deliberately NOT secret and deliberately NOT sealed. Its whole job is to be
+ * readable without proving anything, so the login screen can decide whether to
+ * offer a fingerprint without spending one to find out. A screen that had to
+ * read the token to learn there was a token would be a prompt in front of the
+ * app on every cold start — the gate this feature is not.
+ *
+ * An expiry is not a credential. It says a session existed and until when,
+ * which is what the lock screen of every phone already tells anybody holding
+ * it.
+ */
+export const SEALED_UNTIL_KEY = "waymark.session.sealed";
 
 export const createSessionStore = (storage: SecureStorage): SessionStore => {
   const listeners = new Set<() => void>();
@@ -55,26 +98,42 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
   const isLive = (session: Session): boolean =>
     Date.parse(session.expiresAt) > Date.now();
 
-  const settle = (session: Session | null): void => {
+  const settle = (session: Session | null, sealed = false): void => {
     // An expiry that has already passed is not a session. A phone left in a
     // pocket for a month opens on the login screen rather than on an inventory
     // it can no longer load.
     state = {
       status: "known",
       session: session !== null && isLive(session) ? session : null,
+      sealed,
     };
     announce();
   };
 
   /**
-   * One read of the keystore, at startup. A failure is not a crash: a phone
-   * that will not give the token back is a phone that has to sign in again,
-   * which is a screen rather than a stack trace.
+   * # One read of the keystore, at startup, that asks nothing of anybody
+   *
+   * Two keys, neither of them sealed: the token as it is stored on a phone
+   * that cannot seal one, and the note that says a sealed one is waiting. The
+   * sealed token itself is deliberately not touched here — reading it is what
+   * raises the prompt, and a prompt nobody asked for, in front of the whole
+   * app, on every cold start, is the thing this design exists to avoid.
+   *
+   * A failure is not a crash: a phone that will not give the token back is a
+   * phone that has to sign in again, which is a screen rather than a stack
+   * trace.
    */
-  void storage
-    .read(STORAGE_KEY)
-    .then((raw) => {
-      settle(parseSession(raw));
+  void Promise.all([
+    storage.read(SESSION_KEY).catch(() => null),
+    storage.read(SEALED_UNTIL_KEY).catch(() => null),
+  ])
+    .then(([raw, sealedUntil]) => {
+      settle(
+        parseSession(raw),
+        // A door is only worth drawing when it has something behind it, that
+        // something is still a session, and this phone can actually open it.
+        sealedUntil !== null && Date.parse(sealedUntil) > Date.now() && storage.canUnlock(),
+      );
     })
     .catch(() => {
       settle(null);
@@ -99,20 +158,84 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
       return isLive(state.session) ? state.session.token : null;
     },
 
-    save(session) {
-      settle(session);
-      // The write is not awaited: the app is already signed in, and a keystore
-      // that is slow must not hold up the screen behind it.
-      void storage.write(STORAGE_KEY, JSON.stringify(session)).catch(() => {
-        // Memory already holds it; the session lasts as long as the app does.
-      });
+    /**
+     * # Sealed where that means something, in the clear where it does not
+     *
+     * A phone with an enrolled biometric gets the strong version: the token
+     * goes behind a Keystore key the OS will not decrypt without a
+     * fingerprint, and the note beside it says a sealed session is there.
+     *
+     * A phone WITHOUT one gets exactly what it had before this feature
+     * existed. Sealing there would write a value nothing on that device can
+     * ever decrypt — which is not security, it is throwing the session away
+     * and calling it strong — and making those people type a password on every
+     * launch would be charging them for something the hardware cannot give.
+     *
+     * Neither write is awaited, for the reason it never was: the app is
+     * already signed in, and a keystore that is slow must not hold up the
+     * screen behind it. On Android the sealed write raises its own prompt, so
+     * a cancelled one must cost the session it just created nothing — memory
+     * holds it, and the phone simply will not offer the door next time.
+     */
+    save(session, sealPrompt) {
+      const sealing = storage.canUnlock();
+      settle(session, sealing);
+
+      if (!sealing) {
+        void storage.write(SESSION_KEY, JSON.stringify(session)).catch(() => {
+          // Memory already holds it; the session lasts as long as the app does.
+        });
+
+        return;
+      }
+
+      void storage
+        .seal(SESSION_KEY, JSON.stringify(session), sealPrompt)
+        .then(async () => {
+          await storage.write(SEALED_UNTIL_KEY, session.expiresAt);
+        })
+        .catch(() => {
+          // Nothing was sealed, so nothing must claim one is waiting.
+          void storage.remove(SEALED_UNTIL_KEY).catch(() => {
+            // Already absent, or a keystore that will not answer. Either way
+            // the note is not to be trusted and the door is not offered.
+          });
+        });
     },
 
     clear() {
       settle(null);
-      void storage.remove(STORAGE_KEY).catch(() => {
+      // Both, and neither needs a fingerprint: deleting a sealed entry removes
+      // the stored bytes rather than decrypting them, so signing out works
+      // with a thumb that will not read.
+      void Promise.all([
+        storage.remove(SESSION_KEY),
+        storage.remove(SEALED_UNTIL_KEY),
+      ]).catch(() => {
         // Nothing to do: the token is gone from this process either way.
       });
+    },
+
+    async unlockSealed(prompt) {
+      const session = parseSession(await storage.unlock(SESSION_KEY, prompt));
+
+      if (session === null) {
+        // The keystore has nothing behind that door, which on Android is also
+        // what a key invalidated by a changed fingerprint looks like. The note
+        // is now a lie, so it goes.
+        settle(null);
+        await storage.remove(SEALED_UNTIL_KEY).catch(() => {
+          // The door is already withdrawn in this process.
+        });
+
+        return null;
+      }
+
+      // Settled, not saved: the keystore already holds this exact session, and
+      // writing it back would raise a second prompt for nothing.
+      settle(session, true);
+
+      return state.status === "known" ? state.session : null;
     },
 
     subscribe(listener) {
