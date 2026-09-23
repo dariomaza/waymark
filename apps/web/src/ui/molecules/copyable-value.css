@@ -1,0 +1,76 @@
+.copyable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-self: stretch;
+}
+
+/*
+ * The value takes the room and the control takes 48px of it. `align-items:
+ * flex-start` keeps the button at the TOP of the block rather than centred on
+ * it: a secret wraps onto four lines on a phone, and a control centred on
+ * four lines is a control somebody has to go looking for.
+ */
+.copyable__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+/*
+ * Monospaced and in a sunken box, because everything this molecule holds is a
+ * string to be TRANSCRIBED rather than prose to be read: an address, a
+ * credential, two environment assignments.
+ *
+ * It WRAPS rather than scrolling sideways. A forty-character address with its
+ * last eight characters off the right-hand edge of a phone is one somebody
+ * retypes wrongly, and `user-select: all` means a long press takes all of it
+ * rather than one word — which is the way out when the clipboard refuses.
+ */
+.copyable__value {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--text-s);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-s);
+  padding: var(--space-2);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/*
+ * 48 by 48, and not a pixel less. This app is used one-handed, standing up,
+ * holding a box in the other hand — the same floor every button in the app
+ * declares, kept here rather than inherited because this is not a `.button`.
+ *
+ * `flex-shrink: 0` because a long value must never be allowed to squeeze the
+ * target: the thing that gives way is the text, which wraps, not the control.
+ */
+.copyable__copy {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.copyable__copy:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+
+.copyable__failed {
+  margin: 0;
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+}

@@ -23,16 +23,13 @@
   color: var(--color-ink-muted);
 }
 
-/* It wraps: a tunnel hostname is long and a phone is narrow. */
-.api-address__value {
-  display: block;
+/*
+ * The address and its copy control are one block now, and that block draws
+ * its own monospaced value — see `copyable-value.css`. What is left here is
+ * only the one thing this panel knows that the molecule does not: it has to
+ * take the full width, or a short address leaves the control floating in the
+ * middle of the sheet.
+ */
+.api-address > .copyable {
   width: 100%;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: var(--text-s);
-  background: var(--color-surface-sunken);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-s);
-  padding: var(--space-2);
-  overflow-wrap: anywhere;
-  user-select: all;
 }
