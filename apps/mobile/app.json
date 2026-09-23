@@ -34,6 +34,12 @@
           "microphonePermission": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c134d4b8-68bf-4ffe-8d81-c31417dd5580"
+      }
+    },
+    "owner": "dariomaza"
   }
 }
