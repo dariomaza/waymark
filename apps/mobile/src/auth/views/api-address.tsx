@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { CopyButton } from "../../ui/molecules/copy-button.js";
+import { CopyableValue } from "../../ui/molecules/copyable-value.js";
 import { colors, radius, space, text } from "../../ui/styles/tokens.js";
 import { useTranslate } from "../../app/language-context.js";
 
@@ -42,25 +42,18 @@ export const ApiAddress = ({ endpoint }: ApiAddressProps): JSX.Element => {
     <View style={styles.wrap}>
       <Text style={styles.title}>{t("tokens.addressTitle")}</Text>
       {/*
-        It WRAPS rather than truncating. An address with its last eight
-        characters off the right-hand edge of a phone is an address somebody
-        retypes wrongly by hand.
+        The control travels WITH the address rather than sitting under the
+        note about it. It used to be a full-width button below both, wider
+        than the forty characters it was about.
       */}
-      <Text
-        accessibilityLabel={t("tokens.addressLabel")}
-        selectable
-        style={styles.value}
-      >
-        {endpoint}
-      </Text>
-      <Text style={styles.note}>{t("tokens.addressNote")}</Text>
-      <CopyButton
+      <CopyableValue
         value={endpoint}
-        tone="quiet"
-        label={t("tokens.addressCopy")}
+        valueLabel={t("tokens.addressLabel")}
+        copyLabel={t("tokens.addressCopy")}
         copiedLabel={t("tokens.addressCopied")}
         failedLabel={t("tokens.copyFailedPhone")}
       />
+      <Text style={styles.note}>{t("tokens.addressNote")}</Text>
     </View>
   );
 };
@@ -74,7 +67,5 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   title: { color: colors.ink, fontSize: text.s, fontWeight: "700" },
-  /** Monospaced, because this is a string to be transcribed, not prose. */
-  value: { color: colors.ink, fontFamily: "monospace", fontSize: text.s, lineHeight: 20 },
   note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
 });

@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
-import { CopyButton } from "../../ui/molecules/copy-button.js";
+import { CopyableValue } from "../../ui/molecules/copyable-value.js";
 import { colors, radius, space, text } from "../../ui/styles/tokens.js";
 import { useTranslate } from "../../app/language-context.js";
 import { mcpSettings } from "../mcp-settings.js";
@@ -75,13 +75,19 @@ export const IssuedSecret = ({
       <Text style={styles.title}>{t("tokens.secretTitle")}</Text>
       <Text style={styles.warning}>{t("tokens.secretOnce")}</Text>
 
-      <Text
-        accessibilityLabel={t("tokens.secretLabel", { name })}
-        selectable
-        style={styles.value}
-      >
-        {secret}
-      </Text>
+      {/*
+        The secret and the control that takes it are one block, so the control
+        cannot end up anywhere but beside the string it is about — which is
+        where it was NOT, before: a full-width button below the warning, the
+        secret and the note about the scheme.
+      */}
+      <CopyableValue
+        value={secret}
+        valueLabel={t("tokens.secretLabel", { name })}
+        copyLabel={t("tokens.copyAction")}
+        copiedLabel={t("tokens.copied")}
+        failedLabel={t("tokens.copyFailedPhone")}
+      />
 
       {/*
         What the credential is FOR, and the scheme it travels under. `Machine`
@@ -91,13 +97,11 @@ export const IssuedSecret = ({
       */}
       <Text style={styles.how}>{t("tokens.secretHow")}</Text>
 
-      <CopyButton
-        value={secret}
-        tone="primary"
-        label={t("tokens.copyAction")}
-        copiedLabel={t("tokens.copied")}
-        failedLabel={t("tokens.copyFailedPhone")}
-      />
+      {/*
+        One button here now, and it is the one that takes the panel away.
+        "I have stored it" keeps its words for the reason every rare and
+        irreversible act in this app does: there is no shape that means it.
+      */}
       <Button tone="secondary" label={t("tokens.storedAction")} onPress={onDismiss}>
         {t("tokens.storedAction")}
       </Button>
@@ -109,17 +113,11 @@ export const IssuedSecret = ({
       */}
       <View style={styles.pair}>
         <Text style={styles.note}>{t("tokens.pairNote")}</Text>
-        <Text
-          accessibilityLabel={t("tokens.pairLabel", { name })}
-          selectable
-          style={styles.value}
-        >
-          {pair}
-        </Text>
-        <CopyButton
+        <CopyableValue
+          multiline
           value={pair}
-          tone="quiet"
-          label={t("tokens.pairCopy")}
+          valueLabel={t("tokens.pairLabel", { name })}
+          copyLabel={t("tokens.pairCopy")}
           copiedLabel={t("tokens.pairCopied")}
           failedLabel={t("tokens.copyFailedPhone")}
         />
@@ -140,7 +138,6 @@ const styles = StyleSheet.create({
   },
   title: { color: colors.ink, fontSize: text.m, fontWeight: "700" },
   warning: { color: colors.ink, fontSize: text.s, lineHeight: 20 },
-  value: { color: colors.ink, fontFamily: "monospace", fontSize: text.s, lineHeight: 20 },
   how: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
   note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
   pair: {
