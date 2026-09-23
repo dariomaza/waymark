@@ -32,6 +32,9 @@ export const ICON_NAMES = [
    * the story changed the name was left pointing at nothing.
    */
   "waypoints",
+  /** The pair a password field toggles between. */
+  "eye",
+  "eyeOff",
   "scan",
   "search",
   "tree",
@@ -102,6 +105,20 @@ const PATHS: Record<IconName, JSX.Element> = {
     <>
       <Path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />
       <Circle cx="12" cy="13" r="3.4" />
+    </>
+  ),
+  eye: (
+    <>
+      <Path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+      <Circle cx="12" cy="12" r="3.2" />
+    </>
+  ),
+  /** The same eye with the universal stroke through it, so the pair reads as one control. */
+  eyeOff: (
+    <>
+      <Path d="M2.5 12S6 5.5 12 5.5c1.6 0 3 .5 4.2 1.1M21.5 12s-1.4 2.6-4 4.4M9.5 17.9c.8.3 1.6.6 2.5.6" />
+      <Path d="M9.8 9.8a3.2 3.2 0 0 0 4.4 4.4" />
+      <Path d="M3.5 3.5l17 17" />
     </>
   ),
   plus: <Path d="M12 5v14M5 12h14" />,

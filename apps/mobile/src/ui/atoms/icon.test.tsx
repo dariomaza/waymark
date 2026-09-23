@@ -12,6 +12,8 @@ describe("the icon set both clients draw", () => {
   it("carries every symbol this product has, and no library", () => {
     expect([...ICON_NAMES]).toEqual([
       "waypoints",
+      "eye",
+      "eyeOff",
       "scan",
       "search",
       "tree",

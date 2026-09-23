@@ -1,8 +1,9 @@
 import { useState, type JSX } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 
 import { useTranslate } from "../../app/language-context.js";
-import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { colors, radius, TAP_TARGET } from "../styles/tokens.js";
+import { Icon } from "./icon.js";
 import { TextField } from "./text-field.js";
 
 export interface PasswordFieldProps {
@@ -33,9 +34,19 @@ export interface PasswordFieldProps {
  * announces "Show password, on" on landing, without anybody having to press it
  * to find out.
  *
- * The word drawn beside it still flips between "Show" and "Hide", because that
- * is an affordance for eyes and eyes can already see whether the password is
- * legible.
+ * The eye drawn on it still flips between open and struck through, because
+ * that is an affordance for eyes, and eyes can already see whether the
+ * password is legible.
+ *
+ * ## Why it sits INSIDE the field
+ *
+ * It used to sit underneath, on the argument that an inset control shrinks
+ * below this app's 48pt minimum. That objection does not survive the numbers:
+ * the input is already TAP_TARGET tall, so a TAP_TARGET square fits inside its
+ * own border exactly, and the input reserves the space with padding rather
+ * than letting the eye float over the text. Outside the field it read as a
+ * third action competing with signing in — which is what it looked like on a
+ * real phone.
  *
  * ## What the keyboard is told, and why it is four things
  *
@@ -63,51 +74,44 @@ export const PasswordField = ({
   const [shown, setShown] = useState(false);
 
   return (
-    <View style={styles.wrap}>
-      <TextField
-        label={label}
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={!shown}
-        // Autofill still applies: this is about the suggestion strip and the
-        // keyboard's own learning, not about a password manager.
-        autoComplete="current-password"
-        autoCapitalize="none"
-        autoCorrect={false}
-        spellCheck={false}
-        keyboardType={shown ? "visible-password" : "default"}
-        returnKeyType="go"
-        {...(onSubmitEditing === undefined ? {} : { onSubmitEditing })}
-      />
-      <Pressable
-        role="switch"
-        accessibilityLabel={t("login.showPassword")}
-        accessibilityState={{ checked: shown }}
-        onPress={() => {
-          setShown((was) => !was);
-        }}
-        style={({ pressed }) => [styles.reveal, pressed ? styles.pressed : null]}
-      >
-        <Text style={styles.revealText}>{shown ? t("login.hide") : t("login.show")}</Text>
-      </Pressable>
-    </View>
+    <TextField
+      label={label}
+      value={value}
+      onChangeText={onChangeText}
+      secureTextEntry={!shown}
+      // Autofill still applies: this is about the suggestion strip and the
+      // keyboard's own learning, not about a password manager.
+      autoComplete="current-password"
+      autoCapitalize="none"
+      autoCorrect={false}
+      spellCheck={false}
+      keyboardType={shown ? "visible-password" : "default"}
+      returnKeyType="go"
+      {...(onSubmitEditing === undefined ? {} : { onSubmitEditing })}
+      trailing={
+        <Pressable
+          role="switch"
+          accessibilityLabel={t("login.showPassword")}
+          accessibilityState={{ checked: shown }}
+          onPress={() => {
+            setShown((was) => !was);
+          }}
+          style={({ pressed }) => [styles.reveal, pressed ? styles.pressed : null]}
+        >
+          <Icon name={shown ? "eyeOff" : "eye"} size={20} color={colors.inkMuted} />
+        </Pressable>
+      }
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.s1, alignItems: "flex-start" },
-  /**
-   * Under the field rather than floating inside it. An icon tucked into the
-   * right-hand end of an input is the common drawing and it is the one that
-   * fails here: it shrinks to well under the tap target this app holds
-   * everything else to, and it sits exactly where a thumb rests while typing.
-   */
   reveal: {
-    minHeight: TAP_TARGET,
+    width: TAP_TARGET,
+    height: TAP_TARGET,
+    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: space.s3,
     borderRadius: radius.s,
   },
   pressed: { opacity: 0.7 },
-  revealText: { color: colors.accentText, fontSize: text.s, fontWeight: "600" },
 });
