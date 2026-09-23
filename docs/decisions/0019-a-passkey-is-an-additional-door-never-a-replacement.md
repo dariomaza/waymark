@@ -254,6 +254,14 @@ The counter exists so that a cloned authenticator can be noticed: a genuine
 one only ever counts up, so a signature carrying a count at or below one
 already seen is evidence that two things are answering for one credential.
 
+`@simplewebauthn/server` implements the same rule and would refuse the
+assertion first, with a message that cannot name the device. So the comparison
+is made here instead — the library is handed a stored counter of zero, which
+is the one argument it uses for that check and nothing else — and the refusal
+this product makes is one a person can act on. An integer comparison is not
+what ADR 19 refuses to hand-write; CBOR, COSE and a signature over the right
+bytes are.
+
 The complication is that **most of the authenticators this product will
 actually meet always send zero**. Platform passkeys on iOS and Android, and
 anything synced through a password manager, do not keep a per-credential
@@ -267,8 +275,11 @@ So the rule is exactly this:
   does not keep a counter.** Accept, and store zero.
 - The presented count is greater than the stored one: accept, and store it.
 - Anything else — including a presented zero against a stored count that is
-  not — is a **clone signal**: the assertion is refused, the counter is not
-  moved, and the refusal is logged with the passkey's label.
+  not — is a **clone signal**: the assertion is refused, and the stored counter
+  is deliberately NOT moved, so a genuine authenticator that is still ahead
+  keeps working the moment whatever was answering for it stops. The refusal
+  names the passkey, because the only useful thing to say is which device to
+  remove.
 
 **What it does not do is delete the passkey.** Deleting one on this signal is
 destroying somebody's credential on a heuristic that a buggy authenticator can
