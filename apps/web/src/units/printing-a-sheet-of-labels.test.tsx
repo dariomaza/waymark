@@ -220,6 +220,30 @@ describe("a sheet of labels for a whole storage room", () => {
 
     expect(await screen.findByText(/tick the spaces you want labels for/i)).toBeVisible();
   });
+
+  /**
+   * # The small control, and the one thing about it worth asserting
+   *
+   * The owner: "lo mejor sería el botón principal en grande y lo de las
+   * etiquetas en pequeñito con un icono al lado". Adding a room is what this
+   * screen is FOR; a sheet of labels is a different errand that starts here,
+   * and two identical rectangles said they were the same kind of thing.
+   *
+   * Which control is lime and which has no border is appearance, and this
+   * codebase does not assert class names (ADR 21 says so and accepts the gap).
+   * The picture is not appearance: it is the difference between the shape this
+   * control had before — a word in a rectangle — and the shape it has now,
+   * where the rectangle is gone and the picture is what says "pressable" in
+   * its place. So that is what is pinned, and it is enough to fail if somebody
+   * puts the rectangle back.
+   */
+  it("wears a picture beside its word, now that it has no rectangle to wear", async () => {
+    renderApp({ route: "/" });
+
+    const toTheSheet = await screen.findByRole("link", { name: /label sheet/i });
+
+    expect(toTheSheet.querySelector("svg")).toBeVisible();
+  });
 });
 
 describe("what is printed on one label", () => {

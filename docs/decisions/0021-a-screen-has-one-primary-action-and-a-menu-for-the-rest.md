@@ -134,6 +134,52 @@ The home screen needed no change. It already had exactly one primary and one
 secondary, which is some evidence that the rule was latent in the codebase and
 only the detail screens had drifted.
 
+### Amended: a secondary PLACE is not a secondary action
+
+That last paragraph was wrong, and wrong in a way the rule as written could not
+catch. The home screen's two controls were an outlined rectangle beside a lime
+one — one primary and one secondary, exactly as required — and the owner looked
+at it on his phone and said:
+
+> lo mejor sería el botón principal en grande y lo de las etiquetas en
+> pequeñito con un icono al lado
+
+The count was right and the SHAPE was wrong. Adding a room is what the home
+screen is for; a sheet of labels is a different errand that happens to start
+there. Two rectangles side by side say the two controls are the same kind of
+thing, so a person reads both to find out which is which — which is the failure
+this whole ADR was written to end, at two controls instead of nine.
+
+So the vocabulary gains a third shape, `QuietLink` (`ui/atoms/quiet-link.tsx`):
+a word with a picture beside it, no fill and no edge, for **a second PLACE
+rather than a second action**. The primary takes the full width; this sits under
+it at its own size.
+
+Three rules come with it, and the first is the one that gets broken:
+
+1. **It is small to look at and not small to hit.** The 48px floor is
+   unchanged. Visual weight and touch area are different measurements, and this
+   is the shape where they are easiest to confuse: small text beside a small
+   picture looks like something that should be the height of a line of text.
+2. **Its picture is required**, unlike a `Button`'s. A control with no
+   rectangle around it has nothing but its words to say it is a control at all,
+   and small words alone read as a caption. Where no honest picture exists,
+   widen the icon set (ADR 20) — `tags` was added for exactly this, and is to
+   `tag` what `things` is to `box`.
+3. **It is a route, never an act.** Anything that does something to what the
+   screen is showing belongs in that thing's menu, which is the other half of
+   this ADR. `QuietLink` is for a way somewhere that the screen is not for.
+
+The other place it belongs today is `photos/views/photo-status-note.tsx`, where
+"See the ones that failed" is a `Button` in `quiet` tone doing this shape's job
+with a button's clothes on. That is left alone here only because nobody has
+complained about that screen, and a redesign nobody asked for is how the row of
+nine got built.
+
+Printing is a browser errand, so `apps/mobile` has no label sheet and needs
+none of this. The two clients still agree on what a screen offers; they differ
+on what a phone can do with a printer.
+
 ### Amended: which second control a box gets
 
 The rule above survives this unchanged — one primary, at most one secondary —

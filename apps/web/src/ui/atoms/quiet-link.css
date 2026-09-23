@@ -1,0 +1,41 @@
+/**
+ * A word and a picture, and nothing drawn around either of them.
+ *
+ * No background and no border is the whole point: this is what tells somebody
+ * at a glance that it is not the thing the screen is for. Everything that is
+ * here is here because taking it away would cost something.
+ */
+.quiet-link {
+  /*
+    The floor, unchanged from `.button`, and the reason this file exists rather
+    than a `font-size` on a plain link. A thumb is about 9mm across. Small is
+    how this control LOOKS; it is not how big it is to hit.
+  */
+  min-height: 48px;
+  min-width: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  /*
+    Horizontal padding only. The height is already the target, so padding here
+    is about not butting up against whatever sits next to it.
+  */
+  padding: 0 var(--space-2);
+  font-size: var(--text-s);
+  /*
+    The accent as a foreground — the job that token was split out for. NOT the
+    muted grey: muted grey is how this app draws things that are not controls,
+    and a quiet control is still a control.
+  */
+  color: var(--color-accent-text);
+  /* An `<a>` is underlined by default, and this one is drawn as a control. */
+  text-decoration: none;
+  /* No hover-only affordance anywhere: a phone has no hover. */
+  touch-action: manipulation;
+}
+
+.quiet-link:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
