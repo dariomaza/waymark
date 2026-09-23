@@ -38,20 +38,36 @@ import { AuthenticateMachineToken } from "../auth/authenticate-machine-token.js"
 import { AuthenticateSession } from "../auth/authenticate-session.js";
 import {
   AuthError,
+  ClonedPasskey,
   InvalidCredentials,
   InvalidMachineToken,
   InvalidMachineTokenName,
+  InvalidPasskey,
+  InvalidPasskeyLabel,
   InvalidSession,
   MachineTokenNameAlreadyTaken,
+  PasskeyAlreadyRegistered,
+  PasskeyCeremonyExpired,
+  PasskeyDidNotVerifyTheUser,
+  PasskeyNeedsAPassword,
+  PasskeyNotFound,
   ReadOnlyMachineToken,
   TooManyLoginAttempts,
+  TooManyPasskeyAttempts,
 } from "../auth/auth-errors.js";
 import { callerMayWrite, type Caller } from "../auth/caller.js";
 import type { MachineTokenRepository } from "../auth/machine-token-repository.js";
 import type { RateLimiter } from "../auth/login-rate-limiter.js";
 import { Login } from "../auth/login.js";
 import { Logout } from "../auth/logout.js";
+import { BeginPasskeyAuthentication } from "../auth/begin-passkey-authentication.js";
+import { BeginPasskeyRegistration } from "../auth/begin-passkey-registration.js";
 import { CreateMachineToken } from "../auth/create-machine-token.js";
+import { FinishPasskeyAuthentication } from "../auth/finish-passkey-authentication.js";
+import { FinishPasskeyRegistration } from "../auth/finish-passkey-registration.js";
+import type { PasskeyRepository } from "../auth/passkey-repository.js";
+import type { PasskeyChallengeRepository } from "../auth/passkey-challenge-repository.js";
+import { relyingPartyFor } from "../auth/relying-party.js";
 import { RevokeMachineToken } from "../auth/revoke-machine-token.js";
 import { RotateMachineToken } from "../auth/rotate-machine-token.js";
 import type { PasswordHasher } from "../auth/password-hasher.js";
@@ -76,6 +92,7 @@ import { errorBody, HttpError } from "./http-error.js";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
 import { machineTokenRoutes } from "./routes/machine-token-routes.js";
+import { passkeyLoginRoutes, passkeyRoutes } from "./routes/passkey-routes.js";
 import { photoRoutes } from "./routes/photo-routes.js";
 import { qrRoutes } from "./routes/qr-routes.js";
 import { searchRoutes } from "./routes/search-routes.js";
@@ -129,11 +146,21 @@ export interface AppDependencies {
   readonly sessions: SessionRepository;
   /** Long-lived credentials that are not people; see ADR 17. */
   readonly machineTokens: MachineTokenRepository;
+  /** Devices somebody can prove they are holding; see ADR 19. */
+  readonly passkeys: PasskeyRepository;
+  /** Ceremonies in flight. Rows that live two minutes and are spent once. */
+  readonly passkeyChallenges: PasskeyChallengeRepository;
   readonly hasher: PasswordHasher;
   readonly ids: IdGenerator;
   readonly publicIds: PublicIdGenerator;
   readonly clock: Clock;
   readonly rateLimiter: RateLimiter;
+  /**
+   * A counter of its own for passkey ceremonies, separate from the login
+   * limiter on purpose (ADR 19): a mistyped password must not be able to take
+   * the fingerprint away, and a passkey assertion cannot be guessed.
+   */
+  readonly passkeyRateLimiter: RateLimiter;
   /** What a scanned QR resolves against; see `qr/storage-unit-qr.ts`. */
   readonly publicBaseUrl: string;
   readonly photoStorage: PhotoStorageConfig;
@@ -302,6 +329,46 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       ? {}
       : { lastUsedGranularityMs: deps.lastUsedGranularityMs }),
   });
+  /**
+   * Who a passkey is minted for, derived here from the same public base URL
+   * the QR codes are built from (ADR 19). It is derived rather than configured
+   * so there is no second setting to disagree with the first, and a base URL
+   * no browser will run WebAuthn against has already stopped the process in
+   * `loadConfig`.
+   */
+  const relyingParty = relyingPartyFor(deps.publicBaseUrl);
+  const beginPasskeyRegistration = new BeginPasskeyRegistration({
+    passkeys: deps.passkeys,
+    challenges: deps.passkeyChallenges,
+    ids: deps.ids,
+    clock: deps.clock,
+    relyingParty,
+  });
+  const finishPasskeyRegistration = new FinishPasskeyRegistration({
+    passkeys: deps.passkeys,
+    challenges: deps.passkeyChallenges,
+    ids: deps.ids,
+    clock: deps.clock,
+    relyingParty,
+  });
+  const beginPasskeyAuthentication = new BeginPasskeyAuthentication({
+    challenges: deps.passkeyChallenges,
+    ids: deps.ids,
+    clock: deps.clock,
+    relyingParty,
+    rateLimiter: deps.passkeyRateLimiter,
+  });
+  const finishPasskeyAuthentication = new FinishPasskeyAuthentication({
+    passkeys: deps.passkeys,
+    challenges: deps.passkeyChallenges,
+    users: deps.users,
+    sessions: deps.sessions,
+    ids: deps.ids,
+    clock: deps.clock,
+    relyingParty,
+    rateLimiter: deps.passkeyRateLimiter,
+    ...(deps.sessionTtlMs === undefined ? {} : { sessionTtlMs: deps.sessionTtlMs }),
+  });
   const authenticate = new AuthenticateSession({
     users: deps.users,
     sessions: deps.sessions,
@@ -343,6 +410,16 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   app.get("/health", async (_request, reply) => reply.code(200).send({ status: "ok" }));
 
   void app.register(authRoutes, { login, logout });
+  /**
+   * Beside the login, and not behind the session, because signing in is what
+   * happens before there is a session. They reveal nothing about anybody: the
+   * options answer is a random challenge and an empty credential list, the
+   * same for every caller (ADR 19).
+   */
+  void app.register(passkeyLoginRoutes, {
+    beginPasskeyAuthentication,
+    finishPasskeyAuthentication,
+  });
 
   /**
    * Everything below this line needs a session. An encapsulated scope with one
@@ -413,6 +490,11 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       createMachineToken,
       rotateMachineToken,
       revokeMachineToken,
+    });
+    void scope.register(passkeyRoutes, {
+      passkeys: deps.passkeys,
+      beginPasskeyRegistration,
+      finishPasskeyRegistration,
     });
     void scope.register(storageUnitRoutes, {
       storageUnits: deps.storageUnits,
@@ -762,6 +844,98 @@ const sendAuthError = async (
           requiredScope: "read-write",
         }),
       );
+  }
+
+  /**
+   * # What a passkey ceremony can be refused with
+   *
+   * The statuses follow ADR 8's split, and the interesting ones are the two
+   * that are neither 401 nor 403.
+   */
+
+  if (error instanceof TooManyPasskeyAttempts) {
+    return reply
+      .code(429)
+      .header("retry-after", String(error.retryAfterSeconds))
+      .send(errorBody("TOO_MANY_PASSKEY_ATTEMPTS", error.message));
+  }
+
+  /**
+   * 422: fix the REQUEST, then retry (ADR 8). The ceremony is over — spent,
+   * lapsed or never issued — and the fix is to start another one, which is a
+   * different request rather than a change in the world. 401 would be wrong:
+   * nobody failed to authenticate, they ran out of time.
+   */
+  if (error instanceof PasskeyCeremonyExpired) {
+    return reply
+      .code(422)
+      .send(errorBody("PASSKEY_CEREMONY_EXPIRED", error.message));
+  }
+
+  /** 422: the name is in the body the caller just sent, and it is what changes. */
+  if (error instanceof InvalidPasskeyLabel) {
+    return reply
+      .code(422)
+      .send(errorBody("INVALID_PASSKEY_LABEL", error.message, { label: error.label }));
+  }
+
+  /**
+   * 422 and not 401: this is a registration by somebody who is already
+   * authenticated, and what has to change is the DEVICE — it has to be able to
+   * check who is holding it. A 401 would tell a signed-in person to sign in.
+   */
+  if (error instanceof PasskeyDidNotVerifyTheUser) {
+    return reply
+      .code(422)
+      .send(errorBody("PASSKEY_DID_NOT_VERIFY_THE_USER", error.message));
+  }
+
+  /**
+   * 409: fix the WORLD, then retry (ADR 8). The request is perfectly good and
+   * the same call succeeds on a device that is not already registered — or
+   * after this one has been removed.
+   */
+  if (error instanceof PasskeyAlreadyRegistered) {
+    return reply
+      .code(409)
+      .send(errorBody("PASSKEY_ALREADY_REGISTERED", error.message));
+  }
+
+  if (error instanceof PasskeyNotFound) {
+    return reply
+      .code(404)
+      .send(errorBody("PASSKEY_NOT_FOUND", error.message));
+  }
+
+  /**
+   * 403: the caller authenticated successfully and is refused anyway, which is
+   * exactly what 403 is for (RFC 9110). What has to change is which session
+   * they are holding, and the message says how.
+   */
+  if (error instanceof PasskeyNeedsAPassword) {
+    return reply
+      .code(403)
+      .send(errorBody("PASSKEY_NEEDS_A_PASSWORD", error.message));
+  }
+
+  /**
+   * 401 for both, and the same challenge header a session gets. A cloned
+   * authenticator keeps its own code, because it is the one refusal here with
+   * something for the person to DO — remove that device and register it again
+   * — and the label travels so the screen can name it.
+   */
+  if (error instanceof ClonedPasskey) {
+    return reply
+      .code(401)
+      .header("www-authenticate", "Bearer")
+      .send(errorBody("CLONED_PASSKEY", error.message, { label: error.label }));
+  }
+
+  if (error instanceof InvalidPasskey) {
+    return reply
+      .code(401)
+      .header("www-authenticate", "Bearer")
+      .send(errorBody("INVALID_PASSKEY", error.message));
   }
 
   return reply
