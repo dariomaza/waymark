@@ -37,6 +37,14 @@ export const theApiKnowsTheHouse = (): void => {
     http.get(`${API_URL}/auth/me`, () =>
       HttpResponse.json({ user: { id: "u1", username: "dario" } }),
     ),
+    /*
+     * The account tab asks for these the moment it is opened, so they belong
+     * with the handlers a signed-in screen needs before it can draw anything.
+     * A test about credentials overrides this with its own.
+     */
+    http.get(`${API_URL}/auth/machine-tokens`, () =>
+      HttpResponse.json({ machineTokens: [] }),
+    ),
     http.get(`${API_URL}/storage-units`, () =>
       HttpResponse.json({ tree: [aTree(garage, [aTree(wardrobe, [aTree(box)])])] }),
     ),

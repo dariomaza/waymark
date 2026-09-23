@@ -30,6 +30,32 @@ export interface UnitDetailProps {
   readonly itemPhoto?: (item: ItemView) => ReactNode;
   readonly onOpenUnit: (id: string) => void;
   readonly onOpenItem: (id: string) => void;
+  /**
+   * Picking several things for a bulk move, when the screen is offering it.
+   *
+   * One object rather than five parallel props, because they are one
+   * decision: a card cannot be half a tick box. Absent means the grid is what
+   * it has always been — a set of ways in.
+   */
+  readonly picking?: ItemPicking | undefined;
+  /** Pinned under the grid, where a thumb is. The bulk move bar goes here. */
+  readonly belowItems?: ReactNode;
+}
+
+/** How a screen offers, draws and records picking. See `useItemSelection`. */
+export interface ItemPicking {
+  /** Whether a tap ticks rather than opens. */
+  readonly on: boolean;
+  isSelected(item: ItemView): boolean;
+  toggle(item: ItemView): void;
+  /**
+   * What a card is CALLED while it is a tick box.
+   *
+   * A function rather than a string, because it names one item — and it is
+   * the screen's word rather than this view's, so the dictionary stays the
+   * only place sentences live.
+   */
+  label(item: ItemView): string;
 }
 
 /**
@@ -56,10 +82,12 @@ export const UnitDetail = ({
   itemPhoto,
   onOpenUnit,
   onOpenItem,
+  picking,
+  belowItems,
 }: UnitDetailProps): JSX.Element => {
   const t = useTranslate();
 
-  return (
+  const grid = (
     <ItemGrid
       label={t("units.items")}
       cells={items.map((item) => ({
@@ -72,9 +100,29 @@ export const UnitDetail = ({
         secondary: item.tags.join(", "),
         quantity: item.quantity,
         photo: itemPhoto?.(item),
+        ...(picking?.on === true
+          ? {
+              picking: true,
+              selected: picking.isSelected(item),
+              label: picking.label(item),
+            }
+          : {}),
         onPress: () => {
+          if (picking?.on === true) {
+            picking.toggle(item);
+
+            return;
+          }
+
           onOpenItem(item.id);
         },
+        ...(picking === undefined
+          ? {}
+          : {
+              onLongPress: () => {
+                picking.toggle(item);
+              },
+            }),
       }))}
       header={
         <View style={styles.head}>
@@ -129,7 +177,22 @@ export const UnitDetail = ({
         </View>
       }
     />
-);
+  );
+
+  /*
+   * The bar sits OUTSIDE the grid rather than in its footer. A footer scrolls
+   * away, and the moment it matters most is when somebody has picked six
+   * things and is still scrolling for the seventh — so it is pinned under the
+   * scroller, which is also where the thumb already is.
+   */
+  return belowItems === undefined ? (
+    grid
+  ) : (
+    <View style={styles.withBar}>
+      {grid}
+      {belowItems}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -139,4 +202,5 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
   heading: { color: colors.ink, fontSize: text.l, fontWeight: "700", marginTop: space.s3 },
   list: { gap: space.s2 },
+  withBar: { flex: 1, gap: space.s3 },
 });

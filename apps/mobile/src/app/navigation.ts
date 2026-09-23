@@ -32,6 +32,14 @@ export interface RootStackParamList extends Record<string, object | undefined> {
   Label: { readonly id: string };
   /** The address printed on every box: `<public base>/u/<publicId>`. */
   ScannedLabel: { readonly publicId: string };
+  /**
+   * What background removal is doing, for whoever runs the sidecar.
+   *
+   * A stack screen and not a tab. It is a place to answer "is it just this
+   * one photo?", which is a question asked from a photo — not a place to look
+   * for a thing, which is what the five destinations in the bar are for.
+   */
+  Processing: undefined;
 }
 
 /**

@@ -13,6 +13,14 @@ export interface PhotoStatusNoteProps {
   /** Puts this photo back in the queue. See `useReprocessPhoto`. */
   readonly onRetry: () => void;
   readonly retrying: boolean;
+  /**
+   * The way to the queue screen, which answers the question a failure
+   * immediately raises: is it just this one?
+   *
+   * Only ever drawn beside a `FAILED` photo, and injected rather than
+   * navigated to here, because this file is a view.
+   */
+  readonly onSeeFailed?: (() => void) | undefined;
 }
 
 /**
@@ -32,6 +40,7 @@ export const PhotoStatusNote = ({
   photo,
   onRetry,
   retrying,
+  onSeeFailed,
 }: PhotoStatusNoteProps): JSX.Element | null => {
   const t = useTranslate();
 
@@ -44,14 +53,21 @@ export const PhotoStatusNote = ({
     <View style={styles.wrap}>
       <Text style={styles.note}>{note}</Text>
       {photo.processingStatus === PhotoProcessingStatus.FAILED ? (
-        <Button
-          tone="quiet"
-          label={t("photos.retryRemoval")}
-          disabled={retrying}
-          onPress={onRetry}
-        >
-          {t("photos.retryRemoval")}
-        </Button>
+        <View style={styles.actions}>
+          <Button
+            tone="quiet"
+            label={t("photos.retryRemoval")}
+            disabled={retrying}
+            onPress={onRetry}
+          >
+            {t("photos.retryRemoval")}
+          </Button>
+          {onSeeFailed === undefined ? null : (
+            <Button tone="quiet" label={t("photos.seeFailed")} onPress={onSeeFailed}>
+              {t("photos.seeFailed")}
+            </Button>
+          )}
+        </View>
       ) : null}
     </View>
   );
@@ -60,4 +76,5 @@ export const PhotoStatusNote = ({
 const styles = StyleSheet.create({
   wrap: { gap: space.s2, alignItems: "flex-start" },
   note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
 });

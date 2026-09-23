@@ -8,7 +8,9 @@ import { inMemorySecureStorage, type SecureStorage } from "../auth/secure-storag
 import type { Session } from "../auth/session-store.js";
 import type { CodeScanner } from "../scanning/code-scanner.js";
 import type { PhotoSource } from "../photos/photo-source.js";
+import type { Clipboard } from "../ui/clipboard.js";
 import { API_URL } from "./api-server.js";
+import { fakeClipboard } from "./fake-clipboard.js";
 import { fakePhotoSource } from "./fake-photo-source.js";
 import { fakeScanner } from "./fake-scanner.js";
 
@@ -27,6 +29,12 @@ export interface RenderAppOptions {
   readonly scanner?: CodeScanner;
   /** Stands in for the camera roll and the camera, for the same reason. */
   readonly photos?: PhotoSource;
+  /**
+   * Stands in for the system clipboard. Pass one to read what the app put on
+   * it — which is the only way to assert that a credential shown once left
+   * the screen intact.
+   */
+  readonly clipboard?: Clipboard;
   /**
    * The language already chosen, sitting in the keystore when the app starts.
    *
@@ -102,6 +110,7 @@ export const renderApp = async ({
   session,
   scanner,
   photos,
+  clipboard,
   language,
   storage,
 }: RenderAppOptions = {}): Promise<RenderResult> => {
@@ -134,6 +143,7 @@ export const renderApp = async ({
       {...(state === undefined ? {} : { initialState: state })}
       scanner={scanner ?? fakeScanner()}
       photos={photos ?? fakePhotoSource()}
+      clipboard={clipboard ?? fakeClipboard()}
     />,
   );
 };

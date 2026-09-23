@@ -29,6 +29,23 @@ export interface ItemCardProps {
    * what it wants announced rather than dropping them on the floor.
    */
   readonly label?: string | undefined;
+  /**
+   * Picking mode: this card is a tick box rather than a way in.
+   *
+   * It is a PROP and not something this card works out, for the same reason
+   * `secondary` is: a card that decided for itself which screen it was on
+   * would grow a branch per screen. What changes is the ROLE it announces and
+   * what a tap does — both of which are the screen's decision, taken once for
+   * the whole grid.
+   */
+  readonly picking?: boolean;
+  readonly selected?: boolean;
+  /**
+   * Held down. The gesture that starts picking on this platform, offered on
+   * every card rather than on a handle, because a handle on a photograph is a
+   * target the thumb covers.
+   */
+  readonly onLongPress?: (() => void) | undefined;
 }
 
 /**
@@ -50,17 +67,28 @@ export const ItemCard = ({
   quantity,
   photo,
   label,
+  picking = false,
+  selected = false,
+  onLongPress,
 }: ItemCardProps): JSX.Element => {
   const line = secondary === undefined || secondary === "" ? undefined : secondary;
 
   return (
     <Pressable
-      role="link"
+      /*
+       * A link when a tap opens a thing, a tick box when a tap ticks one.
+       * Saying "link" while a tap ticks would be the drawing and the
+       * announcement disagreeing about what the card IS — which is exactly
+       * the disagreement a screen reader cannot see past.
+       */
+      role={picking ? "checkbox" : "link"}
       accessibilityLabel={label ?? (line === undefined ? name : `${name}, ${line}`)}
+      accessibilityState={picking ? { checked: selected } : {}}
       onPress={onPress}
+      {...(onLongPress === undefined ? {} : { onLongPress })}
       style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}
     >
-      <View style={styles.image}>
+      <View style={[styles.image, selected ? styles.picked : null]}>
         {photo ?? (
           /**
            * Not a spinner and not an icon: the initials say WHICH thing this
@@ -70,7 +98,21 @@ export const ItemCard = ({
            */
           <Text style={styles.initials}>{initialsOf(name)}</Text>
         )}
-        {quantity === undefined || quantity <= 1 ? null : (
+        {selected ? (
+          /**
+           * The tick sits where the quantity badge sits, and the two never
+           * appear together: while picking, how many of a thing there are is
+           * not the question being asked.
+           *
+           * Not translated, and not a gap in the translation: `✓` is a symbol
+           * with no word in it, the same way `×8` is. What it MEANS is said
+           * in words by the card's own accessible state, which is where a
+           * screen reader hears it.
+           */
+          <View style={styles.tick}>
+            <Text style={styles.tickMark}>✓</Text>
+          </View>
+        ) : quantity === undefined || quantity <= 1 ? null : (
           /**
            * Over the photo, not under the name. In a card the name is what
            * truncates, and "×8" is exactly the part that must not.
@@ -113,6 +155,25 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   initials: { color: colors.inkMuted, fontSize: text.xl, fontWeight: "700" },
+  /**
+   * The picked state is drawn on the PHOTO's box rather than around the whole
+   * card, so the name underneath keeps its position — a border that appeared
+   * around the card would shift every name in the row by a pixel as things
+   * are ticked.
+   */
+  picked: { borderWidth: 3, borderColor: colors.accent },
+  tick: {
+    position: "absolute",
+    top: space.s1,
+    right: space.s1,
+    width: 24,
+    height: 24,
+    borderRadius: radius.m,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tickMark: { color: colors.accentInk, fontSize: text.s, fontWeight: "700" },
   quantity: {
     position: "absolute",
     top: space.s1,

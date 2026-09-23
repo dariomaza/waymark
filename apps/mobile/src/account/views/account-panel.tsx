@@ -12,6 +12,17 @@ export interface AccountPanelProps {
   readonly username: string | null;
   /** The control that is ABOUT the language rather than written in it. */
   readonly language: ReactNode;
+  /**
+   * Credentials for programs. Injected, because it fetches and mutates and
+   * this file draws.
+   *
+   * It goes UNDER the language and ABOVE the way out, which is the order of
+   * how often each is wanted and how final each is. Signing out is last on
+   * purpose: it is the one control here that ends the session, and a
+   * destructive button above a list somebody is scrolling is a button that
+   * gets hit by a thumb reaching past it.
+   */
+  readonly machineTokens: ReactNode;
   readonly busy: boolean;
   readonly onSignOut: () => void;
 }
@@ -27,6 +38,7 @@ export interface AccountPanelProps {
 export const AccountPanel = ({
   username,
   language,
+  machineTokens,
   busy,
   onSignOut,
 }: AccountPanelProps): JSX.Element => {
@@ -53,6 +65,8 @@ export const AccountPanel = ({
         <Text style={styles.settingLabel}>{t("language.label")}</Text>
         {language}
       </View>
+
+      {machineTokens}
 
       <Button
         tone="danger"

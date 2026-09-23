@@ -13,6 +13,10 @@ export interface ItemCell {
   readonly label?: string | undefined;
   readonly photo?: ReactNode;
   readonly onPress: () => void;
+  /** Picking mode, and this card's tick. See `ItemCard`. */
+  readonly picking?: boolean;
+  readonly selected?: boolean;
+  readonly onLongPress?: (() => void) | undefined;
 }
 
 export interface ItemGridProps {

@@ -1,6 +1,8 @@
 import { type ItemView, detailNumber, movedEarlier, withCoverFirst } from "@waymark/api-client";
 import { describeFailure, tooManyPhotosMessage } from "@waymark/i18n";
 import { MAX_ITEM_PHOTOS } from "@waymark/domain";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -16,6 +18,7 @@ import {
 } from "./photo-mutations.js";
 import { PhotoPicker } from "./views/photo-picker.js";
 import { PhotoStatusNote } from "./views/photo-status-note.js";
+import type { RootStackParamList } from "../app/navigation.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface ItemPhotosProps {
@@ -46,6 +49,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
   const reorder = useReorderItemPhotos(item.id);
   const remove = useDeleteItemPhoto(item.id);
   const reprocess = useReprocessPhoto();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const full = t(tooManyPhotosMessage(
     upload.error,
@@ -87,6 +91,9 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                 <PhotoStatusNote
                   photo={photo}
                   retrying={reprocess.isPending}
+                  onSeeFailed={() => {
+                    navigation.navigate("Processing");
+                  }}
                   onRetry={() => {
                     reprocess.mutate(photo.id);
                   }}

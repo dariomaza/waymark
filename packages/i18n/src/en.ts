@@ -232,6 +232,19 @@ export const EN = {
   "items.moveIt": "Move it",
   "items.moveThemInto": "Move them into",
   "items.moveThem": "Move them",
+
+  /**
+   * # Picking several things, said on a phone
+   *
+   * The web client can afford a tick box beside every row for ever. A grid of
+   * photographs three across cannot, so on a phone picking is a MODE — and a
+   * mode nobody can see is a mode nobody uses. These two sentences are what
+   * makes it visible: a button that starts it in words, and a line that tells
+   * whoever took the button the gesture they will reach for next time.
+   */
+  "items.selectSeveral": "Select several",
+  "items.pickingHint":
+    "Tap the things you want to move. Holding one down starts this too.",
   "items.name": "Name",
   "items.quantity": "Quantity",
   "items.tags": "Tags",
@@ -564,6 +577,17 @@ export const EN = {
   "tokens.copyAction": "Copy",
   "tokens.copied": "Copied",
   "tokens.copyFailed": "This browser would not copy it. Select it and copy it by hand.",
+  /**
+   * The same refusal, said to somebody holding a phone.
+   *
+   * It is a second sentence rather than a reworded one because the ADVICE
+   * differs, not just the noun. "Select it and copy it by hand" is a real
+   * instruction in a browser and a dead end on Android, where the way out of
+   * a refused clipboard is to hold the text until the system offers its own
+   * copy — and where the credential is still on screen to be read from.
+   */
+  "tokens.copyFailedPhone":
+    "This phone would not copy it. Hold the text down to copy it yourself, before you leave this screen.",
   "tokens.storedAction": "I have stored it",
 
   "tokens.rotateAction": "Rotate",

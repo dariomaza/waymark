@@ -4,10 +4,14 @@ import type {
   ItemPhotoResponse,
   ItemResponse,
   RequeuedPhotoResponse,
+  RequeuedPhotosResponse,
   StorageUnitPhotoResponse,
 } from "@waymark/api-client";
 import type { ItemId, PhotoId, UnitId } from "@waymark/domain";
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
+
+import { queryKeys } from "@waymark/api-client";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useApi } from "../api/api-context.js";
 import type { PhotoUpload } from "../api/mobile-client.js";
@@ -97,10 +101,48 @@ export const useReprocessPhoto = (): UseMutationResult<
   PhotoId
 > => {
   const api = useApi();
+  const queries = useQueryClient();
   const invalidate = useInvalidateInventory();
 
   return useMutation({
     mutationFn: async (photoId: PhotoId) => await api.reprocessPhoto(photoId),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      /*
+       * And the queue, which is a separate graph (`INVENTORY_ROOTS` does not
+       * reach it). A photo put back changes what the processing screen says
+       * about how many are stuck, and that screen is where this button is
+       * most often pressed.
+       */
+      void queries.invalidateQueries({ queryKey: queryKeys.photoProcessing() });
+    },
+  });
+};
+
+/**
+ * "Try all of them again."
+ *
+ * The bulk half of the same idea, and the reason the queue screen exists: a
+ * sidecar that was down for an hour leaves a pile of `FAILED` photos, and
+ * tapping each one in turn is the chore ADR 10 built the route to avoid.
+ *
+ * The answer is a `202` and a COUNT — how many went back — and nothing here
+ * waits for any of them to finish. It invalidates the queue rather than the
+ * inventory: the counts on that screen are what just changed, and the boxes
+ * are not.
+ */
+export const useRetryFailedPhotos = (): UseMutationResult<
+  RequeuedPhotosResponse,
+  Error,
+  void
+> => {
+  const api = useApi();
+  const queries = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => await api.retryFailedPhotos(),
+    onSuccess: () => {
+      void queries.invalidateQueries({ queryKey: queryKeys.photoProcessing() });
+    },
   });
 };

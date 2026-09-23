@@ -1,5 +1,7 @@
 import { type StorageUnitWithPhotoView } from "@waymark/api-client";
 import { describeFailure } from "@waymark/i18n";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -14,6 +16,7 @@ import {
 } from "./photo-mutations.js";
 import { PhotoPicker } from "./views/photo-picker.js";
 import { PhotoStatusNote } from "./views/photo-status-note.js";
+import type { RootStackParamList } from "../app/navigation.js";
 import { useTranslate } from "../app/language-context.js";
 
 /**
@@ -35,18 +38,26 @@ export const UnitPhoto = ({
   const upload = useUploadUnitPhoto(unit.id);
   const remove = useDeleteUnitPhoto(unit.id);
   const reprocess = useReprocessPhoto();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const photo = unit.photo;
 
   return (
     <View style={styles.wrap}>
       {photo === null ? null : (
-        <AuthenticatedImage src={photo.url} alt={`Photo of ${unit.name}`} size={160} />
+        <AuthenticatedImage
+          src={photo.url}
+          alt={t("photos.photoOf", { name: unit.name })}
+          size={160}
+        />
       )}
 
       {photo === null ? null : (
         <PhotoStatusNote
           photo={photo}
           retrying={reprocess.isPending}
+          onSeeFailed={() => {
+            navigation.navigate("Processing");
+          }}
           onRetry={() => {
             reprocess.mutate(photo.id);
           }}
