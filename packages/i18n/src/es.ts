@@ -387,4 +387,60 @@ export const ES: Dictionary = {
   "units.emptyRootNote":
     "Una unidad raíz no tiene unidad superior en la que vaciarse. Todo lo que hay dentro de {name} tiene que ir a otro sitio.",
   "units.emptyIntoNote": "Todo lo que hay dentro de {name} sube a {parent}. No se borra nada.",
+
+  // ---------------------------------------------------------------------
+  // Tokens de máquina: credenciales para programas (ADR 17, ADR 18)
+  // ---------------------------------------------------------------------
+  "tokens.title": "Tokens de máquina",
+  "tokens.explains":
+    "Una clave que le das a un programa para que lea tu inventario sin tu contraseña. Cada una se revoca por separado.",
+  "tokens.loading": "Cargando tus tokens de máquina",
+  "tokens.none": "Todavía no hay ningún token de máquina.",
+
+  "tokens.scopeRead": "Solo lectura",
+  "tokens.scopeReadWrite": "Lectura y escritura",
+  "tokens.scopeLabel": "Qué puede hacer",
+
+  "tokens.createdOn": "Creado el {when}",
+  "tokens.lastUsedOn": "Usado por última vez el {when}",
+  "tokens.neverUsed": "Sin usar",
+  "tokens.lapsesOn": "Caduca el {when}",
+  "tokens.neverLapses": "No caduca",
+
+  "tokens.newAction": "Nuevo token",
+  "tokens.newTitle": "Nuevo token de máquina",
+  "tokens.nameLabel": "Para qué es",
+  "tokens.nameHint":
+    "Minúsculas, dígitos y . _ - — mcp-server, backup. Es lo que nombrarás al revocarlo.",
+  "tokens.createAction": "Créalo",
+  "tokens.creating": "Creando…",
+
+  "tokens.secretTitle": "Esta es la única vez que vas a ver esto",
+  "tokens.secretOnce":
+    "Waymark guarda un hash, no el secreto, así que no puede volver a enseñártelo. Cópialo ahora: si lo pierdes, rota el token y coge uno nuevo.",
+  "tokens.secretHow": "Envíalo así: Authorization: Machine <token>",
+  "tokens.secretLabel": "El secreto de {name}",
+  "tokens.copyAction": "Copiar",
+  "tokens.copied": "Copiado",
+  "tokens.copyFailed": "Este navegador no lo ha copiado. Selecciónalo y cópialo a mano.",
+  "tokens.storedAction": "Ya lo he guardado",
+
+  "tokens.rotateAction": "Rotar",
+  "tokens.rotateTitle": "¿Rotar {name}?",
+  "tokens.rotateWarning":
+    "El secreto que {name} usa ahora deja de funcionar en cuanto lo hagas. Lo que lo tenga recibirá un rechazo en cada petición hasta que pongas el nuevo secreto en su sitio.",
+  "tokens.rotating": "Rotando…",
+
+  "tokens.revokeAction": "Revocar",
+  "tokens.revokeTitle": "¿Revocar {name}?",
+  "tokens.revokeWarning":
+    "{name} deja de funcionar en su siguiente petición. No se toca ningún otro token ni ninguna cuenta.",
+  "tokens.revoking": "Revocando…",
+
+  "tokens.nameTaken": "Ya existe un token de máquina que se llama {name}.",
+  "tokens.badName":
+    "Usa minúsculas, dígitos y . _ - — tiene que poder escribirse en una shell.",
+  "tokens.alreadyGone":
+    "No hay ningún token de máquina con ese nombre. Puede que ya se haya revocado.",
+
 };

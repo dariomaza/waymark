@@ -123,6 +123,44 @@ export const loginFailureMessage = (error: unknown): Message | null => {
 };
 
 /**
+ * # The three refusals the machine-token panel has a real answer for
+ *
+ * Everything else falls through to `describeFailure`, which passes the API's
+ * own English sentence along. These three do not, because they are the ones an
+ * operator meets constantly and the ones with something to DO about them:
+ * pick another name, fix this one, or stop looking for a token that is
+ * already gone.
+ *
+ * `null` for anything else, so a screen can tell the refusals it handles from
+ * every other — the same bargain every function in this file makes.
+ */
+export const machineTokenFailureMessage = (error: unknown): Message | null => {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  switch (error.code) {
+    case ApiErrorCode.MACHINE_TOKEN_NAME_ALREADY_TAKEN:
+      return message("tokens.nameTaken", {
+        name: detailText(error, "machineTokenName") ?? "",
+      });
+    case ApiErrorCode.INVALID_MACHINE_TOKEN_NAME:
+      return message("tokens.badName");
+    case ApiErrorCode.MACHINE_TOKEN_NOT_FOUND:
+      return message("tokens.alreadyGone");
+    default:
+      return null;
+  }
+};
+
+/** A string out of `details`, read without trusting the wire. */
+const detailText = (error: ApiError, key: string): string | null => {
+  const value = error.details[key];
+
+  return typeof value === "string" ? value : null;
+};
+
+/**
  * One sentence a person can act on, for a failure a screen did not expect.
  *
  * Screens handle the refusals they have an answer for — a box that is not

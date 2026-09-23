@@ -468,4 +468,82 @@ export const EN = {
   "units.emptyRootNote":
     "A root unit has no parent to empty into. Everything inside {name} has to go somewhere else.",
   "units.emptyIntoNote": "Everything inside {name} moves up into {parent}. Nothing is deleted.",
+
+  // ---------------------------------------------------------------------
+  // Machine tokens: credentials for programs (ADR 17, ADR 18)
+  // ---------------------------------------------------------------------
+
+  /**
+   * The noun is the API's, in both languages, and deliberately so.
+   *
+   * `nav.places` chose the person's word over the database's, and that was
+   * right for a tab four people tap every day. This is not that: the person
+   * opening this panel is the one who also runs `machine-token create` in a
+   * shell, reads the README, and has to recognise the same object in both
+   * places. Inventing a friendlier word here would mean an operator holding
+   * two names for one thing. The EXPLANATION is what does the humanising.
+   */
+  "tokens.title": "Machine tokens",
+  "tokens.explains":
+    "A key you give to a program, so it can read your inventory without your password. Each one is revoked on its own.",
+  "tokens.loading": "Loading your machine tokens",
+  "tokens.none": "No machine tokens yet.",
+
+  "tokens.scopeRead": "Read only",
+  "tokens.scopeReadWrite": "Read and write",
+  "tokens.scopeLabel": "What it may do",
+
+  "tokens.createdOn": "Made {when}",
+  "tokens.lastUsedOn": "Last used {when}",
+  /** The answer that makes an abandoned credential visible. */
+  "tokens.neverUsed": "Never used",
+  "tokens.lapsesOn": "Lapses {when}",
+  "tokens.neverLapses": "Never lapses",
+
+  "tokens.newAction": "New token",
+  "tokens.newTitle": "New machine token",
+  "tokens.nameLabel": "What is it for",
+  "tokens.nameHint":
+    "Lower case letters, digits, and any of . _ - — mcp-server, backup. It is what revoking it later names.",
+  "tokens.createAction": "Create it",
+  "tokens.creating": "Creating…",
+
+  /**
+   * # The sentence that has to arrive BEFORE the secret can be dismissed
+   *
+   * A warning shown after the only copy is gone is an epitaph. It sits beside
+   * the secret, while it is still on screen and still copyable.
+   */
+  "tokens.secretTitle": "This is the only time you will see this",
+  "tokens.secretOnce":
+    "Waymark kept a hash of it, not the secret, so it cannot show it to you again. Copy it now — if it gets away from you, rotate the token and take a new one.",
+  "tokens.secretHow": "Send it as: Authorization: Machine <token>",
+  "tokens.secretLabel": "The secret for {name}",
+  "tokens.copyAction": "Copy",
+  "tokens.copied": "Copied",
+  "tokens.copyFailed": "This browser would not copy it. Select it and copy it by hand.",
+  "tokens.storedAction": "I have stored it",
+
+  "tokens.rotateAction": "Rotate",
+  "tokens.rotateTitle": "Rotate {name}?",
+  /**
+   * There is no grace period, by design (ADR 18), so the outage is named
+   * before the button rather than discovered after it.
+   */
+  "tokens.rotateWarning":
+    "The secret {name} is using now stops working the moment you do this. Whatever is holding it will be refused every request until you put the new secret in place.",
+  "tokens.rotating": "Rotating…",
+
+  "tokens.revokeAction": "Revoke",
+  "tokens.revokeTitle": "Revoke {name}?",
+  "tokens.revokeWarning":
+    "{name} stops working on its very next request. No other token and no account is touched.",
+  "tokens.revoking": "Revoking…",
+
+  "tokens.nameTaken": "There is already a machine token called {name}.",
+  "tokens.badName":
+    "Use lower case letters, digits, and any of . _ - — it has to be typeable in a shell.",
+  "tokens.alreadyGone":
+    "There is no machine token by that name. It may already have been revoked.",
+
 } as const;

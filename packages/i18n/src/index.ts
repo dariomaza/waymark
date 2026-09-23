@@ -52,6 +52,7 @@ export {
   describeFailure,
   fieldComplaints,
   loginFailureMessage,
+  machineTokenFailureMessage,
   missingTargetMessage,
   moveRefusedMessage,
   notEmptyMessage,

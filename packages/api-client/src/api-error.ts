@@ -102,6 +102,20 @@ export const ApiErrorCode = {
    */
   READ_ONLY_MACHINE_TOKEN: "READ_ONLY_MACHINE_TOKEN",
   TOO_MANY_LOGIN_ATTEMPTS: "TOO_MANY_LOGIN_ATTEMPTS",
+  /** A machine token with that name already exists (409, ADR 18). */
+  MACHINE_TOKEN_NAME_ALREADY_TAKEN: "MACHINE_TOKEN_NAME_ALREADY_TAKEN",
+  /** The name would need shell quoting to type, so it is refused (422, ADR 18). */
+  INVALID_MACHINE_TOKEN_NAME: "INVALID_MACHINE_TOKEN_NAME",
+  /** Nothing was rotated or revoked, because that name named nothing (404). */
+  MACHINE_TOKEN_NOT_FOUND: "MACHINE_TOKEN_NOT_FOUND",
+  /**
+   * A machine token tried to manage machine tokens (403, ADR 18).
+   *
+   * Never seen by `apps/web` or `apps/mobile`, which hold a person's session.
+   * It is here because the code is part of the contract, and because the MCP
+   * server has to be able to recognise the refusal rather than read a status.
+   */
+  MACHINE_TOKEN_CANNOT_MANAGE_MACHINE_TOKENS: "MACHINE_TOKEN_CANNOT_MANAGE_MACHINE_TOKENS",
   VALIDATION_FAILED: "VALIDATION_FAILED",
 } as const;
 

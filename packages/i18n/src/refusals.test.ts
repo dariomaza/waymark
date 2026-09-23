@@ -6,6 +6,7 @@ import {
   describeFailure,
   fieldComplaints,
   loginFailureMessage,
+  machineTokenFailureMessage,
   missingTargetMessage,
   moveRefusedMessage,
   notEmptyMessage,
@@ -220,5 +221,58 @@ describe("the API's complaints about a field", () => {
 
   it("has nothing to say about any other refusal", () => {
     expect(fieldComplaints(new ApiError(409, "STORAGE_UNIT_NOT_EMPTY", "x"))).toEqual([]);
+  });
+});
+
+/**
+ * # The refusals the machine-token panel answers itself
+ *
+ * `describeFailure` would pass the API's own English through for all three,
+ * which is the right default for a refusal nobody has met yet and the wrong
+ * one for the three an operator meets constantly. These have somewhere to go:
+ * pick another name, fix this one, stop looking.
+ */
+describe("what a machine-token refusal becomes", () => {
+  const refusal = (code: string, details: Record<string, unknown> = {}) =>
+    new ApiError(409, code, "the API's own words", details);
+
+  it("names the token somebody has already used", () => {
+    const said = machineTokenFailureMessage(
+      refusal("MACHINE_TOKEN_NAME_ALREADY_TAKEN", { machineTokenName: "mcp-server" }),
+    );
+
+    expect(translator("en")(said)).toContain("mcp-server");
+    expect(translator("es")(said)).toContain("mcp-server");
+  });
+
+  it("says what a usable name looks like, in both languages", () => {
+    const said = machineTokenFailureMessage(refusal("INVALID_MACHINE_TOKEN_NAME"));
+
+    expect(translator("en")(said)).toMatch(/lower case/i);
+    expect(translator("es")(said)).toMatch(/minúsculas/i);
+  });
+
+  /**
+   * Not "something went wrong": a token that is not there has very likely
+   * already been revoked, which is a different thing to tell somebody who is
+   * standing there wondering whether their click worked.
+   */
+  it("suggests the token may already be gone rather than reporting a fault", () => {
+    const said = machineTokenFailureMessage(refusal("MACHINE_TOKEN_NOT_FOUND"));
+
+    expect(translator("en")(said)).toMatch(/already have been revoked/i);
+  });
+
+  it("stays out of the way of every other failure", () => {
+    expect(machineTokenFailureMessage(refusal("STORAGE_UNIT_NOT_EMPTY"))).toBeNull();
+    expect(machineTokenFailureMessage(new Error("boom"))).toBeNull();
+    expect(machineTokenFailureMessage(null)).toBeNull();
+  });
+
+  /** A name missing from `details` must not print the word "undefined". */
+  it("survives an API that did not send the name", () => {
+    const said = machineTokenFailureMessage(refusal("MACHINE_TOKEN_NAME_ALREADY_TAKEN"));
+
+    expect(translator("en")(said)).not.toContain("undefined");
   });
 });
