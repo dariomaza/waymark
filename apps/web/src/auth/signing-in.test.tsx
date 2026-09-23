@@ -32,6 +32,16 @@ const knowsTheSession = (): void => {
     http.get(`${API_URL}/auth/me`, () =>
       HttpResponse.json({ user: { id: "u1", username: "dario" } }),
     ),
+    /*
+     * The account sheet holds both kinds of credential a person manages
+     * (ADR 18, ADR 19), and asks for each list the moment it opens. Declared
+     * here because `setup.ts` is emphatic about it: a request no test declared
+     * is a test that does not know what it depends on.
+     */
+    http.get(`${API_URL}/auth/machine-tokens`, () =>
+      HttpResponse.json({ machineTokens: [] }),
+    ),
+    http.get(`${API_URL}/auth/passkeys`, () => HttpResponse.json({ passkeys: [] })),
   );
 };
 

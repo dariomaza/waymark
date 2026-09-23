@@ -2,6 +2,7 @@ import type { Clock, IdGenerator } from "@waymark/domain";
 import {
   verifyRegistrationResponse,
   type RegistrationResponseJSON,
+  type VerifiedRegistrationResponse,
 } from "@simplewebauthn/server";
 
 import {
@@ -21,6 +22,17 @@ import type { PasskeyChallengeRepository } from "./passkey-challenge-repository.
 import type { PasskeyRepository } from "./passkey-repository.js";
 import type { RelyingParty } from "./relying-party.js";
 import type { User } from "./user.js";
+
+/**
+ * The library's own success arm, taken from its own type rather than
+ * re-described here. Narrowing to `verified: true` is what lets
+ * `registrationInfo` be read without a second check that TypeScript has
+ * already done.
+ */
+type VerifiedRegistration = Extract<
+  VerifiedRegistrationResponse,
+  { verified: true }
+>;
 
 export interface FinishPasskeyRegistrationDependencies {
   readonly passkeys: PasskeyRepository;
@@ -144,7 +156,7 @@ export class FinishPasskeyRegistration {
   async #verify(
     expectedChallenge: string,
     response: RegistrationResponseJSON,
-  ): Promise<{ registrationInfo: { userVerified: boolean; credential: { id: string; publicKey: Uint8Array; counter: number; transports?: string[] } } }> {
+  ): Promise<VerifiedRegistration> {
     let verification;
     try {
       verification = await verifyRegistrationResponse({

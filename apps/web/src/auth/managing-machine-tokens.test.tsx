@@ -38,6 +38,13 @@ const answerWith = (machineTokens: Record<string, unknown>[]): void => {
     http.get(`${API_URL}/auth/machine-tokens`, () =>
       HttpResponse.json({ machineTokens }),
     ),
+    /*
+     * The account sheet also holds the passkeys panel (ADR 19), which asks for
+     * the list the moment the sheet opens. Declared here rather than left
+     * unhandled because `setup.ts` is emphatic about it: a request no test
+     * declared is a test that does not know what it depends on.
+     */
+    http.get(`${API_URL}/auth/passkeys`, () => HttpResponse.json({ passkeys: [] })),
   );
 };
 
