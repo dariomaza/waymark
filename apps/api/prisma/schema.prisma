@@ -244,3 +244,45 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
 }
+
+/// A machine credential: named, long-lived, revocable on its own (ADR 17).
+///
+/// It is deliberately NOT a `User` and carries no `userId`. ADR 5 says users
+/// are credentials against one shared inventory, and this is another credential
+/// against that same inventory rather than a delegation of somebody's account —
+/// which is the whole point, because a machine using a person's password cannot
+/// be revoked without changing that person's password.
+///
+/// There is no relation to `User` for that reason, and so deleting an account
+/// does not silently kill the MCP server the household depends on.
+model MachineToken {
+  id String @id
+  /// What the token is FOR, in a human's words. Unique, because it is what
+  /// `machine-token revoke --name` addresses, and revocation must never be a
+  /// coin toss between two rows. Normalized lower case in the application, for
+  /// the same reason `User.username` is.
+  name String @unique
+  /// SHA-256 of the token, which is shown once by the CLI and never stored.
+  ///
+  /// NOT scrypt, unlike `User.passwordHash`, and the reasoning is written out
+  /// in `src/auth/machine-token-secret.ts`: the secret is 256 uniform random
+  /// bits, so there is no dictionary for a slow KDF to make expensive, and the
+  /// cost would land on every request a machine makes rather than on one login.
+  /// Unique so a presented token is one indexed read and never a scan that
+  /// compares digests in application code.
+  tokenHash String @unique
+  /// `read` | `read-write`. A string for the same reason `StorageUnit.kind` is:
+  /// SQLite has no enum, so the value is checked on the way out by the mapper.
+  scope String
+
+  createdAt DateTime
+  /// `null` means it never lapses, which is the normal case for a credential
+  /// that lives in a compose file.
+  expiresAt DateTime?
+  /// Written at most once an hour, not once a request. A machine is the one
+  /// caller that reads in a loop, and stamping every read would turn an
+  /// inventory walk into forty writes on a single SQLite file.
+  lastUsedAt DateTime?
+
+  @@index([expiresAt])
+}

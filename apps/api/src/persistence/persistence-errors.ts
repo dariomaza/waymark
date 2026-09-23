@@ -57,3 +57,28 @@ export class UnknownPhotoProcessingStatus extends DomainError {
     super(`Stored photo ${photoId} has an impossible processing status: "${value}"`);
   }
 }
+
+/**
+ * Raised when a machine token's `scope` column holds something outside
+ * `MachineTokenScope`.
+ *
+ * Same reasoning as `UnknownStorageUnitKind`, and sharper: this column decides
+ * whether a credential may write. A value nobody recognises must stop the
+ * request, never fall back to a default — "unknown, so probably read-only"
+ * would be a guess about an authorization decision, and "unknown, so
+ * read-write" would be that guess pointed the dangerous way.
+ *
+ * It is a `DomainError` rather than an `AuthError` because it says the DATABASE
+ * is wrong, not the caller: an `AuthError` becomes a 401 or a 403, which would
+ * blame whoever presented a perfectly good token for a row this service wrote.
+ */
+export class UnknownMachineTokenScope extends DomainError {
+  constructor(
+    readonly machineTokenId: string,
+    readonly value: string,
+  ) {
+    super(
+      `Stored machine token ${machineTokenId} has an impossible scope: "${value}"`,
+    );
+  }
+}

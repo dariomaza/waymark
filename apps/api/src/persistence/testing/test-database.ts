@@ -55,6 +55,10 @@ export const createTestDatabase = async (): Promise<TestDatabase> => {
       await client.$executeRawUnsafe(`DELETE FROM "StorageUnit"`);
       await client.$executeRawUnsafe(`DELETE FROM "Session"`);
       await client.$executeRawUnsafe(`DELETE FROM "User"`);
+      // No foreign key to anything, so the order here does not matter — but it
+      // has to be emptied, or a contract case would inherit the previous one's
+      // unique names and fail for a reason that has nothing to do with it.
+      await client.$executeRawUnsafe(`DELETE FROM "MachineToken"`);
     },
 
     async destroy(): Promise<void> {

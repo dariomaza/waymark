@@ -12,6 +12,7 @@ import {
 
 import {
   CorruptStorageUnitHierarchy,
+  UnknownMachineTokenScope,
   UnknownPhotoProcessingStatus,
   UnknownStorageUnitKind,
 } from "../persistence/persistence-errors.js";
@@ -41,6 +42,7 @@ export interface MappedDomainError {
  * | `CorruptStorageUnitHierarchy`  | 500    | The stored data is broken. Nothing the caller sent is wrong.        |
  * | `UnknownStorageUnitKind`       | 500    | Same: a column holds something the domain says cannot exist.        |
  * | `UnknownPhotoProcessingStatus` | 500    | Same, for a photo row that contradicts itself.                      |
+ * | `UnknownMachineTokenScope`     | 500    | Same, for a credential row whose scope is not a scope.              |
  *
  * ## The rule behind 404, 409 and 422
  *
@@ -178,6 +180,13 @@ const MAPPINGS = new Map<unknown, Mapper>([
     (): MappedDomainError => ({
       status: 500,
       code: "UNKNOWN_PHOTO_PROCESSING_STATUS",
+    }),
+  ],
+  [
+    UnknownMachineTokenScope,
+    (): MappedDomainError => ({
+      status: 500,
+      code: "UNKNOWN_MACHINE_TOKEN_SCOPE",
     }),
   ],
   [
