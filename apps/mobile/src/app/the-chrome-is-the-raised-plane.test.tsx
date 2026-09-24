@@ -2,7 +2,7 @@ import { aSession } from "@waymark/api-client/testing";
 
 import { fireEvent, renderApp, screen, waitFor } from "../testing/render-app.js";
 import { theApiKnowsTheHouse } from "../testing/the-house.js";
-import { colors } from "../ui/styles/tokens.js";
+import { colors, text } from "../ui/styles/tokens.js";
 
 /**
  * # The bar at the top and the bar at the bottom are the same plane
@@ -105,5 +105,37 @@ describe("the tab you are on", () => {
     expect(screen.getByRole("button", { name: "Scan" })).toHaveStyle({
       borderTopColor: "transparent",
     });
+  });
+});
+
+/**
+ * # The word under a tab's symbol is this product's size, not the library's
+ *
+ * The browser drew it at an unexplained `0.7rem` and this client drew it at
+ * whatever React Navigation's default happened to be. Neither was a decision,
+ * and the two were not the same number.
+ *
+ * It is the one place in this product where a word is a CAPTION ON A SYMBOL
+ * rather than a line of text — the icon carries the meaning, the word
+ * disambiguates it, and it has to stay on one line in both languages across
+ * four tabs on a 360px screen. So the scale gained `xs` for it, deliberately
+ * and for that role alone, and both clients now name it. See ADR 22 and the
+ * doc comment on `TEXT` in `@waymark/tokens`.
+ */
+describe("the word under a tab's symbol", () => {
+  it("is the size this product publishes for it", async () => {
+    theApiKnowsTheHouse();
+    await renderApp({ session: aSession() });
+
+    await waitFor(() => {
+      expect(screen.getByText("Scan")).toBeOnTheScreen();
+    });
+
+    expect(screen.getByText("Scan")).toHaveStyle({ fontSize: text.xs });
+  });
+
+  /** And that size is the deliberate step, not the body size by accident. */
+  it("is smaller than anything a sentence is set in", () => {
+    expect(text.xs).toBeLessThan(text.s);
   });
 });

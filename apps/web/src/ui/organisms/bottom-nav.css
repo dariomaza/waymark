@@ -28,8 +28,16 @@
   color: var(--color-ink-muted);
 }
 
+/**
+ * The word under the symbol, at the one size the scale added for it.
+ *
+ * This was `0.7rem` — 11.2px, on no scale at all — and the phone was inheriting
+ * whatever React Navigation's default happened to be, which is not this
+ * product's number to leave to somebody else. Both clients now name it
+ * (ADR 22).
+ */
 .bottom-nav__label {
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   font-weight: 650;
   /* The word is a hint under a symbol, not a heading. It must not wrap. */
   white-space: nowrap;
