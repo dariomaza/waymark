@@ -101,3 +101,20 @@ npx expo config --type public          # what the build will actually see
 EXPO_PUBLIC_WAYMARK_API_URL=https://your.waymark.host \
   npx expo export --platform android   # the real Metro bundle
 ```
+
+## Releasing
+
+A version is a tag. Bump `expo.version` in `app.json`, commit, then:
+
+```sh
+git tag v0.2.0
+git push github v0.2.0
+```
+
+`.github/workflows/release.yml` runs the full CI against that commit, builds
+the APK on EAS, checks the build is that exact commit and version, and attaches
+it to a GitHub release. A tag that disagrees with `app.json` is refused before
+any build time is spent.
+
+It needs one repository secret, `EXPO_TOKEN` — an access token from the Expo
+account that owns the project. The signing keystore never leaves EAS.

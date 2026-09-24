@@ -23,8 +23,17 @@ on:
   # The cost is that a push to a branch with an open pull request runs the job
   # twice. That is some wasted minutes; the alternative is a whole branch
   # nobody checked.
+  #
+  # Branches only. A bare `push:` also fires for a TAG, and a tag is how a
+  # release starts — `release.yml` calls this file as its first job, so a tag
+  # push would otherwise verify the same commit twice, once for nothing.
   push:
+    branches: ["**"]
   pull_request:
+  # So `release.yml` can require exactly these checks, rather than a copy of
+  # them. Two lists of "what proves a commit is good" is two lists that drift,
+  # which is the failure this repository has spent a week removing elsewhere.
+  workflow_call:
 
 # A superseded push has nothing left to prove, so it stops rather than queuing
 # behind the answer that replaced it.
