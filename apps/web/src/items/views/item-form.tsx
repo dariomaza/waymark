@@ -24,7 +24,6 @@ export interface ItemFormProps {
   readonly failureTone?: CalloutTone;
   readonly fieldProblems: readonly FieldComplaint[];
   readonly onSubmit: (values: ItemFormValues) => void;
-  readonly onCancel: () => void;
 }
 
 /**
@@ -47,7 +46,6 @@ export const ItemForm = ({
   failureTone = "wrong",
   fieldProblems,
   onSubmit,
-  onCancel,
 }: ItemFormProps): JSX.Element => {
   const t = useTranslate();
 
@@ -124,8 +122,7 @@ export const ItemForm = ({
           }}
         />
 
-        <div className="sheet__buttons">
-          <Button onClick={onCancel}>{t("action.cancel")}</Button>
+        <div className="sheet__commit">
           <Button type="submit" tone="primary" disabled={busy}>
             {busy ? t("action.saving") : submitLabel}
           </Button>

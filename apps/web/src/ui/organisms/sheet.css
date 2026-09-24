@@ -17,7 +17,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgb(0 0 0 / 55%);
+  /* 67%, which is what the phone dims to. See ADR 22. */
+  background: rgb(0 0 0 / 67%);
 }
 
 .sheet {
@@ -65,13 +66,20 @@
   min-height: 0;
 }
 
+/**
+ * The title and Close stay put; only what is under them moves — and the rule
+ * is what says so before anybody has scrolled far enough to find out. The
+ * phone has had it all along; this client had the behaviour without the line
+ * that explains it (ADR 22).
+ */
 .sheet__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  /* The title and Close stay put; only what is under them moves. */
   flex: 0 0 auto;
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: var(--space-3);
 }
 
 .sheet__body {
@@ -100,12 +108,35 @@
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
 }
 
-.sheet__buttons {
+/**
+ * # The one thing the sheet is FOR, full width, and no Cancel beside it
+ *
+ * This was a two-up row: `Cancel` next to the action, at equal width and equal
+ * weight. The phone has always ended a sheet with one full-width primary and
+ * left the X in the head as the way out, and the phone's shape wins (ADR 22).
+ *
+ * Three arguments, and the first is the one that decides it:
+ *
+ * - the way out already exists and is already in ONE place. Every sheet has
+ *   the X in its head; here Escape also closes it. `Cancel` was a third
+ *   spelling of that, and the one spelling sitting where a thumb aiming at
+ *   Confirm can land.
+ * - it halved the primary. The sheet exists for one action, and giving away
+ *   half the row makes "Guardar los cambios" wrap inside a 48px rectangle —
+ *   the exact failure ADR 21 was written about, at two controls instead of
+ *   nine.
+ * - two rectangles side by side say they are the same kind of thing, so a
+ *   person reads both to find out which is which. `Cancel` beside `Delete` is
+ *   the worst instance of that in the product.
+ *
+ * Singular, because there is one. The name was `sheet__buttons`, and a plural
+ * class holding one control is a name that outlived its layout.
+ */
+.sheet__commit {
   display: flex;
-  gap: var(--space-2);
 }
 
-.sheet__buttons .button {
+.sheet__commit .button {
   flex: 1;
 }
 

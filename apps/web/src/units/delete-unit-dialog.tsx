@@ -60,8 +60,7 @@ export const DeleteUnitDialog = ({
           {remove.isError ? (
             <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}
-          <div className="sheet__buttons">
-            <Button onClick={onClose}>{t("action.cancel")}</Button>
+          <div className="sheet__commit">
             <Button
               tone="danger"
               disabled={remove.isPending}
@@ -100,8 +99,7 @@ export const DeleteUnitDialog = ({
             <Callout tone="wrong">{t(describeFailure(emptyAndRemove.error))}</Callout>
           ) : null}
 
-          <div className="sheet__buttons">
-            <Button onClick={onClose}>{t("units.leaveItAlone")}</Button>
+          <div className="sheet__commit">
             <Button
               tone="danger"
               disabled={emptyAndRemove.isPending || (needsTarget && chosen === undefined)}

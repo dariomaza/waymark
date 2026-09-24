@@ -66,8 +66,7 @@ export const ItemMenu = ({ item, holder }: ItemMenuProps): JSX.Element => {
           {remove.isError ? (
             <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>
           ) : null}
-          <div className="sheet__buttons">
-            <Button onClick={close}>{t("action.cancel")}</Button>
+          <div className="sheet__commit">
             <Button
               tone="danger"
               disabled={remove.isPending}

@@ -177,7 +177,6 @@ export const ES: Dictionary = {
   "units.moveEverythingInto": "Mover todo a",
   "units.chooseUnit": "Elige una unidad…",
   "units.emptyThereAndDelete": "Vaciarla ahí y borrarla",
-  "units.leaveItAlone": "Dejarla como está",
   "units.emptyIt": "Vaciarla",
   "units.moveInto": "Moverla a",
   "units.moveIt": "Moverla",

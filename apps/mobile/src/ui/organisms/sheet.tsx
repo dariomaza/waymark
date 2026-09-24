@@ -59,7 +59,9 @@ export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => 
 };
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#000000aa" },
+  // 0.67, the same as the browser's backdrop. It was `#000000aa`, which is the
+  // same number said in a way nobody can check against a stylesheet.
+  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0, 0, 0, 0.67)" },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.l,

@@ -72,8 +72,7 @@ export const EmptyUnitDialog = ({
         <Callout tone="wrong">{t(describeFailure(empty.error))}</Callout>
       ) : null}
 
-      <div className="sheet__buttons">
-        <Button onClick={onClose}>{t("action.cancel")}</Button>
+      <div className="sheet__commit">
         <Button
           tone="primary"
           disabled={empty.isPending || (needsTarget && chosen === undefined)}

@@ -22,6 +22,7 @@ const CALLOUT = sheet("ui/atoms/callout.css");
 const EMPTY = sheet("ui/molecules/empty-note.css");
 const FIELD = sheet("ui/atoms/text-field.css");
 const CRUMB = sheet("ui/molecules/breadcrumb.css");
+const SHEET = sheet("ui/organisms/sheet.css");
 
 /**
  * The control. Every assertion below reads a computed value, and a harness
@@ -240,5 +241,54 @@ describe("a breadcrumb", () => {
     expect(pixels(drawn(CRUMB_MARKUP, ".breadcrumb__step a", { sheets: [CRUMB] }).minHeight)).toBe(
       48,
     );
+  });
+});
+
+/**
+ * The panel's own chrome. Two small disagreements, both going to the phone.
+ *
+ * The backdrop was 55% here and 67% there — the same idea at two strengths,
+ * which on a dark screen is the difference between a page that is dimmed and
+ * one that is plainly behind something.
+ *
+ * The head's rule is the one that carries an argument. The head holds the
+ * title and the way out and stays put while the body scrolls; the rule is what
+ * says so before anybody has scrolled. This client had the scrolling and not
+ * the line that explains it.
+ */
+describe("the panel a question is asked in", () => {
+  const SHEET_MARKUP = `
+    <div class="sheet__backdrop">
+      <div class="sheet">
+        <div class="sheet__head"><h3>Delete Box 3</h3></div>
+        <div class="sheet__body"></div>
+      </div>
+    </div>`;
+
+  /**
+   * Character for character the string the phone's `Sheet` now carries, which
+   * is as close to a shared value as two platforms with no common stylesheet
+   * can get for a colour that is not a token.
+   */
+  it("dims the page behind it as far as the phone dims it", () => {
+    expect(drawn(SHEET_MARKUP, ".sheet__backdrop", { sheets: [SHEET] }).background).toBe(
+      "rgba(0, 0, 0, 0.67)",
+    );
+  });
+
+  it("still has a head to rule off, or the next assertion proves nothing", () => {
+    expect(declarationsIn(SHEET, ".sheet__head").trim()).not.toBe("");
+  });
+
+  /** `border-bottom` is a shorthand, so this one goes to the file. */
+  it("rules off the part that does not move, as the phone does", () => {
+    expect(declarationsIn(SHEET, ".sheet__head")).toContain(
+      "border-bottom: 1px solid var(--color-line);",
+    );
+  });
+
+  /** Unchanged, and the reason the rule means anything: only the body scrolls. */
+  it("still scrolls the body and nothing else", () => {
+    expect(drawn(SHEET_MARKUP, ".sheet__body", { sheets: [SHEET] }).overflowY).toBe("auto");
   });
 });
