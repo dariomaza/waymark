@@ -2,10 +2,10 @@ import { type PhotoView } from "@waymark/api-client";
 import { photoStatusNote } from "@waymark/i18n";
 import { PhotoProcessingStatus } from "@waymark/domain";
 import type { JSX } from "react";
-import { Link } from "react-router-dom";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
+import { QuietLink } from "../../ui/atoms/quiet-link.js";
 import { ROUTES } from "../../app/routes.js";
 import { useTranslate } from "../../app/language-context.js";
 
@@ -65,9 +65,16 @@ export const PhotoStatusNote = ({
                 >
                   {t("photos.retryRemoval")}
                 </Button>
-                <Link className="button button--quiet" to={ROUTES.backgroundRemoval}>
+                {/*
+                  The site ADR 21 named for `QuietLink` and then left alone.
+                  This is a way SOMEWHERE — the queue of everything that failed
+                  — beside a button that acts on the photograph in front of
+                  you, and drawing both as rectangles said they were the same
+                  kind of thing. ADR 22.
+                */}
+                <QuietLink icon="image" to={ROUTES.backgroundRemoval}>
                   {t("photos.seeFailed")}
-                </Link>
+                </QuietLink>
               </>
             ),
           }

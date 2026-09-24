@@ -2,10 +2,10 @@ import { type PhotoView } from "@waymark/api-client";
 import { photoStatusNote } from "@waymark/i18n";
 import { PhotoProcessingStatus } from "@waymark/domain";
 import type { JSX } from "react";
-import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
-import { colors, space, text } from "../../ui/styles/tokens.js";
+import { Callout } from "../../ui/atoms/callout.js";
+import { QuietLink } from "../../ui/atoms/quiet-link.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface PhotoStatusNoteProps {
@@ -49,32 +49,49 @@ export const PhotoStatusNote = ({
     return null;
   }
 
+  const failed = photo.processingStatus === PhotoProcessingStatus.FAILED;
+
+  /*
+   * A `Callout` in the `note` tone, which is what the browser has always drawn
+   * here. This was a bare line of muted text, so the same sentence was an
+   * aside on one client and a marked note on the other (ADR 22).
+   *
+   * It is a NOTE and not an alert: the original photograph is on the screen
+   * and stays there whatever happens next.
+   */
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.note}>{note}</Text>
-      {photo.processingStatus === PhotoProcessingStatus.FAILED ? (
-        <View style={styles.actions}>
-          <Button
-            tone="quiet"
-            label={t("photos.retryRemoval")}
-            disabled={retrying}
-            onPress={onRetry}
-          >
-            {t("photos.retryRemoval")}
-          </Button>
-          {onSeeFailed === undefined ? null : (
-            <Button tone="quiet" label={t("photos.seeFailed")} onPress={onSeeFailed}>
-              {t("photos.seeFailed")}
-            </Button>
-          )}
-        </View>
-      ) : null}
-    </View>
+    <Callout
+      tone="note"
+      {...(failed
+        ? {
+            action: (
+              <>
+                <Button
+                  tone="quiet"
+                  label={t("photos.retryRemoval")}
+                  disabled={retrying}
+                  onPress={onRetry}
+                >
+                  {t("photos.retryRemoval")}
+                </Button>
+                {onSeeFailed === undefined ? null : (
+                  /*
+                   * The site ADR 21 named for `QuietLink` and then left alone.
+                   * This is a way SOMEWHERE — the queue of everything that
+                   * failed — beside a button that acts on the photograph in
+                   * front of you, and drawing both as rectangles said they
+                   * were the same kind of thing.
+                   */
+                  <QuietLink icon="image" onPress={onSeeFailed}>
+                    {t("photos.seeFailed")}
+                  </QuietLink>
+                )}
+              </>
+            ),
+          }
+        : {})}
+    >
+      {note}
+    </Callout>
   );
 };
-
-const styles = StyleSheet.create({
-  wrap: { gap: space.s2, alignItems: "flex-start" },
-  note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-});
