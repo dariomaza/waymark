@@ -43,7 +43,6 @@ export const CreateUnitDialog = ({
           create.isError && problems.length === 0 ? t(describeFailure(create.error)) : null
         }
         fieldProblems={problems}
-        onCancel={onClose}
         onSubmit={(values) => {
           create.mutate(
             {

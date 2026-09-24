@@ -68,7 +68,7 @@ export const SearchResults = ({ results }: SearchResultsProps): JSX.Element => {
       {results.storageUnits.length === 0 ? null : (
         <section>
           <h3>{t("search.units")}</h3>
-          <ul aria-label={t("search.unitsFound")}>
+          <ul className="search-hit-list" aria-label={t("search.unitsFound")}>
             {results.storageUnits.map((hit) => (
               <SearchHit
                 key={hit.unit.id}

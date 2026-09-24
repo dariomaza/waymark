@@ -44,7 +44,6 @@ export const EditUnitDialog = ({ unit, onClose }: EditUnitDialogProps): JSX.Elem
         failure={edit.isError && problems.length === 0 ? t(describeFailure(edit.error)) : null}
         failureTone={failureTone(edit.error)}
         fieldProblems={problems}
-        onCancel={onClose}
         onSubmit={(values) => {
           edit.mutate(
             {

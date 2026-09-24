@@ -43,6 +43,7 @@ export const TextField = ({
         placeholderTextColor={colors.inkMuted}
         style={[
           styles.input,
+          rest.multiline === true ? styles.inputArea : null,
           problem == null ? null : styles.inputWrong,
           trailing === undefined ? null : styles.inputWithTrailing,
         ]}
@@ -67,6 +68,22 @@ const styles = StyleSheet.create({
     color: colors.ink,
     paddingHorizontal: space.s3,
     fontSize: text.m,
+  },
+  /**
+   * A box for several lines has to LOOK like one.
+   *
+   * Without a minimum it was a one-line-tall box that happened to accept
+   * newlines, which tells somebody the opposite of what it means — and the
+   * browser has said 84 since it was written (ADR 22).
+   *
+   * `textAlignVertical` is the other half on Android: a tall input still
+   * centres its first line without it, so an empty description box looks like
+   * a short one that has been stretched.
+   */
+  inputArea: {
+    minHeight: 84,
+    paddingVertical: space.s2,
+    textAlignVertical: "top",
   },
   /** Room for the control, so text stops before it rather than under it. */
   inputWithTrailing: { paddingRight: TAP_TARGET + space.s2 },

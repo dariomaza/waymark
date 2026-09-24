@@ -40,6 +40,16 @@ export interface ButtonProps {
    * can press on purpose. See the sheet's close control.
    */
   readonly icon?: IconName;
+  /**
+   * Where the word sits inside the rectangle.
+   *
+   * `center` everywhere except a menu, where the lines are a LIST to be read
+   * down rather than a set of peers to be scanned: a centred label in a
+   * full-width rectangle gives the eye a different starting point on every
+   * row, so finding one of seven means reading all seven. The browser says the
+   * same thing in `overflow-menu.css` (ADR 22).
+   */
+  readonly align?: "center" | "start";
 }
 
 export const Button = ({
@@ -50,6 +60,7 @@ export const Button = ({
   children,
   label,
   icon,
+  align = "center",
 }: ButtonProps): JSX.Element => (
   <Pressable
     role="button"
@@ -61,6 +72,7 @@ export const Button = ({
       styles.base,
       styles[tone],
       block ? styles.block : null,
+      align === "start" ? styles.leading : null,
       disabled ? styles.disabled : null,
       pressed ? styles.pressed : null,
     ]}
@@ -83,7 +95,10 @@ const styles = StyleSheet.create({
     minHeight: TAP_TARGET,
     minWidth: TAP_TARGET,
     paddingHorizontal: space.s4,
-    paddingVertical: space.s3,
+    // No vertical padding, which is what the browser has always done. With it,
+    // a button whose label wrapped grew taller than the button beside it — two
+    // controls in one row at two heights, which is the one thing a row of
+    // peers must not be. The floor above does the work instead (ADR 22).
     borderRadius: radius.m,
     borderWidth: 1,
     borderColor: colors.line,
@@ -92,6 +107,14 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: "row", alignItems: "center", gap: space.s2 },
   block: { alignSelf: "stretch" },
+  /**
+   * A list is read down, so its words start where a list starts.
+   *
+   * `alignItems`, not `justifyContent`: this Pressable has no `flexDirection`,
+   * so its main axis is vertical and `justifyContent` would move the label UP
+   * rather than left. The cross axis is the horizontal one here.
+   */
+  leading: { alignItems: "flex-start" },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.7 },
   primary: { backgroundColor: colors.accent, borderColor: colors.accent },

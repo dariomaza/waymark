@@ -47,7 +47,7 @@ import { ClipboardProvider } from "../ui/clipboard-context.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { Screen } from "../ui/organisms/screen.js";
-import { colors } from "../ui/styles/tokens.js";
+import { colors, text } from "../ui/styles/tokens.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
@@ -324,6 +324,14 @@ const Tabs = (): JSX.Element => {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarStyle: { backgroundColor: colors.surfaceRaised, borderTopColor: colors.line },
+        /*
+         * The word under the symbol, at the size this product publishes for it
+         * rather than whatever the navigation library defaults to. It is a
+         * CAPTION ON A SYMBOL and not a line of text, which is the one role
+         * `text.xs` exists for — the browser names the same step in
+         * `bottom-nav.css`. See ADR 22.
+         */
+        tabBarLabelStyle: { fontSize: text.xs },
         tabBarButton: currentTabIsUnderlined,
       }}
     >

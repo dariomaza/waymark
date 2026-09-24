@@ -240,7 +240,6 @@ export const EN = {
   "units.moveEverythingInto": "Move everything into",
   "units.chooseUnit": "Choose a unit…",
   "units.emptyThereAndDelete": "Empty it there and delete",
-  "units.leaveItAlone": "Leave it alone",
   "units.emptyIt": "Empty it",
   "units.moveInto": "Move it into",
   "units.moveIt": "Move it",

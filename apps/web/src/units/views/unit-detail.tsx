@@ -100,7 +100,7 @@ export const UnitDetail = ({
       {childUnits.length === 0 ? null : (
         <section>
           <h3>{t("units.unitsInside")}</h3>
-          <ul aria-label={t("units.unitsInside")}>
+          <ul className="row-list" aria-label={t("units.unitsInside")}>
             {childUnits.map((child) => (
               <li key={child.id}>
                 <RowLink

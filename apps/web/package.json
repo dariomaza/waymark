@@ -17,6 +17,7 @@
     "@waymark/api-client": "workspace:*",
     "@waymark/domain": "workspace:*",
     "@waymark/i18n": "workspace:*",
+    "@waymark/tokens": "workspace:*",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "lucide-react": "1.47.0",

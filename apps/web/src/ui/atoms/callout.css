@@ -13,8 +13,12 @@
   font-weight: 700;
 }
 
+/*
+ * Full ink, as the phone has it. Muted is what this app draws things that are
+ * NOT the content with, and a refusal about the world is the content.
+ */
 .callout__text {
-  color: var(--color-ink-muted);
+  color: var(--color-ink);
 }
 
 .callout__text p {

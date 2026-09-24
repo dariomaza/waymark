@@ -146,10 +146,21 @@ export const ItemCard = ({
 const styles = StyleSheet.create({
   card: { gap: space.s1 },
   pressed: { opacity: 0.7 },
+  /**
+   * `sunken`, not `raised`. This is the one row of the cross-client audit where
+   * THIS client moved rather than the browser (ADR 22): a photo's backing is
+   * the recess token everywhere else in this product — a field, an option list
+   * — and this app's own `TextField` uses it for exactly that. A tile here was
+   * this file breaking a rule the rest of the app keeps.
+   *
+   * It shows most in the state most of a new inventory is in: forty cells with
+   * no photograph yet, which read as holes waiting for a picture rather than as
+   * forty raised tiles with letters on them.
+   */
   image: {
     aspectRatio: 1,
     borderRadius: radius.m,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.surfaceSunken,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",

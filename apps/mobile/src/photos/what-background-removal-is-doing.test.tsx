@@ -260,7 +260,7 @@ describe("what background removal is doing", () => {
       });
 
       await fireEvent.press(
-        await screen.findByRole("button", { name: "See every photo that failed" }),
+        await screen.findByRole("link", { name: "See every photo that failed" }),
       );
 
       expect(
@@ -337,7 +337,7 @@ describe("what a retry makes stale", () => {
   const fromTheFailedPhotoToTheQueue = async (): Promise<void> => {
     await renderApp({ session: aSession(), screen: { name: "Item", params: { id: "drill" } } });
     await fireEvent.press(
-      await screen.findByRole("button", { name: "See every photo that failed" }),
+      await screen.findByRole("link", { name: "See every photo that failed" }),
     );
     await screen.findByRole("header", { name: "Background removal" });
   };

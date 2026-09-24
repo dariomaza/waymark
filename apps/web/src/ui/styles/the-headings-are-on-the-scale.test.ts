@@ -75,9 +75,24 @@ const sizeOf = (markup: string, sheets: readonly string[] = []): string => {
   return onScale === undefined ? drawn : `${String(onScale)}px`;
 };
 
+/**
+ * The sizes a HEADING may be: the scale without its smallest step.
+ *
+ * `--text-xs` was added deliberately, for one role — the word under a tab-bar
+ * icon, which is a caption on a symbol rather than a line of text (ADR 22, and
+ * the doc comment on `TEXT` in `@waymark/tokens`). Letting it into the set
+ * below would quietly make it a legal size for a heading, which is the exact
+ * opposite of what adding it was for.
+ */
+const HEADING_SIZES = [...SCALE].filter(([name]) => name !== "var(--text-xs)");
+
 describe("the type scale this app publishes", () => {
-  it("is four sizes, and they are the four the phone client carries", () => {
-    expect([...SCALE.values()].sort((a, b) => a - b)).toEqual([14, 16, 20, 24]);
+  it("is five sizes, the smallest of which is deliberate and narrow", () => {
+    expect([...SCALE.values()].sort((a, b) => a - b)).toEqual([12, 14, 16, 20, 24]);
+  });
+
+  it("offers a heading the four the phone client carries, and not the fifth", () => {
+    expect(HEADING_SIZES.map(([, size]) => size).sort((a, b) => a - b)).toEqual([14, 16, 20, 24]);
   });
 
   /**
@@ -173,7 +188,7 @@ describe("every heading level this app actually uses", () => {
     (level) => {
       const drawn = sizeOf(`<${level}>A heading</${level}>`);
 
-      expect([...SCALE.values()].map((size) => `${String(size)}px`)).toContain(drawn);
+      expect(HEADING_SIZES.map(([, size]) => `${String(size)}px`)).toContain(drawn);
     },
   );
 });

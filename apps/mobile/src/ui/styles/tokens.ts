@@ -1,67 +1,58 @@
+import { DARK, RADIUS, SPACE, TEXT } from "@waymark/tokens";
+
 /**
- * The whole visual vocabulary, in one place, and the same one the web client
- * uses — `apps/web/src/ui/styles/tokens.css` carries these exact values, with
- * a light scheme beside them.
+ * # The whole visual vocabulary, and none of it is written here
  *
- * Dark, always: this is opened in a storage room at night as often as
- * anywhere else, and a white screen at arm's length in the dark is the
- * difference between reading a label and turning the phone away. The web app
- * follows the system; a phone held over a box does not get that choice,
- * because the camera screen is black either way.
+ * This used to be a hand-written copy of `apps/web/src/ui/styles/tokens.css` —
+ * the same hex strings, the same spacing steps, the same type sizes, in a
+ * second syntax — kept in step by whoever last remembered. That is the same
+ * arrangement ADR 20 found in the two icon files, and it failed the same way:
+ * not loudly, but by one client quietly becoming a slightly different product.
  *
- * # Why the surfaces are neutral and only the accent has colour
+ * The values now live in `@waymark/tokens` and this file re-exports them, so a
+ * colour changed there is changed here with nothing in between. See ADR 22.
  *
- * They were not. Every token used to sit between hue 74 and hue 111 — the
- * surfaces, the lines, the muted text and the accent were all olive — and an
- * accent only means "look here" when it is the one saturated thing on screen.
- * Against a world made of itself it means nothing.
+ * ## What this file is still FOR
  *
- * # Why the accent is three tokens and not one
+ * The names. `colors`, `space`, `radius` and `text` are what thirty components
+ * in this app import, and they are this platform's spelling of the shared
+ * vocabulary — the same seam `ui/atoms/icon.tsx` is for lucide (ADR 20). The
+ * package's `DARK` is not a name a StyleSheet should have to know, and keeping
+ * the seam is what would make a second source, or a themed variant, a change
+ * to one file rather than to thirty.
  *
- * An accent does two jobs with opposite requirements: it fills a button, and
- * it is a foreground on the page. The web client needs a fourth token, a
- * border, because there the lime fill sits on near-white and its silhouette
- * fails a component boundary. Here it does not — the fill is at 14.51 against
- * this surface — so `accentBorder` is absent rather than transparent, to keep
- * this file honest about what the platform actually needs.
+ * ## Dark, always, and the one token that is deliberately missing
  *
- * Contrast, measured: ink/surface 17.30, ink/raised 15.86, muted/surface
- * 7.98, muted/raised 7.31, accent/surface 14.51, accentInk/accent 13.85.
+ * This is opened in a storage room at night as often as anywhere else, and a
+ * white screen at arm's length in the dark is the difference between reading a
+ * label and turning the phone away. The web client follows the system; a phone
+ * held over a box does not get that choice, because the camera screen is black
+ * either way. So `DARK` is the only scheme this client takes, and the shared
+ * package's `LIGHT` is not imported here at all.
+ *
+ * The browser has two tokens this one has not, and both are absent rather than
+ * transparent, to keep this file honest about what the platform actually
+ * needs:
+ *
+ * - `accentBorder`, because on the light scheme the lime fill has only 1.26
+ *   contrast against the page and its silhouette needs rescuing. Here the fill
+ *   is at 14.51 and needs nothing.
+ * - `focus`, because React Native has no `:focus-visible` and no keyboard
+ *   focus to draw a ring around. The press state is this platform's answer.
+ *
+ * Those numbers are not claims. `@waymark/tokens` recomputes them from the
+ * colours on every test run.
  */
-export const colors = {
-  surface: "#101011",
-  surfaceRaised: "#191a1b",
-  surfaceSunken: "#0a0a0b",
-  ink: "#f4f4f5",
-  inkMuted: "#a6a8ab",
-  line: "#2e3032",
+export const colors = DARK;
 
-  /** The fill, and the ink that goes on it. */
-  accent: "#c8f04a",
-  accentInk: "#14170a",
-  /** The accent as a foreground: a link, the active tab, an outline button. */
-  accentText: "#c8f04a",
+export const space = SPACE;
 
-  danger: "#ff8a7a",
-  dangerInk: "#2a0d08",
-  warning: "#ffc34d",
-} as const;
+export const radius = RADIUS;
 
-export const space = {
-  s1: 4,
-  s2: 8,
-  s3: 12,
-  s4: 16,
-  s5: 24,
-  s6: 32,
-} as const;
-
-export const radius = { s: 6, m: 10, l: 16 } as const;
-
-export const text = { s: 14, m: 16, l: 20, xl: 24 } as const;
+export const text = TEXT;
 
 /**
  * Nothing tappable is smaller than this. The app is used one-handed, standing
  * up, sometimes on a step ladder.
  */
-export const TAP_TARGET = 48;
+export { TAP_TARGET } from "@waymark/tokens";

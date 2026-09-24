@@ -62,8 +62,7 @@ export const MoveItemsDialog = ({
         <Callout tone="wrong">{refused ?? t(describeFailure(move.error))}</Callout>
       ) : null}
 
-      <div className="sheet__buttons">
-        <Button onClick={onClose}>{t("action.cancel")}</Button>
+      <div className="sheet__commit">
         <Button
           tone="primary"
           disabled={move.isPending || target === ""}

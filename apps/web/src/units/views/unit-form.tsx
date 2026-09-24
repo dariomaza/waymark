@@ -31,7 +31,6 @@ export interface UnitFormProps {
   /** The API's own complaints, shown against the fields they name. */
   readonly fieldProblems: readonly FieldComplaint[];
   readonly onSubmit: (values: UnitFormValues) => void;
-  readonly onCancel: () => void;
 }
 
 /**
@@ -49,7 +48,6 @@ export const UnitForm = ({
   failureTone = "wrong",
   fieldProblems,
   onSubmit,
-  onCancel,
 }: UnitFormProps): JSX.Element => {
   const t = useTranslate();
 
@@ -107,8 +105,7 @@ export const UnitForm = ({
           }}
         />
 
-        <div className="sheet__buttons">
-          <Button onClick={onCancel}>{t("action.cancel")}</Button>
+        <div className="sheet__commit">
           <Button type="submit" tone="primary" disabled={busy}>
             {busy ? t("action.saving") : submitLabel}
           </Button>

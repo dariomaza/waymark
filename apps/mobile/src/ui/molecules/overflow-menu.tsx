@@ -103,6 +103,7 @@ export const OverflowMenu = ({ label, actions }: OverflowMenuProps): JSX.Element
               >
                 <Button
                   block
+                  align="start"
                   tone={action.tone ?? "secondary"}
                   {...(action.icon === undefined ? {} : { icon: action.icon })}
                   onPress={() => {
