@@ -1,0 +1,184 @@
+# A tag becomes a GitHub release with the Android app attached.
+#
+#   git tag v0.2.0 && git push github v0.2.0
+#
+# Nothing else starts it. A push to `main` is not a version: versioning is a
+# decision somebody makes, and the tag is where they make it.
+#
+# Why the APK lives on GitHub rather than being linked from Expo: an EAS
+# artifact link is three redirects deep, ends on a separate CDN domain
+# (`eascdn.net`) behind a pre-signed URL that expires after fifteen minutes,
+# and the artifact itself has an expiry date. The owner's own phone could not
+# follow it. A release asset is one domain, one URL, public, and permanent.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+# Never cancelled half way. A release that stops between "built" and
+# "attached" is worse than one that takes its time.
+#
+# Not `${{ github.workflow }}-${{ github.ref }}`: the reusable CI below
+# evaluates ITS concurrency group in this workflow's context, which would give
+# it the same name — and group names are case-insensitive — so the two would
+# queue behind each other for ever.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # The same checks every push gets, called rather than copied — typecheck,
+  # every suite, and building AND running the API image. A version is only
+  # published from a commit that passed all of them.
+  verify:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: build the app and attach it
+    needs: verify
+    runs-on: ubuntu-latest
+    # Most of this is waiting in EAS's queue, which on the free plan has taken
+    # over an hour. Three is the point at which something is wrong rather
+    # than slow.
+    timeout-minutes: 180
+    # The only job in this repository that writes anything, and it writes one
+    # thing: a release on its own tag.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up pnpm and Node
+        uses: pnpm/setup@v3
+        with:
+          runtime: node@22
+          cache: true
+          install: false
+
+      # A tag that disagrees with the app is refused before an hour of build
+      # time is spent on it. `v0.2.0` on a commit whose `app.json` still says
+      # 0.1.0 would publish a file named 0.2.0 that reports itself as 0.1.0 in
+      # Android's settings, and nobody could tell the two apart afterwards.
+      #
+      # `app.json` and not `app.config.ts`: the TypeScript file spreads the
+      # JSON and overrides only the deep-link host, so the version has exactly
+      # one home.
+      - name: The tag names the version the app carries
+        id: version
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$tag' is not vMAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          version="${tag#v}"
+          app_version="$(node -p "require('./apps/mobile/app.json').expo.version")"
+          if [ "$version" != "$app_version" ]; then
+            echo "::error::Tag says $version but apps/mobile/app.json says $app_version. Bump app.json, commit, and tag that commit."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # `eas build` evaluates `app.config.ts` on this machine before uploading.
+      # Its only import is a type, erased at load time, but a frozen install
+      # costs seconds from the cache and removes the question.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The build runs on Expo's machines, which hold the signing keystore.
+      # That is the reason this repository uses EAS at all: an Android app's
+      # identity is its package name plus that key, and a key kept on one
+      # laptop is one disk failure from never being able to ship an update.
+      # This job never sees the key.
+      #
+      # `EXPO_PUBLIC_WAYMARK_API_URL` is not set here on purpose. It lives in
+      # the Expo account's `production` environment, which is where a fork
+      # sets its own — see `apps/mobile/README.md` — and `app.config.ts`
+      # refuses to build on EAS without it.
+      #
+      # The CLI is pinned. An unpinned `npx eas-cli` is a different program on
+      # the day a major version changes its JSON.
+      - name: Build on EAS
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::The EXPO_TOKEN secret is not set on this repository."
+            exit 1
+          fi
+          npx --yes eas-cli@24.7.0 build \
+            --platform android \
+            --profile production \
+            --non-interactive \
+            --wait \
+            --json > "$RUNNER_TEMP/build.json"
+
+      # What EAS says it built, checked rather than trusted. `gitCommitHash`
+      # is the part that matters: the attached file must be the commit the tag
+      # points at, not whatever EAS happened to have uploaded.
+      - name: The build is this commit, and finished
+        id: build
+        run: |
+          # `eas build --json` answers a list, one entry per platform, while
+          # `eas build:view --json` answers the object alone. Only the second
+          # was observed when this was written, so either shape is accepted
+          # rather than one being assumed.
+          build="$RUNNER_TEMP/build.json"
+          one='if type == "array" then .[0] else . end'
+          status="$(jq -r "$one | .status" "$build")"
+          commit="$(jq -r "$one | .gitCommitHash" "$build")"
+          built_version="$(jq -r "$one | .appVersion" "$build")"
+          url="$(jq -r "$one | .artifacts.applicationArchiveUrl" "$build")"
+
+          [ "$status" = "FINISHED" ] || { echo "::error::EAS build status is $status"; exit 1; }
+          [ "$commit" = "$GITHUB_SHA" ] || { echo "::error::EAS built $commit, the tag points at $GITHUB_SHA"; exit 1; }
+          [ "$built_version" = "${{ steps.version.outputs.version }}" ] || { echo "::error::EAS built version $built_version"; exit 1; }
+          [ -n "$url" ] && [ "$url" != "null" ] || { echo "::error::EAS returned no artifact URL"; exit 1; }
+
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # Downloaded here, while the pre-signed link still works, and checked
+      # before it is published: an HTML error page saved with an .apk name is
+      # the failure `curl -f` alone does not catch once a redirect has
+      # answered 200.
+      - name: Download the APK
+        id: apk
+        run: |
+          file="waymark-${{ steps.version.outputs.version }}.apk"
+          curl -fsSL -o "$file" "${{ steps.build.outputs.url }}"
+
+          size="$(stat -c %s "$file")"
+          magic="$(head -c 2 "$file")"
+          [ "$magic" = "PK" ] || { echo "::error::Downloaded file is not a zip archive"; exit 1; }
+          [ "$size" -gt 10000000 ] || { echo "::error::APK is only $size bytes"; exit 1; }
+
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      # Created if absent, re-attached if a previous run died after creating
+      # it — re-running a failed release is the one retry that must be safe.
+      #
+      # Notes are generated from the commits since the previous tag, which is
+      # why this repository's conventional commits are worth their discipline.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          file="${{ steps.apk.outputs.file }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$file" --clobber
+          else
+            gh release create "$tag" "$file" \
+              --title "Waymark ${{ steps.version.outputs.version }}" \
+              --generate-notes \
+              --verify-tag
+          fi
