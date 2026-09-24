@@ -19,6 +19,12 @@ describe("the icon set both clients draw", () => {
    * that the web client draws in `apps/web/src/ui/atoms/icon.tsx` — plus
    * `eyeOff`, which exists here because THIS reveal flips its icon and the
    * browser's deliberately does not.
+   *
+   * `tags` was the one name that used to be on the browser's list and not on
+   * this one, and ADR 22 wrote that down as a drift it had found and NOT closed:
+   * printing was a browser errand, so the phone had no sheet of labels and a
+   * name with nothing to draw it for is speculative. The phone prints now, so
+   * the name has a job here and the drift is closed rather than left standing.
    */
   it("carries every symbol this product has, under this product's names", () => {
     expect([...ICON_NAMES]).toEqual([
@@ -31,6 +37,7 @@ describe("the icon set both clients draw", () => {
       "things",
       "box",
       "tag",
+      "tags",
       "camera",
       "image",
       "plus",

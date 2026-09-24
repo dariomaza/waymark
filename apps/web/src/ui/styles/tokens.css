@@ -95,6 +95,28 @@
   --text-xl: 1.5rem;
 
   --bar-height: 56px;
+  /* The word under a tab-bar icon. See `TAB_LABEL_WEIGHT`. */
+  --tab-label-weight: 600;
+
+  /* The printed page. Millimetres, because it is paper. */
+  --label-page-width: 190mm;
+  --label-page-height: 273mm;
+  --label-margin-side: 10mm;
+  --label-margin-top: 12mm;
+  --label-columns: 3;
+  --label-rows: 4;
+  --label-symbol: 36mm;
+  --label-cell-padding: 3mm;
+  --label-cell-gap: 1.5mm;
+  --label-name: 4.2mm;
+  --label-name-max-height: 9.7mm;
+  --label-code: 3.2mm;
+  --label-where: 2.6mm;
+  --label-cut-guide-width: 0.2mm;
+  --label-paper: #ffffff;
+  --label-ink: #000000;
+  --label-cut-guide: #999999;
+  --label-where-ink: #444444;
 }
 
 /**

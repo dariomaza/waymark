@@ -30,6 +30,17 @@ export interface RootStackParamList extends Record<string, object | undefined> {
   Unit: { readonly id: string };
   Item: { readonly id: string };
   Label: { readonly id: string };
+  /**
+   * A sheet of labels for as many units as somebody ticks.
+   *
+   * A stack screen and not a tab, for the reason `Processing` is: the five
+   * destinations in the bar are places to look for a thing, and this is a job
+   * you do for the whole house, standing at a printer. It is reached from the
+   * home screen, which is the only place it is offered (ADR 21's third
+   * amendment), and the browser puts it at exactly one address for the same
+   * reason.
+   */
+  Labels: undefined;
   /** The address printed on every box: `<public base>/u/<publicId>`. */
   ScannedLabel: { readonly publicId: string };
   /**

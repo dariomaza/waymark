@@ -23,10 +23,11 @@ import { useTranslate } from "../app/language-context.js";
  * the unit's `publicId` and the configured public base URL, so a stored one
  * would only be a picture of a dead URL the day that setting moves.
  *
- * The PNG is used rather than the SVG. The SVG is the one to PRINT and the web
- * client serves it for that; a phone is not printing anything, it is holding
- * the symbol up next to a box so somebody can check the sticker matches, and
- * for that a bitmap the native decoder can draw is the right answer.
+ * The PNG is used rather than the SVG. The SVG is the one to PRINT, and this
+ * screen is not printing: it is holding the symbol up next to a box so somebody
+ * can check the sticker matches, and for that a bitmap the native decoder can
+ * draw is the right answer. The sheet is where printing happens, on this client
+ * as on the browser, and it fetches the SVG for exactly that reason.
  *
  * The code is spelled out underneath, in the same ten characters printed on
  * the sticker, so it can be read aloud across a garage.
@@ -77,9 +78,14 @@ export const LabelScreen = (): JSX.Element => {
           <Text style={styles.code} accessibilityLabel={t("units.codeIs", { code: unit.data.unit.publicId })}>
             {unit.data.unit.publicId}
           </Text>
-          <Text style={styles.hint}>
-            {t("label.printFromWeb")}
-          </Text>
+          {/*
+            * This used to say "print this from the web client". That stopped
+            * being true the day the phone got a label sheet (ADR 21, amended),
+            * and it was answering a question nobody standing in front of a box
+            * is asking. What is worth saying here is what the symbol DOES, and
+            * it is the same sentence the browser's label screen says.
+            */}
+          <Text style={styles.hint}>{t("label.anyCamera")}</Text>
         </View>
       ) : null}
     </Screen>

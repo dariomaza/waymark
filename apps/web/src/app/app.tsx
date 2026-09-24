@@ -9,6 +9,7 @@ import { LoginScreen } from "../auth/login-screen.js";
 import { defaultPasskeyPlatform, PasskeyProvider } from "../auth/passkey-context.js";
 import type { PasskeyPlatform } from "../auth/passkey-platform.js";
 import { RequireSession } from "../auth/require-session.js";
+import { AccountScreen } from "../account/account-screen.js";
 import { AllItemsScreen } from "../items/all-items-screen.js";
 import { ItemScreen } from "../items/item-screen.js";
 import { PhotoProcessingScreen } from "../photos/processing-screen.js";
@@ -89,6 +90,11 @@ export const App = ({ client, scanner, passkeys }: AppProps = {}): JSX.Element =
                     path={ROUTES.backgroundRemoval}
                     element={<PhotoProcessingScreen />}
                   />
+                  {/*
+                    * The fifth destination in the bar, and the only one that is
+                    * not a place to look for a thing.
+                    */}
+                  <Route path={ROUTES.account} element={<AccountScreen />} />
                   <Route path={ROUTES.scannedLabel} element={<ScannedLabelScreen />} />
                 </Route>
               </Route>

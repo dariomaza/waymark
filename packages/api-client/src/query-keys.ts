@@ -22,7 +22,18 @@ export const queryKeys = {
   photo: (url: string) => ["photo", url] as const,
   /** What background removal is doing. Not part of the inventory graph. */
   photoProcessing: () => ["photo-processing"] as const,
+  /** Where a unit's symbol IS — a URL a native `<Image>` can be pointed at. */
   qr: (id: UnitId) => ["qr", id] as const,
+  /**
+   * The symbol's own MARKUP, which is a different thing from its address.
+   *
+   * A sheet of labels is built as a document with the symbols embedded in it,
+   * so it needs the SVG itself rather than somewhere to fetch it from. Keeping
+   * the two apart matters: one key holding a URL on one screen and a document
+   * on another is a cache that answers the wrong question the first time both
+   * are on screen at once.
+   */
+  qrSvg: (id: UnitId) => ["qr-svg", id] as const,
   /**
    * Credentials for programs (ADR 17, ADR 18). Deliberately NOT in
    * `INVENTORY_ROOTS`: moving a box must not refetch a list of credentials,

@@ -20,9 +20,9 @@ import { renderApp, screen, userEvent, waitFor, within } from "../../testing/ren
  * ## What was actually happening
  *
  * `.app-bar` is `position: sticky` with `z-index: 10`, and a positioned
- * element with a `z-index` other than `auto` CREATES A STACKING CONTEXT.
- * `AccountSheet` is handed to `AppBar` as its `actions`, so the whole sheet —
- * backdrop, panel, Sign out — renders inside `<header class="app-bar">` and is
+ * element with a `z-index` other than `auto` CREATES A STACKING CONTEXT. The
+ * account sheet was handed to `AppBar` as its `actions`, so the whole sheet —
+ * backdrop, panel, Sign out — rendered inside `<header class="app-bar">` and was
  * painted inside the app bar's stacking context. `z-index: 20` orders it
  * against the app bar's other children and against nothing else in the world.
  * `position: fixed` does not rescue it: a fixed descendant is still painted in
@@ -61,6 +61,19 @@ import { renderApp, screen, userEvent, waitFor, within } from "../../testing/ren
  *
  * A test asserting Sign out is in the document would pass on the broken code.
  * That is the test this one exists instead of.
+ *
+ * ## The reported instance no longer exists, and the guard stays
+ *
+ * The account sheet is gone: the account is the fifth destination in the bottom
+ * bar now, because that is the shape the phone has and both clients live on the
+ * owner's phone. So nothing in this app is opened from inside the header any
+ * more, and the exact screenshot cannot recur.
+ *
+ * The CAUSE can. `.app-bar` is still sticky, still `z-index: 10`, still a
+ * stacking context, and the next thing somebody hangs off it would be trapped
+ * in it exactly as that sheet was. What is asserted below is therefore the
+ * structure — no ancestor but `<body>` — for the sheets this app still opens,
+ * from a screen sitting between two bars that both create one.
  */
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
@@ -83,10 +96,10 @@ describe("a sheet, wherever in the app it was opened from", () => {
         HttpResponse.json({ unit: withPhoto(box), path: [garage, box], children: [], items: [] }),
       ),
       /*
-       * The account sheet holds both kinds of credential a person manages
-       * (ADR 18, ADR 19), and asks for each list the moment it opens. Declared
-       * here because `setup.ts` is emphatic about it: a request no test
-       * declared is a test that does not know what it depends on.
+       * The account screen holds both kinds of credential a person manages
+       * (ADR 18, ADR 19), and asks for each list the moment it is opened.
+       * Declared here because `setup.ts` is emphatic about it: a request no
+       * test declared is a test that does not know what it depends on.
        */
       http.get(`${API_URL}/auth/machine-tokens`, () =>
         HttpResponse.json({ machineTokens: [] }),
@@ -95,15 +108,19 @@ describe("a sheet, wherever in the app it was opened from", () => {
     );
   });
 
-  describe("the account sheet, which is opened from inside the top bar", () => {
-    const openTheAccountSheet = async (): Promise<HTMLElement> => {
+  /**
+   * The home screen's own sheet, opened with both bars on screen. It stands in
+   * for the account sheet that was reported: the header is still sticky, still
+   * `z-index: 10` and still a stacking context, and the navigation is still its
+   * sibling at the same number.
+   */
+  describe("a sheet opened with the chrome above and below it", () => {
+    const openTheNewSpaceSheet = async (): Promise<HTMLElement> => {
       renderApp({ route: "/" });
 
-      await userEvent.click(
-        await screen.findByRole("button", { name: /your account/i }),
-      );
+      await userEvent.click(await screen.findByRole("button", { name: /add a space/i }));
 
-      return await screen.findByRole("dialog", { name: /your account/i });
+      return await screen.findByRole("dialog");
     };
 
     /**
@@ -111,18 +128,18 @@ describe("a sheet, wherever in the app it was opened from", () => {
      * dialog was a descendant of the header, so nothing it could say about
      * its own `z-index` was ever compared with the navigation's.
      */
-    it("is not drawn inside the top bar it was opened from", async () => {
-      const account = await openTheAccountSheet();
+    it("is not drawn inside the top bar, which is still a stacking context", async () => {
+      const panel = await openTheNewSpaceSheet();
 
       expect(document.querySelector(".app-bar")).not.toBeNull();
-      expect(account.closest(".app-bar")).toBeNull();
+      expect(panel.closest(".app-bar")).toBeNull();
     });
 
     it("is not inside any element of the shell that could paint over it", async () => {
-      const account = await openTheAccountSheet();
+      const panel = await openTheNewSpaceSheet();
 
       for (const chrome of TRAPPING_ANCESTORS) {
-        expect(account.closest(chrome)).toBeNull();
+        expect(panel.closest(chrome)).toBeNull();
       }
     });
 
@@ -132,25 +149,25 @@ describe("a sheet, wherever in the app it was opened from", () => {
      * tie with it. Only `<body>` has no ancestor left to lose to.
      */
     it("hangs off the document body, where its z-index finally means something", async () => {
-      const account = await openTheAccountSheet();
+      const panel = await openTheNewSpaceSheet();
 
-      const backdrop = account.parentElement;
+      const backdrop = panel.parentElement;
 
       expect(backdrop).toHaveClass("sheet__backdrop");
       expect(backdrop?.parentElement).toBe(document.body);
     });
 
     /**
-     * Sign out is the control the screenshot cut in half, so it is named
-     * rather than left to "something inside the dialog".
+     * The control at the BOTTOM of the panel is the one the screenshot cut in
+     * half, so it is named rather than left to "something inside the dialog".
      */
-    it("carries the way out with it, out of the chrome", async () => {
-      const account = await openTheAccountSheet();
+    it("carries the control at its foot with it, out of the chrome", async () => {
+      const panel = await openTheNewSpaceSheet();
 
-      const signOut = within(account).getByRole("button", { name: /sign out/i });
+      const submit = within(panel).getByRole("button", { name: /create/i });
 
-      expect(signOut.closest(".app-bar")).toBeNull();
-      expect(signOut.closest(".bottom-nav")).toBeNull();
+      expect(submit.closest(".app-bar")).toBeNull();
+      expect(submit.closest(".bottom-nav")).toBeNull();
     });
 
     /**
@@ -160,25 +177,24 @@ describe("a sheet, wherever in the app it was opened from", () => {
      * introduces and the one worth a test.
      */
     it("takes the whole panel away again when it closes", async () => {
-      await openTheAccountSheet();
+      await openTheNewSpaceSheet();
 
       await userEvent.keyboard("{Escape}");
 
       await waitFor(() => {
-        expect(screen.queryByRole("dialog", { name: /your account/i })).toBeNull();
+        expect(screen.queryByRole("dialog")).toBeNull();
       });
       expect(document.querySelectorAll(".sheet__backdrop")).toHaveLength(0);
     });
   });
 
   /**
-   * The account sheet is the one that was reported, because it is the only one
-   * opened from inside the header. Every other sheet in this app is the same
-   * component opened from inside `.screen`, which happens not to create a
-   * stacking context TODAY — so they were one `transform`, one `filter` or one
-   * `will-change` away from the same screenshot, and the fix is theirs too.
+   * Every sheet in this app is the same component opened from inside `.screen`,
+   * which happens not to create a stacking context TODAY — so they are one
+   * `transform`, one `filter` or one `will-change` away from the same
+   * screenshot, and the portal is theirs too. This one is two panels deep.
    */
-  describe("a sheet opened from a screen rather than from the chrome", () => {
+  describe("a sheet opened from inside another sheet", () => {
     it("leaves the shell as well, rather than relying on the screen not trapping it", async () => {
       renderApp({ route: "/units/box3" });
 

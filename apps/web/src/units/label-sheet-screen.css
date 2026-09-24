@@ -25,17 +25,33 @@
 }
 
 /**
- * The home screen's two ways in, and they are not two of a kind.
+ * # The home screen's two ways in, side by side
  *
- * A column rather than a wrapping row: the primary takes the whole width —
- * "el botón principal en grande" — and the quiet way to the label sheet sits
- * under it at its own size. `flex-start` is what keeps the small one small; in
- * a stretched column it would grow to the full width and become a second
- * rectangle by accident, which is the thing this arrangement exists to undo.
+ * The owner: "quería que fueran dos botones en línea". They were a full-width
+ * lime rectangle with a small quiet link under it, which was itself the answer
+ * to an earlier sentence of his (ADR 21's first amendment). This is the third
+ * sentence, and it wins.
+ *
+ * A GRID of two tracks, and not a wrapping flex row. ADR 21 threw away
+ * `flex: 1 1 8rem` on the detail screens because it collapsed to one control
+ * per row the moment the Spanish labels grew past the basis — "Añadir un
+ * espacio" and "Hoja de etiquetas" are long — and no value of that property
+ * could have been asked not to. A grid with two explicit columns has nothing
+ * to wrap with, so the row is a row at every width this app is used at.
+ *
+ * At 360px, less the screen's two 16px gutters and this 8px gap, each track is
+ * 156px. Neither Spanish label fits on one line in that, so both WRAP to two
+ * lines — chosen deliberately over truncating a label or dropping under the
+ * 48px floor, because half a word is not a word. Two lines of 16px still clear
+ * the floor, and the grid's own stretch is what keeps both rectangles the same
+ * height whatever each label does: "a row of two peers at two heights is the
+ * one thing a row of peers must not be" (ADR 22).
+ *
+ * `align-items` is deliberately absent. Adding it is how one of these becomes
+ * shorter than the other.
  */
 .inventory-screen__actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
 }

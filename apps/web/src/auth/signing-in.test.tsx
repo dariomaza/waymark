@@ -149,11 +149,10 @@ describe("a session that is over", () => {
       http.post(`${API_URL}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
     );
 
-    renderApp({ route: "/" });
+    // The way out lives on the account destination, with everything else that
+    // is about the person rather than about the inventory.
+    renderApp({ route: "/you" });
 
-    await userEvent.click(
-      await screen.findByRole("button", { name: /your account/i }),
-    );
     await userEvent.click(await screen.findByRole("button", { name: /sign out/i }));
 
     expect(

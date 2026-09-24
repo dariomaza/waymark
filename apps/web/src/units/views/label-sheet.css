@@ -1,11 +1,16 @@
 /**
- * # The page, in millimetres
+ * # The page, in millimetres, and none of them written here
  *
- * A4, because this is Spain. 10mm at the sides and 12mm top and bottom: the
- * extra 2mm is for the browser's own header and footer, which CSS cannot
- * switch off — the screen asks the person to untick them in the print dialog,
- * and the margin means a header that is printed anyway lands in white space
- * instead of on the first row of labels.
+ * Every measurement below comes from `LABEL_SHEET` in `@waymark/tokens` by way
+ * of the generated `tokens.css`. The phone prints the same page from the same
+ * object (ADR 21, amended), and a millimetre spelled twice is a millimetre that
+ * drifts — which is the whole of ADR 22.
+ *
+ * A4, because this is Spain. The margins are 10mm at the sides and 12mm top and
+ * bottom: the extra 2mm is for the browser's own header and footer, which CSS
+ * cannot switch off — the screen asks the person to untick them in the print
+ * dialog, and the margin means a header that is printed anyway lands in white
+ * space instead of on the first row of labels.
  *
  * `@page` is not scopable to a selector, so this applies to printing any
  * screen in the app. That is deliberate rather than tolerated: the only other
@@ -14,7 +19,7 @@
  */
 @page {
   size: A4;
-  margin: 12mm 10mm;
+  margin: var(--label-margin-top) var(--label-margin-side);
 }
 
 /**
@@ -31,16 +36,16 @@
 }
 
 .label-sheet__page {
-  /* 190 × 273mm: A4 less the margins above. */
-  width: 190mm;
-  height: 273mm;
+  /* A4 less the margins above. */
+  width: var(--label-page-width);
+  height: var(--label-page-height);
   flex: none;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--label-columns), 1fr);
+  grid-template-rows: repeat(var(--label-rows), 1fr);
   /* White, always. A label is printed, and a dark one is a cartridge. */
-  background: #ffffff;
-  color: #000000;
+  background: var(--label-paper);
+  color: var(--label-ink);
 }
 
 /**
@@ -48,13 +53,13 @@
  * adjacent labels sharing one is exactly right — the cut is the same cut.
  */
 .sheet-label {
-  border: 0.2mm dashed #999999;
-  padding: 3mm;
+  border: var(--label-cut-guide-width) dashed var(--label-cut-guide);
+  padding: var(--label-cell-padding);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5mm;
+  gap: var(--label-cell-gap);
   overflow: hidden;
   /* Belt and braces: the pages are chunked in JS, and this stops a printer
      splitting one label even if that ever changes. */
@@ -63,14 +68,14 @@
 
 .sheet-label__name {
   margin: 0;
-  font-size: 4.2mm;
+  font-size: var(--label-name);
   line-height: 1.15;
   font-weight: 700;
   text-align: center;
   /* Two lines of a long name, then clipped: the code below it is the
      unambiguous identifier, so a clipped name is inconvenient and never
      wrong. */
-  max-height: 9.7mm;
+  max-height: var(--label-name-max-height);
   overflow: hidden;
 }
 
@@ -82,10 +87,10 @@
  * 63mm wide would still LOOK like a label and would print four to a row.
  */
 .sheet-label .sheet-label__symbol {
-  width: 36mm;
-  height: 36mm;
+  width: var(--label-symbol);
+  height: var(--label-symbol);
   flex: none;
-  background: #ffffff;
+  background: var(--label-paper);
   /* The quiet zone is part of the symbol; nothing may be taken off a corner. */
   border-radius: 0;
   object-fit: contain;
@@ -94,14 +99,14 @@
 .sheet-label__code {
   margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 3.2mm;
+  font-size: var(--label-code);
   letter-spacing: 0.08em;
 }
 
 .sheet-label__where {
   margin: 0;
-  font-size: 2.6mm;
-  color: #444444;
+  font-size: var(--label-where);
+  color: var(--label-where-ink);
   text-align: center;
   max-width: 100%;
   white-space: nowrap;

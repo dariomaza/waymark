@@ -9,9 +9,11 @@ import type { Session } from "../auth/session-store.js";
 import type { CodeScanner } from "../scanning/code-scanner.js";
 import type { PhotoSource } from "../photos/photo-source.js";
 import type { Clipboard } from "../ui/clipboard.js";
+import type { Printer } from "../units/printer.js";
 import { API_URL } from "./api-server.js";
 import { fakeClipboard } from "./fake-clipboard.js";
 import { fakePhotoSource } from "./fake-photo-source.js";
+import { fakePrinter } from "./fake-printer.js";
 import { fakeScanner } from "./fake-scanner.js";
 
 export interface RenderAppOptions {
@@ -35,6 +37,11 @@ export interface RenderAppOptions {
    * the screen intact.
    */
   readonly clipboard?: Clipboard;
+  /**
+   * Stands in for Android's print service. Pass one to read the page that
+   * reached the platform, which is the last thing this app is responsible for.
+   */
+  readonly printer?: Printer;
   /**
    * The language already chosen, sitting in the keystore when the app starts.
    *
@@ -111,6 +118,7 @@ export const renderApp = async ({
   scanner,
   photos,
   clipboard,
+  printer,
   language,
   storage,
 }: RenderAppOptions = {}): Promise<RenderResult> => {
@@ -144,6 +152,7 @@ export const renderApp = async ({
       scanner={scanner ?? fakeScanner()}
       photos={photos ?? fakePhotoSource()}
       clipboard={clipboard ?? fakeClipboard()}
+      printer={printer ?? fakePrinter()}
     />,
   );
 };

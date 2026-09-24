@@ -80,3 +80,19 @@ export const TAP_TARGET = 48;
 
 /** The chrome: the top bar, and the row of tabs at the bottom. */
 export const BAR_HEIGHT = 56;
+
+/**
+ * # How heavy the word under a tab-bar icon is
+ *
+ * The size of that word is `TEXT.xs`, and ADR 22 explains at length why the
+ * scale grew a step for it rather than leaving it to a library. The WEIGHT was
+ * left behind in that same change, and it is the same defect: the browser
+ * carried an unexplained 650 and the phone inherited whatever React
+ * Navigation's default happened to be. The owner put both bars on one phone and
+ * the browser's was plainly the bolder of the two.
+ *
+ * 600, because that is what every word inside a control in this product is set
+ * in — a `Button`'s label on both clients — and a tab is a control. A caption
+ * on a symbol has no business being heavier than the button beside it.
+ */
+export const TAB_LABEL_WEIGHT = 600;

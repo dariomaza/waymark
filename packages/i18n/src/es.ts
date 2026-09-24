@@ -36,8 +36,6 @@ export const ES: Dictionary = {
   "language.label": "Idioma",
   "shell.signedInAs": "Sesión iniciada como {username}",
   "shell.signOut": "Cerrar sesión",
-  "shell.account": "Tu cuenta",
-  "shell.accountOf": "Tu cuenta, sesión iniciada como {username}",
   "shell.offline":
     "Sin conexión. Puedes consultar lo que ya está cargado; nada de lo que cambies se guardará hasta que vuelva la conexión.",
 
@@ -153,8 +151,6 @@ export const ES: Dictionary = {
   "inventory.loading": "Cargando tu inventario",
   "inventory.failed": "No se ha podido cargar tu inventario",
   "inventory.addSpace": "Añadir un espacio",
-  "inventory.emptyLine":
-    "Todavía no hay nada guardado. Añade un espacio — una habitación, el garaje, un estante — para empezar.",
   "inventory.emptyTitle": "Todavía no hay nada registrado",
   "inventory.emptyExplains":
     "Empieza por un sitio que llamarías por su nombre en voz alta: una habitación, el garaje, la caseta.",
@@ -302,8 +298,6 @@ export const ES: Dictionary = {
   "label.backToUnit": "Volver a la unidad",
   "units.showLabel": "Ver la etiqueta",
   "label.sheet": "Hoja de etiquetas",
-  "label.printFromWeb":
-    "Imprime esto desde el cliente web, que sirve el mismo símbolo como SVG.",
 
   // ---------------------------------------------------------------------
   // Odds and ends of the frame
@@ -355,6 +349,9 @@ export const ES: Dictionary = {
     "No se ha podido obtener un símbolo, así que la hoja está incompleta y la impresión está desactivada.",
   "label.printingHint":
     "Papel A4 normal y tijeras: no hace falta papel de etiquetas. En el diálogo de impresión, desactiva los encabezados y los pies de página y deja los márgenes por defecto: la página ya lleva los suyos. Lo que ves debajo es la página a su tamaño real.",
+  "label.printingHintPhone":
+    "Papel A4 normal y tijeras: no hace falta papel de etiquetas. El diálogo de impresión del móvil te enseña la página antes de imprimir nada, y puede guardarla como PDF si la impresora está en otro sitio.",
+  "label.printFailed": "No se ha podido imprimir esa hoja.",
   "label.pickUnits":
     "Marca los espacios de los que quieres etiquetas, o coge uno entero con «todo lo que hay dentro».",
   "label.nothingPicked": "Todavía no hay nada seleccionado.",

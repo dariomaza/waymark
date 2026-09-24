@@ -50,6 +50,21 @@ export interface ButtonProps {
    * same thing in `overflow-menu.css` (ADR 22).
    */
   readonly align?: "center" | "start";
+  /**
+   * Takes an equal share of the row it is in, and fills its height.
+   *
+   * For a row of two controls, which the home screen now is: "quería que fueran
+   * dos botones en línea". The browser gets this from a grid of two tracks and
+   * needs nothing on the button; React Native has no grid, so each peer says it
+   * here. `flexBasis: 0` is what makes the share EQUAL rather than proportional
+   * to how long each label happens to be.
+   *
+   * Filling the height is the other half and it is the one that matters: with
+   * only the width shared, a label that wraps to two lines makes one rectangle
+   * taller than the other, and "a row of two peers at two heights is the one
+   * thing a row of peers must not be" (ADR 22).
+   */
+  readonly share?: boolean;
 }
 
 export const Button = ({
@@ -61,6 +76,7 @@ export const Button = ({
   label,
   icon,
   align = "center",
+  share = false,
 }: ButtonProps): JSX.Element => (
   <Pressable
     role="button"
@@ -72,6 +88,7 @@ export const Button = ({
       styles.base,
       styles[tone],
       block ? styles.block : null,
+      share ? styles.share : null,
       align === "start" ? styles.leading : null,
       disabled ? styles.disabled : null,
       pressed ? styles.pressed : null,
@@ -105,8 +122,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  row: { flexDirection: "row", alignItems: "center", gap: space.s2 },
+  row: { flexDirection: "row", alignItems: "center", gap: space.s2, flexShrink: 1 },
   block: { alignSelf: "stretch" },
+  /** An equal share of the row's width, and the whole of its height. */
+  share: { flexGrow: 1, flexBasis: 0, alignSelf: "stretch" },
   /**
    * A list is read down, so its words start where a list starts.
    *
@@ -121,7 +140,13 @@ const styles = StyleSheet.create({
   secondary: { backgroundColor: colors.surfaceRaised },
   danger: { backgroundColor: colors.surfaceRaised, borderColor: colors.danger },
   quiet: { backgroundColor: "transparent", borderColor: "transparent" },
-  label: { fontSize: text.m, fontWeight: "600" },
+  /**
+   * `flexShrink` because a word must be allowed to wrap rather than run off the
+   * side. React Native defaults a flex child to not shrinking, so a long label
+   * in a narrow rectangle — "Añadir un espacio" in a half-width button at
+   * 360px — would otherwise overflow instead of taking a second line.
+   */
+  label: { fontSize: text.m, fontWeight: "600", flexShrink: 1 },
 });
 
 const textStyles = StyleSheet.create({

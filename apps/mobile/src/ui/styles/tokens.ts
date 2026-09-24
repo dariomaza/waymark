@@ -56,3 +56,13 @@ export const text = TEXT;
  * up, sometimes on a step ladder.
  */
 export { TAP_TARGET } from "@waymark/tokens";
+
+/**
+ * How heavy the word under a tab-bar icon is.
+ *
+ * Here because this client was not choosing it at all: React Navigation's own
+ * default is 500 and the browser's stylesheet said 650, which is one product
+ * with two bars on the owner's one phone. The size beside it was settled in
+ * ADR 22; this is the half that was left behind.
+ */
+export { TAB_LABEL_WEIGHT } from "@waymark/tokens";

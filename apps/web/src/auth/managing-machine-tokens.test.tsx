@@ -73,15 +73,20 @@ const everythingIn = (storage: Storage | undefined): string => {
   return values.join("\u0000");
 };
 
-const openTheAccountSheet = async (): Promise<HTMLElement> => {
-  renderApp({ route: "/" });
+/**
+ * The panel is on a SCREEN now rather than in a sheet behind the top bar's
+ * avatar: the account became the fifth destination when this client took the
+ * phone's bar. Everything asserted below is unchanged; only the way in is.
+ */
+const openTheAccountScreen = async (): Promise<HTMLElement> => {
+  renderApp({ route: "/you" });
 
-  await userEvent.click(await screen.findByRole("button", { name: /your account/i }));
+  const heading = await screen.findByRole("heading", { name: /machine tokens/i });
 
-  return await screen.findByRole("dialog", { name: /your account/i });
+  return heading.closest("section") as HTMLElement;
 };
 
-describe("machine tokens, from the account sheet", () => {
+describe("machine tokens, from the account screen", () => {
   beforeEach(() => {
     sessionStore.save(aSession());
     apiServer.use(
@@ -97,7 +102,7 @@ describe("machine tokens, from the account sheet", () => {
 
   describe("what exists", () => {
     it("says there are none yet, rather than showing an empty box", async () => {
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
 
       expect(
         await within(account).findByText(/no machine tokens yet/i),
@@ -110,7 +115,7 @@ describe("machine tokens, from the account sheet", () => {
         aMachineTokenView({ id: "mt2", name: "backup", scope: "read-write" }),
       ]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
 
       expect(await within(account).findByText("mcp-server")).toBeVisible();
       expect(within(account).getByText("backup")).toBeVisible();
@@ -127,7 +132,7 @@ describe("machine tokens, from the account sheet", () => {
         aMachineTokenView({ id: "mt2", name: "backup", scope: "read-write" }),
       ]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
 
       expect(await within(account).findByText(/read only/i)).toBeVisible();
       expect(within(account).getByText(/read and write/i)).toBeVisible();
@@ -147,7 +152,7 @@ describe("machine tokens, from the account sheet", () => {
         }),
       ]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
 
       expect(await within(account).findByText(/never used/i)).toBeVisible();
       expect(within(account).getByText(/last used/i)).toBeVisible();
@@ -156,7 +161,7 @@ describe("machine tokens, from the account sheet", () => {
     it("never draws a control that revokes everything", async () => {
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
 
       expect(
@@ -205,7 +210,7 @@ describe("machine tokens, from the account sheet", () => {
         }),
       );
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await userEvent.click(
         within(account).getByRole("button", { name: /new token/i }),
@@ -230,7 +235,7 @@ describe("machine tokens, from the account sheet", () => {
     it("shows the secret it was given", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
 
@@ -251,7 +256,7 @@ describe("machine tokens, from the account sheet", () => {
     it("says it will never show it again while it is still showing it", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
 
@@ -270,7 +275,7 @@ describe("machine tokens, from the account sheet", () => {
     it("tells somebody how to present it, which is the next thing they need", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
 
@@ -299,7 +304,7 @@ describe("machine tokens, from the account sheet", () => {
       });
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
@@ -314,7 +319,7 @@ describe("machine tokens, from the account sheet", () => {
     it("takes the secret away when it is dismissed", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
@@ -329,26 +334,29 @@ describe("machine tokens, from the account sheet", () => {
     });
 
     /**
-     * A secret that survives the sheet closing is a secret in the DOM of a
+     * A secret that survives leaving the screen is a secret in the DOM of a
      * screen somebody walked away from. It lives in component state and goes
-     * with it.
+     * with it — which is now proved by walking away, because the surface is a
+     * destination rather than a sheet that closes.
      */
-    it("does not bring the secret back when the sheet is reopened", async () => {
+    it("does not bring the secret back when the screen is left and returned to", async () => {
       createAnswering("wmk_the-only-copy");
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
 
-      await userEvent.keyboard("{Escape}");
+      await userEvent.click(screen.getByRole("link", { name: /^places$/i }));
       await waitFor(() => {
-        expect(screen.queryByRole("dialog", { name: /your account/i })).toBeNull();
+        expect(screen.queryByText("wmk_the-only-copy")).toBeNull();
       });
-      await userEvent.click(screen.getByRole("button", { name: /your account/i }));
-      const reopened = await screen.findByRole("dialog", { name: /your account/i });
+      await userEvent.click(screen.getByRole("link", { name: /you, signed in as dario/i }));
 
+      const reopened = (await screen.findByRole("heading", { name: /machine tokens/i })).closest(
+        "section",
+      ) as HTMLElement;
       await within(reopened).findByText("mcp-server");
       expect(within(reopened).queryByText("wmk_the-only-copy")).toBeNull();
     });
@@ -357,7 +365,7 @@ describe("machine tokens, from the account sheet", () => {
     it("never puts the secret in browser storage", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
@@ -378,7 +386,7 @@ describe("machine tokens, from the account sheet", () => {
         }),
       );
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
 
@@ -400,7 +408,7 @@ describe("machine tokens, from the account sheet", () => {
         ),
       );
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
 
@@ -419,7 +427,7 @@ describe("machine tokens, from the account sheet", () => {
         ),
       );
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account, "mcp server");
 
@@ -446,7 +454,7 @@ describe("machine tokens, from the account sheet", () => {
     it("warns that the current secret stops working, before it does anything", async () => {
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^rotate$/i }),
@@ -470,7 +478,7 @@ describe("machine tokens, from the account sheet", () => {
       );
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^rotate$/i }),
@@ -487,7 +495,7 @@ describe("machine tokens, from the account sheet", () => {
       answerWith([aMachineTokenView()]);
       rotateAnswering("wmk_the-next-one");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^rotate$/i }),
@@ -506,7 +514,7 @@ describe("machine tokens, from the account sheet", () => {
     it("never offers a scope while rotating", async () => {
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^rotate$/i }),
@@ -523,7 +531,7 @@ describe("machine tokens, from the account sheet", () => {
     it("warns what will stop working, before it does anything", async () => {
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^revoke$/i }),
@@ -544,7 +552,7 @@ describe("machine tokens, from the account sheet", () => {
       );
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^revoke$/i }),
@@ -570,7 +578,7 @@ describe("machine tokens, from the account sheet", () => {
         ),
       );
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^revoke$/i }),
@@ -596,7 +604,7 @@ describe("machine tokens, from the account sheet", () => {
         ),
       );
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
       await userEvent.click(
         within(account).getByRole("button", { name: /^revoke$/i }),
@@ -621,7 +629,7 @@ describe("machine tokens, from the account sheet", () => {
    */
   describe("the address the calls go to", () => {
     it("is on the list before anybody has made a single token", async () => {
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
 
       expect(within(account).getByText("http://localhost:3000")).toBeVisible();
@@ -636,7 +644,7 @@ describe("machine tokens, from the account sheet", () => {
     it("is on the list beside the tokens that already exist", async () => {
       answerWith([aMachineTokenView()]);
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText("mcp-server");
 
       expect(within(account).getByText("http://localhost:3000")).toBeVisible();
@@ -653,7 +661,7 @@ describe("machine tokens, from the account sheet", () => {
         },
       });
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
 
       await userEvent.click(
@@ -699,7 +707,7 @@ describe("machine tokens, from the account sheet", () => {
     it("offers both settings in the shape the MCP server reads", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
 
@@ -721,7 +729,7 @@ describe("machine tokens, from the account sheet", () => {
       });
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
@@ -745,7 +753,7 @@ describe("machine tokens, from the account sheet", () => {
     it("says the scheme is Machine and not Bearer, without anybody reading an ADR", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
@@ -766,7 +774,7 @@ describe("machine tokens, from the account sheet", () => {
     it("keeps the warning ahead of everything it added", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
 
@@ -789,7 +797,7 @@ describe("machine tokens, from the account sheet", () => {
     it("takes the pair away with the secret and leaves the address standing", async () => {
       createAnswering("wmk_the-only-copy");
 
-      const account = await openTheAccountSheet();
+      const account = await openTheAccountScreen();
       await within(account).findByText(/no machine tokens yet/i);
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
@@ -806,11 +814,16 @@ describe("machine tokens, from the account sheet", () => {
   });
 
   /** The way out is still there, underneath all of this. */
-  it("still carries the way out, which is what the sheet was for", async () => {
+  /**
+   * Sign out sits beside the tokens rather than inside their panel, so it is
+   * looked for on the SCREEN. It was the thing the sheet existed for before the
+   * tokens ever moved in, and a rearrangement of this surface must not lose it.
+   */
+  it("still carries the way out, which is what this surface existed for first", async () => {
     answerWith([aMachineTokenView()]);
 
-    const account = await openTheAccountSheet();
+    await openTheAccountScreen();
 
-    expect(within(account).getByRole("button", { name: /sign out/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /sign out/i })).toBeVisible();
   });
 });

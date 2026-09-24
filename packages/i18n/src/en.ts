@@ -29,16 +29,15 @@ export const EN = {
   "shell.signedInAs": "Signed in as {username}",
   "shell.signOut": "Sign out",
 
-  /**
-   * The title of the one surface that is about the person rather than about
-   * the boxes, and the avatar's own accessible name.
-   *
-   * The name is in the label rather than printed above every screen. Somebody
-   * who cannot see the letter in the circle still gets told who is signed in,
-   * and nobody pays a row of the inventory for it.
+  /*
+   * `shell.account` and `shell.accountOf` were here: the title of the sheet
+   * behind the top bar's avatar, and that avatar's own accessible name. There
+   * is no such sheet and no such avatar on either client now — the account is
+   * the fifth destination in the bottom bar, its heading is `account.title` and
+   * its tab is named by `nav.youNamed`, which is what the phone has always
+   * said. A key born of a surface should die with the surface, as this
+   * dictionary already said of `units.showLabelPhone` and `units.leaveItAlone`.
    */
-  "shell.account": "Your account",
-  "shell.accountOf": "Your account, signed in as {username}",
 
   /**
    * What the app promises with no signal, and what it refuses to promise.
@@ -216,8 +215,14 @@ export const EN = {
    * is how both mistakes survived: neither was wrong NEXT TO ITSELF.
    */
   "inventory.addSpace": "Add a space",
-  "inventory.emptyLine":
-    "Nothing stored yet. Add a space — a room, the garage, a shelf — to start.",
+  /*
+   * `inventory.emptyLine` was here, and it said in one line what
+   * `inventory.emptyTitle` and `inventory.emptyExplains` say in two. Only this
+   * client used it, and only because its home screen had been written without
+   * looking at the phone's — which is the whole of what the owner was
+   * photographing. A key that exists so one client can say something its own
+   * way is a key that should go when the two clients agree.
+   */
   "inventory.emptyTitle": "Nothing is registered yet",
   "inventory.emptyExplains":
     "Start with somewhere you would name out loud: a room, the garage, the shed.",
@@ -401,8 +406,6 @@ export const EN = {
    */
   "units.showLabel": "Show the label",
   "label.sheet": "Label sheet",
-  "label.printFromWeb":
-    "Print this from the web client, which serves the same symbol as an SVG.",
 
   // ---------------------------------------------------------------------
   // Odds and ends of the frame
@@ -454,6 +457,20 @@ export const EN = {
     "A symbol could not be fetched, so the sheet is incomplete and printing is off.",
   "label.printingHint":
     "Plain A4 and scissors — no special label paper. In the print dialog, turn headers and footers OFF and leave the margins at default: the page already carries its own. What you see below is the page at its real size.",
+  /**
+   * The phone's version of the sentence above, and it is a different sentence
+   * rather than a translation of it.
+   *
+   * The browser shows the page on screen and asks somebody to untick the
+   * headers its own print dialog adds. Android's print service has no such
+   * setting and shows its own preview, so what a person needs to be told here
+   * is what paper to put in and that "Save as PDF" is a way out of having no
+   * printer at all.
+   */
+  "label.printingHintPhone":
+    "Plain A4 and scissors — no special label paper. Your phone's print dialog shows the page before anything is printed, and it can save it as a PDF if the printer is somewhere else.",
+  /** The print service refused, or somebody backed out of its dialog. */
+  "label.printFailed": "That sheet could not be printed.",
   "label.pickUnits":
     "Tick the spaces you want labels for, or take a whole one with “everything inside”.",
   "label.nothingPicked": "Nothing picked yet.",

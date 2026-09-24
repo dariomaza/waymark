@@ -58,12 +58,15 @@ export {
   BAR_HEIGHT,
   RADIUS,
   SPACE,
+  TAB_LABEL_WEIGHT,
   TAP_TARGET,
   TEXT,
   type RadiusStep,
   type SpaceStep,
   type TextStep,
 } from "./scale.js";
+
+export { LABELS_PER_PAGE, LABEL_SHEET } from "./label-sheet.js";
 
 export {
   AA_BOUNDARY,

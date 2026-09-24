@@ -7,7 +7,8 @@ import {
   type Palette,
   type WebOnlyPalette,
 } from "./palette.js";
-import { BAR_HEIGHT, RADIUS, SPACE, TEXT } from "./scale.js";
+import { LABEL_SHEET } from "./label-sheet.js";
+import { BAR_HEIGHT, RADIUS, SPACE, TAB_LABEL_WEIGHT, TEXT } from "./scale.js";
 
 /**
  * # The browser's half of the palette, rendered rather than written
@@ -37,6 +38,28 @@ const rem = (pixels: number): string => `${String(pixels / 16)}rem`;
 const evidenceFor = (scheme: "dark" | "light"): string =>
   MEASURED.filter((pair) => pair.scheme === scheme)
     .map((pair) => ` *   ${`${kebab(pair.of)}/${kebab(pair.on)}`.padEnd(28)}${pair.ratio.toFixed(2)}`)
+    .join("\n");
+
+/**
+ * # The paper, handed to a stylesheet
+ *
+ * `label-sheet.css` lays out an A4 page of printed labels, and the phone builds
+ * the same page as a string of HTML for Android's print service. CSS cannot
+ * import the object both of them are describing, so the numbers come through
+ * here as custom properties — the same arrangement the palette has, for the
+ * same reason, and with the same test holding it.
+ *
+ * A key ending in `Mm` becomes a millimetre length with the suffix dropped:
+ * `pageWidthMm` is `--label-page-width: 190mm`. Everything else is written as
+ * it stands, which is the two counts and the four printed colours.
+ */
+const labelSheetLines = (): string =>
+  Object.entries(LABEL_SHEET)
+    .map(([name, value]) =>
+      name.endsWith("Mm")
+        ? `  --label-${kebab(name.slice(0, -2))}: ${String(value)}mm;`
+        : `  --label-${kebab(name)}: ${String(value)};`,
+    )
     .join("\n");
 
 const colorLines = (palette: Palette, webOnly: WebOnlyPalette, indent: string): string =>
@@ -108,6 +131,11 @@ ${Object.entries(TEXT)
   .join("\n")}
 
   --bar-height: ${String(BAR_HEIGHT)}px;
+  /* The word under a tab-bar icon. See \`TAB_LABEL_WEIGHT\`. */
+  --tab-label-weight: ${String(TAB_LABEL_WEIGHT)};
+
+  /* The printed page. Millimetres, because it is paper. */
+${labelSheetLines()}
 }
 
 /**

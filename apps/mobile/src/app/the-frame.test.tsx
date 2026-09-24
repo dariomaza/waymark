@@ -1,4 +1,7 @@
 import { aSession } from "@waymark/api-client/testing";
+import { TAB_LABEL_WEIGHT, TEXT } from "@waymark/tokens";
+
+import { StyleSheet } from "react-native";
 
 import { fireEvent, renderApp, screen } from "../testing/render-app.js";
 import { theApiKnowsTheHouse } from "../testing/the-house.js";
@@ -43,6 +46,32 @@ describe("the frame every signed-in screen sits in", () => {
      * "Inventory" is the name of the database; the tab is for the person, so
      * it takes the person's word.
      */
+    /**
+     * # The word under the icon, at the size AND the weight the browser draws
+     *
+     * The owner put the two clients side by side on one phone and the browser's
+     * bar was plainly the bolder of the two. The size had already been settled —
+     * ADR 22 grew the type scale a step for exactly this role — and the WEIGHT
+     * was left behind in the same change: an unexplained 650 there against
+     * whatever React Navigation defaults to here.
+     *
+     * Both now come from `@waymark/tokens`, so this reads the style the label is
+     * actually drawn with rather than trusting the navigator's default.
+     */
+    it("sets the word under each icon at the shared size and weight", async () => {
+      await renderApp({ session: aSession() });
+
+      await screen.findByText(/scan a label/i);
+
+      const style = StyleSheet.flatten(screen.getByText("Places").props.style) as {
+        fontSize?: number;
+        fontWeight?: number | string;
+      };
+
+      expect(style.fontSize).toBe(TEXT.xs);
+      expect(style.fontWeight).toBe(TAB_LABEL_WEIGHT);
+    });
+
     it("uses the words somebody standing in a garage uses", async () => {
       await renderApp({ session: aSession() });
 
