@@ -8,11 +8,6 @@
   width: 100%;
 }
 
-.passkeys__title {
-  font-size: var(--text-m);
-  margin: 0;
-}
-
 .passkeys__explains,
 .passkeys__none {
   margin: 0;
