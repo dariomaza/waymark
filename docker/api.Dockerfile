@@ -36,6 +36,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/domain/package.json packages/domain/
 COPY packages/api-client/package.json packages/api-client/
 COPY packages/i18n/package.json packages/i18n/
+COPY packages/tokens/package.json packages/tokens/
 COPY apps/web/package.json apps/web/
 
 # With devDependencies, because Vite is one, and WITHOUT `--ignore-scripts`,
@@ -47,6 +48,7 @@ RUN pnpm install --frozen-lockfile
 COPY packages/domain packages/domain
 COPY packages/api-client packages/api-client
 COPY packages/i18n packages/i18n
+COPY packages/tokens packages/tokens
 COPY apps/web apps/web
 
 # `VITE_WAYMARK_API_URL` is deliberately unset. The bundle then talks to the
