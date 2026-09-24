@@ -233,16 +233,74 @@ a key born of a row should die with the row, as this project said of
 - **The selection affordance on an item card.** A checkbox top-left on the
   browser, a lime tick top-right and a 3px accent border on the phone, because
   a grid of photographs three across on a phone has no column to give.
-- **The avatar in the tab bar** stays a ring. Filled, at that size, in the
+- ~~**The avatar in the tab bar** stays a ring. Filled, at that size, in the
   accent, it reads as the selected tab whichever tab you are actually on. That
   argument is about the BAR and does not reach the 44pt disc on the account
-  screen, which is filled on both now.
+  screen, which is filled on both now.~~
+
+  **Not a difference any more, and for the reason it was listed as one.** It was
+  here because only the phone had an avatar in a bar; the browser's lived in the
+  top bar, where filled was right. The browser has the phone's bar now (see the
+  amendment below), so the argument reaches it: a ring on both in the bar, a
+  filled disc on both on the account screen. The exception is spent rather than
+  overruled — an exception whose premise disappears should disappear with it.
 - **The light scheme.** The browser follows the system; the phone does not get
   that choice, because the camera screen is black either way.
 - **The photo cell's `max-width`.** One number the phone has no use for, since
   a phone is always narrower than it. It stops a desktop rendering a square
   photograph the height of the window, and both clients draw the same thing on
   the screen that matters.
+
+### Amended: the bar, which was the loudest difference of all
+
+- Decided by: the owner, 2026-09-24.
+
+The audit behind this ADR compared cards, rows, fields, callouts, breadcrumbs,
+spinners and sheets. It did not compare the two bottom bars, which were the
+largest permanently visible object on either screen and the thing a thumb
+reaches for most. The owner photographed both home screens on one phone and the
+difference is unmissable:
+
+| | browser | phone |
+| --- | --- | --- |
+| tabs | four | five |
+| order | Places, Things, Search, Scan | Scan, Places, Search, Things, You |
+| the account | an avatar in the TOP bar, opening a sheet | a destination in the bar |
+| the word's weight | 650 | React Navigation's 500 |
+
+Different count, different order, and the account reached two different ways.
+
+**The phone's shape wins**, which is this ADR's own rule and the owner's
+standing decision: both clients live on his phone. So the browser takes all of
+it — five tabs, Scan first, the account as a `You` destination with the avatar
+as its tab icon, and nothing in the top bar that belongs to a person.
+
+Two decisions are overruled by that and both are amended where they live rather
+than contradicted in silence:
+
+- **`apps/mobile/src/app/navigation.ts` argued Scan is first.** That argument was
+  never about React Native — "the product is a printed QR on a box and a phone
+  pointed at it; every tap between launching the app and the camera being live
+  is a tap taken in a garage, one-handed, holding something" — and the PWA is
+  installed on the same phone. It is carried to the browser's shell unchanged.
+- **`apps/web/src/app/account-sheet.tsx` argued for a sheet behind the top-bar
+  avatar**, and every sentence of that argument still holds on its own terms: a
+  group of controls is not a menu, and an origin with one namespace to spend
+  (ADR 16) should not spend an address on two controls. It is overruled because
+  it weighed ONE client. An account reached one way here and another way there
+  is what the owner was looking at. The file is gone and its reasoning is at the
+  top of `apps/web/src/account/account-screen.tsx`, including what the move
+  costs — the address, and a navigation away from the inventory and back.
+
+Nothing in it was lost: the language, the machine tokens (ADR 18), the passkeys
+that exist only on the browser (ADR 19), "signed in as", and the way out, in the
+phone's order.
+
+The word under the icon gains the half this ADR missed. It grew the type scale a
+step for that word's SIZE and left its weight to each client: 650 on one and a
+library's default on the other, which is what the owner saw as one bar plainly
+bolder than the other. `TAB_LABEL_WEIGHT` sits beside `TEXT.xs` now, and it is
+600 — what every word inside a control in this product is set in.
 
 ## What it costs
 
@@ -283,6 +341,16 @@ Named, because a decision that lists no cost has not been made.
   alternative, which is what the first draft did: two behavioural tests that
   covered two of seven sheets and were green with a `Cancel` sitting in a
   third.
+- **A fifth tab is a narrower tab.** At 360px five destinations share the bar
+  where four did, so each one is about 72px wide instead of 90. The words still
+  hold on one line in both languages at `TEXT.xs`, which is the size that step
+  was added for, and the tap target is the bar's full 56px height — but there is
+  less slack for a sixth destination than there was, and that is the right
+  amount of pressure to be under.
+- **The browser gained an address it argued against.** `/you` is one more path
+  in an origin the API shares (ADR 16), and one more thing `routes.test.ts` has
+  to keep clear of the API's own namespace. It was refused once on exactly that
+  ground, and it is spent now for a reason that ground could not weigh.
 - **None of the appearance is asserted by a person looking.** Every claim in
   this ADR is a computed style or a rendered style object. A stylesheet that
   applies perfectly and looks wrong on a real 360px screen in a real garage
@@ -294,6 +362,15 @@ Named, because a decision that lists no cost has not been made.
 - `packages/tokens/src/palette.ts` is where a colour is changed. Both clients
   follow, or the build does not pass. That sentence is the deliverable; the
   rest of this file is why it was needed.
+- `packages/tokens` holds two things that are not colours and belong to it for
+  the same reason colours do. `TAB_LABEL_WEIGHT` sits beside `TEXT.xs`, because a
+  caption on a symbol needs both halves decided in one place. `LABEL_SHEET` holds
+  the printed page in millimetres, because the browser and the phone now draw the
+  same sheet of labels through two different renderers (ADR 21, amended) and a
+  millimetre written twice drifts exactly like a hex value written twice. Its
+  four colours are deliberately NOT in `Palette`: paper is white and ink is black
+  in every scheme, and a token that followed the system theme would print a grey
+  square no camera can read.
 - The measured contrast ratios are in `packages/tokens/src/contrast.ts` as
   data. Adding a colour pair that carries text means adding a row there, and
   the test will tell whoever changes a colour which pair they broke.
@@ -304,13 +381,20 @@ Named, because a decision that lists no cost has not been made.
 - `QuietLink` exists on both clients now, and both use it in
   `photos/views/photo-status-note.tsx` — the second site ADR 21 named for the
   shape and then deliberately left alone. That loose end is closed.
-- **One drift this ADR found and did NOT close**: the two `ICON_NAMES` arrays
-  still disagree. `tags` exists on the browser and not on the phone, because
-  printing is a browser errand and the phone has no label sheet. ADR 20's whole
-  argument was that those two arrays must not drift, and adding an unused name
-  to the phone to satisfy a rule is speculative in the other direction. It is
-  written down here rather than fixed quietly, so the next person decides it on
-  purpose.
+- **The one drift this ADR found and did not close is closed.** The two
+  `ICON_NAMES` arrays disagreed by one name: `tags` existed on the browser and
+  not on the phone, because printing was a browser errand and the phone had no
+  label sheet. This file refused to fix it quietly, on the grounds that adding
+  an unused name to satisfy a rule is speculative in the other direction, and
+  left it for somebody to decide on purpose.
+
+  Decided, 2026-09-24: `tags` is on both. Not to satisfy the rule — the premise
+  underneath it collapsed. "Printing is a browser errand" was an assumption
+  nobody had checked, `expo-print` has matched this app's SDK the whole time,
+  and the phone has a label sheet now (ADR 21, amended). The name is EARNED
+  here, which is exactly the test this entry said it should have to pass. The
+  two arrays now differ only by `eyeOff`, which is a real platform difference:
+  that reveal flips its icon and the browser's deliberately does not.
 - If there is a fourth report from the owner about the two clients looking
   different, it should be read as evidence that some value is still written
   twice — and the first question is which file it is in, not which screen.

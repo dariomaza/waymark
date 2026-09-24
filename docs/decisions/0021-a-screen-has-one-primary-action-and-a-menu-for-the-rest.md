@@ -176,9 +176,11 @@ with a button's clothes on. That is left alone here only because nobody has
 complained about that screen, and a redesign nobody asked for is how the row of
 nine got built.
 
-Printing is a browser errand, so `apps/mobile` has no label sheet and needs
+~~Printing is a browser errand, so `apps/mobile` has no label sheet and needs
 none of this. The two clients still agree on what a screen offers; they differ
-on what a phone can do with a printer.
+on what a phone can do with a printer.~~
+
+**Reversed. See "Amended: a phone prints" below.**
 
 ### Amended: which second control a box gets
 
@@ -234,6 +236,97 @@ the garage", and the sheet's own screen does that in one press — the subtree
 control beside each room, which has its own test. The narrowed address is still
 honoured for anybody holding one; nothing builds it any more, so
 `labelsWithinPath` is gone.
+
+### Amended: a phone prints
+
+- Decided by: the owner, 2026-09-24.
+
+The struck-out paragraph at the end of "a secondary PLACE is not a secondary
+action" was never true.
+
+**What was claimed.** That printing is a browser errand; that `apps/mobile`
+therefore has no label sheet and "needs none of this"; and that the two clients
+differ only "on what a phone can do with a printer". It was written as a fact
+about the platform and it was an assumption about the platform, made without
+looking.
+
+**What turned out to be true.** `expo-print` exists. It ships Android printing
+and PDF generation, it is published in lockstep with the SDK this app is on,
+and `expo-print@57.0.2` matches `expo@~57.0.24`. It has been installable for
+the whole life of this client. Android's own print service has been in the
+platform since 4.4 and every modern Android phone can print to a network
+printer or save to PDF from the same dialog. Nothing about a phone made the
+sheet impossible; nobody had checked.
+
+**Who decided.** The owner, with both clients side by side on his one phone:
+
+> Aparte de que son diferentes no me gustan, la app no tiene las hojas de
+> etiquetas y quería que fueran dos botones en línea.
+
+He did not argue about `expo-print`. He noticed that one of his two clients
+could do something the other could not, on one device, and that is the whole
+argument — the same argument ADR 22 is built on.
+
+**What it cost to be wrong about it.** A feature the owner wanted was absent
+for the life of this client, and the absence was written down as a decision, so
+nobody re-opened it. That is the specific danger of an ADR: a claim recorded
+beside real reasoning borrows the reasoning's authority. This one sat inside a
+document that had measured a bundle and counted nine buttons, and it had
+measured nothing.
+
+**What is true now.** The sheet exists on both. The paper's geometry — the page,
+the grid, the 36mm symbol, the type sizes and the four printed colours — is
+`LABEL_SHEET` in `@waymark/tokens`, read by the browser's stylesheet as custom
+properties and imported by the phone's renderer, so the two cannot draw
+different paper. `flattenUnits`, `subtreeOf` and `qrSvg` were already shared and
+are shared here. What genuinely differs is one thing: the browser lays the page
+out in the document it is already showing and calls `window.print()`, and the
+phone builds the same page as a document and hands it to the platform, whose own
+dialog is the preview. Intent is what the two clients owe each other; mechanism
+is not.
+
+The phone's printer is a PORT — `units/printer.ts` — like the camera, the
+keystore, the photo library and the clipboard, and for the same reason. What
+crosses it is a string of HTML, which keeps "which units" and "what a label
+says" on this side of the boundary where a test can read them.
+
+`label.printFromWeb` is deleted. It told the owner to print from the web client,
+and a sentence that stops being true is worse than no sentence.
+
+### Amended: the home screen's two controls are a row of two
+
+- Decided by: the owner, 2026-09-24.
+
+This is the third shape that screen has had, and each one was his.
+
+1. Two rectangles side by side. He looked at it and said *"lo mejor sería el
+   botón principal en grande y lo de las etiquetas en pequeñito con un icono al
+   lado"*, which produced `QuietLink`.
+2. A full-width primary with a small quiet link under it. He put both clients on
+   one phone and said *"quería que fueran dos botones en línea"*.
+3. Two rectangles side by side, at equal width, the primary lime and first.
+
+It is worth saying plainly that (3) is close to (1), and that the rule this ADR
+states did not decide any of the three. The rule says how MANY controls a screen
+shows; it has never said what shape they are. What settled it each time is the
+person using the app, which is the same admission the second amendment above
+makes about WHICH two a box gets.
+
+**What is different this time is that the failure mode was named in advance.**
+The row of two collapsed once before, and this ADR recorded why: `flex: 1 1 8rem`
+had no way to be told not to wrap, so once "Añadir un espacio" outgrew the basis
+the row became one control per row — the single cramped column the comment beside
+it existed to prevent. So the row is a GRID of two tracks on the browser, which
+has nothing to wrap with, and two `share` buttons in a row on the phone, which
+has no grid. At 360px each track is 156px, both Spanish labels take two lines,
+and both rectangles stay the same height because the grid stretches them and
+because the phone's peers fill their row. Wrapping a label was chosen over
+truncating one: half a word is not a word.
+
+`QuietLink` survives. It is drawn in `photos/views/photo-status-note.tsx` on both
+clients — the second site this ADR named for the shape and ADR 22 closed — so it
+is not a dead atom, and the argument in it is still the right argument for a
+quiet way somewhere. The home screen simply is not that case any more.
 
 ### Why the overflow opens a sheet, and not an ARIA `menu`
 
@@ -296,6 +389,14 @@ Named, because a decision that lists no cost has not been made.
   count, further in distance for somebody standing in front of the room — and
   charged deliberately, because the alternative is a box's menu that offers
   things which are not about the box.
+- **A second renderer for one piece of paper.** The sheet is now drawn by a
+  stylesheet on the browser and by a string of generated HTML on the phone. The
+  measurements cannot drift — they are one object in `@waymark/tokens` — but
+  the two RENDERERS can: a rule one engine honours and the other ignores would
+  show up as a page that looks right in one place and comes out of a printer
+  wrong in the other. Nothing in either test suite prints anything; the phone's
+  page is asserted as bytes handed to the platform, which is the last thing this
+  app is responsible for and not the same as ink on paper.
 - **One menu with one line in it.** The item screen's overflow holds only
   `delete`. That looks like ceremony and is not: the rule is not "hide the
   rarely used", it is that nothing destructive may sit where a thumb reaching
@@ -334,7 +435,11 @@ Named, because a decision that lists no cost has not been made.
   in those terms: the ones that used to press a button in a row of nine open
   the menu first and are otherwise unchanged, and one of them is called "can
   still delete a box, from behind the overflow".
-- The three reports the owner has now made are one report. ADR 20 answered the
+- `apps/mobile/src/units/label-sheet-screen.tsx` is the phone's half of a
+  feature this document said the phone did not need. Its doc comment says what
+  it shares with the browser's and what it does not, which is the shape every
+  "two clients, one product" file in here should have.
+- The four reports the owner has now made are one report. ADR 20 answered the
   half about the vocabulary; this answers the half about the arrangement. If
   there is a fourth, it should be read as evidence that a rule is missing
   rather than that a screen is untidy.
