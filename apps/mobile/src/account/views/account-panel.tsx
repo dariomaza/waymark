@@ -65,7 +65,7 @@ export const AccountPanel = ({
             * whole name, and announcing "DM" first would be reading the
             * abbreviation instead of the answer.
             */}
-          <Avatar name={username} size={44} color={colors.accentText} />
+          <Avatar name={username} size={44} filled />
           <Text style={styles.name}>{t("shell.signedInAs", { username })}</Text>
         </View>
       )}
