@@ -106,3 +106,75 @@ describe("everything a screen can do that is not the thing it is for", () => {
     expect(trigger).toHaveStyle({ minHeight: TAP_TARGET, minWidth: TAP_TARGET });
   });
 });
+
+/**
+ * # A menu is a list to be read down, so its words start where a list starts
+ *
+ * The lines were centred here and left aligned on the browser. A centred label
+ * in a full-width rectangle gives the eye a different starting point on every
+ * row, so finding "Move" in a list of seven means reading all seven — which is
+ * the failure ADR 21 was written about, one level down inside the thing that
+ * was supposed to fix it.
+ *
+ * The browser had the argument written down already: this is a list to be read
+ * down, not a set of peers to be scanned. ADR 22.
+ */
+describe("the lines of a menu", () => {
+  interface RenderedNode {
+    readonly props?: { readonly style?: unknown };
+    readonly children?: readonly unknown[] | null;
+  }
+
+  const flatten = (style: unknown): Record<string, unknown> =>
+    Array.isArray(style)
+      ? Object.assign({}, ...style.map(flatten))
+      : ((style ?? {}) as Record<string, unknown>);
+
+  /**
+   * Every style in the tree that places its content across the cross axis.
+   *
+   * `alignItems` and NOT `justifyContent`, which is the trap this control sits
+   * in: the button's Pressable declares no `flexDirection`, so its main axis is
+   * vertical and `justifyContent` moves a label up rather than left. Asserting
+   * the wrong one of the two passes while the label sits in the wrong place.
+   */
+  const alignments = (tree: unknown): unknown[] => {
+    const found: unknown[] = [];
+
+    const walk = (node: unknown): void => {
+      if (node === null || typeof node !== "object") {
+        return;
+      }
+
+      const style = flatten((node as RenderedNode).props?.style);
+      if (style["alignItems"] !== undefined) {
+        found.push(style["alignItems"]);
+      }
+
+      for (const child of (node as RenderedNode).children ?? []) {
+        walk(child);
+      }
+    };
+
+    walk(tree);
+
+    return found;
+  };
+
+  it("start their words where the eye already is, as the browser's do", async () => {
+    const drawn = await draw([{ label: "Edit", onSelect: () => undefined }]);
+    await openIt();
+
+    expect(alignments(drawn.toJSON())).toContain("flex-start");
+  });
+
+  /**
+   * The control: the trigger itself is an icon in a square and stays centred,
+   * so a blanket change would have shown up here.
+   */
+  it("leaves the control that opens the menu centred, it being a square", async () => {
+    const drawn = await draw([{ label: "Edit", onSelect: () => undefined }]);
+
+    expect(alignments(drawn.toJSON())).toContain("center");
+  });
+});

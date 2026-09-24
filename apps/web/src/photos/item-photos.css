@@ -5,11 +5,21 @@
   align-items: flex-start;
 }
 
+/**
+ * One photograph per row, which is what the phone has always drawn.
+ *
+ * This was `repeat(auto-fill, minmax(9rem, 1fr))` — two across on a phone —
+ * and the controls are why that lost. Every cell carries the three things you
+ * can do to a photograph, and at two across on a 360px screen the cell is
+ * about 164px wide, so three controls with a 48px floor stack into a tower
+ * under each picture. One per row gives them a row, and gives the photograph
+ * the width it is being looked at for (ADR 22).
+ */
 .item-photos__grid {
-  display: grid;
-  /* Two photos across on a phone, more as the screen allows. */
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  /* A longhand, so a test can ask the cascade: jsdom will not expand `gap`. */
+  row-gap: var(--space-3);
   width: 100%;
 }
 
@@ -17,6 +27,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  /*
+   * The one number the phone has no use for: it is always narrower than this,
+   * so both clients draw the same thing on the screen that matters. It stops a
+   * desktop rendering a square photograph the height of the window.
+   */
+  max-width: 24rem;
 }
 
 .item-photos__cell .photo {
