@@ -380,8 +380,6 @@ export const EN = {
    */
   "units.showLabel": "Show the label",
   "label.sheet": "Label sheet",
-  "label.printFromWeb":
-    "Print this from the web client, which serves the same symbol as an SVG.",
 
   // ---------------------------------------------------------------------
   // Odds and ends of the frame
@@ -433,6 +431,20 @@ export const EN = {
     "A symbol could not be fetched, so the sheet is incomplete and printing is off.",
   "label.printingHint":
     "Plain A4 and scissors — no special label paper. In the print dialog, turn headers and footers OFF and leave the margins at default: the page already carries its own. What you see below is the page at its real size.",
+  /**
+   * The phone's version of the sentence above, and it is a different sentence
+   * rather than a translation of it.
+   *
+   * The browser shows the page on screen and asks somebody to untick the
+   * headers its own print dialog adds. Android's print service has no such
+   * setting and shows its own preview, so what a person needs to be told here
+   * is what paper to put in and that "Save as PDF" is a way out of having no
+   * printer at all.
+   */
+  "label.printingHintPhone":
+    "Plain A4 and scissors — no special label paper. Your phone's print dialog shows the page before anything is printed, and it can save it as a PDF if the printer is somewhere else.",
+  /** The print service refused, or somebody backed out of its dialog. */
+  "label.printFailed": "That sheet could not be printed.",
   "label.pickUnits":
     "Tick the spaces you want labels for, or take a whole one with “everything inside”.",
   "label.nothingPicked": "Nothing picked yet.",

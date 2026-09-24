@@ -300,8 +300,6 @@ export const ES: Dictionary = {
   "label.backToUnit": "Volver a la unidad",
   "units.showLabel": "Ver la etiqueta",
   "label.sheet": "Hoja de etiquetas",
-  "label.printFromWeb":
-    "Imprime esto desde el cliente web, que sirve el mismo símbolo como SVG.",
 
   // ---------------------------------------------------------------------
   // Odds and ends of the frame
@@ -353,6 +351,9 @@ export const ES: Dictionary = {
     "No se ha podido obtener un símbolo, así que la hoja está incompleta y la impresión está desactivada.",
   "label.printingHint":
     "Papel A4 normal y tijeras: no hace falta papel de etiquetas. En el diálogo de impresión, desactiva los encabezados y los pies de página y deja los márgenes por defecto: la página ya lleva los suyos. Lo que ves debajo es la página a su tamaño real.",
+  "label.printingHintPhone":
+    "Papel A4 normal y tijeras: no hace falta papel de etiquetas. El diálogo de impresión del móvil te enseña la página antes de imprimir nada, y puede guardarla como PDF si la impresora está en otro sitio.",
+  "label.printFailed": "No se ha podido imprimir esa hoja.",
   "label.pickUnits":
     "Marca los espacios de los que quieres etiquetas, o coge uno entero con «todo lo que hay dentro».",
   "label.nothingPicked": "Todavía no hay nada seleccionado.",

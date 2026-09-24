@@ -50,6 +50,9 @@ import { Screen } from "../ui/organisms/screen.js";
 import { colors, TAB_LABEL_WEIGHT, text } from "../ui/styles/tokens.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
+import { LabelSheetScreen } from "../units/label-sheet-screen.js";
+import { expoPrinter, type Printer } from "../units/printer.js";
+import { PrinterProvider } from "../units/printer-context.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { createDefaultClient } from "./create-client.js";
 import { createLanguageStore } from "./language.js";
@@ -74,6 +77,12 @@ export interface AppProps {
    * token nobody can use.
    */
   readonly clipboard?: Clipboard;
+  /**
+   * Android's print service. A port for the same reason the other four are: it
+   * is the operating system, it does not exist under a test runner, and a sheet
+   * of labels nobody can print is a sheet of labels nobody can use.
+   */
+  readonly printer?: Printer;
   /** Where the app opens, for the tests. A phone always starts at the tabs. */
   readonly initialState?: PartialState<NavigationState>;
   /**
@@ -103,6 +112,7 @@ export const App = ({
   scanner,
   photos,
   clipboard,
+  printer,
   initialState,
   queries: given,
 }: AppProps = {}): JSX.Element => {
@@ -116,6 +126,7 @@ export const App = ({
   const [camera] = useState(() => scanner ?? expoCameraScanner());
   const [photoSource] = useState(() => photos ?? expoPhotoSource());
   const [board] = useState(() => clipboard ?? expoClipboard());
+  const [press] = useState(() => printer ?? expoPrinter());
 
   return (
     // `initialMetrics` rather than a measurement: without it the first frame
@@ -130,7 +141,9 @@ export const App = ({
               <ScannerProvider scanner={camera}>
                 <PhotoSourceProvider source={photoSource}>
                   <ClipboardProvider clipboard={board}>
-                    <SessionGate initialState={initialState} />
+                    <PrinterProvider printer={press}>
+                      <SessionGate initialState={initialState} />
+                    </PrinterProvider>
                   </ClipboardProvider>
                 </PhotoSourceProvider>
               </ScannerProvider>
@@ -291,6 +304,13 @@ const ConfirmedSession = ({
           <Stack.Screen name="Unit" component={UnitScreen} />
           <Stack.Screen name="Item" component={ItemScreen} />
           <Stack.Screen name="Label" component={LabelScreen} />
+          {/*
+            * Reached from the home screen's second button, which is the only
+            * place it is offered — a sheet is a job you do for the whole house
+            * (ADR 21's third amendment), and the browser puts it at exactly one
+            * address for the same reason.
+            */}
+          <Stack.Screen name="Labels" component={LabelSheetScreen} />
           {/* The address printed on every box. See the screen. */}
           <Stack.Screen name="ScannedLabel" component={ScannedLabelScreen} />
           {/*

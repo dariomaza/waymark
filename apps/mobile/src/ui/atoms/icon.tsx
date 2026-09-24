@@ -20,6 +20,7 @@ import {
   ScanQrCode,
   Search,
   Tag,
+  Tags,
   Trash2,
   X,
   type LucideIcon,
@@ -89,6 +90,18 @@ export const ICON_NAMES = [
   /** One container. Distinct from `things` on purpose: one box, not many. */
   "box",
   "tag",
+  /**
+   * Several labels at once: a SHEET of them, which is a different errand from
+   * sticking one on a box. Distinct from `tag` the way `things` is distinct
+   * from `box` — many, not one.
+   *
+   * This was the browser's one extra name, and ADR 22 wrote it down as a drift
+   * it had found and deliberately not closed: printing was a browser errand, so
+   * the phone had no sheet and a name with nothing to draw it for is
+   * speculative in the other direction. The phone prints now (ADR 21, amended),
+   * so the name is earned rather than added for symmetry.
+   */
+  "tags",
   /** Taking a new photograph. */
   "camera",
   /** A photograph that already exists — the library, not the shutter. */
@@ -145,6 +158,7 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "waypoints">, LucideIcon> = {
   things: Boxes,
   box: Box,
   tag: Tag,
+  tags: Tags,
   camera: Camera,
   image: Image,
   plus: Plus,
