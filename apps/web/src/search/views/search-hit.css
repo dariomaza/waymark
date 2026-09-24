@@ -1,6 +1,19 @@
+/**
+ * A result is the same shape as a row, for the same reason (ADR 22): a raised
+ * rounded block with air around it, rather than a flat line with a hairline
+ * under it. The phone has drawn results this way all along.
+ */
+.search-hit-list {
+  display: flex;
+  flex-direction: column;
+  /* A longhand, so a test can ask the cascade: jsdom will not expand `gap`. */
+  row-gap: var(--space-2);
+}
+
 .search-hit {
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
 }
 
 .search-hit__link {
@@ -8,7 +21,6 @@
   flex-direction: column;
   gap: var(--space-1);
   min-height: 48px;
-  padding: var(--space-1) 0;
   text-decoration: none;
   color: inherit;
 }

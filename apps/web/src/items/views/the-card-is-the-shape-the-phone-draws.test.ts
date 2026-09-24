@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { describe, expect, it } from "vitest";
+
+import { declarationsIn, drawn, pixels, sheet } from "../../testing/drawn.js";
 
 /**
  * # The densest screen in the product, drawn the same way on both clients
@@ -33,61 +32,12 @@ import { describe, expect, it } from "vitest";
  * proves the rule was given a TOKEN, and the token is then read from the one
  * file both clients are generated from.
  */
-const STYLES = join(process.cwd(), "src/ui/styles");
+const CARD = sheet("items/views/item-card.css");
 
-const TOKENS = readFileSync(join(STYLES, "tokens.css"), "utf8");
-const CARD = readFileSync(join(process.cwd(), "src/items/views/item-card.css"), "utf8");
+const styleOf = (markup: string, selector: string): CSSStyleDeclaration =>
+  drawn(markup, selector, { sheets: [CARD] });
 
-/** `var(--text-s)` -> `0.875rem`, read off the generated file. */
-const VALUES = new Map<string, string>(
-  [...TOKENS.slice(0, TOKENS.indexOf("@media")).matchAll(/(--[a-z\d-]+):\s*([^;]+);/gu)].map(
-    ([, name, value]) => [`var(${String(name)})`, String(value)],
-  ),
-);
-
-/** What a person actually sees, in pixels. A rem is 16; nothing moves the root. */
-const pixels = (value: string): number => {
-  const resolved = VALUES.get(value) ?? value;
-
-  return resolved.endsWith("rem")
-    ? Number.parseFloat(resolved) * 16
-    : Number.parseFloat(resolved);
-};
-
-/**
- * The one question that cannot be put to the DOM.
- *
- * jsdom refuses to expand ANY shorthand containing a `var()` — `border: 1px
- * solid var(--color-line)` computes to `""` for the shorthand and `""` for
- * every longhand under it, which is character for character what an element
- * with no border at all computes to. An assertion that the frame is gone would
- * therefore have passed with the frame still there, which is the way a test
- * goes green for the wrong reason.
- *
- * So this one property is read off the file, deliberately and only here, and
- * the rule block is asserted to be non-empty first so it cannot pass by
- * finding nothing.
- */
-const blockFor = (selector: string): string => {
-  const found = new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`, "u").exec(CARD);
-  if (found === null) {
-    throw new Error(`no ${selector} rule in item-card.css`);
-  }
-
-  return String(found[1]);
-};
-
-const styleOf = (markup: string, selector: string): CSSStyleDeclaration => {
-  document.head.innerHTML = `<style>${TOKENS}${CARD}</style>`;
-  document.body.innerHTML = markup;
-
-  const element = document.querySelector(selector);
-  if (element === null) {
-    throw new Error(`no ${selector} in that markup`);
-  }
-
-  return globalThis.getComputedStyle(element);
-};
+const blockFor = (selector: string): string => declarationsIn(CARD, selector);
 
 const CARD_MARKUP = `
   <ul class="item-grid">

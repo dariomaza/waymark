@@ -23,7 +23,7 @@ export const UnitTree = ({ nodes }: UnitTreeProps): JSX.Element => {
   const t = useTranslate();
 
   return (
-    <ul className="unit-tree" aria-label={t("units.treeLabel")}>
+    <ul className="unit-tree row-list" aria-label={t("units.treeLabel")}>
       {nodes.map((node) => (
         <UnitTreeBranch key={node.id} node={node} />
       ))}
@@ -38,7 +38,7 @@ const UnitTreeBranch = ({ node }: { readonly node: StorageUnitTreeView }): JSX.E
     <li className="unit-tree__branch">
       <RowLink to={unitPath(node.id)} title={node.name} meta={kindLabel(t, node.kind)} />
       {node.children.length === 0 ? null : (
-        <ul className="unit-tree__children">
+        <ul className="unit-tree__children row-list">
           {node.children.map((child) => (
             <UnitTreeBranch key={child.id} node={child} />
           ))}

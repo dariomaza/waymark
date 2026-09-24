@@ -1,8 +1,30 @@
+/**
+ * # A raised row with air around it, not a line with a rule under it
+ *
+ * This was a flat row on no background with a 1px hairline beneath it. That is
+ * a good idiom for a mouse on a wide screen, and both of this product's
+ * clients live on the same Android phone, where a column of hairline-separated
+ * rows reads as a web page wearing an app costume. The phone drew these as
+ * raised rounded rows all along; its idiom wins (ADR 22).
+ *
+ * The list's own spacing is at the call site, the way the phone does it: a
+ * `gap` on the container that holds the rows. There is no shared list class,
+ * because each screen already owns the element the rows sit in.
+ */
+.row-list {
+  display: flex;
+  flex-direction: column;
+  /* A longhand, so a test can ask the cascade: jsdom will not expand `gap`. */
+  row-gap: var(--space-2);
+}
+
 .row-link {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  border-bottom: 1px solid var(--color-line);
+  gap: var(--space-3);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-m);
+  padding: 0 var(--space-3);
 }
 
 .row-link__target {
@@ -11,9 +33,14 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  /* 56px, so the row is a thumb target and not a line of text. */
-  min-height: 56px;
-  padding: var(--space-2) var(--space-1);
+  /*
+    48, which is what this product calls a thumb target — `TAP_TARGET` in the
+    shared tokens, and the floor under every control in both clients. It was
+    56, a second floor with no argument attached to it. 56 survives where it
+    means something else: `--bar-height`, which is chrome rather than a row.
+  */
+  min-height: 48px;
+  padding: var(--space-2) 0;
   text-decoration: none;
   color: inherit;
 }
