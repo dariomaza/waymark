@@ -126,6 +126,9 @@ importers:
       '@waymark/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@waymark/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
       expo:
         specifier: ~57.0.24
         version: 57.0.24(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(react-dom@19.3.0(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
@@ -214,6 +217,9 @@ importers:
       '@waymark/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@waymark/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
       '@zxing/browser':
         specifier: ^0.1.5
         version: 0.1.5(@zxing/library@0.21.3)
@@ -338,6 +344,21 @@ importers:
       '@types/node':
         specifier: ^24.3.0
         version: 24.13.6
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@24.13.6)(jiti@2.7.0)(jsdom@27.4.0)(lightningcss@1.33.0)(msw@2.15.0(@types/node@24.13.6)(typescript@5.9.3))(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
+
+  packages/tokens:
+    devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.13.6
+      tsx:
+        specifier: ^4.20.3
+        version: 4.23.13
       typescript:
         specifier: ^5.9.2
         version: 5.9.3

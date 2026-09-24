@@ -19,6 +19,7 @@
     "@waymark/api-client": "workspace:*",
     "@waymark/domain": "workspace:*",
     "@waymark/i18n": "workspace:*",
+    "@waymark/tokens": "workspace:*",
     "expo": "~57.0.24",
     "expo-camera": "~57.0.5",
     "expo-clipboard": "^57.0.2",
