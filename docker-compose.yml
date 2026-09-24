@@ -29,6 +29,16 @@ services:
       # `packages/domain` from source.
       context: .
       dockerfile: docker/api.Dockerfile
+      args:
+        # Which commit this image is, baked in so the running container can say
+        # so on `GET /health` (ADR 23). `scripts/deploy.sh` exports it; the
+        # `:-` default is what lets anybody bring the stack up by hand without
+        # knowing this variable exists, and the image then answers `null`.
+        #
+        # CI builds with plain `docker build`, so this line is the one link in
+        # the chain no workflow can see — `apps/api/src/http/the-image-is-told-
+        # which-commit-it-is.test.ts` is what watches it.
+        WAYMARK_COMMIT: ${WAYMARK_COMMIT:-}
     image: waymark-api:latest
     restart: unless-stopped
 

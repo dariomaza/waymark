@@ -74,6 +74,15 @@ export interface ApiConfig {
    * whole same-origin decision is for.
    */
   readonly webRoot: string | null;
+  /**
+   * The commit this image was built from, or `null` when the build never said.
+   *
+   * It is the one value in this interface that decides nothing. Nothing reads
+   * it, branches on it or hands it anywhere: it is repeated on `GET /health` so
+   * that a deploy can assert which code is answering instead of inferring it
+   * from a bundle filename (ADR 23).
+   */
+  readonly commit: string | null;
   readonly security: SecurityConfig;
   readonly login: LoginRateLimitConfig;
   readonly photos: PhotoConfig;
@@ -188,6 +197,7 @@ export const loadConfig = (env: NodeJS.ProcessEnv): ApiConfig => ({
   publicBaseUrl: readPublicBaseUrl(env["WAYMARK_PUBLIC_BASE_URL"]),
   relyingParty: readRelyingParty(env["WAYMARK_PUBLIC_BASE_URL"]),
   webRoot: readWebRoot(env["WAYMARK_WEB_ROOT"]),
+  commit: readCommit(env["WAYMARK_COMMIT"]),
   security: {
     trustedProxies: readTrustedProxies(env["WAYMARK_TRUSTED_PROXIES"]),
     allowedOrigins: readAllowedOrigins(env["WAYMARK_ALLOWED_ORIGINS"]),
@@ -472,6 +482,33 @@ const readWebRoot = (raw: string | undefined): string | null => {
   const root = raw?.trim() ?? "";
 
   return root.length === 0 ? null : root;
+};
+
+/**
+ * Which commit this image was built from, or nothing.
+ *
+ * This is the only reader in this file that validates nothing, and the
+ * exception is deliberate. Every other value here is refused when it is
+ * malformed because every other value DECIDES something — who may call, whose
+ * address is believed, where photos are written — and a setting that parses and
+ * is wrong is a security hole wearing the face of a working deployment.
+ *
+ * A commit decides nothing. It is read once and repeated on `/health`, and the
+ * comparison that matters happens in `scripts/deploy.sh`, which knows the
+ * commit it just shipped and refuses when the running one differs. Refusing
+ * here would move that refusal to boot, where being wrong means a container
+ * that will not start — a label able to take the inventory down, which is a
+ * worse failure than the one it would catch.
+ *
+ * Blank counts as unknown, because that is what `${WAYMARK_COMMIT:-}` in the
+ * compose file produces for anybody bringing the stack up by hand, and because
+ * an image built without the argument must still run. It says `null`, the
+ * deploy script refuses, and nobody is told a stale container is the new one.
+ */
+const readCommit = (raw: string | undefined): string | null => {
+  const commit = raw?.trim() ?? "";
+
+  return commit.length === 0 ? null : commit;
 };
 
 /**

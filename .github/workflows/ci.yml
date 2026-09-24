@@ -162,5 +162,69 @@ jobs:
       # So this builds the real image from the real Dockerfile. It is slower
       # than everything above it put together, and it is the step that answers
       # "will this deploy".
+      # `--build-arg WAYMARK_COMMIT` is not decoration here. It is the value the
+      # next step asserts on, so this job builds the image the same way a deploy
+      # builds it rather than a variant of it.
       - name: Build the API image
-        run: docker build -f docker/api.Dockerfile -t waymark-api:ci .
+        run: |
+          docker build \
+            -f docker/api.Dockerfile \
+            --build-arg WAYMARK_COMMIT="${{ github.sha }}" \
+            -t waymark-api:ci .
+
+      # Building is not running, and the step above could never tell the
+      # difference.
+      #
+      # An image that builds and then dies on boot passed this job until today.
+      # Everything between `docker build` succeeding and the app being reachable
+      # was unverified: the entrypoint's `prisma migrate deploy`, the Prisma
+      # query engine matching the runtime's OpenSSL, `createWebClient` finding a
+      # build at `WAYMARK_WEB_ROOT`, the server binding a port at all. Each of
+      # those has its own way of failing only in the container.
+      #
+      # It runs with NO environment at all — no compose file, no variables —
+      # which is the stronger claim: the image's own baked-in defaults are a
+      # complete, working configuration.
+      #
+      # And it asserts the commit, which makes the deploy gate's one assumption
+      # true by test rather than by hope. `scripts/deploy.sh` proves a release
+      # by asking the running container which commit it is; if that plumbing
+      # ever breaks — an `ARG` not redeclared in the runtime stage, a renamed
+      # variable — the deploy would refuse every time and nobody would know
+      # which half was wrong. This is the half that gets checked first.
+      - name: Run it, and make it say which commit it is
+        run: |
+          docker run --detach --name waymark-ci \
+            --publish 127.0.0.1:3000:3000 \
+            waymark-api:ci
+
+          health=''
+          for _ in $(seq 1 60); do
+            if health=$(curl --silent --show-error --max-time 3 http://127.0.0.1:3000/health); then
+              break
+            fi
+            health=''
+            sleep 2
+          done
+
+          if [ -z "$health" ]; then
+            echo "The container never answered /health." >&2
+            exit 1
+          fi
+
+          echo "GET /health -> $health"
+
+          running=$(printf '%s' "$health" | jq -r '.commit // "<null>"')
+          if [ "$running" != "${{ github.sha }}" ]; then
+            echo "The image reports \"$running\" and was built from ${{ github.sha }}." >&2
+            echo "The build argument is not reaching the running process." >&2
+            exit 1
+          fi
+
+      - name: What the container said, when it went wrong
+        if: failure()
+        run: docker logs waymark-ci || true
+
+      - name: Stop it
+        if: always()
+        run: docker rm --force waymark-ci || true

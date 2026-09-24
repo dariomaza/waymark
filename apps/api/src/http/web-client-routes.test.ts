@@ -226,7 +226,11 @@ describe("the web client served from the API", () => {
       const response = await api.app.inject({ method: "GET", url: "/health" });
 
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ status: "ok" });
+      // `commit` is null because nothing told this API which one it is, which
+      // is what a build with no `WAYMARK_COMMIT` produces (ADR 23). The point
+      // here is that a web client in front of the API does not take the probe
+      // away from it.
+      expect(response.json()).toEqual({ status: "ok", commit: null });
     });
   });
 

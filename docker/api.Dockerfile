@@ -146,6 +146,26 @@ RUN mkdir -p /data/photos /data/db \
 USER node
 WORKDIR /repo/apps/api
 
+# Which commit this image was built from.
+#
+# LAST in this stage on purpose. Everything above it is identical between two
+# builds of the same tree, and an `ENV` placed any earlier would invalidate the
+# apt layer and the copies on every deploy — which is every time this value
+# changes, by definition.
+#
+# The `ARG` is redeclared here because one before the first `FROM` is global and
+# still invisible inside a stage that does not ask for it: `--build-arg` naming
+# an argument no stage declares is a warning, not an error, and the image would
+# report nothing for ever while the build looked fine.
+#
+# Defaulted to empty, so a `docker build` that says nothing still builds. An
+# image that cannot say what it is is useless to a deploy, but a build that
+# REFUSES over a label would make this variable able to break every checkout and
+# every contributor's laptop for the sake of one NAS. The API answers `null`
+# instead, and `scripts/deploy.sh` is what refuses to call that a deploy.
+ARG WAYMARK_COMMIT=""
+ENV WAYMARK_COMMIT=${WAYMARK_COMMIT}
+
 EXPOSE 3000
 
 # The API's own answer to "are you alive", which is deliberately NOT the one

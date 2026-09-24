@@ -115,6 +115,7 @@ export const composeApp = (
       publicIds: new Base32PublicIdGenerator(),
       clock,
       publicBaseUrl: config.publicBaseUrl,
+      commit: config.commit,
       photoStorage: {
         root: config.photos.root,
         maxUploadBytes: config.photos.maxBytes,

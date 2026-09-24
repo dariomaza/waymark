@@ -258,7 +258,7 @@ JSON, and a write to a path nothing serves is JSON.
 
 | Method   | Route                       | Answers                                      |
 | -------- | --------------------------- | -------------------------------------------- |
-| `GET`    | `/health`                   | `{ status }`                                 |
+| `GET`    | `/health`                   | `{ status, commit }` — `commit` is which one is running (ADR 23) |
 | `POST`   | `/auth/login`               | `{ token, expiresAt, user }`                 |
 | `GET`    | `/auth/me`                  | `{ user }`, or `{ machineToken }` for a machine |
 | `POST`   | `/auth/logout`              | `204` — a session only; a machine token gets 403 |
@@ -1155,6 +1155,62 @@ bring up an API from one commit and a client from another would have exactly
 one interesting state, the mismatched one, and it would be discovered by
 somebody standing in a garage.
 
+### Deploying is a script, and it refuses
+
+```sh
+pnpm deploy          # scripts/deploy.sh
+pnpm deploy:check    # every gate, and stop before touching the box
+```
+
+A deploy used to be four commands pasted into a terminal, and on 2026-09-24
+that shipped a broken image: `packages/tokens` was added, the Dockerfile's
+hand-kept COPY list was not told, and the image failed at `vite build`. CI was
+red on that exact commit eleven minutes earlier. Nobody looked — and
+`docker compose up -d --build` **left the previous container running and
+answering 200**, so the deployment looked healthy while serving the old bundle.
+It was found by comparing a hashed JavaScript filename by eye.
+
+So the checks are in a file now (ADR 23). `scripts/deploy.sh` refuses, before
+touching the server, when:
+
+- the working tree is not clean — rsync ships the working tree, so anything
+  uncommitted would make the commit the image reports a lie;
+- `HEAD` is not on both remotes, `github` and `origin`;
+- **CI did not pass for that exact SHA.** Read from the public API with no
+  token, because `gh` is not logged in on this machine and a gate that needs a
+  login stops working silently. No run yet, still running, and failed are three
+  different answers: only the middle one is worth waiting for, and the script
+  waits for that one.
+
+Then it deploys — rsync, `docker compose build`, `docker compose up -d` — and
+then it **proves** it. Not by comparing bundle filenames, which is empty when
+only the API changed and never names a commit: the image is built with a
+`WAYMARK_COMMIT` build argument and the running container reports it on
+`GET /health`. The script asserts the running commit equals the one it just
+shipped, on the box over SSH and again through the tunnel, and exits non-zero
+if it cannot. An image built without the argument answers `null`, which fails
+the assertion — a local `docker build` still works, and only the deploy is
+strict about it.
+
+`docker compose build` and `docker compose up -d` are two commands rather than
+`up -d --build`, so a failed build has an exit code of its own and nothing
+follows it. The old container survives a failed build, which is correct: a
+broken image is not a reason to take the inventory down. What changes is that
+nobody is told a deploy happened.
+
+There is one escape hatch, and it names a dependency rather than a check:
+
+```sh
+WAYMARK_DEPLOY_WITHOUT_GITHUB=1 pnpm deploy
+```
+
+That drops the two gates that need github.com to answer, prints a red banner
+saying nothing has proved this commit, and keeps everything else — including
+the verification, which can never be skipped. The argument is in ADR 23: a gate
+with no way past it does not get obeyed at two in the morning, it gets walked
+around by pasting the rsync out of the script, and that loses the proof as well
+as the checks.
+
 ### On the target host, one thing has to be set first
 
 The commands above are correct for an ordinary Docker host, and they are
@@ -1211,6 +1267,14 @@ the types `apps/api` imports do not exist on disk until it has. And `pnpm -r
 test` is two runners — vitest everywhere, jest in `apps/mobile` — where a
 failure in either has to exit non-zero, which is the one property the whole
 file exists for.
+
+A second job builds `docker/api.Dockerfile` and then **runs it**, with no
+environment at all, and asserts the container answers `GET /health` with the
+commit it was built from. Building is not running: until this step existed, an
+image that built and then died on boot passed — the entrypoint's `prisma
+migrate deploy`, the query engine matching the runtime's OpenSSL, the server
+binding a port, none of it was covered. It also makes the deploy gate's one
+assumption true by test rather than by hope.
 
 Only the pnpm store is cached, keyed on the hash of `pnpm-lock.yaml`. The
 store is content addressed and the install is `--frozen-lockfile`, so the

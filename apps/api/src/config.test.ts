@@ -277,6 +277,58 @@ describe("loadConfig", () => {
     });
   });
 
+  /**
+   * The one value in this file that is a LABEL. Everything else here decides
+   * something inside the process — who may call, whose address is believed,
+   * where photos land — which is why everything else is refused when it is
+   * malformed: a setting that parses and is wrong looks exactly like a working
+   * deployment.
+   *
+   * The commit decides nothing. It is read once and repeated on `/health`, and
+   * `scripts/deploy.sh` is what compares it and what refuses. Validating it
+   * here would only move the refusal to boot time, where the consequence of
+   * being wrong is a container that will not start — so a typo in a label could
+   * take the inventory down. See ADR 23.
+   */
+  describe("the commit the image was built from", () => {
+    it("reads it from the build argument the image bakes in", () => {
+      const config = loadConfig({
+        WAYMARK_COMMIT: "6a852af0f7335499e407620aff6b46dfc56999c6",
+      });
+
+      expect(config.commit).toBe("6a852af0f7335499e407620aff6b46dfc56999c6");
+    });
+
+    it("answers null when nothing said, rather than refusing to start", () => {
+      // A `docker build` on a laptop passes no build argument, and a container
+      // that will not run without one would make this field able to take the
+      // service down. The gate refuses; the process reports.
+      const config = loadConfig({});
+
+      expect(config.commit).toBeNull();
+    });
+
+    it("treats a blank value as unknown, which is what ${WAYMARK_COMMIT:-} produces", () => {
+      const config = loadConfig({ WAYMARK_COMMIT: "   " });
+
+      expect(config.commit).toBeNull();
+    });
+
+    it("trims it, because a value crossing a shell picks up whitespace", () => {
+      const config = loadConfig({ WAYMARK_COMMIT: " 6a852af \n" });
+
+      expect(config.commit).toBe("6a852af");
+    });
+
+    it("does not judge the shape, because an equality check at the gate already does", () => {
+      // A short SHA, a tag, the word `dev`: each of them is repeated verbatim
+      // and each of them fails the deploy script's comparison, loudly, naming
+      // what was found. That is a better place to be told than a container that
+      // will not boot.
+      expect(loadConfig({ WAYMARK_COMMIT: "dev" }).commit).toBe("dev");
+    });
+  });
+
   describe("refuses nonsense rather than starting with it", () => {
     it.each([
       ["a port that is not a number", { PORT: "http" }],

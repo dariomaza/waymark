@@ -103,6 +103,14 @@ export interface TestApiOptions {
    * complete JSON service on its own.
    */
   readonly webRoot?: string;
+  /**
+   * What the image would have been built from. Absent is the case that matters
+   * most: it is what a `docker build` with no build argument produces, and what
+   * every other file in this suite runs as — so each of them is, incidentally,
+   * a test that an API which does not know its own commit still serves every
+   * request (ADR 23).
+   */
+  readonly commit?: string;
 }
 
 export interface TestApi {
@@ -230,6 +238,7 @@ export const createTestApi = async (
         publicIds,
         clock: api.clock,
         publicBaseUrl: TEST_PUBLIC_BASE_URL,
+        commit: options.commit ?? null,
         photoStorage: {
           root: photoRoot,
           maxUploadBytes: MAX_UPLOAD_BYTES_IN_TESTS,
