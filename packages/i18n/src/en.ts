@@ -215,8 +215,14 @@ export const EN = {
    * is how both mistakes survived: neither was wrong NEXT TO ITSELF.
    */
   "inventory.addSpace": "Add a space",
-  "inventory.emptyLine":
-    "Nothing stored yet. Add a space — a room, the garage, a shelf — to start.",
+  /*
+   * `inventory.emptyLine` was here, and it said in one line what
+   * `inventory.emptyTitle` and `inventory.emptyExplains` say in two. Only this
+   * client used it, and only because its home screen had been written without
+   * looking at the phone's — which is the whole of what the owner was
+   * photographing. A key that exists so one client can say something its own
+   * way is a key that should go when the two clients agree.
+   */
   "inventory.emptyTitle": "Nothing is registered yet",
   "inventory.emptyExplains":
     "Start with somewhere you would name out loud: a room, the garage, the shed.",

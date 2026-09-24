@@ -65,14 +65,28 @@ export const InventoryScreen = (): JSX.Element => {
       {tree.isError ? (
         <FailureNote
           error={tree.error}
+          /*
+            Titled, which the phone has always been. The same refusal read as a
+            bare sentence here and as a named problem there, and the title is
+            the half that says WHAT is missing.
+          */
+          title={t("inventory.failed")}
           onRetry={() => {
             void tree.refetch();
           }}
         />
       ) : null}
 
+      {/*
+        A title and a sentence under it, which is the shape `EmptyNote` was
+        built for on both clients and which the phone has always drawn: on an
+        empty screen the statement IS the content, and what the place is for
+        goes underneath it quietly. This client said both halves in one line.
+      */}
       {tree.isSuccess && tree.data.tree.length === 0 ? (
-        <EmptyNote>{t("inventory.emptyLine")}</EmptyNote>
+        <EmptyNote explains={t("inventory.emptyExplains")}>
+          {t("inventory.emptyTitle")}
+        </EmptyNote>
       ) : null}
 
       {tree.isSuccess && tree.data.tree.length > 0 ? (

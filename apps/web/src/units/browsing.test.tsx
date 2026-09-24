@@ -42,12 +42,13 @@ describe("browsing the inventory", () => {
     expect(within(tree).getByRole("link", { name: /box 3/i })).toBeVisible();
   });
 
+  /** The same two sentences the phone shows. See `the-home-screen-offers-two`. */
   it("says the house is empty rather than drawing an empty list", async () => {
     theForestIs();
 
     renderApp({ route: "/" });
 
-    expect(await screen.findByText(/nothing stored yet/i)).toBeVisible();
+    expect(await screen.findByText(/nothing is registered yet/i)).toBeVisible();
   });
 
   it("offers a way to try again when the inventory cannot be loaded", async () => {

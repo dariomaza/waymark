@@ -91,6 +91,74 @@ describe("the two ways off the home screen", () => {
 });
 
 /**
+ * # The two clients' home screens, said in the same words
+ *
+ * The owner's two screenshots are of one screen on one phone, minutes apart.
+ * Beyond the row of buttons, three things on it still differed — and none of
+ * them was wrong next to itself, which is the sentence this project keeps
+ * writing (ADR 20, ADR 22).
+ *
+ * The phone's wins in all three, because the phone's shape wins.
+ */
+describe("what the home screen says when there is nothing in it", () => {
+  beforeEach(() => {
+    sessionStore.save(aSession());
+    apiServer.use(
+      http.get(`${API_URL}/auth/me`, () =>
+        HttpResponse.json({ user: { id: "u1", username: "dario" } }),
+      ),
+      http.get(`${API_URL}/storage-units`, () => HttpResponse.json({ tree: [] })),
+    );
+  });
+
+  /**
+   * One line here — "Nothing stored yet. Add a space — a room, the garage, a
+   * shelf — to start." — against a title and a sentence under it on the phone.
+   * The phone's is the shape `EmptyNote` was built for on both clients: the
+   * statement IS the content of an empty screen, and what the place is for goes
+   * underneath it quietly.
+   */
+  it("names the state and then says what to do about it, as the phone does", async () => {
+    renderApp({ route: "/" });
+
+    expect(await screen.findByText(/nothing is registered yet/i)).toBeVisible();
+    expect(screen.getByText(/somewhere you would name out loud/i)).toBeVisible();
+  });
+
+  /** The row is what the screen is for, so it is there before anything loads. */
+  it("still offers both ways in", async () => {
+    renderApp({ route: "/" });
+
+    expect(await screen.findByRole("button", { name: /add a space/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /label sheet/i })).toBeVisible();
+  });
+});
+
+describe("what the home screen says when it could not be loaded", () => {
+  beforeEach(() => {
+    sessionStore.save(aSession());
+    apiServer.use(
+      http.get(`${API_URL}/auth/me`, () =>
+        HttpResponse.json({ user: { id: "u1", username: "dario" } }),
+      ),
+      http.get(`${API_URL}/storage-units`, () => HttpResponse.error()),
+    );
+  });
+
+  /**
+   * The phone titles this failure and this client did not, so the same refusal
+   * read as a bare sentence here and as a named problem there. A title is what
+   * turns "the network is unavailable" into "your inventory could not be
+   * loaded", which is the half that says WHAT is missing.
+   */
+  it("says which thing could not be loaded, as the phone does", async () => {
+    renderApp({ route: "/" });
+
+    expect(await screen.findByText(/your inventory could not be loaded/i)).toBeVisible();
+  });
+});
+
+/**
  * # What happens at 360px, decided rather than discovered
  *
  * A grid of two equal tracks. The row cannot become two rows, because a grid

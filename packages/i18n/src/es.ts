@@ -151,8 +151,6 @@ export const ES: Dictionary = {
   "inventory.loading": "Cargando tu inventario",
   "inventory.failed": "No se ha podido cargar tu inventario",
   "inventory.addSpace": "Añadir un espacio",
-  "inventory.emptyLine":
-    "Todavía no hay nada guardado. Añade un espacio — una habitación, el garaje, un estante — para empezar.",
   "inventory.emptyTitle": "Todavía no hay nada registrado",
   "inventory.emptyExplains":
     "Empieza por un sitio que llamarías por su nombre en voz alta: una habitación, el garaje, la caseta.",

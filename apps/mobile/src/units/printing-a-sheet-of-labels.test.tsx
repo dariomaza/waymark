@@ -304,3 +304,35 @@ describe("getting to the sheet", () => {
     expect(await screen.findByText(/tick the spaces you want labels for/i)).toBeOnTheScreen();
   });
 });
+
+/**
+ * # The two home screens, side by side on one phone
+ *
+ * The owner photographed both clients minutes apart. Beyond the row of buttons,
+ * one thing on this screen still differed and it is the one that only shows
+ * when something is slow or broken: this client drew the row ONLY once the tree
+ * had arrived, so on a bad connection the home screen offered nothing at all
+ * while the browser offered both ways in.
+ *
+ * The row is what the screen is FOR. It does not wait for a request.
+ */
+describe("the home screen while the inventory is not there", () => {
+  it("still offers both ways in when the inventory could not be loaded", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/auth/me`, () =>
+        HttpResponse.json({ user: { id: "u1", username: "dario" } }),
+      ),
+      http.get(`${API_URL}/auth/machine-tokens`, () => HttpResponse.json({ machineTokens: [] })),
+      http.get(`${API_URL}/storage-units`, () => HttpResponse.error()),
+    );
+
+    await renderApp({
+      session: aSession(),
+      screen: { name: "Tabs", params: { screen: "Inventory" } },
+    });
+
+    expect(await screen.findByText(/could not be loaded/i)).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Add a space" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Label sheet" })).toBeOnTheScreen();
+  });
+});

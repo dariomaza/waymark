@@ -33,6 +33,45 @@ export const InventoryScreen = (): JSX.Element => {
     <Screen>
       <ScreenTitle>{t("inventory.title")}</ScreenTitle>
 
+      {/*
+        Two controls, on one line — "quería que fueran dos botones en línea".
+        The primary is still the primary: it is the only lime rectangle on the
+        screen and it comes first, which is what ADR 21 asks of a screen's one
+        primary. What it no longer does is take the whole width and leave the
+        other errand somewhere else entirely — this client had no way to a sheet
+        of labels at all until now.
+
+        `share` on both is what keeps the two rectangles the same width and the
+        same HEIGHT once a Spanish label wraps to two lines; the browser gets
+        the same thing from a grid of two tracks. See the atom.
+
+        It sits ABOVE the three states of the request rather than inside the
+        one where it worked. The row is what this screen is FOR, and drawing it
+        only once the tree had arrived meant a bad connection left the home
+        screen offering nothing at all — which the browser never did.
+      */}
+      <View style={styles.actions}>
+        <Button
+          tone="primary"
+          icon="plus"
+          share
+          onPress={() => {
+            setAdding(true);
+          }}
+        >
+          {t("inventory.addSpace")}
+        </Button>
+        <Button
+          icon="tags"
+          share
+          onPress={() => {
+            navigation.navigate("Labels");
+          }}
+        >
+          {t("label.sheet")}
+        </Button>
+      </View>
+
       {tree.isPending ? <Loading label={t("inventory.loading")} /> : null}
 
       {tree.isError ? (
@@ -47,40 +86,6 @@ export const InventoryScreen = (): JSX.Element => {
 
       {tree.isSuccess ? (
         <>
-          {/*
-            Two controls, on one line — "quería que fueran dos botones en
-            línea". The primary is still the primary: it is the only lime
-            rectangle on the screen and it comes first, which is what ADR 21
-            asks of a screen's one primary. What it no longer does is take the
-            whole width and leave the other errand somewhere else entirely —
-            this client had no way to a sheet of labels at all until now.
-
-            `share` on both is what keeps the two rectangles the same width and
-            the same HEIGHT once a Spanish label wraps to two lines; the browser
-            gets the same thing from a grid of two tracks. See the atom.
-          */}
-          <View style={styles.actions}>
-            <Button
-              tone="primary"
-              icon="plus"
-              share
-              onPress={() => {
-                setAdding(true);
-              }}
-            >
-              {t("inventory.addSpace")}
-            </Button>
-            <Button
-              icon="tags"
-              share
-              onPress={() => {
-                navigation.navigate("Labels");
-              }}
-            >
-              {t("label.sheet")}
-            </Button>
-          </View>
-
           {tree.data.tree.length === 0 ? (
             <EmptyNote explains={t("inventory.emptyExplains")}>
               {t("inventory.emptyTitle")}
