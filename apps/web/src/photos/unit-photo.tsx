@@ -10,6 +10,7 @@ import {
   useReprocessPhoto,
   useUploadUnitPhoto,
 } from "./photo-mutations.js";
+import { uploadFailureMessage } from "./readable-photo.js";
 import { PhotoPicker } from "./views/photo-picker.js";
 import { PhotoStatusNote } from "./views/photo-status-note.js";
 import "./unit-photo.css";
@@ -75,7 +76,7 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
       </div>
 
       {upload.isError ? (
-        <Callout tone="wrong">{t(describeFailure(upload.error))}</Callout>
+        <Callout tone="wrong">{t(uploadFailureMessage(upload.error))}</Callout>
       ) : null}
       {remove.isError ? (
         <Callout tone="wrong">{t(describeFailure(remove.error))}</Callout>

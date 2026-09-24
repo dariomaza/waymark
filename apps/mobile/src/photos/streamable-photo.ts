@@ -99,9 +99,16 @@ const copied = async (uri: string, files: PhotoFiles): Promise<PhotoFile> => {
 };
 
 /**
- * The platform's own sentence, untranslated — the same bargain
- * `failure.asTheApiPutIt` makes with the API's prose. It is what somebody
- * with no console can read out loud.
+ * The platform's own words, untranslated — the same bargain
+ * `failure.asTheApiPutIt` makes with the API's prose. The NAME is carried
+ * with the message when there is one worth carrying, because a native
+ * module's own class name is what a maintainer recognises, and all of it is
+ * what somebody with no console can read out loud.
  */
-const wordsFor = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause);
+const wordsFor = (cause: unknown): string => {
+  if (!(cause instanceof Error)) {
+    return String(cause);
+  }
+
+  return cause.name === "Error" ? cause.message : `${cause.name}: ${cause.message}`;
+};

@@ -13,6 +13,7 @@ import {
   useUploadItemPhoto,
 } from "./photo-mutations.js";
 
+import { uploadFailureMessage } from "./readable-photo.js";
 import { PhotoPicker } from "./views/photo-picker.js";
 import { PhotoStatusNote } from "./views/photo-status-note.js";
 import "./item-photos.css";
@@ -69,7 +70,7 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
 
       {upload.isError ? (
         <Callout tone={full === null ? "wrong" : "blocked"}>
-          {full ?? t(describeFailure(upload.error))}
+          {full ?? t(uploadFailureMessage(upload.error))}
         </Callout>
       ) : null}
 

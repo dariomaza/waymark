@@ -158,8 +158,14 @@ describe("photographing a thing", () => {
     const said = await screen.findByText(/could not read that photo off this device/iu);
 
     expect(said).toBeOnTheScreen();
-    // The sentence that was wrong, and the reason this test exists.
-    expect(screen.queryByText(/could not connect to waymark/iu)).not.toBeOnTheScreen();
+    /*
+     * The sentence that WAS shown — `failure.offline` — cannot be reached
+     * from here at all, because the upload never starts, so asserting its
+     * absence would assert nothing. What can be reached, and what this
+     * replaced, is the throwable's own message: developer prose, in English,
+     * in front of somebody standing in a garage.
+     */
+    expect(screen.queryByText(/^The photo could not be read:/u)).not.toBeOnTheScreen();
     // Nothing was sent, which is the promise the sentence makes.
     expect(posted).toEqual([]);
     /*
