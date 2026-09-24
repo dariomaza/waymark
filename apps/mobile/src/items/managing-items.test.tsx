@@ -228,3 +228,61 @@ describe("looking after items", () => {
     expect(screen.getByText("Box 3")).toBeOnTheScreen();
   });
 });
+
+/**
+ * # A form in flight says so, rather than only going quiet
+ *
+ * The web client's two forms have always swapped the word on the button for
+ * `action.saving` while the request is out; the phone's two only went
+ * disabled. A greyed button with the same word on it is indistinguishable from
+ * a button that did not take the tap, which on a phone behind a garage wall is
+ * exactly the moment somebody presses it again.
+ *
+ * The phone already does this everywhere else — `login.submitting` on the
+ * sign-in button, `photos.uploading` on the camera one — so this was two forms
+ * missing a convention the app already had, not a new idea.
+ */
+describe("a form with a request still out", () => {
+  beforeEach(() => {
+    theApiKnowsTheHouse();
+    theApiKnowsTheDrill();
+  });
+
+  it("says it is saving, on the button that was pressed", async () => {
+    apiServer.use(
+      // Never answers. The assertion is about the moment BEFORE the answer,
+      // and a handler that resolved would race the assertion to the screen.
+      http.patch(`${API_URL}/items/drill`, () => new Promise(() => undefined)),
+    );
+
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Edit" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByRole("button", { name: "Saving…" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
+  });
+
+  /** And it is still the disabled button it always was. */
+  it("still refuses a second tap while it says so", async () => {
+    let asked = 0;
+    apiServer.use(
+      http.patch(`${API_URL}/items/drill`, () => {
+        asked += 1;
+
+        return new Promise(() => undefined);
+      }),
+    );
+
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Edit" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Save changes" }));
+
+    const saving = await screen.findByRole("button", { name: "Saving…" });
+    await fireEvent.press(saving);
+
+    expect(asked).toBe(1);
+  });
+});

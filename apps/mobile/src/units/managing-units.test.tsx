@@ -510,3 +510,28 @@ describe("choosing what kind of thing a unit is", () => {
     );
   });
 });
+
+/**
+ * The same convention on the other form. See `items/managing-items.test.tsx`
+ * for why a button that only goes grey is a button somebody presses twice.
+ */
+describe("a unit form with a request still out", () => {
+  beforeEach(() => {
+    theApiKnowsTheHouse();
+  });
+
+  it("says it is saving, on the button that was pressed", async () => {
+    apiServer.use(
+      http.patch(`${API_URL}/storage-units/box3`, () => new Promise(() => undefined)),
+    );
+
+    await renderApp({ session: aSession(), screen: atBox3 });
+
+    await openTheMenuFor("Box 3");
+    await fireEvent.press(await screen.findByRole("button", { name: "Edit" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByRole("button", { name: "Saving…" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
+  });
+});
