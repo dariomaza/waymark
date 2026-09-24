@@ -163,6 +163,17 @@ export interface AppDependencies {
   readonly passkeyRateLimiter: RateLimiter;
   /** What a scanned QR resolves against; see `qr/storage-unit-qr.ts`. */
   readonly publicBaseUrl: string;
+  /**
+   * The commit this image was built from, repeated on `GET /health`, or `null`
+   * when the build never said (ADR 23).
+   *
+   * Required rather than optional, and that is the point of it: a dependency
+   * with a default is one a new composition root can forget to wire, and the
+   * symptom would be a deployment that reports `null` for ever while every
+   * test passes. There is exactly one thing this API cannot be allowed to be
+   * vague about, and it is which code it is.
+   */
+  readonly commit: string | null;
   readonly photoStorage: PhotoStorageConfig;
   /**
    * Background removal, which is optional in every direction: the routes it
@@ -407,7 +418,25 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   registerSecurityPlugins(app, deps.security);
   registerErrorHandling(app, webClient);
 
-  app.get("/health", async (_request, reply) => reply.code(200).send({ status: "ok" }));
+  /**
+   * Alive, and which code is alive, in one answer.
+   *
+   * The identity rides on the probe's own route rather than a `/version` beside
+   * it, because a deploy's two questions are asked in one breath: anything
+   * verifying a release polls this until it answers, and the answer it waited
+   * for is the one that has to say what came up. A separate route can be
+   * skipped, and a deploy that skips it is back to comparing bundle filenames —
+   * which is empty when only the API changed and never names a commit.
+   *
+   * `commit` is `null`, and never absent, when the image was not told. A
+   * container from before this field existed answers with no key at all, and
+   * the deploy script reads those two as different sentences: "this image
+   * predates the gate" and "this image was built without saying what it is".
+   * They are fixed by different actions. See ADR 23.
+   */
+  app.get("/health", async (_request, reply) =>
+    reply.code(200).send({ status: "ok", commit: deps.commit }),
+  );
 
   void app.register(authRoutes, { login, logout });
   /**

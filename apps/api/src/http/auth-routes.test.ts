@@ -377,7 +377,10 @@ describe("authentication over HTTP", () => {
       const response = await api.app.inject({ method: "GET", url: "/health" });
 
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ status: "ok" });
+      // `commit` is null because this API was built the way a laptop builds it,
+      // with nothing saying which commit it is. What it reports when the image
+      // WAS told lives in `the-api-says-which-commit-it-is.test.ts`.
+      expect(response.json()).toEqual({ status: "ok", commit: null });
     });
   });
 
