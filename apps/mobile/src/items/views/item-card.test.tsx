@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 
+import { colors } from "../../ui/styles/tokens.js";
 import { ItemCard } from "./item-card.js";
 
 const nothing = (): void => {};
@@ -8,6 +9,50 @@ const nothing = (): void => {};
 /** Every square box this card declares for its picture, photo or no photo. */
 const squares = (tree: unknown): number =>
   JSON.stringify(tree).split('"aspectRatio":1').length - 1;
+
+interface RenderedNode {
+  readonly props?: { readonly style?: unknown };
+  readonly children?: readonly unknown[] | null;
+}
+
+/** One style object, whatever mixture of arrays and nulls it was written as. */
+const flatten = (style: unknown): Record<string, unknown> =>
+  Array.isArray(style)
+    ? Object.assign({}, ...style.map(flatten))
+    : ((style ?? {}) as Record<string, unknown>);
+
+/**
+ * The style of the square the picture goes in, found by the one property that
+ * identifies it: a declared aspect ratio of 1. Asking for it by shape rather
+ * than by a test id keeps the card free of markup that exists only for a test.
+ */
+const pictureBox = (tree: unknown): Record<string, unknown> => {
+  const found: Record<string, unknown>[] = [];
+
+  const walk = (node: unknown): void => {
+    if (node === null || typeof node !== "object") {
+      return;
+    }
+
+    const style = flatten((node as RenderedNode).props?.style);
+    if (style["aspectRatio"] === 1) {
+      found.push(style);
+    }
+
+    for (const child of (node as RenderedNode).children ?? []) {
+      walk(child);
+    }
+  };
+
+  walk(tree);
+
+  const box = found[0];
+  if (box === undefined) {
+    throw new Error("this card drew no square for its picture");
+  }
+
+  return box;
+};
 
 describe("one thing, as a card", () => {
   it("is a link named after the thing", async () => {
@@ -52,6 +97,27 @@ describe("one thing, as a card", () => {
 
     expect(squares(withNone.toJSON())).toBe(1);
     expect(squares(withPhoto.toJSON())).toBe(1);
+  });
+
+  /**
+   * # The one row of the cross-client audit where this client moved
+   *
+   * The browser drew the picture's box in the SUNKEN plane and this one drew it
+   * in the RAISED plane — not a difference of degree, but a recess on one
+   * client and a tile on the other, on the densest screen in the product.
+   *
+   * The phone's shape won almost everywhere else in ADR 22, and here it did
+   * not, because this product already had a rule and this file was the thing
+   * breaking it: `sunken` is the recess token — a field, an option list, the
+   * grey behind a photo — and this client's own `TextField` uses it for
+   * exactly that. Most of a new inventory is cells with no photograph yet, so
+   * whether forty grey squares read as holes waiting for a picture or as tiles
+   * is the whole character of the screen.
+   */
+  it("draws the picture's box as a recess, which is what both clients now do", async () => {
+    const drawn = await render(<ItemCard name="Cordless drill" onPress={nothing} />);
+
+    expect(pictureBox(drawn.toJSON())["backgroundColor"]).toBe(colors.surfaceSunken);
   });
 
   describe("how many of it there are", () => {

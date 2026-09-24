@@ -8,29 +8,51 @@
 .item-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-2);
+  /*
+    The axes are deliberately not equal, and the phone has had it this way all
+    along. Two photographs side by side need only to be told apart; a caption
+    at the bottom of one row and a photograph at the top of the next need
+    enough air that the words plainly belong to the picture above them.
+
+    Longhands rather than the `gap` shorthand: this is the pair the two clients
+    were found to disagree about, so it is the pair a test has to be able to
+    read, and jsdom will not expand a shorthand that contains a `var()`.
+  */
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/**
+ * # A photograph on the page, not a tile in a frame
+ *
+ * This was a framed card: a 1px border, a radius, a raised plate behind it and
+ * the caption inside the frame. The phone drew the same thing as a bare
+ * photograph with its caption underneath, on the page. Nine framed tiles on a
+ * 360px screen spend three pixels a side on furniture and leave the picture —
+ * the only thing that tells a drill from a bag of screws — smaller for it.
+ *
+ * The phone's shape wins (ADR 22). What is left here is position, because the
+ * quantity badge and the selection control are still anchored to the cell.
+ */
 .item-card {
   position: relative;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-m);
-  background: var(--color-surface-raised);
-  overflow: hidden;
 }
 
 .item-card__target {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  /* The same 4 the phone puts between a picture, a name and the line under it. */
+  gap: var(--space-1);
   text-decoration: none;
   color: inherit;
 }
 
 .item-card__target:focus-visible {
   outline: 3px solid var(--color-focus);
-  outline-offset: -3px;
+  outline-offset: 2px;
 }
 
 /**
@@ -40,12 +62,23 @@
  * whose cells take their height from a loaded image reflows under the thumb
  * that is already reaching for something. Reserving the box means the layout
  * is final before the first byte.
+ *
+ * The radius moved here from the frame that used to be around the whole cell,
+ * which is where the phone has always kept it: with no frame, a square
+ * photograph with square corners in a grid of three reads as a contact sheet.
+ *
+ * `sunken` and not `raised`. This is the one row of the audit where the PHONE
+ * moved: a photo's backing is the recess token everywhere else in this product
+ * — a field, an option list — and most of a new inventory is cells with no
+ * photograph yet, so whether forty grey squares read as holes or as tiles is
+ * the whole character of the screen. See ADR 22.
  */
 .item-card__image {
   position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 1 / 1;
+  border-radius: var(--radius-m);
   background: var(--color-surface-sunken);
   overflow: hidden;
 }
@@ -57,53 +90,76 @@
   display: block;
 }
 
+/**
+ * On the scale. This was `1.6rem` — 25.6px — one of three sizes on this client
+ * that were not on the scale this client publishes, and the phone draws the
+ * same letters at `text.xl`. The invented `letter-spacing` went with it.
+ *
+ * Muted on the sunken surface: a gap with information in it, not content.
+ */
 .item-card__initials {
-  font-size: 1.6rem;
+  font-size: var(--text-xl);
   font-weight: 700;
-  letter-spacing: 0.02em;
-  /* Muted on the sunken surface: a gap with information in it, not content. */
   color: var(--color-ink-muted);
 }
 
+/**
+ * The phone's badge, whole.
+ *
+ * This used to be a pill at `0.66rem` — 10.56px — on `rgba(0, 0, 0, 0.6)`.
+ * Both clients were solving the same problem, which is that this sits on a
+ * photograph and a photograph can be any colour, but a translucent plate still
+ * lets a bright picture through and an opaque one cannot. Being a token rather
+ * than a literal, it also follows the light scheme, which the black never did.
+ */
 .item-card__quantity {
   position: absolute;
   top: var(--space-1);
   right: var(--space-1);
-  padding: 1px var(--space-2);
-  border-radius: 999px;
-  font-size: 0.66rem;
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-s);
+  font-size: var(--text-s);
   font-weight: 700;
-  /**
-   * Its own dark plate rather than a palette colour, because it sits on a
-   * photograph and a photograph can be any colour. The accent would vanish
-   * against a lime toolbox exactly once, and that is once too often.
-   */
-  background: rgba(0, 0, 0, 0.6);
-  color: #ffffff;
+  background: var(--color-surface-sunken);
+  color: var(--color-ink);
 }
 
 .item-card__text {
-  display: block;
-  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.item-card__name,
+/**
+ * Two lines, as on the phone, and then an ellipsis.
+ *
+ * One line was the old rule, on the reasoning that a card is a fixed shape and
+ * a name that wraps changes it. The shape is still fixed — the picture above is
+ * a declared square and it is what the grid measures — and a name is how
+ * somebody finds the thing they came for. "Brocas de pared de widia surtidas…"
+ * cut at one line is three cards that look identical.
+ */
+.item-card__name {
+  font-size: var(--text-s);
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/**
+ * 14, the same as the name, with ink doing the separating — which is what the
+ * phone does. It was `0.72rem`, 11.52px: a hierarchy, and a size nothing else
+ * in the product used.
+ */
 .item-card__secondary {
-  display: block;
-  /* One line each. A card is a fixed shape; a name that wraps changes it. */
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.item-card__name {
-  font-weight: 550;
-  font-size: var(--text-s);
-}
-
-.item-card__secondary {
-  color: var(--color-ink-muted);
-  font-size: 0.72rem;
 }
 
 .item-card__trailing {
