@@ -19,3 +19,11 @@ apps/mobile/android/
 apps/mobile/ios/
 .atl/
 .codegraph/
+
+# Operator-specific deploy target. The committed example is deploy.env.example.
+scripts/deploy.env
+
+# Personal, per-machine Claude Code files. Project-wide ones (CLAUDE.md,
+# .claude/rules/) ARE committed.
+CLAUDE.local.md
+.claude/settings.local.json

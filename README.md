@@ -1158,9 +1158,15 @@ somebody standing in a garage.
 ### Deploying is a script, and it refuses
 
 ```sh
+cp scripts/deploy.env.example scripts/deploy.env   # once; git ignores it
 pnpm deploy          # scripts/deploy.sh
 pnpm deploy:check    # every gate, and stop before touching the box
 ```
+
+Where to deploy is one operator's fact, so it is not in the repository: the
+host, the path on it and the public address live in `scripts/deploy.env`, and
+the script refuses, naming the variable, when one is missing. A fork fills in
+its own and inherits nobody's server.
 
 A deploy used to be four commands pasted into a terminal, and on 2026-09-24
 that shipped a broken image: `packages/tokens` was added, the Dockerfile's
@@ -1281,6 +1287,26 @@ store is content addressed and the install is `--frozen-lockfile`, so the
 lockfile decides what is installed and the cache only decides how long that
 takes.
 
+## Releasing
+
+A version is decided from the commits and published when a person says so.
+
+On every push to `main`, release-please reads the conventional commits since
+the last release and keeps one pull request open that bumps the root
+`package.json`, `.release-please-manifest.json` and `expo.version` in
+`apps/mobile/app.json`, and writes `CHANGELOG.md`. `fix:` is a patch and `feat:`
+a minor; while this is 0.x, a breaking change is a minor too. **Merging that
+pull request is the release.** It then runs the whole of CI against the tagged
+commit, builds the APK on EAS, checks the build is exactly that commit and
+version, and attaches it to the GitHub release.
+
+The one secret it needs is `EXPO_TOKEN`. The signing keystore never leaves EAS
+— an Android app's identity is its package name plus that key, and a key on one
+laptop is one disk failure from never shipping an update again.
+
+A tag pushed by hand (`git tag v0.2.0 && git push github v0.2.0`) goes through
+the same `release.yml`, for the day release-please is the thing that is broken.
+
 ## Status
 
 Domain, persistence, HTTP, authentication, search, editing, QR generation,
@@ -1290,18 +1316,19 @@ in the web client, which is where a printer is. The PWA is served by the API fro
 same origin (ADR 16), so one container behind one tunnel hostname is the whole
 product rather than an API somebody has to drive with `curl`.
 
-The Android app has the single label and not the sheet. That is deliberate:
-the sheet is print CSS and a page box measured in millimetres, and React
-Native has neither a print dialog nor a page.
+Both clients print the label sheet. The browser renders it with print CSS in
+millimetres; the phone builds the same page as HTML and hands it to Android's
+print service through `expo-print`, whose own dialog is the preview. The page
+geometry — margins, the 3×4 grid, the 36 mm symbol — lives once, in
+`packages/tokens`, so the two renderers cannot disagree about the paper
+(ADR 21, amended; ADR 22).
 
-The Android app is verified as far as this repository can verify anything that
-runs on a phone: it typechecks, its tests pass, `expo prebuild` generates the
-native project from `app.config.ts`, and `expo export` produces an Android
-Hermes bundle whose bytecode carries the API address it was built with. It is
-now configured for EAS — `eas.json` is validated against the schema EAS itself
-parses it with, and asks for an `.apk` rather than the App Bundle EAS defaults
-to. It has never been run on a device or an emulator, and no APK has been
-built: that needs a device, an emulator or an Expo account.
+The Android app runs on a real phone. It is built on EAS, installed on the
+owner's handset, and published as a GitHub release (`v0.1.0`). Releases are
+cut by release-please — see [Releasing](#releasing). What is still unproven on
+a device, stated so nobody reads the tests as more than they are: a sheet
+printed on paper and scanned back, the camera upload path after its fix, and
+how the Spanish labels wrap at 360 px. `docs/roadmap.md` keeps that list.
 
 The MCP server is verified the same way, and with the same honesty about where
 that stops. Its tools are driven through the real protocol against a stubbed

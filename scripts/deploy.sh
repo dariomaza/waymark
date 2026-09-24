@@ -62,15 +62,40 @@
 #     that caused the incident: green-looking, unproven.
 set -euo pipefail
 
-readonly REMOTE="${WAYMARK_DEPLOY_REMOTE:-DarioMaza@100.108.95.2}"
-readonly REMOTE_PATH="${WAYMARK_DEPLOY_PATH:-/DATA/AppData/waymark/src}"
-readonly PUBLIC_URL="${WAYMARK_DEPLOY_PUBLIC_URL:-https://waymark.idemcloud.uk}"
-readonly GITHUB_REPO="${WAYMARK_DEPLOY_GITHUB_REPO:-dariomaza/waymark}"
+# Where to deploy is one operator's fact, not the repository's. This file is
+# public, and a default that names one person's box is a default every fork
+# inherits — the same reason `apps/mobile/eas.json` names no server. So the
+# values live in `scripts/deploy.env`, which git ignores, and the committed
+# `scripts/deploy.env.example` says what they are. Real environment variables
+# still win over the file.
+readonly DEPLOY_ENV="$(dirname "$0")/deploy.env"
+if [ -f "$DEPLOY_ENV" ]; then
+  set -a
+  # shellcheck source=/dev/null
+  . "$DEPLOY_ENV"
+  set +a
+fi
+
+# The four that have no honest default. A missing one refuses before anything
+# is touched, naming the variable, rather than deploying to a guess.
+for required in WAYMARK_DEPLOY_REMOTE WAYMARK_DEPLOY_PATH WAYMARK_DEPLOY_PUBLIC_URL WAYMARK_DEPLOY_GITHUB_REPO; do
+  if [ -z "${!required:-}" ]; then
+    printf 'REFUSING TO DEPLOY\n%s is not set.\n\nCopy scripts/deploy.env.example to scripts/deploy.env and fill it in.\n' \
+      "$required" >&2
+    exit 1
+  fi
+done
+
+readonly REMOTE="$WAYMARK_DEPLOY_REMOTE"
+readonly REMOTE_PATH="$WAYMARK_DEPLOY_PATH"
+readonly PUBLIC_URL="$WAYMARK_DEPLOY_PUBLIC_URL"
+readonly GITHUB_REPO="$WAYMARK_DEPLOY_GITHUB_REPO"
 # ZimaOS keeps `/DATA/.docker` root-owned and unreadable by the login user, and
 # the Docker CLI responds by silently finding no plugins at all rather than
 # saying it was denied. Pointing this somewhere readable is what makes
-# `docker compose` exist on that box. See the README.
-readonly REMOTE_DOCKER_CONFIG="${WAYMARK_DEPLOY_DOCKER_CONFIG:-/DATA/AppData/waymark/.docker}"
+# `docker compose` exist on that box. Unset means the remote's own default,
+# which is right on any host that does not have that quirk.
+readonly REMOTE_DOCKER_CONFIG="${WAYMARK_DEPLOY_DOCKER_CONFIG:-}"
 
 # The port the API listens on inside the host's network namespace. The compose
 # file binds it to loopback, so this is reachable only from the box itself,
@@ -350,8 +375,15 @@ good "copied"
 # failed build. The second one is only a cost if somebody believes it is the new
 # one, and the verification below is what makes that impossible.
 # ---------------------------------------------------------------------------
-remote_env=$(printf 'DOCKER_CONFIG=%q WAYMARK_COMMIT=%q WAYMARK_PUBLIC_BASE_URL=%q' \
-  "$REMOTE_DOCKER_CONFIG" "$commit" "$PUBLIC_URL")
+remote_env=$(printf 'WAYMARK_COMMIT=%q WAYMARK_PUBLIC_BASE_URL=%q' "$commit" "$PUBLIC_URL")
+# Only when the operator set one. An empty `DOCKER_CONFIG=` happens to mean
+# "the default" to the Docker CLI today, and relying on that is how a quirk of
+# one host becomes a failure on another.
+docker_env=""
+if [ -n "$REMOTE_DOCKER_CONFIG" ]; then
+  docker_env="DOCKER_CONFIG=$(printf '%q' "$REMOTE_DOCKER_CONFIG") "
+  remote_env="$docker_env$remote_env"
+fi
 
 step "Building the image on the box"
 ssh "$REMOTE" "cd $(printf '%q' "$REMOTE_PATH") && $remote_env docker compose build" ||
@@ -368,7 +400,7 @@ ssh "$REMOTE" "cd $(printf '%q' "$REMOTE_PATH") && $remote_env docker compose up
   refuse "\`docker compose up -d\` failed. The box may be serving the old commit,
 the new one, or nothing. Look:
 
-  ssh $REMOTE 'cd $REMOTE_PATH && DOCKER_CONFIG=$REMOTE_DOCKER_CONFIG docker compose ps'"
+  ssh $REMOTE 'cd $REMOTE_PATH && ${docker_env}docker compose ps'"
 
 good "recreated"
 
@@ -417,7 +449,7 @@ case "$running" in
 The image built and the container was recreated, so it started and then did not
 come up. Migrations run before the port opens:
 
-  ssh $REMOTE 'cd $REMOTE_PATH && DOCKER_CONFIG=$REMOTE_DOCKER_CONFIG docker compose logs --tail 80 api'"
+  ssh $REMOTE 'cd $REMOTE_PATH && ${docker_env}docker compose logs --tail 80 api'"
     ;;
   '<absent>')
     refuse "The running container answers /health with no \`commit\` at all.
