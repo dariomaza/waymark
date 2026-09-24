@@ -1,9 +1,19 @@
-# A tag becomes a GitHub release with the Android app attached.
+# A version becomes a GitHub release with the Android app attached.
 #
-#   git tag v0.2.0 && git push github v0.2.0
+# Two ways in, one set of steps:
 #
-# Nothing else starts it. A push to `main` is not a version: versioning is a
-# decision somebody makes, and the tag is where they make it.
+# - `release-please.yml` calls this after its release PR is merged. That is the
+#   normal path: it bumps the versions and writes the changelog, and merging its
+#   pull request is the decision that a version exists.
+# - A tag pushed by hand — `git tag v0.2.0 && git push github v0.2.0` — for the
+#   day release-please is the thing that is broken.
+#
+# Both exist because release-please creates its tag with `GITHUB_TOKEN`, and
+# GitHub deliberately does not start workflows from events that token caused.
+# Waiting for its tag to trigger the `push: tags` below would wait for ever. So
+# it calls this file directly instead, and hands over the tag and the commit.
+#
+# Nothing else starts it. A push to `main` is not a version.
 #
 # Why the APK lives on GitHub rather than being linked from Expo: an EAS
 # artifact link is three redirects deep, ends on a separate CDN domain
@@ -16,6 +26,16 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_call:
+    inputs:
+      tag:
+        description: The tag release-please created, e.g. v0.2.0.
+        required: true
+        type: string
+      sha:
+        description: The commit release-please tagged.
+        required: true
+        type: string
 
 # Never cancelled half way. A release that stops between "built" and
 # "attached" is worse than one that takes its time.
@@ -52,9 +72,25 @@ jobs:
     # thing: a release on its own tag.
     permissions:
       contents: write
+    # Resolved once, from whichever door this came in by. On a hand-pushed tag
+    # `inputs` is empty and the event itself names the tag and the commit.
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      RELEASE_SHA: ${{ inputs.sha || github.sha }}
 
     steps:
       - uses: actions/checkout@v7
+
+      # `verify` above checked out the commit that started this run, and so did
+      # the step before this one. The release must be that commit, or this job
+      # would publish something other than what was just proved — which is the
+      # one mistake every other check in this file exists to prevent.
+      - name: The tagged commit is the commit that was verified
+        run: |
+          if [ "$RELEASE_SHA" != "$GITHUB_SHA" ]; then
+            echo "::error::The tag points at $RELEASE_SHA but this run verified $GITHUB_SHA"
+            exit 1
+          fi
 
       - name: Set up pnpm and Node
         uses: pnpm/setup@v3
@@ -74,7 +110,7 @@ jobs:
       - name: The tag names the version the app carries
         id: version
         run: |
-          tag="$GITHUB_REF_NAME"
+          tag="$RELEASE_TAG"
           if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::'$tag' is not vMAJOR.MINOR.PATCH"
             exit 1
@@ -140,7 +176,7 @@ jobs:
           url="$(jq -r "$one | .artifacts.applicationArchiveUrl" "$build")"
 
           [ "$status" = "FINISHED" ] || { echo "::error::EAS build status is $status"; exit 1; }
-          [ "$commit" = "$GITHUB_SHA" ] || { echo "::error::EAS built $commit, the tag points at $GITHUB_SHA"; exit 1; }
+          [ "$commit" = "$RELEASE_SHA" ] || { echo "::error::EAS built $commit, the tag points at $RELEASE_SHA"; exit 1; }
           [ "$built_version" = "${{ steps.version.outputs.version }}" ] || { echo "::error::EAS built version $built_version"; exit 1; }
           [ -n "$url" ] && [ "$url" != "null" ] || { echo "::error::EAS returned no artifact URL"; exit 1; }
 
@@ -172,7 +208,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="$GITHUB_REF_NAME"
+          tag="$RELEASE_TAG"
           file="${{ steps.apk.outputs.file }}"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" "$file" --clobber

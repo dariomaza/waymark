@@ -1,0 +1,69 @@
+# Versions decided from the commits, published when a person says so.
+#
+# On every push to `main`, release-please reads the conventional commits since
+# the last release and keeps ONE pull request open that says what the next
+# version would be: `fix:` is a patch, `feat:` a minor, and — while this is
+# 0.x — a breaking change is a minor too (`bump-minor-pre-major`), so a
+# `feat!:` on a hobby project does not accidentally declare 1.0.0.
+#
+# That pull request bumps the three places the version lives — the root
+# `package.json`, `.release-please-manifest.json`, and `expo.version` in
+# `apps/mobile/app.json`, which is the number Android shows in Settings — and
+# writes CHANGELOG.md. Nothing is published while it is open. Merging it is the
+# decision.
+#
+# Why not publish on every push: each release is an EAS build that has spent
+# over an hour in the free plan's queue, and a version nobody chose is noise.
+#
+# One thing to know about that pull request: release-please opens it with
+# `GITHUB_TOKEN`, and GitHub does not start workflows from events that token
+# caused, so CI does not run on it. That is acceptable here because it only
+# ever changes version numbers and a changelog, and because the merge is a
+# push by a person — which DOES run CI, and `release.yml` runs the whole of it
+# again before anything is built.
+
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      created: ${{ steps.rp.outputs.release_created }}
+      tag: ${{ steps.rp.outputs.tag_name }}
+      sha: ${{ steps.rp.outputs.sha }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # Only when the merged pull request actually produced a release. Every other
+  # push to `main` stops at the job above, having at most updated the pull
+  # request.
+  #
+  # Called directly rather than left to the tag's `push` event, which would
+  # never fire — see the note on `GITHUB_TOKEN` in `release.yml`.
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag }}
+      sha: ${{ needs.release-please.outputs.sha }}
+    permissions:
+      contents: write
+    # `EXPO_TOKEN` is the only one it needs, and it is the repository's to give.
+    secrets: inherit
