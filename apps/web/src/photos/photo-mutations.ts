@@ -17,6 +17,7 @@ import {
 
 import { useApi } from "../api/api-context.js";
 import { useInvalidateInventory } from "../api/use-invalidate-inventory.js";
+import { readablePhoto } from "./readable-photo.js";
 
 export const useUploadItemPhoto = (
   id: ItemId,
@@ -25,7 +26,12 @@ export const useUploadItemPhoto = (
   const invalidate = useInvalidateInventory();
 
   return useMutation({
-    mutationFn: async (file: File) => await api.uploadItemPhoto(id, file),
+    /*
+     * Read one byte first. A `File` from an input is a handle, and a handle
+     * that will not open becomes a `fetch` rejection that is indistinguishable
+     * from a dead network — see `readable-photo.ts`.
+     */
+    mutationFn: async (file: File) => await api.uploadItemPhoto(id, await readablePhoto(file)),
     onSuccess: invalidate,
   });
 };
@@ -71,7 +77,7 @@ export const useUploadUnitPhoto = (
   const invalidate = useInvalidateInventory();
 
   return useMutation({
-    mutationFn: async (file: File) => await api.uploadUnitPhoto(id, file),
+    mutationFn: async (file: File) => await api.uploadUnitPhoto(id, await readablePhoto(file)),
     onSuccess: invalidate,
   });
 };

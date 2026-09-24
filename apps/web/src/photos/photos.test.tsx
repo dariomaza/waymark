@@ -39,6 +39,30 @@ const signedIn = (): void => {
 const aJpeg = (name = "drill.jpg"): File =>
   new File([new Uint8Array([255, 216, 255])], name, { type: "image/jpeg" });
 
+/**
+ * A file the browser will not read.
+ *
+ * `<input type="file">` hands back a HANDLE, not bytes. The bytes are read
+ * later, when `fetch` builds the body — and by then the file may have been
+ * moved, renamed, deleted, unplugged or locked. The browser then throws a
+ * `NotReadableError`, `fetch` rejects with a `TypeError`, and the client
+ * cannot tell that apart from a laptop that lost its wifi.
+ *
+ * Every read is refused, because every read is a way the body could be built.
+ */
+const aFileTheBrowserCannotRead = (): File => {
+  const file = aJpeg("gone.jpg");
+  const refuse = (): never => {
+    throw new DOMException("The requested file could not be read", "NotReadableError");
+  };
+
+  for (const read of ["slice", "arrayBuffer", "stream", "text", "bytes"]) {
+    Object.defineProperty(file, read, { value: refuse, configurable: true });
+  }
+
+  return file;
+};
+
 describe("photos", () => {
   beforeEach(() => {
     signedIn();
@@ -119,6 +143,79 @@ describe("photos", () => {
       );
     });
     expect(screen.getByText(/background removal is still pending/i)).toBeVisible();
+  });
+
+  /**
+   * # The same hole the phone had, with a different lid on it
+   *
+   * A phone hands the client a `file://` URI and React Native opens it when
+   * the request goes out; a browser hands it a `File` and reads the bytes at
+   * the same moment. Different mechanisms, identical consequence: the read
+   * fails, `fetch` rejects with a `TypeError`, and the one thing that never
+   * happened — reaching Waymark — is what the person is told about.
+   *
+   * "Check the connection" is the wrong instruction for a file that is gone,
+   * and it is the expensive kind of wrong: somebody goes and looks at a
+   * router that is working.
+   */
+  it("says the photo could not be read, rather than blaming the connection", async () => {
+    const posted: string[] = [];
+    apiServer.use(
+      http.get(`${API_URL}/items/drill`, () =>
+        HttpResponse.json({
+          item: anItem({ id: "drill", storageUnitId: "box3", photos: [] }),
+          storageUnit: box,
+          path: [garage, box],
+        }),
+      ),
+      http.post(`${API_URL}/items/drill/photos`, () => {
+        posted.push("POST /items/drill/photos");
+
+        return HttpResponse.json({ photo: aPhoto({ id: "p1" }), item: anItem({ id: "drill" }) }, {
+          status: 201,
+        });
+      }),
+    );
+
+    renderApp({ route: "/things/drill" });
+
+    await userEvent.upload(
+      await screen.findByLabelText(/add a photo/i),
+      aFileTheBrowserCannotRead(),
+    );
+
+    expect(
+      await screen.findByText(/could not read that photo off this device/i),
+    ).toBeVisible();
+    // The sentence that used to be shown, and the whole reason for this test.
+    expect(screen.queryByText(/could not reach waymark/i)).not.toBeInTheDocument();
+    // Nothing was sent, which is the promise the sentence makes.
+    expect(posted).toEqual([]);
+  });
+
+  /**
+   * The browser's own name for it, carried through untranslated — the same
+   * bargain `passkeys.deviceFailed` makes with a `DOMException`.
+   */
+  it("carries the browser's own name for what stopped the read", async () => {
+    apiServer.use(
+      http.get(`${API_URL}/items/drill`, () =>
+        HttpResponse.json({
+          item: anItem({ id: "drill", storageUnitId: "box3", photos: [] }),
+          storageUnit: box,
+          path: [garage, box],
+        }),
+      ),
+    );
+
+    renderApp({ route: "/things/drill" });
+
+    await userEvent.upload(
+      await screen.findByLabelText(/add a photo/i),
+      aFileTheBrowserCannotRead(),
+    );
+
+    expect(await screen.findByText(/NotReadableError/)).toBeVisible();
   });
 
   it("says WHICH photo is still waiting for its background to be removed", async () => {

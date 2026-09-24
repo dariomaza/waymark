@@ -1,10 +1,20 @@
 import type { PhotoUpload } from "../api/mobile-client.js";
-import { PhotoPermissionRefused, type PhotoSource } from "../photos/photo-source.js";
+import {
+  PhotoCouldNotBeRead,
+  PhotoPermissionRefused,
+  type PhotoSource,
+} from "../photos/photo-source.js";
 
 export interface FakePhotoSource extends PhotoSource {
   /** What the next capture or pick answers with. */
   hands(photo: PhotoUpload | null): void;
   refuses(message: string): void;
+  /**
+   * The photo was taken and the app cannot read the file behind it — which
+   * is what a camera looks like when it goes wrong, and what React Native
+   * reports as a network failure unless somebody checks first.
+   */
+  cannotRead(reason: string): void;
 }
 
 /**
@@ -20,10 +30,14 @@ export const fakePhotoSource = (): FakePhotoSource => {
     type: "image/jpeg",
   };
   let refusal: string | null = null;
+  let unreadable: string | null = null;
 
   const answer = async (): Promise<PhotoUpload | null> => {
     if (refusal !== null) {
       throw new PhotoPermissionRefused(refusal);
+    }
+    if (unreadable !== null) {
+      throw new PhotoCouldNotBeRead(unreadable);
     }
 
     return next;
@@ -35,9 +49,13 @@ export const fakePhotoSource = (): FakePhotoSource => {
     hands(photo) {
       next = photo;
       refusal = null;
+      unreadable = null;
     },
     refuses(message) {
       refusal = message;
+    },
+    cannotRead(reason) {
+      unreadable = reason;
     },
   };
 };

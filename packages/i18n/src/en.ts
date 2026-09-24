@@ -302,6 +302,27 @@ export const EN = {
   "photos.take": "Take a photo",
   "photos.choose": "Choose a photo",
   "photos.unreadable": "That photo could not be read.",
+  /**
+   * # A photo that never left the device, said as what it is
+   *
+   * React Native streams a photo off disk into the multipart body, and when
+   * it cannot OPEN that file it reports a network failure — so an unreadable
+   * photo reached the owner as `failure.offline`, the one sentence that sends
+   * somebody to look at their router. A file that is gone, a file that cannot
+   * be opened and a genuine loss of signal are three different things and
+   * only one of them is about the connection.
+   *
+   * Three things, because each is true and each is what somebody needs: it
+   * happened on the device, nothing was sent so the inventory is exactly as
+   * they left it, and here is the platform's own word for what stopped it.
+   *
+   * `{reason}` is that word, and like `passkeys.deviceFailed` it is NOT
+   * translated. It is what somebody with no console can read out loud, and a
+   * Spanish rendering of a platform's own message would be a guess at what
+   * the platform meant.
+   */
+  "photos.couldNotBeRead":
+    "Waymark could not read that photo off this device, so it was never sent and nothing in your inventory changed. What stopped it: {reason}.",
   "photos.retryRemoval": "Try removing the background again",
   "photos.seeFailed": "See every photo that failed",
   "photos.processingTitle": "Background removal",

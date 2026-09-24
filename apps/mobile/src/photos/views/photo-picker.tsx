@@ -1,3 +1,4 @@
+import { photoReadFailureMessage } from "@waymark/i18n";
 import { useState, type JSX } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -5,12 +6,19 @@ import type { PhotoUpload } from "../../api/mobile-client.js";
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
 import { space } from "../../ui/styles/tokens.js";
+import { PhotoCouldNotBeRead } from "../photo-source.js";
 import { usePhotoSource } from "../photo-source-context.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface PhotoPickerProps {
   readonly busy: boolean;
   readonly onPick: (photo: PhotoUpload) => void;
+}
+
+/** What the picker itself has to say, and which box it goes in. */
+interface Refusal {
+  readonly tone: "blocked" | "wrong";
+  readonly text: string;
 }
 
 /**
@@ -24,12 +32,18 @@ export interface PhotoPickerProps {
  *
  * A refusal of the camera permission is a sentence, not a crash — saying no is
  * a normal answer on a phone.
+ *
+ * A photo the app could not READ is a different sentence and a different
+ * colour. Saying no is something somebody did on purpose and the screen says
+ * so quietly; a file that will not open is something that went wrong, and it
+ * used to reach a person as "the app could not connect to Waymark" because
+ * React Native reports a file it cannot open as a network failure.
  */
 export const PhotoPicker = ({ busy, onPick }: PhotoPickerProps): JSX.Element => {
   const t = useTranslate();
 
   const source = usePhotoSource();
-  const [refused, setRefused] = useState<string | null>(null);
+  const [refused, setRefused] = useState<Refusal | null>(null);
 
   const ask = (open: () => Promise<PhotoUpload | null>) => (): void => {
     setRefused(null);
@@ -41,7 +55,12 @@ export const PhotoPicker = ({ busy, onPick }: PhotoPickerProps): JSX.Element => 
       })
       .catch((cause: unknown) => {
         setRefused(
-          cause instanceof Error ? cause.message : t("photos.unreadable"),
+          cause instanceof PhotoCouldNotBeRead
+            ? { tone: "wrong", text: t(photoReadFailureMessage(cause)) }
+            : {
+                tone: "blocked",
+                text: cause instanceof Error ? cause.message : t("photos.unreadable"),
+              },
         );
       });
   };
@@ -60,7 +79,9 @@ export const PhotoPicker = ({ busy, onPick }: PhotoPickerProps): JSX.Element => 
           {t("photos.choose")}
         </Button>
       </View>
-      {refused === null ? null : <Callout tone="blocked">{refused}</Callout>}
+      {refused === null ? null : (
+        <Callout tone={refused.tone}>{refused.text}</Callout>
+      )}
     </View>
   );
 };

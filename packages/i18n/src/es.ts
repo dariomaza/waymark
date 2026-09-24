@@ -235,6 +235,8 @@ export const ES: Dictionary = {
   "photos.take": "Hacer una foto",
   "photos.choose": "Elegir una foto",
   "photos.unreadable": "No se ha podido leer esa foto.",
+  "photos.couldNotBeRead":
+    "Waymark no ha podido leer esa foto de este dispositivo, así que no se ha enviado nada y tu inventario no ha cambiado. Lo que lo ha impedido: {reason}.",
   "photos.retryRemoval": "Intentar recortar el fondo otra vez",
   "photos.seeFailed": "Ver todas las fotos que han fallado",
   "photos.processingTitle": "Recorte del fondo",

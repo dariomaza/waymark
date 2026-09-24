@@ -5,6 +5,7 @@ import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js
 import { fakePhotoSource } from "../testing/fake-photo-source.js";
 import { fireEvent, renderApp, screen, waitFor, within } from "../testing/render-app.js";
 import { box, garage, theApiKnowsTheHouse } from "../testing/the-house.js";
+import { colors } from "../ui/styles/tokens.js";
 
 const atTheDrill = { name: "Item", params: { id: "drill" } } as const;
 
@@ -121,6 +122,82 @@ describe("photographing a thing", () => {
   });
 
   /**
+   * # The bug this file exists to keep shut
+   *
+   * Photographing a thing failed and choosing one from the library worked,
+   * and what the owner read was "the app could not connect to Waymark". The
+   * API never saw the request: React Native's `FormData` streams the photo
+   * off disk when the request goes out, and a file it cannot OPEN is reported
+   * as a network failure — the same `TypeError` a phone in a garage with no
+   * signal produces.
+   *
+   * So he was sent to look at a router about a file. Three different things —
+   * no signal, a file that is gone, a file that cannot be opened — were one
+   * sentence, and it was the wrong one for two of them.
+   */
+  it("says the photo could not be read, rather than blaming the connection", async () => {
+    theDrillHolds([]);
+    const posted: string[] = [];
+    apiServer.use(
+      http.post(`${API_URL}/items/drill/photos`, () => {
+        posted.push("POST /items/drill/photos");
+
+        return HttpResponse.json({ photo: aPhoto({ id: "p1" }), item: anItem({ id: "drill" }) }, {
+          status: 201,
+        });
+      }),
+    );
+
+    const camera = fakePhotoSource();
+    camera.cannotRead("there is no file at file:///cache/ImagePicker/abc.jpeg");
+
+    await renderApp({ session: aSession(), screen: atTheDrill, photos: camera });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Take a photo" }));
+
+    const said = await screen.findByText(/could not read that photo off this device/iu);
+
+    expect(said).toBeOnTheScreen();
+    /*
+     * The sentence that WAS shown — `failure.offline` — cannot be reached
+     * from here at all, because the upload never starts, so asserting its
+     * absence would assert nothing. What can be reached, and what this
+     * replaced, is the throwable's own message: developer prose, in English,
+     * in front of somebody standing in a garage.
+     */
+    expect(screen.queryByText(/^The photo could not be read:/u)).not.toBeOnTheScreen();
+    // Nothing was sent, which is the promise the sentence makes.
+    expect(posted).toEqual([]);
+    /*
+     * And it reads as something that WENT WRONG rather than as a refusal
+     * somebody made on purpose. ADR 8 draws that line and `Callout` paints
+     * it; a file that will not open is not the same news as a camera the
+     * owner declined.
+     */
+    expect(said.parent).toHaveStyle({ borderLeftColor: colors.danger });
+  });
+
+  /**
+   * The platform's own words, carried through untranslated, because they are
+   * what somebody with no console can read out loud.
+   */
+  it("carries what the phone said about the file it could not read", async () => {
+    theDrillHolds([]);
+    const camera = fakePhotoSource();
+    camera.cannotRead("EACCES: permission denied");
+
+    await renderApp({ session: aSession(), screen: atTheDrill, photos: camera });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Take a photo" }));
+
+    expect(
+      await screen.findByText(/What stopped it: EACCES: permission denied/u),
+    ).toBeOnTheScreen();
+    // And not the throwable's own message, which is for a log and not a person.
+    expect(screen.queryByText(/^The photo could not be read:/u)).not.toBeOnTheScreen();
+  });
+
+  /**
    * Saying no to the camera is a normal answer on a phone, not a crash.
    */
   it("says so when the camera permission was refused", async () => {
@@ -132,7 +209,11 @@ describe("photographing a thing", () => {
 
     await fireEvent.press(await screen.findByRole("button", { name: "Take a photo" }));
 
-    expect(await screen.findByText(/needs permission to use the camera/i)).toBeOnTheScreen();
+    const said = await screen.findByText(/needs permission to use the camera/i);
+
+    expect(said).toBeOnTheScreen();
+    // Saying no is a decision, not a fault, and it is painted as one.
+    expect(said.parent).toHaveStyle({ borderLeftColor: colors.warning });
   });
 
   /**
