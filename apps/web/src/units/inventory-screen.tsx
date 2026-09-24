@@ -1,7 +1,8 @@
 import { useState, type JSX } from "react";
+import { Link } from "react-router-dom";
 
 import { Button } from "../ui/atoms/button.js";
-import { QuietLink } from "../ui/atoms/quiet-link.js";
+import { Icon } from "../ui/atoms/icon.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
@@ -32,14 +33,19 @@ export const InventoryScreen = (): JSX.Element => {
       <h2>{t("inventory.title")}</h2>
 
       {/*
-        One big control and one small one. Adding a room is what this screen is
-        FOR; a sheet of labels is a different errand that happens to start here,
-        and while both were rectangles the screen said they were two of the same
-        kind of thing. See `QuietLink`, and the owner's sentence in it.
+        Two controls, on one line — "dos botones en línea". The primary is
+        still the primary: it is the only lime rectangle on the screen and it
+        comes first, which is what ADR 21 asks of a screen's one primary. What
+        it no longer does is take the whole width and push the other errand
+        underneath it at half the size.
+
+        The second is an `<a>` and not a `<button>` because it is a URL and
+        belongs in the history; it wears the same rectangle, which is where it
+        gets the 48px floor. See `label-sheet-screen.css` for what the row does
+        at 360px.
       */}
       <div className="inventory-screen__actions">
         <Button
-          block
           tone="primary"
           icon="plus"
           onClick={() => {
@@ -48,9 +54,10 @@ export const InventoryScreen = (): JSX.Element => {
         >
           {t("inventory.addSpace")}
         </Button>
-        <QuietLink to={ROUTES.labels} icon="tags">
+        <Link className="button button--secondary" to={ROUTES.labels}>
+          <Icon name="tags" size={18} />
           {t("label.sheet")}
-        </QuietLink>
+        </Link>
       </div>
 
       {tree.isPending ? <Loading label={t("inventory.loading")} /> : null}
