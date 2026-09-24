@@ -83,7 +83,10 @@ const styles = StyleSheet.create({
     minHeight: TAP_TARGET,
     minWidth: TAP_TARGET,
     paddingHorizontal: space.s4,
-    paddingVertical: space.s3,
+    // No vertical padding, which is what the browser has always done. With it,
+    // a button whose label wrapped grew taller than the button beside it — two
+    // controls in one row at two heights, which is the one thing a row of
+    // peers must not be. The floor above does the work instead (ADR 22).
     borderRadius: radius.m,
     borderWidth: 1,
     borderColor: colors.line,

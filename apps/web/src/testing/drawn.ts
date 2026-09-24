@@ -87,7 +87,8 @@ export const drawn = (
  * loudly instead of passing by finding nothing.
  */
 export const declarationsIn = (css: string, selector: string): string => {
-  const found = new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`, "u").exec(css);
+  const literal = selector.replaceAll(/[$()*+.?[\\\]^{|}]/gu, (char) => `\\${char}`);
+  const found = new RegExp(`${literal}\\s*\\{([^}]*)\\}`, "u").exec(css);
   if (found === null) {
     throw new Error(`no ${selector} rule in that stylesheet`);
   }

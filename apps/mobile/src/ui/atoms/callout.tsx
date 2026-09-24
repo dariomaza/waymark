@@ -44,7 +44,12 @@ const styles = StyleSheet.create({
   },
   blocked: { borderLeftColor: colors.warning },
   wrong: { borderLeftColor: colors.danger },
-  note: { borderLeftColor: colors.line },
+  /*
+   * The accent, not `line`. A grey edge on a grey plate is a 4px stripe nobody
+   * can see, and an accent edge that does not read is not a quieter accent —
+   * it is an absent one. The browser had this right (ADR 22).
+   */
+  note: { borderLeftColor: colors.accent },
   title: { color: colors.ink, fontSize: text.m, fontWeight: "700" },
   text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
   action: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },

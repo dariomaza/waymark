@@ -56,15 +56,36 @@
   border-color: var(--color-line);
 }
 
+/**
+ * Outlined, not filled, which is what the phone has always drawn (ADR 22).
+ *
+ * This was a salmon rectangle with dark ink on it, and it is Sign out, every
+ * Delete, every Revoke and every destructive line in every overflow menu — so
+ * it was the most-seen disagreement between the two clients.
+ *
+ * It also agrees with a rule this codebase already had. ADR 21 gives a screen
+ * exactly ONE filled rectangle, the primary, and says the eye should land on
+ * it before anybody has read a word. A second filled rectangle in a loud
+ * colour competes for exactly that, and what it competes with hardest is the
+ * thing you meant to press.
+ *
+ * The word is at 7.61 in the dark and 6.87 in the light, both measured in
+ * `@waymark/tokens` rather than asserted here.
+ */
 .button--danger {
-  background: var(--color-danger);
-  color: var(--color-danger-ink);
+  background: var(--color-surface-raised);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
+/*
+ * No padding of its own. It had 8 where every other tone has 16, and the phone
+ * gave it 16 like the rest; a quiet button is quiet in its fill, not in the
+ * room it takes to be hit.
+ */
 .button--quiet {
   background: transparent;
   color: var(--color-ink-muted);
-  padding: 0 var(--space-2);
 }
 
 .button--block {

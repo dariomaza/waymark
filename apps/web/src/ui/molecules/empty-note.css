@@ -4,7 +4,7 @@
   gap: var(--space-3);
   align-items: flex-start;
   /* Breathing room instead of a border: the space is what marks it out now. */
-  padding: var(--space-6) var(--space-2);
+  padding: var(--space-4) var(--space-2);
 }
 
 .empty-note__text {
@@ -15,10 +15,14 @@
   color: var(--color-ink);
 }
 
+/*
+ * Body size, as the phone sets it. It is the one line explaining what a place
+ * is FOR, on a screen with nothing else on it.
+ */
 .empty-note__explains {
   margin: 0;
   color: var(--color-ink-muted);
-  font-size: var(--text-s);
+  font-size: var(--text-m);
   max-width: 44ch;
 }
 

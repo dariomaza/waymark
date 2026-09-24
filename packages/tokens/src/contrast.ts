@@ -74,6 +74,14 @@ export const MEASURED: readonly Measured[] = [
   { scheme: "dark", of: "inkMuted", on: "surfaceRaised", ratio: 7.31, needs: AA_TEXT },
   { scheme: "dark", of: "accent", on: "surface", ratio: 14.51, needs: AA_BOUNDARY },
   { scheme: "dark", of: "accentInk", on: "accent", ratio: 13.85, needs: AA_TEXT },
+  /**
+   * The outlined `danger` tone's word, and the ink inside a field. Both became
+   * load-bearing when the two clients converged on the phone's version of each
+   * (ADR 22): before that, this client filled a danger button and drew its
+   * fields on the page's own surface, so neither pair existed to be measured.
+   */
+  { scheme: "dark", of: "danger", on: "surfaceRaised", ratio: 7.61, needs: AA_TEXT },
+  { scheme: "dark", of: "ink", on: "surfaceSunken", ratio: 18.0, needs: AA_TEXT },
 
   { scheme: "light", of: "ink", on: "surface", ratio: 17.67, needs: AA_TEXT },
   { scheme: "light", of: "ink", on: "surfaceRaised", ratio: 18.44, needs: AA_TEXT },
@@ -81,6 +89,8 @@ export const MEASURED: readonly Measured[] = [
   { scheme: "light", of: "inkMuted", on: "surfaceRaised", ratio: 6.42, needs: AA_TEXT },
   { scheme: "light", of: "accentText", on: "surface", ratio: 7.32, needs: AA_TEXT },
   { scheme: "light", of: "accentInk", on: "accent", ratio: 13.85, needs: AA_TEXT },
+  { scheme: "light", of: "danger", on: "surfaceRaised", ratio: 6.87, needs: AA_TEXT },
+  { scheme: "light", of: "ink", on: "surfaceSunken", ratio: 16.21, needs: AA_TEXT },
 
   /**
    * The failure, recorded on purpose. A lime fill on near-white has no

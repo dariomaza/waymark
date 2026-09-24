@@ -7,15 +7,33 @@
   color: var(--color-ink-muted);
 }
 
+/**
+ * The phone's glyph and the phone's ink.
+ *
+ * `›` rather than `>`: one is a typographic separator and the other is a
+ * mathematical operator that a browser draws heavier than the words around it.
+ * And `--color-ink-muted` rather than `--color-line` — `line` is the colour of
+ * a RULE, and at that weight between two words it disappears, which turns a
+ * path into a run-on of names.
+ */
 .breadcrumb__step + .breadcrumb__step::before {
-  content: ">";
+  content: "›";
   margin-right: var(--space-2);
-  color: var(--color-line);
+  color: var(--color-ink-muted);
 }
 
+/**
+ * A step is tapped with a thumb as often as it is read, and neither client had
+ * made it a target: 32 here and about 22 on the phone, against this product's
+ * floor of 48.
+ *
+ * ADR 21 settled the principle for `QuietLink` — a control may be small to
+ * look at and may not be small to hit — and a breadcrumb is exactly that
+ * shape. The steps sit side by side, so the row costs 48 once rather than
+ * once per step.
+ */
 .breadcrumb__step a {
-  /* A breadcrumb is tapped with a thumb as often as it is read. */
-  display: inline-block;
-  padding: var(--space-1) 0;
-  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
 }
