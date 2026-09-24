@@ -1,6 +1,12 @@
 import { findById } from "@waymark/api-client";
 import { unitId } from "@waymark/domain";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import {
+  useNavigation,
+  useRoute,
+  type CompositeNavigationProp,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState, type JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -31,18 +37,50 @@ import { useTranslate } from "../app/language-context.js";
  *
  * `within` is a subtree at any depth: a location IS a storage unit (ADR 1), so
  * "search the garage" means everything under it.
+ *
+ * # Why the scope is read from the route and not held in state
+ *
+ * This screen is a TAB, so once it has been opened it stays mounted for the
+ * life of the app. It used to seed `useState` from `route.params` — and a
+ * `useState` initialiser runs once, at mount, so the scope and the parameter
+ * that produced it were two values with nothing keeping them equal.
+ *
+ * Today they cannot be seen to disagree, and the reason is not this file:
+ * `navigate("Tabs", { screen: "Search", params })` rebuilds the tab
+ * navigator's state, which throws this screen away and mounts a new one, so
+ * the initialiser happens to run again on every scoped search. That was
+ * measured, not assumed — pressing "Search everywhere" and then asking again
+ * re-narrows correctly on `@react-navigation/bottom-tabs` 7.19.2, and the
+ * same navigate also clears the parameter when it lands on another tab.
+ *
+ * Leaning on that is still wrong. It is a detail of somebody else's router,
+ * it is invisible from here, and the day it changes this screen searches the
+ * wrong box silently — no error, no empty list, just answers from somewhere
+ * else. The parameter IS the screen's address, the way the query string is on
+ * the web client, so it is read every render and the button that widens the
+ * search clears it. Then there is one value and nothing to keep in step.
  */
+/**
+ * This screen is a tab that also pushes onto the stack above it: it opens
+ * units and items, and it sets its own scope. Composing the two is what lets
+ * `setParams` mean "this Search tab" while `navigate` still reaches `Unit`.
+ */
+type SearchNavigation = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, "Search">,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+
 export const SearchScreen = (): JSX.Element => {
   const t = useTranslate();
 
   const route = useRoute<RouteProp<TabParamList, "Search">>();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<SearchNavigation>();
   const tree = useStorageUnitTree();
 
   const [typed, setTyped] = useState("");
   const query = useDebouncedValue(typed);
-  const [scope, setScope] = useState<string | null>(route.params?.within ?? null);
 
+  const scope = route.params?.within ?? null;
   const within = scope === null ? null : unitId(scope);
   const results = useSearch(query, within);
   const scopeUnit =
@@ -71,7 +109,7 @@ export const SearchScreen = (): JSX.Element => {
           </Text>
           <Button
             onPress={() => {
-              setScope(null);
+              navigation.setParams({ within: undefined });
             }}
           >
             {t("search.everywhere")}
