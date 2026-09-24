@@ -276,6 +276,41 @@ export const passkeyCeremonyFailureMessage = (
   }
 };
 
+/**
+ * A photo the app could not read off the device, as the one string that
+ * diagnoses it.
+ *
+ * An interface rather than a class for the same reason `PasskeyCeremonyFailure`
+ * is one: the class belongs to a client. The phone's `PhotoCouldNotBeRead`
+ * satisfies this by having the field, and nothing here has to know that
+ * `expo-file-system` exists.
+ */
+export interface PhotoReadFailure {
+  /**
+   * The platform's own words for what stopped the read — a native error
+   * message, or this app's own observation when the file simply was not there.
+   */
+  readonly reason: string;
+}
+
+/**
+ * # What a photo the DEVICE could not read becomes
+ *
+ * The same missing half as `passkeyCeremonyFailureMessage`, one floor down.
+ * React Native's `FormData` takes a local URI and streams the file off disk;
+ * when it cannot open that file it reports the failure as a NETWORK failure,
+ * and `failureKindOf` reads that — correctly, for what it is — as `OFFLINE`.
+ * So a photo that could not be read told somebody the app could not connect
+ * to Waymark, and sent them to look at a router that was working.
+ *
+ * Never `null`, for the reason the ceremony one never is: a read that failed
+ * on the device is always a thing this function has an answer for. It always
+ * carries `reason`, untranslated, so somebody with no console can still say
+ * what happened.
+ */
+export const photoReadFailureMessage = (failure: PhotoReadFailure): Message =>
+  message("photos.couldNotBeRead", { reason: failure.reason });
+
 /** A string out of `details`, read without trusting the wire. */
 const detailText = (error: ApiError, key: string): string | null => {
   const value = error.details[key];

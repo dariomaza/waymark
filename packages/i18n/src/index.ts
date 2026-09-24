@@ -47,10 +47,11 @@ export { translator, type Translate } from "./translate.js";
  * What each app then draws around them — a sheet, a callout, a toast — is its
  * own.
  *
- * `passkeyCeremonyFailureMessage` is the one that is NOT a function of an
- * `ApiError`, and it is here for the same reason the rest are: a ceremony that
- * failed on the device is still a thing a person has to be told, in the same
- * words on whichever client they are holding.
+ * `passkeyCeremonyFailureMessage` and `photoReadFailureMessage` are the two
+ * that are NOT functions of an `ApiError`, and they are here for the same
+ * reason the rest are: a ceremony the device refused and a photo it could not
+ * read are both things a person has to be told, in the same words on
+ * whichever client they are holding.
  */
 export {
   cyclicMoveMessage,
@@ -63,9 +64,11 @@ export {
   notEmptyMessage,
   passkeyCeremonyFailureMessage,
   passkeyFailureMessage,
+  photoReadFailureMessage,
   tooManyPhotosMessage,
   type FieldComplaint,
   type PasskeyCeremonyFailure,
+  type PhotoReadFailure,
 } from "./refusals.js";
 
 export { kindChoices, kindLabel } from "./kind-label.js";

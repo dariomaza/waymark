@@ -12,6 +12,7 @@ import {
   notEmptyMessage,
   passkeyCeremonyFailureMessage,
   passkeyFailureMessage,
+  photoReadFailureMessage,
   tooManyPhotosMessage,
 } from "./refusals.js";
 import { translator } from "./translate.js";
@@ -524,5 +525,57 @@ describe("what a ceremony the device refused becomes", () => {
     ]) {
       expect(es(passkeyCeremonyFailureMessage(failure(reason)))).not.toMatch(/\busted\b/iu);
     }
+  });
+});
+
+/**
+ * # A photo the app could not read off the device
+ *
+ * The same shape of bug as the ceremony above, one floor down. React Native's
+ * `FormData` streams a photo off disk, and when it cannot open that file it
+ * reports a NETWORK failure — so a photo that could not be read arrived at a
+ * person as "the app could not connect to Waymark". Three different things —
+ * no signal, a file that is gone, a file that cannot be opened — were one
+ * sentence, and it was the one sentence that sends somebody to look at their
+ * router.
+ *
+ * So this sentence has to do three things: put the failure on the device,
+ * say that NOTHING was sent and the inventory is untouched, and carry the
+ * platform's own word for what stopped it.
+ */
+describe("what a photo that could not be read becomes", () => {
+  it("blames the device rather than the connection, in both languages", () => {
+    const said = photoReadFailureMessage({ reason: "no file at that location" });
+
+    expect(en(said)).toMatch(/this device/iu);
+    expect(en(said)).not.toMatch(/connect/iu);
+    expect(es(said)).toMatch(/este dispositivo/iu);
+    expect(es(said)).not.toMatch(/conectar/iu);
+  });
+
+  it("says nothing was sent and the inventory has not changed, in both languages", () => {
+    const said = photoReadFailureMessage({ reason: "no file at that location" });
+
+    expect(en(said)).toMatch(/never sent/iu);
+    expect(en(said)).toMatch(/inventory/iu);
+    expect(es(said)).toMatch(/no se ha enviado/iu);
+    expect(es(said)).toMatch(/inventario/iu);
+  });
+
+  /**
+   * Untranslated, for the reason `passkeys.deviceFailed` carries a
+   * `DOMException` name untranslated: it is what somebody with no console can
+   * read out, and inventing a Spanish rendering of a platform's own words
+   * would be a guess at what the platform meant.
+   */
+  it("carries the platform's own word for what stopped it, verbatim", () => {
+    const said = photoReadFailureMessage({ reason: "ENOENT: no such file" });
+
+    expect(en(said)).toContain("ENOENT: no such file");
+    expect(es(said)).toContain("ENOENT: no such file");
+  });
+
+  it("speaks to the owner as tú, never as usted", () => {
+    expect(es(photoReadFailureMessage({ reason: "gone" }))).not.toMatch(/\busted\b/iu);
   });
 });
