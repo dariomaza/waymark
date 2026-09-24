@@ -30,9 +30,34 @@ a {
   color: inherit;
 }
 
+/**
+ * # Headings are on the scale, because a browser's idea of one is not
+ *
+ * Left alone, a browser draws these at 32, 24, 18.72 and 16 pixels — three
+ * numbers off the scale this product defines, and the 24 only right by
+ * accident. The phone client sizes every title from `tokens.ts`, so it was the
+ * one already being deliberate; these four rules say the same thing here.
+ *
+ * `--text-xl` names what the screen is (the phone's `ScreenTitle`), `--text-l`
+ * names a part of it (the phone's section headings, its `Sheet` title and its
+ * `AppBar`). An `h4` is a panel inside a screen, which is still a part of one.
+ * A component that means something else says so with a class; the top bar is
+ * the one that does.
+ */
+h1,
+h2 {
+  font-size: var(--text-xl);
+}
+
+h3,
+h4 {
+  font-size: var(--text-l);
+}
+
 h1,
 h2,
-h3 {
+h3,
+h4 {
   line-height: 1.2;
   margin: 0;
 }

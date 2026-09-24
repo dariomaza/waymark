@@ -1,8 +1,9 @@
-import type { JSX } from "react";
-import { Image, StyleSheet } from "react-native";
+import { useState, type JSX } from "react";
+import { Image, StyleSheet, View } from "react-native";
 
 import { useApi } from "../api/api-context.js";
 import { useSessionStore } from "../auth/session-context.js";
+import { useTranslate } from "../app/language-context.js";
 import { colors, radius } from "../ui/styles/tokens.js";
 
 export interface AuthenticatedImageProps {
@@ -39,6 +40,20 @@ export interface AuthenticatedImageProps {
  * not have twenty photos resident at once.
  *
  * The path is whatever the API put in `photo.url`. Nothing here builds one.
+ *
+ * # When it does not arrive
+ *
+ * A grey square says nothing. Was it this photo, the token, or the server? On
+ * a garage's worth of signal that question gets asked, so a picture that fails
+ * keeps its box and takes the failure's NAME — "{name} (could not be loaded)",
+ * which is what the web client's error branch has always said. The name is
+ * inside the sentence rather than read out before it, because a gallery of
+ * twelve failures that all say "could not be loaded" is one sentence twelve
+ * times.
+ *
+ * A picture with no name of its own stays silent when it fails, for the same
+ * reason it is silent when it works: the text beside it already said what it
+ * is, and "(could not be loaded)" with nothing in front of it names nothing.
  */
 export const AuthenticatedImage = ({
   src,
@@ -46,8 +61,34 @@ export const AuthenticatedImage = ({
   size = 96,
   fill = false,
 }: AuthenticatedImageProps): JSX.Element => {
+  const t = useTranslate();
+
   const api = useApi();
   const token = useSessionStore().token();
+
+  /**
+   * The src it failed on, rather than a bare flag: a photo that is reprocessed
+   * arrives at a new address, and a flag would leave the new bytes wearing the
+   * old failure's name until the screen was thrown away.
+   */
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const shape = fill ? styles.filling : [styles.photo, { width: size, height: size }];
+
+  if (failedSrc === src) {
+    return (
+      <View
+        accessible={alt !== ""}
+        importantForAccessibility={alt === "" ? "no-hide-descendants" : "yes"}
+        {...(alt === ""
+          ? {}
+          : {
+              accessibilityLabel: t("photos.couldNotLoad", { name: alt }),
+              accessibilityRole: "image" as const,
+            })}
+        style={shape}
+      />
+    );
+  }
 
   return (
     <Image
@@ -59,7 +100,10 @@ export const AuthenticatedImage = ({
         uri: api.absoluteUrl(src),
         ...(token === null ? {} : { headers: { Authorization: `Bearer ${token}` } }),
       }}
-      style={fill ? styles.filling : [styles.photo, { width: size, height: size }]}
+      onError={() => {
+        setFailedSrc(src);
+      }}
+      style={shape}
     />
   );
 };

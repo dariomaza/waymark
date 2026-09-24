@@ -289,3 +289,115 @@ describe("what background removal is doing", () => {
     });
   });
 });
+
+/**
+ * # What a bulk retry makes stale
+ *
+ * `useReprocessPhoto` throws away the inventory AND the queue: a photo put
+ * back changes the note under it on the item's own screen, and it changes the
+ * counts on this one. `useRetryFailedPhotos` — the same idea for every failed
+ * photo at once — threw away only the queue, so the item screen underneath
+ * went on saying "background removal failed" about photos that had just been
+ * requeued, until something else happened to refetch it. The web client
+ * invalidates both for both.
+ *
+ * The screen this is pressed on is reached FROM a failed photo, so the screen
+ * holding the stale note is almost always still mounted right underneath it.
+ */
+describe("what a retry makes stale", () => {
+  beforeEach(() => {
+    theApiKnowsTheHouse();
+  });
+
+  const anItemWithAFailedPhoto = (): { asked: () => number } => {
+    let asks = 0;
+    const drill = anItem({
+      id: "drill",
+      storageUnitId: "box3",
+      name: "Cordless drill",
+      photos: [aPhoto({ id: "p1", processingStatus: PhotoProcessingStatus.FAILED })],
+    });
+
+    apiServer.use(
+      http.get(`${API_URL}/items/drill`, () => {
+        asks += 1;
+
+        return HttpResponse.json({ item: drill, storageUnit: box, path: [garage, wardrobe, box] });
+      }),
+      http.get(`${API_URL}/photos/p1/thumbnail`, () =>
+        HttpResponse.arrayBuffer(new ArrayBuffer(8), {
+          headers: { "content-type": "image/jpeg" },
+        }),
+      ),
+    );
+
+    return { asked: () => asks };
+  };
+
+  const fromTheFailedPhotoToTheQueue = async (): Promise<void> => {
+    await renderApp({ session: aSession(), screen: { name: "Item", params: { id: "drill" } } });
+    await fireEvent.press(
+      await screen.findByRole("button", { name: "See every photo that failed" }),
+    );
+    await screen.findByRole("header", { name: "Background removal" });
+  };
+
+  /**
+   * The control. One photo has always done this, so if the harness could not
+   * see an invalidation at all, this would fail too and the next assertion
+   * would be proving nothing.
+   */
+  it("asks the item again after ONE photo has been put back", async () => {
+    theApiSays(
+      someProcessing({
+        counts: { PENDING: 0, DONE: 1, FAILED: 1, SKIPPED: 0 },
+        abandoned: [anAbandonedPhoto({ photoId: "p1" })],
+      }),
+    );
+    const item = anItemWithAFailedPhoto();
+    apiServer.use(
+      http.post(`${API_URL}/photos/p1/reprocess`, () =>
+        HttpResponse.json({ photo: aPhoto({ id: "p1" }) }, { status: 202 }),
+      ),
+    );
+
+    await fromTheFailedPhotoToTheQueue();
+    await waitFor(() => {
+      expect(item.asked()).toBe(1);
+    });
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Try p1 again" }));
+
+    await waitFor(() => {
+      expect(item.asked()).toBe(2);
+    });
+  });
+
+  it("asks the item again after EVERY failed photo has been put back", async () => {
+    theApiSays(
+      someProcessing({
+        counts: { PENDING: 0, DONE: 1, FAILED: 4, SKIPPED: 0 },
+        abandoned: [anAbandonedPhoto({ photoId: "p1" })],
+      }),
+    );
+    const item = anItemWithAFailedPhoto();
+    apiServer.use(
+      http.post(`${API_URL}/photos/processing/retry`, () =>
+        HttpResponse.json({ requeued: 4 }, { status: 202 }),
+      ),
+    );
+
+    await fromTheFailedPhotoToTheQueue();
+    await waitFor(() => {
+      expect(item.asked()).toBe(1);
+    });
+
+    await fireEvent.press(
+      await screen.findByRole("button", { name: "Retry every failed photo" }),
+    );
+
+    await waitFor(() => {
+      expect(item.asked()).toBe(2);
+    });
+  });
+});

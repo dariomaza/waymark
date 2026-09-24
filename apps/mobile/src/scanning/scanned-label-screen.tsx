@@ -80,7 +80,7 @@ export const ScannedLabelScreen = (): JSX.Element => {
             </Button>
           }
         >
-          {`No unit in this inventory carries the code ${code}. The label may belong to another house, or the unit may have been deleted.`}
+          {t("scan.noSuchCode", { code })}
         </EmptyNote>
       </Screen>
     );

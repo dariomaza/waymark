@@ -233,3 +233,72 @@ describe("photographing a thing", () => {
     ).toBeNull();
   });
 });
+
+/**
+ * # A picture that did not arrive still has to say which picture it was
+ *
+ * The web client's `AuthenticatedImage` has an error branch that names the
+ * photo that failed — `photos.couldNotLoad`, "{name} (could not be loaded)" —
+ * and the phone's was a bare `Image` with none. A photo that 404s or times out
+ * on a garage's worth of signal left a grey square, with nothing to tell
+ * anybody whether it was one photo, the token, or the whole server.
+ *
+ * The dictionary already carried the sentence in both languages, and says why
+ * the NAME goes inside it: a gallery of twelve failures that all read "could
+ * not be loaded" is one sentence twelve times.
+ */
+describe("a photo that could not be loaded", () => {
+  beforeEach(() => {
+    theApiKnowsTheHouse();
+  });
+
+  const theCover = async (): Promise<ReturnType<typeof within>> => {
+    const gallery = await screen.findByLabelText("Photos");
+
+    return within(gallery);
+  };
+
+  /**
+   * The control, and the reason the next one cannot be green for the wrong
+   * reason: a photo that arrives must NOT be wearing the failure's name.
+   */
+  it("is named plainly while it is still arriving", async () => {
+    theDrillHolds([aPhoto({ id: "p1" })]);
+
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    const gallery = await theCover();
+    expect(gallery.getByLabelText("Cover photo of Cordless drill")).toBeOnTheScreen();
+    expect(
+      gallery.queryByLabelText("Cover photo of Cordless drill (could not be loaded)"),
+    ).toBeNull();
+  });
+
+  it("says which photo it was, rather than leaving a grey square", async () => {
+    theDrillHolds([aPhoto({ id: "p1" })]);
+
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    const gallery = await theCover();
+    await fireEvent(gallery.getByLabelText("Cover photo of Cordless drill"), "error");
+
+    expect(
+      await screen.findByLabelText("Cover photo of Cordless drill (could not be loaded)"),
+    ).toBeOnTheScreen();
+  });
+
+  /** One photo failing says nothing about the one beside it. */
+  it("says it about that photo and not about the gallery", async () => {
+    theDrillHolds([aPhoto({ id: "p1" }), aPhoto({ id: "p2" })]);
+
+    await renderApp({ session: aSession(), screen: atTheDrill });
+
+    const gallery = await theCover();
+    await fireEvent(gallery.getByLabelText("Cover photo of Cordless drill"), "error");
+
+    expect(
+      await screen.findByLabelText("Cover photo of Cordless drill (could not be loaded)"),
+    ).toBeOnTheScreen();
+    expect(screen.getByLabelText("Photo 2 of Cordless drill")).toBeOnTheScreen();
+  });
+});

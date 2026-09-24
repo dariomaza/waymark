@@ -18,54 +18,101 @@ import * as ts from "typescript";
  *
  * So this reads the source. Every file the app ships is parsed with the
  * TypeScript compiler — the one already installed to typecheck it, so this
- * costs no dependency — and two shapes are refused:
+ * costs no dependency — and three shapes are refused:
  *
  * - JSX TEXT. Anything between `<Text>` and `</Text>` that contains a letter is
  *   a sentence somebody wrote in English rather than a key somebody looked up.
+ * - A literal DRAWN BETWEEN TWO TAGS THROUGH BRACES. `{`No unit carries the
+ *   code ${code}.`}` is a sentence on the screen exactly as surely as the same
+ *   words without the braces.
  * - A string LITERAL in a prop that ends up spoken or drawn: `label`, `title`,
- *   `hint`, `placeholder`, `accessibilityLabel` and the rest of the list below.
+ *   `hint`, `submitLabel`, `accessibilityLabel` and the rest of the list below.
  *   An accessible name is read aloud, so an English one on a Spanish phone is
  *   the same bug with a smaller audience.
  *
- * Both are found by their shape rather than by their words, which is what makes
- * this a guard and not a list: a sentence added next year is caught on the day
- * it is written, by a test nobody has to remember to update.
+ * All three are found by their shape rather than by their words, which is what
+ * makes this a guard and not a list: a sentence added next year is caught on
+ * the day it is written, by a test nobody has to remember to update.
+ *
+ * ## Why this file and the web client's read almost identically
+ *
+ * They are the same guard, and for a long time they only believed they were.
+ * This one inspected `ts.isJsxText` and a list of props and nothing else, so a
+ * template expression handed to a `<Text>` walked straight past it — which is
+ * exactly how a hardcoded English paragraph sat on the app's FIRST TAB while
+ * the key that says the same thing in two languages sat unused in the
+ * dictionary. The same hole was found once before, in `unit-photo.tsx`, noted,
+ * and not closed.
+ *
+ * So the detection is now the same walk in both clients, down to the names:
+ * `renderedLiterals`, `OUR_OWN_PROPS`, `THE_PLATFORM_ASKS_FOR`. The only thing
+ * that legitimately differs is the platform's own vocabulary — React Native's
+ * `accessibilityLabel` here, the DOM's `aria-label` there. Anything else
+ * appearing in one list and not the other is drift, and the list of this app's
+ * OWN props is asserted below so that dropping one is a failure rather than a
+ * silence.
  *
  * ## What it deliberately cannot catch
  *
- * A string built in a variable and handed to a prop, and any sentence composed
+ * A sentence assembled in a variable and handed to a prop, and any prose built
  * outside JSX. Those exist and are rarer, and a guard that tried to follow
- * values around would be a type checker. This catches the shape that is
- * actually easy to write by accident, which is the one worth catching.
+ * values around would be a type checker. This catches the shapes that are
+ * actually easy to write by accident, which are the ones worth catching.
  */
 
 /**
- * Props whose value a person reads or hears.
+ * The props this app's OWN components draw or speak.
  *
- * `label`, `title` and `hint` are this app's own; `accessibilityLabel` and its
- * relatives are React Native's. `children` is here for the spelling
- * `<Foo children="..." />`, which is the same sentence written sideways.
+ * This list is identical in `apps/web`'s guard on purpose: these are names
+ * this product invented, so a prop that is copy on one client is copy on the
+ * other. `children` is here for the spelling `<Foo children="..." />`, which
+ * is the same sentence written sideways.
+ *
+ * `submitLabel` is the word on the button that ends a form, and it was missing
+ * from the web client's list for as long as that list existed — which is how
+ * three dialogs came to say "Save" and "Add" in Spanish.
  *
  * `CopyableValue` names four things — what the string IS, what the control
  * does, what it is called once it has worked, and what it says when the phone
  * refuses — and every one of them is read or heard.
  */
-const SPOKEN_PROPS = new Set([
-  "accessibilityHint",
-  "accessibilityLabel",
-  "alt",
+export const OUR_OWN_PROPS = [
+  "caption",
   "children",
   "copiedLabel",
   "copyLabel",
+  "error",
   "explains",
   "failedLabel",
+  "heading",
   "hint",
   "label",
+  "legend",
+  "meta",
   "placeholder",
-  "tabBarAccessibilityLabel",
+  "secondary",
+  "submitLabel",
+  "summary",
   "title",
   "valueLabel",
-]);
+] as const;
+
+/**
+ * What the platform itself calls a name. React Native's, and the ARIA
+ * spellings it also accepts. `aria-labelledby` and its relatives are
+ * deliberately absent: they carry element ids, which are machinery.
+ */
+const THE_PLATFORM_ASKS_FOR = [
+  "accessibilityHint",
+  "accessibilityLabel",
+  "alt",
+  "aria-label",
+  "aria-placeholder",
+  "aria-valuetext",
+  "tabBarAccessibilityLabel",
+] as const;
+
+const DRAWN_OR_SPOKEN = new Set<string>([...OUR_OWN_PROPS, ...THE_PLATFORM_ASKS_FOR]);
 
 /**
  * The product is called Waymark in both languages, which the English
@@ -73,17 +120,11 @@ const SPOKEN_PROPS = new Set([
  * the one literal that is only ever the product's own name is allowed through
  * — by being exactly that name, not by being in a file that gets a pass.
  */
-const PRODUCT_NAME = "Waymark";
-
-const COMPARISONS = new Set<ts.SyntaxKind>([
-  ts.SyntaxKind.EqualsEqualsToken,
-  ts.SyntaxKind.EqualsEqualsEqualsToken,
-  ts.SyntaxKind.ExclamationEqualsToken,
-  ts.SyntaxKind.ExclamationEqualsEqualsToken,
-]);
+const THE_SAME_IN_EVERY_LANGUAGE = new Set(["Waymark"]);
 
 /** Anything with a letter in it is something somebody wrote to be read. */
-const hasWords = (value: string): boolean => /\p{L}/u.test(value);
+const saysSomething = (value: string): boolean =>
+  /\p{L}/u.test(value) && !THE_SAME_IN_EVERY_LANGUAGE.has(value.trim());
 
 const sourceFilesUnder = (directory: string): readonly string[] =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -104,80 +145,119 @@ interface EnglishOnly {
 }
 
 /**
- * The string literals inside a prop's value that are SENTENCES.
+ * Every literal that ends up in front of a person, from one expression.
  *
- * A prop is written three ways — `label="Close"`, `label={"Close"}` and
- * `label={busy ? "Saving" : "Save"}` — and the third one is the one a rule
- * written against the first two would let through, so this descends.
+ * "Ends up in front of a person" is the whole subtlety. `t("photos.cover")`
+ * contains a string literal too, and that literal is a KEY — the one thing in
+ * this app that must stay in English. So the walk follows only the positions
+ * whose value is the value of the expression: the branches of a ternary, the
+ * sides of `&&`, `||`, `??` and `+`, and the inside of a parenthesis. It stops
+ * dead at a call, which is exactly where a key lives.
  *
- * What it does not descend into is the arguments of a call. `t("login.submit")`
- * is a literal in a `label`, and it is the OPPOSITE of the bug: it is the
- * lookup. A key, a query name and a colour are all arguments; a sentence
- * written to be read is not passed to anything, it IS the value. So a literal
- * that is an argument is a name, and a literal that stands on its own is a
- * sentence.
+ * Stopping at a call is also what keeps it out of nested JSX. A ternary whose
+ * branches are elements — `{ok ? <Icon name="check" /> : null}` — would
+ * otherwise hand back `"check"`, which is an icon's name and nobody's word.
  */
-const literalsIn = (node: ts.Node): readonly ts.StringLiteralLike[] => {
-  if (ts.isStringLiteralLike(node)) {
-    return [node];
+const renderedLiterals = (node: ts.Node | undefined, found: string[]): void => {
+  if (node === undefined) {
+    return;
   }
 
-  if (ts.isCallExpression(node)) {
-    return literalsIn(node.expression);
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+    found.push(node.text);
+
+    return;
   }
 
-  // `typeof children === "string"` is a question about a value, not a word for
-  // anybody. A literal being COMPARED is never a sentence.
-  if (ts.isBinaryExpression(node) && COMPARISONS.has(node.operatorToken.kind)) {
-    return [];
+  // A template with holes in it is still prose around the holes. This is the
+  // shape that used to walk straight through this file.
+  if (ts.isTemplateExpression(node)) {
+    found.push(node.head.text + node.templateSpans.map((span) => span.literal.text).join(""));
+
+    return;
   }
 
-  const found: ts.StringLiteralLike[] = [];
-  ts.forEachChild(node, (child) => {
-    found.push(...literalsIn(child));
-  });
+  if (ts.isJsxExpression(node) || ts.isParenthesizedExpression(node)) {
+    renderedLiterals(node.expression, found);
 
-  return found;
+    return;
+  }
+
+  if (ts.isConditionalExpression(node)) {
+    renderedLiterals(node.whenTrue, found);
+    renderedLiterals(node.whenFalse, found);
+
+    return;
+  }
+
+  if (ts.isBinaryExpression(node)) {
+    const joins =
+      node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+      node.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+      node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+      node.operatorToken.kind === ts.SyntaxKind.PlusToken;
+
+    if (joins) {
+      renderedLiterals(node.left, found);
+      renderedLiterals(node.right, found);
+    }
+  }
 };
 
-const englishOnlyIn = (path: string, root: string): readonly EnglishOnly[] => {
-  const text = readFileSync(path, "utf8");
-  const source = ts.createSourceFile(
+/** An expression between two tags is drawn; one inside an attribute is not. */
+const isJsxChild = (node: ts.JsxExpression): boolean =>
+  ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent);
+
+export const untranslatedStringsIn = (path: string, source: string): readonly EnglishOnly[] => {
+  const parsed = ts.createSourceFile(
     path,
-    text,
+    source,
     ts.ScriptTarget.Latest,
-    true,
-    path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    /* setParentNodes */ true,
+    path.endsWith(".ts") ? ts.ScriptKind.TS : ts.ScriptKind.TSX,
   );
 
   const found: EnglishOnly[] = [];
 
-  const note = (node: ts.Node, said: string): void => {
-    const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
-    found.push({ where: `${relative(root, path)}:${String(line + 1)}`, said });
+  const reportEach = (node: ts.Node, where: string, texts: readonly string[]): void => {
+    for (const text of texts) {
+      if (saysSomething(text)) {
+        const { line } = parsed.getLineAndCharacterOfPosition(node.getStart(parsed));
+        found.push({
+          where: `${path}:${String(line + 1)} (${where})`,
+          said: text.trim().replace(/\s+/gu, " "),
+        });
+      }
+    }
   };
 
   const visit = (node: ts.Node): void => {
-    if (ts.isJsxText(node) && hasWords(node.text)) {
-      note(node, node.text.trim().replace(/\s+/gu, " "));
-    }
-
-    if (
-      ts.isJsxAttribute(node) &&
-      node.initializer !== undefined &&
-      SPOKEN_PROPS.has(node.name.getText(source))
+    if (ts.isJsxText(node)) {
+      reportEach(node, "JSX text", [node.text]);
+    } else if (ts.isJsxExpression(node) && isJsxChild(node)) {
+      const drawn: string[] = [];
+      renderedLiterals(node.expression, drawn);
+      reportEach(node, "drawn expression", drawn);
+    } else if (ts.isJsxAttribute(node) && DRAWN_OR_SPOKEN.has(node.name.getText(parsed))) {
+      const drawn: string[] = [];
+      renderedLiterals(node.initializer, drawn);
+      reportEach(node, node.name.getText(parsed), drawn);
+    } else if (
+      ts.isPropertyAssignment(node) &&
+      ts.isIdentifier(node.name) &&
+      DRAWN_OR_SPOKEN.has(node.name.text)
     ) {
-      for (const literal of literalsIn(node.initializer)) {
-        if (hasWords(literal.text) && literal.text !== PRODUCT_NAME) {
-          note(node, `${node.name.getText(source)}="${literal.text}"`);
-        }
-      }
+      // `options={[{ value: "", label: "Choose a unit…" }]}` — the same prop,
+      // one object further in.
+      const drawn: string[] = [];
+      renderedLiterals(node.initializer, drawn);
+      reportEach(node, node.name.text, drawn);
     }
 
     ts.forEachChild(node, visit);
   };
 
-  visit(source);
+  visit(parsed);
 
   return found;
 };
@@ -197,8 +277,149 @@ describe("every word a person reads", () => {
    * violation.
    */
   it("goes through the dictionary rather than being written in the component", () => {
-    const escaped = files.flatMap((path) => englishOnlyIn(path, root));
+    const escaped = files.flatMap((path) =>
+      untranslatedStringsIn(relative(root, path), readFileSync(path, "utf8")).map((one) => one),
+    );
 
     expect(escaped).toEqual([]);
+  });
+});
+
+/**
+ * # The guard itself
+ *
+ * A guard that catches nothing passes forever. These are the shapes it exists
+ * for, written out, so that a change which quietly stops it seeing one fails
+ * here rather than in a language nobody on the team reads.
+ *
+ * The first two are the holes that were actually open: a template expression
+ * drawn between two tags, and the word on a form's submit button.
+ */
+describe("the guard itself", () => {
+  const scan = (source: string): readonly string[] =>
+    untranslatedStringsIn("sample.tsx", source).map((one) => one.said);
+
+  it("catches a sentence written between two tags", () => {
+    expect(scan("const A = () => <Text>Signed in as dario</Text>;")).toEqual([
+      "Signed in as dario",
+    ]);
+  });
+
+  /**
+   * The hole. A paragraph with a value interpolated into it, handed to a
+   * `<Text>` through braces, was invisible to this file — which is how the
+   * scanned-label screen shipped English prose next to an unused key.
+   */
+  it("catches a paragraph a template draws between two tags", () => {
+    expect(
+      scan("const A = () => <Text>{`No unit carries the code ${code}. Try another.`}</Text>;"),
+    ).toEqual(["No unit carries the code . Try another."]);
+  });
+
+  it("catches one a ternary draws between two tags", () => {
+    expect(
+      scan("const A = () => <Text>{n === 1 ? `1 photo is queued.` : `${n} photos are queued.`}</Text>;"),
+    ).toEqual(["1 photo is queued.", "photos are queued."]);
+  });
+
+  it("catches a sentence handed to a prop that is drawn", () => {
+    expect(scan('const A = () => <TextField label="Password" />;')).toEqual(["Password"]);
+  });
+
+  /** The other hole, and the one that made three web dialogs say "Save". */
+  it("catches the word on the button that ends a form", () => {
+    expect(scan('const A = () => <ItemForm submitLabel="Save" />;')).toEqual(["Save"]);
+  });
+
+  it("catches one wearing braces, and one wearing backticks", () => {
+    expect(scan('const A = () => <TextField hint={"Optional."} />;')).toEqual(["Optional."]);
+    expect(scan("const A = () => <TextField hint={`Optional.`} />;")).toEqual(["Optional."]);
+  });
+
+  it("catches one written sideways, as a `children` prop", () => {
+    expect(scan('const A = () => <EmptyNote children="Nothing here yet." />;')).toEqual([
+      "Nothing here yet.",
+    ]);
+  });
+
+  it("catches one inside an options array, where a prop hides in an object", () => {
+    expect(scan('const A = () => <OptionList options={[{ value: "", label: "Choose…" }]} />;')).toEqual(
+      ["Choose…"],
+    );
+  });
+
+  it("catches an accessible name, which is read aloud and nowhere else", () => {
+    expect(scan('const A = () => <Pressable accessibilityLabel="Close" />;')).toEqual(["Close"]);
+  });
+
+  it("leaves a message KEY alone, which is the one string that must stay English", () => {
+    expect(scan("const A = () => <Text>{t(\"photos.cover\")}</Text>;")).toEqual([]);
+    expect(scan('const A = () => <Text>{busy ? t("a.b") : t("c.d")}</Text>;')).toEqual([]);
+  });
+
+  it("leaves a translated prop alone", () => {
+    expect(scan('const A = () => <TextField label={t("login.password")} />;')).toEqual([]);
+  });
+
+  /**
+   * The false positive the narrow walk exists to avoid. An icon's name is
+   * machinery, and a guard that reported it would be turned off within a week.
+   */
+  it("leaves the machinery alone: names, routes, roles and modes are not copy", () => {
+    expect(
+      scan(
+        'const A = () => <Pressable role="radio"><Icon name="check" /><Text>{t("x")}</Text></Pressable>;',
+      ),
+    ).toEqual([]);
+    expect(scan('const A = () => <Text>{ok ? <Icon name="check" /> : null}</Text>;')).toEqual([]);
+    expect(scan('const A = () => <TextField autoCapitalize="none" keyboardType="email-address" />;')).toEqual(
+      [],
+    );
+  });
+
+  it("leaves a comment alone, which is the whole reason this is a parser", () => {
+    expect(scan('const A = () => <Text>{/* label="Password" */}{t("x")}</Text>;')).toEqual([]);
+  });
+
+  it("leaves a question about a value alone: a comparison is not a sentence", () => {
+    expect(scan('const A = () => <Text hint={typeof children === "string" ? undefined : t("x")} />;')).toEqual(
+      [],
+    );
+  });
+
+  it("leaves punctuation and numbers alone: ×8 is not a sentence", () => {
+    expect(scan("const A = () => <Text>×{quantity}</Text>;")).toEqual([]);
+  });
+
+  it("leaves the product's own name alone, because it is the same in both languages", () => {
+    expect(scan('const A = () => <AppBar title="Waymark" />;')).toEqual([]);
+  });
+
+  /**
+   * The list this client and the web client must agree on, written out so that
+   * dropping one from either is a failing test rather than a silence. The
+   * platform's own names are allowed to differ; these are the product's.
+   */
+  it("watches every prop this product invented, the same ones the web guard does", () => {
+    expect([...OUR_OWN_PROPS]).toEqual([
+      "caption",
+      "children",
+      "copiedLabel",
+      "copyLabel",
+      "error",
+      "explains",
+      "failedLabel",
+      "heading",
+      "hint",
+      "label",
+      "legend",
+      "meta",
+      "placeholder",
+      "secondary",
+      "submitLabel",
+      "summary",
+      "title",
+      "valueLabel",
+    ]);
   });
 });

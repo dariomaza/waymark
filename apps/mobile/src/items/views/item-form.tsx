@@ -82,11 +82,18 @@ export const ItemForm = ({
         problem={complaintFor("tags")}
       />
 
+      {/*
+        The word changes while the request is out, which is what the web
+        client's two forms have always done. A greyed button still reading
+        "Save changes" is indistinguishable from a button that did not take the
+        tap, and that is the moment somebody presses it again. The same trick
+        the sign-in button and the camera button already use.
+      */}
       <Button
         tone="primary"
         block
         disabled={busy}
-        label={submitLabel}
+        label={busy ? t("action.saving") : submitLabel}
         onPress={() => {
           onSubmit({
             name,
@@ -99,7 +106,7 @@ export const ItemForm = ({
           });
         }}
       >
-        {submitLabel}
+        {busy ? t("action.saving") : submitLabel}
       </Button>
     </View>
   );

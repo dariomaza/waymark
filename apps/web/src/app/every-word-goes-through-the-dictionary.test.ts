@@ -26,11 +26,20 @@ import { describe, expect, it } from "vitest";
  *    reaches the screen — a ternary does it just as well.
  * 3. **A string literal reaching a prop that gets drawn or read aloud**:
  *    `label="Password"`, `alt="A drill"`, `aria-label="Close"`,
- *    `hint="Anything can go inside anything"`. The prop names are listed
- *    below rather than inferred, because only this app knows which of its own
- *    props end up in front of a person.
+ *    `submitLabel="Save"`, `hint="Anything can go inside anything"`. The prop
+ *    names are listed below rather than inferred, because only this app knows
+ *    which of its own props end up in front of a person — and the list is the
+ *    part that rots. `submitLabel` was missing from it, so the word on the
+ *    button that ends a form was the one word this guard never looked at.
  *
- * Both are checked with the TypeScript compiler's own parser rather than with
+ * The phone client's guard reads almost identically, and must: the two believed
+ * they were equivalent for a long time while neither was. The detection is the
+ * same walk in both, down to the names; only the platform's own vocabulary
+ * differs — `aria-label` here, `accessibilityLabel` there — and the list of
+ * this product's own props is asserted at the bottom of both files so that
+ * dropping one from either is a failure rather than a silence.
+ *
+ * All four are checked with the TypeScript compiler's own parser rather than with
  * a regular expression. A regex cannot tell `{t("login.title")}` from the text
  * around it, cannot see an attribute that wrapped onto three lines, and reads
  * the inside of a comment as though it were code — so it would report the
@@ -40,34 +49,38 @@ import { describe, expect, it } from "vitest";
  *
  * A literal handed to a prop whose name is not in the list below, and a
  * sentence assembled at runtime out of pieces. Neither is a reason to skip
- * the two shapes that do get caught: six hardcoded strings were found in the
- * phone client by exactly this pair of rules.
+ * the shapes that do get caught: six hardcoded strings were found in the
+ * phone client by exactly these rules, and three more here by adding one name
+ * to the list.
  */
 
 /**
- * Props whose value a person reads or hears.
+ * The props this app's OWN components draw or speak.
  *
- * The app's own (`label`, `hint`, `error`, `explains`, `meta`, `secondary`,
- * `title`) and the platform's (`alt`, `placeholder`, and the ARIA attributes
- * that carry text rather than an id). `aria-labelledby` and `aria-describedby`
- * are deliberately absent: they carry element ids, which are machinery.
+ * This list is identical in `apps/mobile`'s guard on purpose: these are names
+ * this product invented, so a prop that is copy on one client is copy on the
+ * other. `children` is here for the spelling `<Foo children="..." />`, which
+ * is the same sentence written sideways.
+ *
+ * `submitLabel` is the word on the button that ends a form, and it was absent
+ * from this list for as long as the list existed. `EditItemDialog`,
+ * `EditUnitDialog` and `CreateItemDialog` each passed it a bare English word;
+ * the phone client passes `t("action.saveChanges")` and `t("action.create")`
+ * to the same two forms. So this guard watched every prop but the one on the
+ * button that ends the sentence, and Spanish said "Save" and "Add".
+ *
+ * `CopyableValue` names four things: what the string IS, what the control
+ * does, what it is called once it has worked, and what it says when the
+ * clipboard refuses. Every one of them is read or heard.
  */
-const DRAWN_OR_SPOKEN = new Set([
-  "alt",
-  "aria-description",
-  "aria-label",
-  "aria-placeholder",
-  "aria-roledescription",
-  "aria-valuetext",
+export const OUR_OWN_PROPS = [
   "caption",
-  // `CopyableValue` names four things: what the string IS, what the control
-  // does, what it is called once it has worked, and what it says when the
-  // clipboard refuses. Every one of them is read or heard.
+  "children",
   "copiedLabel",
   "copyLabel",
   "error",
-  "failedLabel",
   "explains",
+  "failedLabel",
   "heading",
   "hint",
   "label",
@@ -75,10 +88,27 @@ const DRAWN_OR_SPOKEN = new Set([
   "meta",
   "placeholder",
   "secondary",
+  "submitLabel",
   "summary",
   "title",
   "valueLabel",
-]);
+] as const;
+
+/**
+ * What the platform itself calls a name: the DOM's `alt` and the ARIA
+ * attributes that carry TEXT. `aria-labelledby` and `aria-describedby` are
+ * deliberately absent — they carry element ids, which are machinery.
+ */
+const THE_PLATFORM_ASKS_FOR = [
+  "alt",
+  "aria-description",
+  "aria-label",
+  "aria-placeholder",
+  "aria-roledescription",
+  "aria-valuetext",
+] as const;
+
+const DRAWN_OR_SPOKEN = new Set<string>([...OUR_OWN_PROPS, ...THE_PLATFORM_ASKS_FOR]);
 
 /**
  * The words that are the same in every language.
@@ -296,6 +326,22 @@ describe("the guard itself", () => {
     );
   });
 
+  it("catches the word on the button that ends a form", () => {
+    expect(scan('const A = () => <ItemForm submitLabel="Save" />;')).toEqual(["Save"]);
+  });
+
+  it("catches one written sideways, as a `children` prop", () => {
+    expect(scan('const A = () => <EmptyNote children="Nothing here yet." />;')).toEqual([
+      "Nothing here yet.",
+    ]);
+  });
+
+  it("catches a paragraph a template draws between two tags", () => {
+    expect(
+      scan("const A = () => <p>{`No unit carries the code ${code}. Try another.`}</p>;"),
+    ).toEqual(["No unit carries the code . Try another."]);
+  });
+
   it("catches a sentence a ternary draws between two tags", () => {
     expect(
       scan("const A = () => <p>{n === 1 ? `1 photo is queued.` : `${n} photos are queued.`}</p>;"),
@@ -329,5 +375,33 @@ describe("the guard itself", () => {
 
   it("leaves the product's own name alone, because it is the same in both languages", () => {
     expect(scan('const A = () => <AppBar title="Waymark" />;')).toEqual([]);
+  });
+
+  /**
+   * The list this client and the phone client must agree on, written out so
+   * that dropping one from either is a failing test rather than a silence. The
+   * platform's own names are allowed to differ; these are the product's.
+   */
+  it("watches every prop this product invented, the same ones the phone guard does", () => {
+    expect([...OUR_OWN_PROPS]).toEqual([
+      "caption",
+      "children",
+      "copiedLabel",
+      "copyLabel",
+      "error",
+      "explains",
+      "failedLabel",
+      "heading",
+      "hint",
+      "label",
+      "legend",
+      "meta",
+      "placeholder",
+      "secondary",
+      "submitLabel",
+      "summary",
+      "title",
+      "valueLabel",
+    ]);
   });
 });

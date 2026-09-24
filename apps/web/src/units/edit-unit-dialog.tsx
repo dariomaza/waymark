@@ -34,7 +34,7 @@ export const EditUnitDialog = ({ unit, onClose }: EditUnitDialogProps): JSX.Elem
   return (
     <Sheet title={t("sheet.edit", { name: unit.name })} onClose={onClose}>
       <UnitForm
-        submitLabel="Save"
+        submitLabel={t("action.saveChanges")}
         initial={{
           name: unit.name,
           kind: unit.kind,

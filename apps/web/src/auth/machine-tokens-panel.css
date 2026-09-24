@@ -8,11 +8,6 @@
   width: 100%;
 }
 
-.machine-tokens__title {
-  font-size: var(--text-m);
-  margin: 0;
-}
-
 .machine-tokens__explains,
 .machine-tokens__none {
   margin: 0;

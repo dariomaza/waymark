@@ -33,7 +33,7 @@ export const EditItemDialog = ({ item, onClose }: EditItemDialogProps): JSX.Elem
   return (
     <Sheet title={t("sheet.edit", { name: item.name })} onClose={onClose}>
       <ItemForm
-        submitLabel="Save"
+        submitLabel={t("action.saveChanges")}
         initial={{
           name: item.name,
           description: item.description ?? "",
