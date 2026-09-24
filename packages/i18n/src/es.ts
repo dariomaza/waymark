@@ -36,8 +36,6 @@ export const ES: Dictionary = {
   "language.label": "Idioma",
   "shell.signedInAs": "Sesión iniciada como {username}",
   "shell.signOut": "Cerrar sesión",
-  "shell.account": "Tu cuenta",
-  "shell.accountOf": "Tu cuenta, sesión iniciada como {username}",
   "shell.offline":
     "Sin conexión. Puedes consultar lo que ya está cargado; nada de lo que cambies se guardará hasta que vuelva la conexión.",
 

@@ -23,6 +23,7 @@ const EMPTY = sheet("ui/molecules/empty-note.css");
 const FIELD = sheet("ui/atoms/text-field.css");
 const CRUMB = sheet("ui/molecules/breadcrumb.css");
 const SHEET = sheet("ui/organisms/sheet.css");
+const AVATAR = sheet("ui/atoms/avatar.css");
 
 /**
  * The control. Every assertion below reads a computed value, and a harness
@@ -290,5 +291,51 @@ describe("the panel a question is asked in", () => {
   /** Unchanged, and the reason the rule means anything: only the body scrolls. */
   it("still scrolls the body and nothing else", () => {
     expect(drawn(SHEET_MARKUP, ".sheet__body", { sheets: [SHEET] }).overflowY).toBe("auto");
+  });
+});
+
+
+/**
+ * # The circle with your initial in it, now that this client has one in the bar
+ *
+ * ADR 22 listed the tab bar's avatar under "what stays different, on purpose",
+ * and the reason was about the BAR: filled, at that size, in the accent, it
+ * reads as the selected tab whichever tab you are actually on. At the time only
+ * the phone had one there — this client's lived in the top bar, where filled
+ * was right.
+ *
+ * The account is the fifth destination here too now, so that argument reaches
+ * this client and the exception is spent: a ring in the bar, on both, and a
+ * filled disc on the account screen, on both. The circle you tapped and the
+ * circle you arrived at are the same drawing.
+ *
+ * The border is the icon set's own stroke weight, so the circle and the four
+ * drawings beside it in the bar are one line rather than two.
+ */
+describe("a person, as a circle with their initial in it", () => {
+  const MARKUP = `<span class="avatar">D</span>`;
+
+  it("is a ring in the bar, not a filled disc that reads as the selected tab", () => {
+    const avatar = drawn(MARKUP, ".avatar", { sheets: [AVATAR] });
+
+    expect(avatar.background).not.toBe("var(--color-accent)");
+    expect(pixels(avatar.borderTopWidth)).toBe(1.7);
+  });
+
+  /** The same weight every drawing in the set is stroked at (ADR 20). */
+  it("is drawn at the icon set's stroke weight, so the bar is one line", () => {
+    expect(declarationsIn(AVATAR, ".avatar")).toContain("border: 1.7px solid currentColor;");
+  });
+
+  /** And filled where it is not competing with a selected state. */
+  it("is a filled disc on the account screen, which is what the phone draws", () => {
+    const avatar = drawn(
+      `<span class="avatar avatar--filled">D</span>`,
+      ".avatar--filled",
+      { sheets: [AVATAR] },
+    );
+
+    expect(avatar.background).toBe("var(--color-accent)");
+    expect(avatar.color).toBe("var(--color-accent-ink)");
   });
 });

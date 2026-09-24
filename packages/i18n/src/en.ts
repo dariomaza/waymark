@@ -29,16 +29,15 @@ export const EN = {
   "shell.signedInAs": "Signed in as {username}",
   "shell.signOut": "Sign out",
 
-  /**
-   * The title of the one surface that is about the person rather than about
-   * the boxes, and the avatar's own accessible name.
-   *
-   * The name is in the label rather than printed above every screen. Somebody
-   * who cannot see the letter in the circle still gets told who is signed in,
-   * and nobody pays a row of the inventory for it.
+  /*
+   * `shell.account` and `shell.accountOf` were here: the title of the sheet
+   * behind the top bar's avatar, and that avatar's own accessible name. There
+   * is no such sheet and no such avatar on either client now — the account is
+   * the fifth destination in the bottom bar, its heading is `account.title` and
+   * its tab is named by `nav.youNamed`, which is what the phone has always
+   * said. A key born of a surface should die with the surface, as this
+   * dictionary already said of `units.showLabelPhone` and `units.leaveItAlone`.
    */
-  "shell.account": "Your account",
-  "shell.accountOf": "Your account, signed in as {username}",
 
   /**
    * What the app promises with no signal, and what it refuses to promise.

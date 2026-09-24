@@ -12,7 +12,7 @@ import {
 import { sessionStore } from "./session-store.js";
 
 /**
- * # The devices on your account, from the account sheet
+ * # The devices on your account, from the account screen
  *
  * Beside the machine tokens, and deliberately a different shape: a machine
  * token hands back a secret once and never again, and a passkey has no secret
@@ -53,8 +53,12 @@ const listing = (...passkeys: readonly ReturnType<typeof aPasskey>[]): void => {
   apiServer.use(http.get(`${API_URL}/auth/passkeys`, () => HttpResponse.json({ passkeys })));
 };
 
-const openTheAccountSheet = async (): Promise<void> => {
-  await userEvent.click(await screen.findByRole("button", { name: /your account/i }));
+/**
+ * The account is the fifth destination now rather than a sheet behind an avatar
+ * in the top bar, so a test reaches it by being there. Nothing else changed.
+ */
+const openTheAccountScreen = async (): Promise<void> => {
+  await screen.findByRole("heading", { name: /^you$/i });
 };
 
 const panel = async (): Promise<HTMLElement> => {
@@ -70,9 +74,9 @@ describe("the passkeys on your account", () => {
 
   it("says there are none before anything is registered", async () => {
     listing();
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
-    await openTheAccountSheet();
+    await openTheAccountScreen();
 
     expect(within(await panel()).getByText(/no passkeys yet/i)).toBeVisible();
   });
@@ -82,9 +86,9 @@ describe("the passkeys on your account", () => {
       aPasskey({ label: "Pixel 8", lastUsedAt: "2026-04-02T10:00:00.000Z" }),
       aPasskey({ id: "pk2", label: "Work laptop" }),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
-    await openTheAccountSheet();
+    await openTheAccountScreen();
     const section = await panel();
 
     expect(within(section).getByText("Pixel 8")).toBeVisible();
@@ -100,9 +104,9 @@ describe("the passkeys on your account", () => {
    */
   it("never shows a secret, because a passkey does not have one", async () => {
     listing(aPasskey());
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
-    await openTheAccountSheet();
+    await openTheAccountScreen();
     const section = await panel();
 
     expect(within(section).queryByRole("button", { name: /copy/i })).toBeNull();
@@ -125,7 +129,7 @@ describe("adding a device", () => {
   };
 
   const addDevice = async (name = "Pixel 8"): Promise<void> => {
-    await openTheAccountSheet();
+    await openTheAccountScreen();
     const section = await panel();
 
     await userEvent.click(
@@ -150,7 +154,7 @@ describe("adding a device", () => {
         return HttpResponse.json({ passkey: aPasskey() }, { status: 201 });
       }),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     await addDevice("Pixel 8");
 
@@ -178,7 +182,7 @@ describe("adding a device", () => {
         HttpResponse.json({ passkeys: added ? [aPasskey()] : [] }),
       ),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     await addDevice();
 
@@ -204,7 +208,7 @@ describe("adding a device", () => {
         ),
       ),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     await addDevice();
 
@@ -220,7 +224,7 @@ describe("adding a device", () => {
       ),
     );
     renderApp({
-      route: "/",
+      route: "/you",
       passkeys: aPlatform({
         register: async () => {
           throw new PasskeyCancelled();
@@ -245,7 +249,7 @@ describe("adding a device", () => {
   it("blames the device rather than Waymark when the ceremony failed here", async () => {
     answersTheCeremony();
     renderApp({
-      route: "/",
+      route: "/you",
       passkeys: aPlatform({
         register: async () => {
           throw new PasskeyCeremonyFailed(
@@ -268,7 +272,7 @@ describe("adding a device", () => {
   it("says this device already holds one when the authenticator says so", async () => {
     answersTheCeremony();
     renderApp({
-      route: "/",
+      route: "/you",
       passkeys: aPlatform({
         register: async () => {
           throw new PasskeyCeremonyFailed(
@@ -291,9 +295,9 @@ describe("adding a device", () => {
    */
   it("offers no way to add one on a device that cannot, and still lists them", async () => {
     listing(aPasskey());
-    renderApp({ route: "/", passkeys: aPlatform({ isAvailable: async () => false }) });
+    renderApp({ route: "/you", passkeys: aPlatform({ isAvailable: async () => false }) });
 
-    await openTheAccountSheet();
+    await openTheAccountScreen();
     const section = await panel();
 
     expect(within(section).queryByRole("button", { name: /add this device/i })).toBeNull();
@@ -307,7 +311,7 @@ describe("removing one", () => {
   });
 
   const askToRemove = async (): Promise<HTMLElement> => {
-    await openTheAccountSheet();
+    await openTheAccountScreen();
     const section = await panel();
 
     await userEvent.click(within(section).getByRole("button", { name: /^remove$/i }));
@@ -317,7 +321,7 @@ describe("removing one", () => {
 
   it("asks first, and says the password still works", async () => {
     listing(aPasskey());
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     const section = await askToRemove();
 
@@ -326,7 +330,7 @@ describe("removing one", () => {
 
   it("names the device in the question", async () => {
     listing(aPasskey({ label: "Work laptop" }));
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     const section = await askToRemove();
 
@@ -343,7 +347,7 @@ describe("removing one", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     const section = await askToRemove();
     await userEvent.click(within(section).getByRole("button", { name: /remove it/i }));
@@ -363,7 +367,7 @@ describe("removing one", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     const section = await askToRemove();
     await userEvent.click(within(section).getByRole("button", { name: /cancel/i }));
@@ -388,7 +392,7 @@ describe("removing one", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     const section = await askToRemove();
     await userEvent.click(within(section).getByRole("button", { name: /remove it/i }));
@@ -406,7 +410,7 @@ describe("removing one", () => {
         ),
       ),
     );
-    renderApp({ route: "/", passkeys: aPlatform() });
+    renderApp({ route: "/you", passkeys: aPlatform() });
 
     const section = await askToRemove();
     await userEvent.click(within(section).getByRole("button", { name: /remove it/i }));

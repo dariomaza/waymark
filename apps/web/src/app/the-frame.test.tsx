@@ -6,7 +6,7 @@ import { aSession, aStorageUnit, aTree } from "@waymark/api-client/testing";
 import { sessionStore } from "../auth/session-store.js";
 import { languageStore } from "./language.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
-import { renderApp, screen, userEvent, waitFor, within } from "../testing/render-app.js";
+import { renderApp, screen, userEvent, within } from "../testing/render-app.js";
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
 
@@ -33,12 +33,22 @@ describe("the frame every signed-in screen sits in", () => {
     );
   });
 
+  /**
+   * # The bar is the phone's bar now
+   *
+   * The owner had both clients open on one phone and the loudest difference on
+   * the screen was down here: four tabs in one order plus an avatar in the top
+   * bar, against five tabs in another order with the account among them. His
+   * standing decision settles which way the convergence runs — both clients
+   * live on his phone, so the phone's shape wins (ADR 22) — and this client
+   * takes all of it.
+   */
   describe("the navigation", () => {
     /**
-     * The four destinations are icons now, with a small word under each. The
-     * word is what makes an icon legible the FIRST time: a magnifier means
-     * search everywhere in the world, but no shape in any vocabulary means
-     * "places" or "things", so those two would otherwise have to be learned.
+     * Five destinations, icons with a small word under each. The word is what
+     * makes an icon legible the FIRST time: a magnifier means search everywhere
+     * in the world, but no shape in any vocabulary means "places" or "things",
+     * so those two would otherwise have to be learned by tapping them.
      *
      * Which is also why the accessible name has to be the word rather than a
      * description of the drawing. A screen reader that announces "cube icon"
@@ -49,18 +59,58 @@ describe("the frame every signed-in screen sits in", () => {
 
       expect(await screen.findByRole("navigation", { name: /main/i })).toBeVisible();
 
-      for (const name of [/places/i, /things/i, /search/i, /scan/i]) {
+      for (const name of [/^scan$/i, /^places$/i, /^search$/i, /^things$/i]) {
         expect(screen.getByRole("link", { name })).toBeVisible();
       }
+      expect(screen.getByRole("link", { name: /you, signed in as dario/i })).toBeVisible();
+    });
+
+    /**
+     * # Scan first, which is an argument this client is inheriting
+     *
+     * It was written in `apps/mobile/src/app/navigation.ts` and it was never
+     * about React Native: "the product is a printed QR on a box and a phone
+     * pointed at it; every tap between launching the app and the camera being
+     * live is a tap taken in a garage, one-handed, holding something."
+     *
+     * The PWA is installed on that same phone. The argument reaches it
+     * unchanged, so the order does too.
+     */
+    it("puts Scan first, because that is what the product is", async () => {
+      renderApp({ route: "/" });
+
+      await screen.findByRole("navigation", { name: /main/i });
+
+      expect(
+        within(screen.getByRole("navigation", { name: /main/i }))
+          .getAllByRole("link")
+          .map((link) => link.getAttribute("href")),
+      ).toEqual(["/scan", "/", "/find", "/things", "/you"]);
     });
 
     it("says which destination you are already at", async () => {
       renderApp({ route: "/" });
 
-      expect(await screen.findByRole("link", { name: /places/i })).toHaveAttribute(
+      expect(await screen.findByRole("link", { name: /^places$/i })).toHaveAttribute(
         "aria-current",
         "page",
       );
+    });
+
+    /**
+     * The fifth destination is drawn as the person's own initial rather than as
+     * a ninth icon: no shape in any vocabulary means "your account" — a
+     * silhouette means "a person", which is the wrong person — and a circle with
+     * your own initial in it is the one thing every product has already taught
+     * everybody to read.
+     */
+    it("draws the account tab as the person's own initial", async () => {
+      renderApp({ route: "/" });
+
+      const you = await screen.findByRole("link", { name: /you, signed in as dario/i });
+
+      expect(you).toHaveTextContent("D");
+      expect(you).toHaveTextContent("You");
     });
   });
 
@@ -74,12 +124,10 @@ describe("the frame every signed-in screen sits in", () => {
     /**
      * # A line of chrome on the screen you look at most is rent
      *
-     * "Signed in as dario" was printed above every single screen — the
-     * inventory, a box, a search, the scanner — to answer a question nobody
-     * asks twice in a household of one shared inventory (ADR 5). It is not
-     * deleted, it is MOVED: it now lives behind the avatar, where the rest of
-     * what belongs to you lives, and the avatar's own accessible name carries
-     * it for anybody who cannot see the letter.
+     * "Signed in as dario" was printed above every single screen to answer a
+     * question nobody asks twice in a household of one shared inventory (ADR 5).
+     * It is not deleted, it is MOVED — first behind an avatar in this bar, and
+     * now onto the account destination, where the phone has always kept it.
      */
     it("no longer spends a row of every screen saying who is signed in", async () => {
       renderApp({ route: "/" });
@@ -89,119 +137,109 @@ describe("the frame every signed-in screen sits in", () => {
       expect(screen.queryByText(/signed in as/i)).toBeNull();
     });
 
-    it("carries the person's own initial instead", async () => {
-      renderApp({ route: "/" });
-
-      const avatar = await screen.findByRole("button", {
-        name: /your account, signed in as dario/i,
-      });
-
-      expect(avatar).toBeVisible();
-      expect(avatar).toHaveTextContent("D");
-    });
-
     /**
-     * The switcher used to sit in the bar beside Sign out. It is about YOU
-     * and not about the inventory, so it went behind the avatar with
-     * everything else that is.
+     * And it carries nothing that belongs to a person either. The avatar was up
+     * here, opening a sheet; the phone has never had one in its bar, and the
+     * owner's screenshots of the two bars side by side are what settled it. One
+     * way to an account, on both clients, in the row where the thumb is.
      */
-    it("keeps the language choice behind the avatar rather than in the bar", async () => {
-      const user = userEvent.setup();
+    it("carries nothing that belongs to a person rather than to the inventory", async () => {
       renderApp({ route: "/" });
 
-      await screen.findByRole("heading", { name: /your inventory/i });
+      await screen.findByRole("heading", { name: "Waymark" });
+
+      expect(screen.queryByRole("button", { name: /your account/i })).toBeNull();
       expect(screen.queryByRole("radio", { name: /español/i })).toBeNull();
       expect(screen.queryByRole("button", { name: /sign out/i })).toBeNull();
-
-      await user.click(screen.getByRole("button", { name: /your account/i }));
-
-      expect(await screen.findByRole("radio", { name: /español/i })).toBeVisible();
-      expect(screen.getByRole("button", { name: /sign out/i })).toBeVisible();
     });
   });
 
   /**
-   * # Why the avatar opens a dialog and not a menu
+   * # The account is a PLACE now, and the sheet argument is retired
    *
-   * What is behind it is a small GROUP OF CONTROLS about you — who you are,
-   * which language you read, and the way out — rather than a list of commands
-   * to pick one of. That rules out `role="menu"`: a menu promises arrow keys,
-   * Home and End and typeahead, and its children have to be menu items, so
-   * the language switcher would have to be rebuilt out of `menuitemradio` and
-   * lose the real radio group it deliberately is. Rewriting a working,
-   * accessible control to satisfy a role name is the wrong trade.
+   * The sheet behind the avatar was argued for at length: what sits behind it
+   * is a small group of controls about you rather than a list of commands, so
+   * `role="menu"` was wrong; and a page of its own cost a navigation away from
+   * the inventory and back, plus an address in an origin with one namespace to
+   * spend (ADR 16), for two controls.
    *
-   * A page was the other option and costs a navigation away from the
-   * inventory and back, plus one more address in an origin that now has only
-   * one namespace to spend (ADR 16), for two controls.
+   * Every sentence of that is still true and the conclusion is overruled
+   * anyway, for a reason the argument never weighed: there are TWO clients on
+   * the owner's phone, and the other one has always made this a destination. A
+   * sheet here and a tab there is one account reached two ways, which is what
+   * he was looking at when he said they read as two products.
    *
-   * So it is the `Sheet` this app already asks every other question with. It
-   * is `role="dialog"` with `aria-modal="true"`, it is labelled by its own
-   * title, it takes the focus on open, it traps Tab, Escape closes it and the
-   * focus goes back to the control that opened it — all of which is already
-   * true and already tested (`sheet-focus.test.tsx`). It comes up from the
-   * bottom for the same reason the navigation is down there: that is where
-   * the thumb already is.
+   * What it BUYS is the phone's own reasoning, unchanged: a destination gets
+   * the back gesture, the router's focus handling and its announcement for
+   * free, and this is a surface somebody arrives at, reads and leaves, rather
+   * than a question being asked of them — which is what the sheets are for.
+   *
+   * The cost is the one the sheet argument named and it is now paid: one more
+   * address, and a navigation away from the inventory and back. It is two taps
+   * either way, which is why this was ever close.
    */
-  describe("what the avatar opens", () => {
-    const openAccount = async (): Promise<HTMLElement> => {
+  describe("the account destination", () => {
+    const openAccount = async (): Promise<void> => {
       renderApp({ route: "/" });
 
       await userEvent.click(
-        await screen.findByRole("button", { name: /your account/i }),
+        await screen.findByRole("link", { name: /you, signed in as dario/i }),
       );
 
-      return await screen.findByRole("dialog", { name: /your account/i });
+      await screen.findByRole("heading", { name: /^you$/i });
     };
 
-    it("is a modal dialog, and says so to a screen reader", async () => {
-      const account = await openAccount();
-
-      expect(account).toHaveAttribute("aria-modal", "true");
-    });
-
     it("says who is signed in, which is where that sentence went", async () => {
-      const account = await openAccount();
+      await openAccount();
 
-      expect(within(account).getByText(/signed in as dario/i)).toBeVisible();
+      expect(screen.getByText(/signed in as dario/i)).toBeVisible();
     });
 
     it("holds the language and the way out", async () => {
-      const account = await openAccount();
-
-      expect(within(account).getByRole("radio", { name: /english/i })).toBeChecked();
-      expect(within(account).getByRole("button", { name: /sign out/i })).toBeVisible();
-    });
-
-    it("takes the focus when it opens, so the keyboard is already inside it", async () => {
-      const account = await openAccount();
-
-      expect(account).toHaveFocus();
-    });
-
-    it("closes on Escape and hands the focus back to the avatar", async () => {
       await openAccount();
-      const avatar = screen.getByRole("button", { name: /your account/i });
 
-      await userEvent.keyboard("{Escape}");
+      expect(screen.getByRole("radio", { name: /english/i })).toBeChecked();
+      expect(screen.getByRole("button", { name: /sign out/i })).toBeVisible();
+    });
 
-      await waitFor(() => {
-        expect(screen.queryByRole("dialog", { name: /your account/i })).toBeNull();
-      });
-      expect(avatar).toHaveFocus();
+    /**
+     * The one panel that exists on this client and not on the phone: the
+     * devices that can open this account (ADR 19). Moving the surface must not
+     * lose it, which is the failure a rearrangement makes easiest.
+     */
+    it("keeps the passkeys, which only this client has", async () => {
+      await openAccount();
+
+      expect(await screen.findByRole("heading", { name: /passkey/i })).toBeVisible();
+    });
+
+    /** Credentials for programs (ADR 18), which both clients have. */
+    it("keeps the credentials handed to programs", async () => {
+      await openAccount();
+
+      expect(await screen.findByRole("heading", { name: /machine/i })).toBeVisible();
     });
 
     it("still lets the language be chosen, and remembers which one", async () => {
-      const account = await openAccount();
+      await openAccount();
 
-      const spanish = within(account).getByRole("radio", { name: /español/i });
-      const english = within(account).getByRole("radio", { name: /english/i });
+      const spanish = screen.getByRole("radio", { name: /español/i });
+      const english = screen.getByRole("radio", { name: /english/i });
       expect(english).toBeChecked();
 
       await userEvent.click(spanish);
 
       expect(spanish).toBeChecked();
       expect(english).not.toBeChecked();
+    });
+
+    it("says it is the destination you are at", async () => {
+      await openAccount();
+
+      expect(screen.getByRole("link", { name: /you, signed in as dario/i })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
     });
   });
 
@@ -216,7 +254,7 @@ describe("the frame every signed-in screen sits in", () => {
       const user = userEvent.setup();
       renderApp({ route: "/" });
 
-      await user.click(await screen.findByRole("button", { name: /your account/i }));
+      await user.click(await screen.findByRole("link", { name: /you, signed in as dario/i }));
       await user.click(await screen.findByRole("radio", { name: /español/i }));
 
       expect(screen.getByRole("link", { name: "Lugares" })).toBeVisible();
@@ -224,19 +262,19 @@ describe("the frame every signed-in screen sits in", () => {
       expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
     });
 
-    /** The new surface is copy too: its title, and the avatar's own name. */
-    it("names the avatar and what it opens in the chosen language", async () => {
+    /** The new surface is copy too: its tab's name, and its own heading. */
+    it("names the account destination and its screen in the chosen language", async () => {
       languageStore.save("es");
       const user = userEvent.setup();
       renderApp({ route: "/" });
 
-      const avatar = await screen.findByRole("button", {
-        name: "Tu cuenta, sesión iniciada como dario",
+      const you = await screen.findByRole("link", {
+        name: "Tú, sesión iniciada como dario",
       });
 
-      await user.click(avatar);
+      await user.click(you);
 
-      expect(await screen.findByRole("dialog", { name: "Tu cuenta" })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: "Tú" })).toBeVisible();
     });
 
     /**
@@ -255,7 +293,7 @@ describe("the frame every signed-in screen sits in", () => {
 
       expect(await screen.findByRole("link", { name: "Lugares" })).toBeVisible();
 
-      await user.click(screen.getByRole("button", { name: /tu cuenta/i }));
+      await user.click(screen.getByRole("link", { name: /tú, sesión iniciada como dario/i }));
 
       expect(await screen.findByRole("radio", { name: /español/i })).toBeChecked();
     });
@@ -273,7 +311,7 @@ describe("the frame every signed-in screen sits in", () => {
 
       expect(document.documentElement.lang).toBe("en");
 
-      await user.click(await screen.findByRole("button", { name: /your account/i }));
+      await user.click(await screen.findByRole("link", { name: /you, signed in as dario/i }));
       await user.click(await screen.findByRole("radio", { name: /español/i }));
 
       expect(document.documentElement.lang).toBe("es");

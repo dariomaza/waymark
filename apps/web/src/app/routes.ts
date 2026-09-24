@@ -55,6 +55,18 @@ export const ROUTES = {
    * whose removal failed.
    */
   backgroundRemoval: "/processing",
+  /**
+   * Everything that belongs to the person rather than to the inventory.
+   *
+   * It used to be a sheet behind an avatar in the top bar, and the argument
+   * against giving it an address was that an origin with one namespace (ADR 16)
+   * should not spend one on two controls. It is spent, because the phone has
+   * always made this a destination and one account reached two ways is what made
+   * the two clients read as two products. `/you` and not `/account`: where the
+   * API uses the resource name, this app uses the shorter human word, and the
+   * tab under the avatar says "You" in both languages.
+   */
+  account: "/you",
   /** The address printed on every box (ADR 12). */
   scannedLabel: "/u/:publicId",
 } as const;
