@@ -127,9 +127,15 @@ export const useReprocessPhoto = (): UseMutationResult<
  * tapping each one in turn is the chore ADR 10 built the route to avoid.
  *
  * The answer is a `202` and a COUNT — how many went back — and nothing here
- * waits for any of them to finish. It invalidates the queue rather than the
- * inventory: the counts on that screen are what just changed, and the boxes
- * are not.
+ * waits for any of them to finish.
+ *
+ * It throws away the same two graphs `useReprocessPhoto` does, and for the
+ * same reason. It used to throw away only the queue, on the grounds that the
+ * counts are what changed and the boxes are not — which is wrong about the
+ * note. Every photo put back stops being `FAILED`, and "background removal
+ * failed" is drawn under the photo on the item's own screen. That screen is
+ * where this button is reached FROM, so it is still mounted underneath it,
+ * still saying something that stopped being true.
  */
 export const useRetryFailedPhotos = (): UseMutationResult<
   RequeuedPhotosResponse,
@@ -138,10 +144,12 @@ export const useRetryFailedPhotos = (): UseMutationResult<
 > => {
   const api = useApi();
   const queries = useQueryClient();
+  const invalidate = useInvalidateInventory();
 
   return useMutation({
     mutationFn: async () => await api.retryFailedPhotos(),
     onSuccess: () => {
+      invalidate();
       void queries.invalidateQueries({ queryKey: queryKeys.photoProcessing() });
     },
   });
