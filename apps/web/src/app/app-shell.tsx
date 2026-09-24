@@ -26,7 +26,18 @@ export const AppShell = (): JSX.Element => {
     <div className="app-shell">
       <AppBar
         title="Waymark"
-        leading={<Icon name="waypoints" size={24} />}
+        leading={
+          /*
+            * The product's MARK, and the phone draws it lime. It carried no
+            * colour here, so it inherited the ink beside it and came out
+            * white — one mark, two colours, on one phone. The wrapper is what
+            * the colour hangs on: `leading` is a slot, and a back arrow put
+            * in it later has no business being the accent.
+            */
+          <span className="app-shell__mark">
+            <Icon name="waypoints" size={24} />
+          </span>
+        }
         /*
           * `null` cannot happen here: this shell is only ever drawn inside
           * `RequireSession`, which sends anybody without a session to the

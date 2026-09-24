@@ -4,10 +4,13 @@ import {
   type NavigationState,
   type PartialState,
 } from "@react-navigation/native";
+import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { PlatformPressable } from "@react-navigation/elements";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
+import { StyleSheet } from "react-native";
 import { useMemo, useState, type JSX } from "react";
 import {
   initialWindowMetrics,
@@ -321,6 +324,7 @@ const Tabs = (): JSX.Element => {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarStyle: { backgroundColor: colors.surfaceRaised, borderTopColor: colors.line },
+        tabBarButton: currentTabIsUnderlined,
       }}
     >
       {/*
@@ -400,6 +404,42 @@ const Tabs = (): JSX.Element => {
     </Tab.Navigator>
   );
 };
+
+/**
+ * # Which tab you are on, stated twice
+ *
+ * A tint and nothing else is a colour difference, and a colour difference is
+ * the one kind that goes missing in bright sunlight, on a cheap panel, and for
+ * roughly one man in twelve. The web client has always drawn a 2px rule along
+ * the top edge of the tab you are on as well; this is that rule.
+ *
+ * Every tab carries it, transparent, so that arriving on one moves a colour
+ * rather than moving the icons down two pixels.
+ *
+ * `accentText` and not `accent`: the rule is a foreground mark, which is the
+ * job that token names — the same one the web client's `--color-accent-text`
+ * does on the same rule. They are the same lime on this app's one scheme.
+ *
+ * `PlatformPressable` is what the navigator itself reaches for when nobody
+ * hands it a button, so the ripple, the hover and the press behaviour are the
+ * stock ones; the only thing added is the style. The focused flag arrives as
+ * `aria-selected`, which is what the navigator puts on the button it builds.
+ */
+const currentTabIsUnderlined = (props: BottomTabBarButtonProps): JSX.Element => (
+  <PlatformPressable
+    {...props}
+    style={[
+      props.style,
+      styles.tab,
+      props["aria-selected"] === true ? styles.currentTab : null,
+    ]}
+  />
+);
+
+const styles = StyleSheet.create({
+  tab: { borderTopWidth: 2, borderTopColor: "transparent" },
+  currentTab: { borderTopColor: colors.accentText },
+});
 
 /**
  * A destination's drawing, in the colour the bar says it is.

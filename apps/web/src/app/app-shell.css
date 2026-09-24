@@ -21,3 +21,16 @@
   justify-content: center;
   align-items: center;
 }
+
+/**
+ * The product's mark, in the accent, which is what the phone client draws.
+ *
+ * `--color-accent-text` and not `--color-accent`: the mark is a stroke on the
+ * bar, which is the FOREGROUND job, and the two are the same lime in the dark
+ * scheme the phone has. Only the foreground one stays legible when the bar
+ * turns white.
+ */
+.app-shell__mark {
+  display: flex;
+  color: var(--color-accent-text);
+}

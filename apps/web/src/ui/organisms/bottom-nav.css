@@ -3,7 +3,14 @@
   bottom: 0;
   z-index: 10;
   display: flex;
-  background: var(--color-surface-sunken);
+/**
+ * `raised`, not `sunken`: the page scrolls UNDERNEATH this bar, and a surface
+ * content passes beneath is above the page rather than below it. `sunken` is
+ * the recess token — a field, an option list, the grey behind a photo — and
+ * the phone client paints its own bar with `surfaceRaised` for exactly this
+ * reason. See `the-chrome-is-the-raised-plane.test.ts`.
+ */
+  background: var(--color-surface-raised);
   border-top: 1px solid var(--color-line);
   padding-bottom: env(safe-area-inset-bottom);
 }
