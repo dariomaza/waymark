@@ -13,6 +13,14 @@ export interface AccountPanelProps {
   /** The control that is ABOUT the language rather than written in it. */
   readonly language: ReactNode;
   /**
+   * Whether this phone keeps the session behind its fingerprint sensor.
+   *
+   * Injected, and often nothing at all: a phone with no sensor, nothing
+   * enrolled or no screen lock gets no switch, and that decision belongs to
+   * the thing that can ask the keystore rather than to this file.
+   */
+  readonly biometrics: ReactNode;
+  /**
    * Credentials for programs. Injected, because it fetches and mutates and
    * this file draws.
    *
@@ -38,6 +46,7 @@ export interface AccountPanelProps {
 export const AccountPanel = ({
   username,
   language,
+  biometrics,
   machineTokens,
   busy,
   onSignOut,
@@ -65,6 +74,13 @@ export const AccountPanel = ({
         <Text style={styles.settingLabel}>{t("language.label")}</Text>
         {language}
       </View>
+
+      {/*
+        Under the language and above the credentials, which is the order of how
+        personal each one is: the words this app speaks, then what this
+        particular phone remembers, then the keys handed to programs.
+      */}
+      {biometrics}
 
       {machineTokens}
 

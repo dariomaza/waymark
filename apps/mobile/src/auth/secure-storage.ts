@@ -123,7 +123,16 @@ export interface SealedBehaviour {
   readonly sealed?: Readonly<Record<string, string>>;
   /** What this stand-in device answers about its own biometrics. */
   readonly canUnlock?: boolean;
-  /** Stands in for the person at the prompt. `false` is a cancelled one. */
+  /**
+   * Stands in for the person at the prompt. `false` is a cancelled one.
+   *
+   * It governs BOTH directions, because on Android both raise the same
+   * dialog: writing a key with `setUserAuthenticationRequired` asks somebody
+   * to authorise it exactly as reading one asks them to prove who they are.
+   * A stand-in whose `seal` always succeeded would make a dismissed prompt
+   * untestable in the one direction where dismissing it used to leave the
+   * state claiming a door that was never built.
+   */
   readonly answersThePrompt?: boolean;
 }
 
@@ -156,6 +165,10 @@ export const inMemorySecureStorage = (
     },
     canUnlock: () => canUnlock,
     seal: async (key, value) => {
+      if (!answersThePrompt) {
+        throw new Error("The authentication prompt was cancelled");
+      }
+
       sealed.set(key, value);
     },
     unlock: async (key) => {

@@ -52,6 +52,51 @@ export const useUnlockSealedSession = (): UseMutationResult<Session | null, Erro
   });
 };
 
+/**
+ * Whether this phone can hold a sealed session at all.
+ *
+ * Synchronous and not a query, because it is a property of the hardware
+ * rather than a question being asked of anybody — and the account screen uses
+ * it to decide whether the switch is DRAWN, which has to be settled before
+ * anything is on screen. A control that appeared a moment later, or appeared
+ * and then failed on the press, is worse than one that was never there.
+ */
+export const useCanSealSession = (): boolean => useSessionStore().canSeal();
+
+/**
+ * The two directions of the switch on the account screen.
+ *
+ * Mutations, like the door on the login screen and for the same reason: each
+ * is a thing somebody DOES, once, on purpose. A query would retry them,
+ * refetch them and repeat them on focus, and for the sealing half every one
+ * of those is a fingerprint prompt nobody asked for.
+ *
+ * Neither rejects on a dismissed prompt. The store settles what the keystore
+ * actually did and the switch draws that, so the feedback for "not now" is
+ * the control going back where it was — not an alarm about a person choosing
+ * an answer that was always allowed.
+ */
+export const useSealSession = (): UseMutationResult<void, Error, void> => {
+  const store = useSessionStore();
+  const t = useTranslate();
+
+  return useMutation({
+    mutationFn: async () => {
+      await store.sealSession(t("login.sealPrompt"));
+    },
+  });
+};
+
+export const useUnsealSession = (): UseMutationResult<void, Error, void> => {
+  const store = useSessionStore();
+
+  return useMutation({
+    mutationFn: async () => {
+      await store.unsealSession();
+    },
+  });
+};
+
 export const useSignOut = (): UseMutationResult<void, Error, void> => {
   const api = useApi();
   const store = useSessionStore();

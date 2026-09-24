@@ -1,5 +1,5 @@
 import type { Language } from "@waymark/i18n";
-import { render, type RenderResult } from "@testing-library/react-native";
+import { cleanup, render, type RenderResult } from "@testing-library/react-native";
 import type { QueryClient } from "@tanstack/react-query";
 import type { NavigationState, PartialState } from "@react-navigation/native";
 
@@ -146,6 +146,30 @@ export const renderApp = async ({
       clipboard={clipboard ?? fakeClipboard()}
     />,
   );
+};
+
+/**
+ * The same phone, killed and opened again.
+ *
+ * A cold start is the only way to prove what a setting LEFT BEHIND: turning
+ * the fingerprint off is a claim about the next launch, and the next launch is
+ * a fresh store reading the same keystore. Hand it the storage the first run
+ * was given and it opens on whatever that run actually wrote.
+ *
+ * The teardown is not optional and is the whole reason this is a helper. A
+ * second `render` on top of a tree that is still settling gives React
+ * overlapping `act()` scopes and the query cache goes on notifying an
+ * unmounted screen — which fails the NEXT test in the file, with a message
+ * about the wrong one. So the old tree is unmounted and awaited, and its cache
+ * is destroyed, before anything is rendered again.
+ */
+export const relaunchApp = async (
+  options: RenderAppOptions = {},
+): Promise<RenderResult> => {
+  await cleanup();
+  discardQueryCaches();
+
+  return await renderApp(options);
 };
 
 /**

@@ -24,13 +24,20 @@ export type SessionState =
       readonly status: "known";
       readonly session: Session | null;
       /**
-       * Whether a fingerprint could open a session this phone is already
-       * holding.
+       * Whether this phone is HOLDING a sealed session right now.
        *
        * It is part of the SNAPSHOT rather than a question the login screen
        * asks, because the answer comes from the same one startup read as the
        * session itself. A screen that asked separately would be a second trip
        * to the keystore for a fact the first trip already had.
+       *
+       * It is also the whole of what the account screen's switch draws. There
+       * is deliberately no "biometrics enabled" preference stored anywhere:
+       * a preference beside the keystore is a second answer to one question,
+       * and the two disagree the first time a seal is refused.
+       *
+       * It is a REPORT of what the keystore did, never a prediction of what
+       * it is about to do — see `sealInto`.
        */
       readonly sealed: boolean;
     };
@@ -47,6 +54,38 @@ export interface SessionStore {
    */
   save(session: Session, sealPrompt: string): void;
   clear(): void;
+  /**
+   * Whether this device can stand behind a sealed value at all.
+   *
+   * Synchronous, like the keystore's own answer, because it is a property of
+   * the hardware rather than a question being asked of anybody. It is what
+   * decides whether the account screen draws a switch — a control that fails
+   * the moment it is touched is worse than no control.
+   */
+  canSeal(): boolean;
+  /**
+   * Puts the session this store is holding behind the phone's sensor, raising
+   * the system's prompt.
+   *
+   * Resolves either way. A dismissed prompt is an ANSWER and not a failure —
+   * the same answer the login screen already respects — and what it leaves
+   * behind is a phone that is simply not sealing anything, which `read()`
+   * then says. Nothing is thrown for a screen to turn into an alarm about a
+   * person choosing "not now".
+   */
+  sealSession(prompt: string): Promise<void>;
+  /**
+   * Takes the sealed session away: the token and the note beside it.
+   *
+   * Asks for no fingerprint. Deleting a sealed entry removes the stored bytes
+   * rather than decrypting them, which matters most on the day somebody's
+   * sensor is the reason they want this gone.
+   *
+   * The session in memory is deliberately untouched — turning a setting off
+   * must not throw somebody out of the app they are standing in. What goes is
+   * this phone's ability to open the NEXT one without a password.
+   */
+  unsealSession(): Promise<void>;
   /**
    * Puts the system's prompt on screen and, if somebody proves who they are,
    * settles the session it was holding.
@@ -108,6 +147,81 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
       sealed,
     };
     announce();
+  };
+
+  /**
+   * Re-settles a session ONLY if it is still the one being held.
+   *
+   * The sealing writes are asynchronous and a sign-out is not, so somebody can
+   * leave while the keystore is still thinking. Without this guard the late
+   * answer would settle a session that had already been cleared — signing
+   * somebody back in from a promise they never saw.
+   */
+  const claim = (session: Session, sealed: boolean): void => {
+    if (state.status !== "known" || state.session?.token !== session.token) {
+      return;
+    }
+
+    settle(session, sealed);
+  };
+
+  /** Back to the shape of a phone that is not sealing anything. */
+  const rollBack = async (): Promise<void> => {
+    await Promise.all([
+      storage.unseal(SESSION_KEY).catch(() => undefined),
+      storage.remove(SEALED_UNTIL_KEY).catch(() => undefined),
+    ]);
+  };
+
+  /**
+   * # The seal is three writes, and the state reports what all three did
+   *
+   * The token goes behind a Keystore key the OS will not decrypt without a
+   * fingerprint, a readable note beside it says a sealed session is there and
+   * until when, and the copy in the clear goes — because anything that can
+   * read THAT never has to ask about the seal, which would make the seal
+   * decoration.
+   *
+   * Two things used to go wrong here, neither of them visible until the
+   * account screen started drawing this flag:
+   *
+   * 1. The state was settled SEALED before the seal resolved. A dismissed
+   *    prompt then left memory claiming a door that was never built — and on
+   *    Android a dismissed prompt is the ordinary answer, not the rare one.
+   * 2. A seal that SUCCEEDED and a note that then failed to write had the note
+   *    withdrawn and nothing else, leaving a sealed token nothing points at:
+   *    never offered, never opened, never cleaned up.
+   *
+   * So the rule is one sentence, and it is the rule for both:
+   *
+   * **The flag is a report of what the keystore did, never a prediction. It
+   * goes true once all three writes have resolved, and any failure among them
+   * rolls the phone back to the unsealed shape — sealed entry deleted, note
+   * removed — and leaves it false.**
+   *
+   * Rolling back rather than keeping whatever survived is the safe direction
+   * of the two errors this can make. Claiming less than the keystore holds
+   * costs a password; claiming more offers a door that cannot open, which is
+   * the one thing the sign-in screen may never do.
+   *
+   * What a roll-back deliberately does NOT do is write the token in the clear
+   * instead. A phone that can seal and did not is not a phone that should be
+   * quietly given the weaker thing behind somebody's back; memory holds the
+   * session for as long as the app is open, exactly as it did before.
+   */
+  const sealInto = async (session: Session, prompt: string): Promise<void> => {
+    try {
+      await storage.seal(SESSION_KEY, JSON.stringify(session), prompt);
+      await storage.write(SEALED_UNTIL_KEY, session.expiresAt);
+      await storage.remove(SESSION_KEY);
+    } catch {
+      await rollBack();
+      claim(session, false);
+
+      return;
+    }
+
+    claim(session, true);
   };
 
   /**
@@ -176,10 +290,27 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
      * screen behind it. On Android the sealed write raises its own prompt, so
      * a cancelled one must cost the session it just created nothing — memory
      * holds it, and the phone simply will not offer the door next time.
+     *
+     * # Signing in still seals, now that there is a switch
+     *
+     * The switch could have replaced this and deliberately does not. What was
+     * wrong with the implicit seal was never that it happened; it was that it
+     * happened ONCE and could not be undone — dismiss the prompt and the phone
+     * would not offer a fingerprint again until the next sign-out. The switch
+     * is what fixes that, and with it in place this stays as the DEFAULT,
+     * because the alternatives are both worse: a sign-in that stored nothing
+     * would make somebody type a password every launch until they went looking
+     * for a setting, and one that stored a readable token would quietly hand
+     * the weaker thing to a phone that can hold the stronger one.
+     *
+     * So: the strongest shape the hardware offers, by default, and one tap to
+     * change your mind in either direction. See ADR 19.
      */
     save(session, sealPrompt) {
       const sealing = storage.canUnlock();
-      settle(session, sealing);
+      // Settled UNSEALED even when it is about to seal. Nothing has been
+      // written yet, so there is nothing to report.
+      settle(session, false);
 
       if (!sealing) {
         void storage
@@ -200,23 +331,32 @@ export const createSessionStore = (storage: SecureStorage): SessionStore => {
         return;
       }
 
-      void storage
-        .seal(SESSION_KEY, JSON.stringify(session), sealPrompt)
-        .then(async () => {
-          await storage.write(SEALED_UNTIL_KEY, session.expiresAt);
-          // And no readable copy beside the sealed one. A phone that had none
-          // of this yesterday still holds the token it wrote then, and
-          // anything that can read THAT never has to ask about the seal —
-          // which would make the seal decoration.
-          await storage.remove(SESSION_KEY);
-        })
-        .catch(() => {
-          // Nothing was sealed, so nothing must claim one is waiting.
-          void storage.remove(SEALED_UNTIL_KEY).catch(() => {
-            // Already absent, or a keystore that will not answer. Either way
-            // the note is not to be trusted and the door is not offered.
-          });
-        });
+      void sealInto(session, sealPrompt);
+    },
+
+    canSeal() {
+      return storage.canUnlock();
+    },
+
+    async sealSession(prompt) {
+      const session = state.status === "known" ? state.session : null;
+
+      if (session === null) {
+        return;
+      }
+
+      await sealInto(session, prompt);
+    },
+
+    async unsealSession() {
+      await rollBack();
+
+      const session = state.status === "known" ? state.session : null;
+
+      if (session !== null) {
+        // The session stays; only the phone's memory of it goes.
+        claim(session, false);
+      }
     },
 
     clear() {
