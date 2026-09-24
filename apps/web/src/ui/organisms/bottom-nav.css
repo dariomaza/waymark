@@ -35,10 +35,15 @@
  * whatever React Navigation's default happened to be, which is not this
  * product's number to leave to somebody else. Both clients now name it
  * (ADR 22).
+ *
+ * The WEIGHT was left behind in that change and is the same defect: 650 here
+ * against React Navigation's own default there, which the owner saw as one bar
+ * plainly bolder than the other on one phone. It is `TAB_LABEL_WEIGHT` now, in
+ * the same package as the size.
  */
 .bottom-nav__label {
   font-size: var(--text-xs);
-  font-weight: 650;
+  font-weight: var(--tab-label-weight);
   /* The word is a hint under a symbol, not a heading. It must not wrap. */
   white-space: nowrap;
 }

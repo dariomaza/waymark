@@ -1,4 +1,5 @@
 import { STORAGE_UNIT_PATH_SEPARATOR } from "@waymark/domain";
+import { LABELS_PER_PAGE } from "@waymark/tokens";
 import type { FlatUnit } from "@waymark/api-client";
 import type { JSX } from "react";
 
@@ -11,26 +12,15 @@ import { useTranslate } from "../../app/language-context.js";
 /**
  * # Twelve labels to an A4 page
  *
- * A4 because this is Spain, and plain paper with scissors because a
- * proprietary label sheet is a thing you have to have bought before you can
- * label a box. 10mm side margins and 12mm top and bottom leave 190 × 273mm,
- * which is 3 columns by 4 rows of 63.3 × 68.2mm.
+ * Every measurement this draws with — the page, the grid, the symbol, the type
+ * sizes and the four printed colours — is `LABEL_SHEET` in `@waymark/tokens`,
+ * read here for the chunking and read by `label-sheet.css` as custom
+ * properties. The phone builds the same page from the same object, which is why
+ * the numbers left this file (ADR 21, amended; ADR 22 for the mechanism).
  *
- * The count is a scanning decision, not a packing one. A QR gets BIGGER as its
- * error correction goes up (ADR 9: level Q, 25%, which is what a scuffed
- * sticker in a garage needs), so at a fixed label size every extra codeword
- * makes every module smaller until a phone camera stops resolving them. The
- * payload here is `<base>/u/<publicId>` — around 35 characters, which at
- * level Q is a 33-module symbol plus its 4-module quiet zone on each side, 41
- * across. Printed at 36mm that is 0.88mm per module; a hostname long enough
- * to push it to 49 modules still gives 0.73mm. Both are comfortably past the
- * ~0.4mm where phone cameras start failing, and a 36mm symbol still leaves
- * room for a name somebody can read without a phone at all.
- *
- * Eighteen to a page was the other candidate — it matches a common
- * off-the-shelf A4 label sheet — and it was rejected because the cell is then
- * 46mm tall: either the symbol drops to ~28mm or the name does, and both of
- * those are the label's whole job.
+ * That file carries the arithmetic: why A4, why twelve rather than eighteen,
+ * and why a 36mm symbol is the smallest one a phone camera can be relied on to
+ * read off a scuffed sticker in a garage.
  *
  * ## Why the pages are counted here instead of being left to the printer
  *
@@ -42,7 +32,7 @@ import { useTranslate } from "../../app/language-context.js";
  * So the labels are chunked into pages of twelve here and the page break goes
  * between the chunks. The preview IS the pages.
  */
-export const LABELS_PER_PAGE = 12;
+export { LABELS_PER_PAGE } from "@waymark/tokens";
 
 export interface LabelSheetProps {
   /** In the order the tree is drawn, which is the order they will print in. */
