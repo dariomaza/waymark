@@ -162,7 +162,7 @@ describe("looking after a storage unit", () => {
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.clear(screen.getByRole("textbox", { name: /^name/i }));
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "Box 4");
-    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save changes$/i }));
 
     await waitFor(() => {
       expect(edits).toEqual([{ name: "Box 4", kind: "BOX", description: null }]);
@@ -183,7 +183,7 @@ describe("looking after a storage unit", () => {
 
     await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
-    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save changes$/i }));
 
     await waitFor(() => {
       expect(edits).toHaveLength(1);
@@ -240,7 +240,7 @@ describe("looking after a storage unit", () => {
 
     await openTheMenuFor("Box 3");
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
-    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save changes$/i }));
 
     expect(await screen.findByText(/<=200 characters/i)).toBeVisible();
   });
@@ -627,5 +627,21 @@ describe("looking after a storage unit, in Spanish", () => {
     expect(
       await screen.findByRole("button", { name: "Vaciarla en Metal wardrobe y borrarla" }),
     ).toBeVisible();
+  });
+
+  /**
+   * `EditUnitDialog` passed `submitLabel` the bare word "Save" while the phone
+   * client passed `t("action.saveChanges")` to the same form. The guard did not
+   * see it because `submitLabel` was the one drawn prop missing from its list.
+   */
+  it("ends the edit form with a Spanish word", async () => {
+    renderApp({ route: "/units/box3" });
+
+    await abreElMenuDe("Box 3");
+    await userEvent.click(await screen.findByRole("button", { name: /^editar$/i }));
+
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByRole("button", { name: /^guardar los cambios$/i })).toBeVisible();
+    expect(within(sheet).queryByRole("button", { name: /^save$/i })).toBeNull();
   });
 });

@@ -27,7 +27,7 @@ export const CreateItemDialog = ({
   return (
     <Sheet title={t("sheet.addItemTo", { name: unitName })} onClose={onClose}>
       <ItemForm
-        submitLabel="Add"
+        submitLabel={t("action.create")}
         initial={{ name: "", description: "", quantity: 1, tags: [] }}
         busy={create.isPending}
         failure={

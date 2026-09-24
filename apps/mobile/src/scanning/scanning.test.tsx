@@ -69,6 +69,49 @@ describe("scanning a label", () => {
     expect(screen.getByRole("button", { name: "Go to your inventory" })).toBeOnTheScreen();
   });
 
+  /**
+   * # The first tab, in English, on a Spanish phone
+   *
+   * This paragraph was written into the component as a template — the words,
+   * with the code dropped into the middle — while `scan.noSuchCode` sat in
+   * both dictionaries, unused. Scan is the tab the app OPENS on, so this was
+   * the most-reached English sentence in the product.
+   *
+   * The assertion is a phrase without the code in it, and the English is
+   * asserted ABSENT. A test that compared whole sentences would pass whatever
+   * language was on screen, because the two strings differ anyway: the code is
+   * interpolated into both.
+   */
+  it("says so in the language the phone is in, not in English", async () => {
+    theApiKnowsTheHouse();
+    const camera = fakeScanner();
+
+    await renderApp({ session: aSession(), language: "es", scanner: camera });
+    await screen.findByText(/escanear una etiqueta/i);
+
+    await act(async () => {
+      camera.scan("https://waymark.example/u/9ZZ9ZZ9ZZ9");
+    });
+
+    expect(await screen.findByText(/ninguna unidad de este inventario/i)).toBeOnTheScreen();
+    expect(screen.queryByText(/no unit in this inventory/i)).toBeNull();
+  });
+
+  /** And the code itself is still in the sentence, wherever the sentence came from. */
+  it("names the code that was scanned, so it can be checked against the label", async () => {
+    theApiKnowsTheHouse();
+    const camera = fakeScanner();
+
+    await renderApp({ session: aSession(), scanner: camera });
+    await screen.findByText(/scan a label/i);
+
+    await act(async () => {
+      camera.scan("https://waymark.example/u/9ZZ9ZZ9ZZ9");
+    });
+
+    expect(await screen.findByText(/9ZZ9ZZ9ZZ9/u)).toBeOnTheScreen();
+  });
+
   it("refuses a QR that is not a Waymark label at all", async () => {
     theApiKnowsTheHouse();
     const camera = fakeScanner();

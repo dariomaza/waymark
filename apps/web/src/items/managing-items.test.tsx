@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { languageStore } from "../app/language.js";
 import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { anItem, aSession, aStorageUnit, aTree, withPhoto } from "@waymark/api-client/testing";
@@ -59,7 +60,7 @@ describe("looking after items", () => {
     await userEvent.clear(screen.getByRole("spinbutton", { name: /quantity/i }));
     await userEvent.type(screen.getByRole("spinbutton", { name: /quantity/i }), "3");
     await userEvent.type(screen.getByRole("textbox", { name: /tags/i }), "diy, tape");
-    await userEvent.click(screen.getByRole("button", { name: /^add$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
 
     await waitFor(() => {
       expect(created).toEqual([
@@ -96,7 +97,7 @@ describe("looking after items", () => {
     await userEvent.type(screen.getByRole("textbox", { name: /^name/i }), "Nothing");
     await userEvent.clear(screen.getByRole("spinbutton", { name: /quantity/i }));
     await userEvent.type(screen.getByRole("spinbutton", { name: /quantity/i }), "0");
-    await userEvent.click(screen.getByRole("button", { name: /^add$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^create$/i }));
 
     expect(await screen.findByText(/integer of at least 1/i)).toBeVisible();
   });
@@ -203,7 +204,7 @@ describe("looking after items", () => {
       "Cordless drill 18V",
     );
     await userEvent.type(screen.getByRole("textbox", { name: /tags/i }), "tools, 18v");
-    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save changes$/i }));
 
     await waitFor(() => {
       expect(edits).toEqual([
@@ -230,7 +231,7 @@ describe("looking after items", () => {
     renderApp({ route: "/things/drill" });
 
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
-    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save changes$/i }));
 
     await waitFor(() => {
       expect(edits).toHaveLength(1);
@@ -279,7 +280,7 @@ describe("looking after items", () => {
     await userEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
     await userEvent.clear(screen.getByRole("spinbutton", { name: /quantity/i }));
     await userEvent.type(screen.getByRole("spinbutton", { name: /quantity/i }), "0");
-    await userEvent.click(screen.getByRole("button", { name: /^save$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^save changes$/i }));
 
     // 422 is about the REQUEST, so it reads as something to fix here.
     const complaint = await screen.findByText(/integer of at least 1/i);
@@ -383,5 +384,46 @@ describe("looking after items", () => {
     expect(
       await screen.findByRole("button", { name: /try again/i }, { timeout: 3000 }),
     ).toBeVisible();
+  });
+});
+
+/**
+ * # The word on the button that ends the form
+ *
+ * `EditItemDialog` and `CreateItemDialog` passed `submitLabel` a bare English
+ * word — "Save" and "Add" — while the phone client passed
+ * `t("action.saveChanges")` and `t("action.create")` to the same two forms. So
+ * somebody reading the app in Spanish filled in a Spanish form, under a
+ * Spanish title, and pressed a button that said Save.
+ *
+ * The guard did not see it because `submitLabel` was the one drawn prop
+ * missing from its list. It is in the list now; these are the two sentences
+ * that say what a person reads.
+ */
+describe("filling in a form about a thing, in Spanish", () => {
+  beforeEach(() => {
+    sessionStore.save(aSession());
+    theHouse();
+    languageStore.save("es");
+  });
+
+  it("ends the edit form with a Spanish word", async () => {
+    renderApp({ route: "/things/drill" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /^editar$/i }));
+
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByRole("button", { name: /^guardar los cambios$/i })).toBeVisible();
+    expect(within(sheet).queryByRole("button", { name: /^save$/i })).toBeNull();
+  });
+
+  it("ends the add form with a Spanish word", async () => {
+    renderApp({ route: "/units/box3" });
+
+    await userEvent.click(await screen.findByRole("button", { name: /a\u00f1adir una cosa/i }));
+
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByRole("button", { name: /^crear$/i })).toBeVisible();
+    expect(within(sheet).queryByRole("button", { name: /^add$/i })).toBeNull();
   });
 });
