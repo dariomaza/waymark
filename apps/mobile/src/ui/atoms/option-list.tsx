@@ -10,6 +10,17 @@ export interface Option {
 
 export interface OptionListProps {
   readonly label: string;
+  /**
+   * One line under the label about what the choice MEANS, when the options on
+   * their own would be read as something they are not.
+   *
+   * The kind picker is the reason it exists: Room, Furniture, Box, Container
+   * reads as a constraint on what may hold what, and it is not one. The web
+   * client has carried that sentence under its `<select>` since the day it was
+   * written, through `aria-describedby`; here it is drawn and announced as an
+   * `accessibilityHint`, which is what React Native calls the same idea.
+   */
+  readonly hint?: string | undefined;
   readonly options: readonly Option[];
   readonly value: string | null;
   readonly onChange: (value: string) => void;
@@ -28,13 +39,19 @@ export interface OptionListProps {
  */
 export const OptionList = ({
   label,
+  hint,
   options,
   value,
   onChange,
 }: OptionListProps): JSX.Element => (
   <View style={styles.wrap}>
     <Text style={styles.label}>{label}</Text>
-    <ScrollView style={styles.list} accessibilityLabel={label}>
+    {hint === undefined ? null : <Text style={styles.hint}>{hint}</Text>}
+    <ScrollView
+      style={styles.list}
+      accessibilityLabel={label}
+      {...(hint === undefined ? {} : { accessibilityHint: hint })}
+    >
       {options.map((option) => (
         <Pressable
           key={option.value}
@@ -56,6 +73,7 @@ export const OptionList = ({
 const styles = StyleSheet.create({
   wrap: { gap: space.s1 },
   label: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
+  hint: { color: colors.inkMuted, fontSize: text.s },
   list: {
     maxHeight: 240,
     borderWidth: 1,

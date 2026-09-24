@@ -467,3 +467,46 @@ describe("looking after a storage unit, in Spanish", () => {
     ).toBeOnTheScreen();
   });
 });
+
+/**
+ * # The one line that stops a kind being read as a rule
+ *
+ * `units.kindHint` — "A label, never a rule: anything can go inside anything."
+ * — has been under the kind picker on the web since the picker existed, and
+ * has never appeared on the phone, because `OptionList` had nowhere to put it.
+ * The dictionary carried the sentence in two languages the whole time.
+ *
+ * It is not decoration. A picker offering Room, Furniture, Box and Container
+ * looks exactly like a constraint on what may hold what, and somebody who
+ * reads it that way stops putting a box inside a box — which the tree allows
+ * and ADR 1 depends on.
+ */
+describe("choosing what kind of thing a unit is", () => {
+  beforeEach(() => {
+    theApiKnowsTheHouse();
+  });
+
+  it("says a kind is a label and never a rule, the way the browser does", async () => {
+    await renderApp({ session: aSession(), screen: atBox3 });
+
+    await openTheMenuFor("Box 3");
+    await fireEvent.press(await screen.findByRole("button", { name: "Edit" }));
+
+    expect(
+      await screen.findByText("A label, never a rule: anything can go inside anything."),
+    ).toBeOnTheScreen();
+  });
+
+  /** And a screen reader is told it too, rather than only the eye. */
+  it("says it to a screen reader as well, since it explains the control", async () => {
+    await renderApp({ session: aSession(), screen: atBox3 });
+
+    await openTheMenuFor("Box 3");
+    await fireEvent.press(await screen.findByRole("button", { name: "Edit" }));
+
+    expect(await screen.findByLabelText("Kind")).toHaveProp(
+      "accessibilityHint",
+      "A label, never a rule: anything can go inside anything.",
+    );
+  });
+});

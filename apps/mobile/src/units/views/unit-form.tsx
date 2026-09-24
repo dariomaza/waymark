@@ -61,6 +61,7 @@ export const UnitForm = ({
 
       <OptionList
         label={t("units.kind")}
+        hint={t("units.kindHint")}
         value={kind}
         options={kindChoices(t).map((choice) => ({
           value: choice.kind,
