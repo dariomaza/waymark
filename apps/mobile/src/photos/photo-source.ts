@@ -1,3 +1,5 @@
+import type { PhotoReadFailure } from "@waymark/i18n";
+
 import type { PhotoUpload } from "../api/mobile-client.js";
 
 /**
@@ -27,5 +29,30 @@ export class PhotoPermissionRefused extends Error {
   constructor(message: string) {
     super(message);
     this.name = "PhotoPermissionRefused";
+  }
+}
+
+/**
+ * The photo is there and the app cannot read it.
+ *
+ * A separate throwable from `PhotoPermissionRefused` because it is a
+ * different sentence and a different colour: saying no to the camera is a
+ * normal answer somebody made on purpose, while this is something that went
+ * wrong. It is also the one that used to be invisible — React Native reports
+ * a file it cannot open as a NETWORK failure, so this arrived as "the app
+ * could not connect to Waymark" (see `streamable-photo.ts`).
+ *
+ * It satisfies `PhotoReadFailure` by having `reason`, which is how
+ * `@waymark/i18n` says it in two languages without knowing that
+ * `expo-file-system` exists.
+ */
+export class PhotoCouldNotBeRead extends Error implements PhotoReadFailure {
+  /** The platform's own words, or this app's own observation of the file. */
+  readonly reason: string;
+
+  constructor(reason: string) {
+    super(`The photo could not be read: ${reason}`);
+    this.name = "PhotoCouldNotBeRead";
+    this.reason = reason;
   }
 }
