@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 
 import { LanguageSwitcher } from "../app/language-switcher.js";
+import { BiometricUnlockSetting } from "../auth/biometric-unlock-setting.js";
 import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
 import { useSessionState, useSignOut } from "../auth/use-session.js";
 import { Screen } from "../ui/organisms/screen.js";
@@ -35,6 +36,13 @@ export const AccountScreen = (): JSX.Element => {
       <AccountPanel
         username={state.status === "known" ? (state.session?.user.username ?? null) : null}
         language={<LanguageSwitcher />}
+        /*
+         * Handed in for the same reason the panel's other two are, and drawing
+         * nothing at all on a phone with no sensor, nothing enrolled or no
+         * screen lock. The panel does not know that is possible; it draws
+         * whatever it is given.
+         */
+        biometrics={<BiometricUnlockSetting />}
         /*
          * Handed in rather than reached for, so the panel stays the only
          * thing that knows what a machine token is and this screen stays the

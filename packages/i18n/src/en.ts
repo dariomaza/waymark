@@ -513,6 +513,49 @@ export const EN = {
    */
   "login.unlockPrompt": "Unlock your Waymark session",
   "login.sealPrompt": "Confirm it is you, so this phone can remember your Waymark session",
+
+  // ---------------------------------------------------------------------
+  // The fingerprint, as a setting somebody can change their mind about
+  // ---------------------------------------------------------------------
+
+  /**
+   * The switch on the account screen, and the sentence under it.
+   *
+   * "Unlock" rather than "Sign in", which is what the door on the sign-in
+   * screen says: this is the setting, that is the act. And a fingerprint
+   * rather than "biometrics", because "biometrics" is a category and the
+   * thing about to touch the sensor is a finger.
+   *
+   * The explanation says where the session GOES, because that is the part
+   * somebody is being asked to agree to. "Faster sign-in" would be selling it;
+   * this says what happens.
+   */
+  "biometrics.label": "Unlock with a fingerprint",
+  "biometrics.explains":
+    "Waymark can keep this session behind your phone's fingerprint sensor, so opening the app does not mean typing your password again.",
+
+  /**
+   * Turning it ON. The system's own prompt follows immediately, so this warns
+   * that it is coming — a dialog nobody expected is the thing that made this
+   * feature unfindable in the first place.
+   */
+  "biometrics.turnOnTitle": "Unlock with a fingerprint?",
+  "biometrics.turnOnNote":
+    "Your phone will ask for your fingerprint now, to put this session behind its sensor. Nothing readable is left beside it, and your password still works as it always did.",
+  "biometrics.turnOn": "Turn it on",
+
+  /**
+   * Turning it OFF: the consequential direction, so it says plainly what stops
+   * working rather than "are you sure".
+   *
+   * Both sentences are needed and neither can be dropped. The first is what
+   * happens to this phone; the second is what somebody notices tomorrow
+   * morning, which is the cost they are actually agreeing to.
+   */
+  "biometrics.turnOffTitle": "Turn off fingerprint unlock?",
+  "biometrics.turnOffNote":
+    "Waymark will forget this session on this phone and the fingerprint door disappears from the sign-in screen, so you will type your password the next time you open Waymark. You stay signed in right now, and you can turn this back on whenever you like.",
+  "biometrics.turnOff": "Turn it off",
   /**
    * Saying no to the camera is a normal answer, so this is a sentence with a
    * way forward rather than a dead screen: the code printed under the symbol

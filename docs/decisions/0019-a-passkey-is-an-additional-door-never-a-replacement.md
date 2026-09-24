@@ -2,6 +2,8 @@
 
 - Status: accepted
 - Date: 2026-09-23
+- Amended: 2026-09-24 — *On the phone, the same door is a setting somebody can
+  turn off*
 
 ## Context
 
@@ -63,6 +65,94 @@ A wet thumb, a cut finger, a freshly rebooted phone that has not been unlocked
 since boot, a replaced handset, a browser without the API: each of these is a
 Tuesday, and none of them may be the reason somebody cannot get into their own
 garage.
+
+### On the phone, the same door is a setting somebody can turn off
+
+*Amendment, 2026-09-24. This section is about the Expo client, which the
+Context above calls "the same correction, already made once". The sentence at
+the top of this file was right there and is unchanged; what was missing was
+anywhere to say yes or no to it.*
+
+The Expo client does not do WebAuthn. It seals the session token into the
+Android Keystore behind `setUserAuthenticationRequired`, which is the same
+guarantee by a different mechanism: the OS will not decrypt those bytes for
+this app or any other without a fingerprint. Everything above about a second
+door, a password form that is never taken away and a cancelled prompt that
+re-prompts nobody applies to it word for word.
+
+What was wrong was WHEN it was decided. Sealing happened implicitly on a
+successful sign-in, which put the system's fingerprint dialog on screen with
+no warning at the one moment somebody had just finished proving who they were
+by other means. Dismissing that dialog — an answer this ADR insists is
+ordinary — meant nothing was sealed, the note beside it was removed, and this
+phone never offered a fingerprint again until the next sign-out and sign-in.
+One dialog, once, and the feature was gone with nowhere to bring it back from.
+The owner's report was not "it is broken"; it was that he could not find it.
+
+**So biometric unlock on the phone is a switch on the account screen, and
+turning it on or off is a thing somebody does on purpose.** Three rules hold
+it up:
+
+- **The switch draws the phone, not a preference.** What it shows is whether
+  this device is HOLDING a sealed session right now — the same fact the
+  sign-in screen draws its door from. There is deliberately no "biometrics
+  enabled" flag stored anywhere. A preference beside the keystore is a second
+  answer to one question, and the two disagree the first time a seal is
+  refused: a switch reading ON above a sign-in screen with no door on it.
+- **Both directions ask first, and the OFF direction says what stops
+  working.** Not "are you sure" — it says that this phone forgets the session,
+  that the fingerprint door leaves the sign-in screen, and that tomorrow
+  morning starts with a password. That is deliberately not symmetric with
+  *Removing every passkey is allowed and needs no warning* above, and the
+  asymmetry is the point: a browser was never remembering a session, so
+  removing a passkey costs nothing tomorrow. Removing the seal costs a
+  password, and a person is entitled to know that before a toggle moves under
+  their thumb.
+- **No switch at all on a phone that cannot do it.** `canUseBiometricAuth-
+  entication()` answers `false` for no sensor, nothing enrolled and no screen
+  lock alike, and all three want the same behaviour. It is the argument the
+  sign-in screen already makes about its button, applied to a setting.
+
+**The implicit seal on sign-in stays, and that is the decision in this
+amendment that could most easily have gone the other way.** The argument for
+removing it is real: it is the unrequested prompt the owner complained about,
+and an explicit switch makes it redundant. What decides it is what a sign-in
+would store instead. Storing nothing means the session dies when the app does,
+so somebody who has not yet found the switch types a password every single
+launch — the same feature failing in the opposite direction. Storing a
+readable token means quietly handing the weaker thing to a phone that can hold
+the stronger one, on a device the README calls reachable from the internet.
+Neither is better than a prompt with a sentence on it.
+
+So the default is the strongest shape the hardware offers, and what the switch
+changes is that the prompt is no longer a life sentence: dismiss it, and it is
+one tap to ask again whenever you like. **What was wrong with the implicit
+seal was never that it happened. It was that it happened once.**
+
+### The sealed state is a report, never a prediction
+
+Two defects in that sealing path were found while building the switch. Neither
+was visible before it, because nothing drew the flag they corrupted, and both
+became reachable the moment something did:
+
+1. The in-memory state was settled SEALED before the keystore's seal resolved.
+   A dismissed prompt then left memory claiming a door that was never built.
+2. A seal that SUCCEEDED and a note that then failed to write had the note
+   withdrawn and nothing else — leaving a sealed token nothing points at:
+   never offered, never opened, never cleaned up.
+
+The rule that fixes both is one sentence. **The sealed flag reports what the
+keystore did and never predicts what it is about to do: it goes true once the
+seal, the note beside it and the removal of the readable copy have all
+resolved, and any failure among them rolls the phone back to the unsealed
+shape — sealed entry deleted, note removed — and leaves the flag false.**
+
+Rolling back rather than keeping whichever write survived is the safe
+direction of the two errors this can make. Claiming less than the keystore
+holds costs somebody a password; claiming more offers a door that cannot open,
+which is the one thing the sign-in screen may never do. A roll-back
+deliberately does not write the token in the clear as a consolation either —
+that would be the silent downgrade this ADR refuses everywhere else.
 
 ### The library is a dependency, and this is where that instinct is wrong
 
@@ -468,3 +558,14 @@ own and says so. Every failure the API actually made keeps the sentence it had.
   library's contract and a software authenticator rather than against a real
   one, is written down in the report that accompanies this change: no browser,
   no phone and no security key took part in any of these tests.
+- On the phone, biometric unlock is a switch on the account screen with a
+  confirmation on both sides of it, drawn only where the hardware can serve it
+  and drawn from the keystore rather than from a remembered preference.
+- Signing in on a phone that can seal still seals. What changed is that the
+  answer is no longer permanent.
+- The sealed flag and the keystore now agree by construction, in the safe
+  direction: the flag may understate what the phone holds and may never
+  overstate it.
+- What still cannot be observed here is the Android prompt itself. The seal,
+  the dismissal and the roll-back are asserted against a stand-in keystore;
+  no sensor took part in any of these tests either.

@@ -403,6 +403,23 @@ export const ES: Dictionary = {
   "login.withBiometrics": "Iniciar sesión con la huella",
   "login.unlockPrompt": "Desbloquea tu sesión de Waymark",
   "login.sealPrompt": "Confirma que eres tú para que este teléfono recuerde tu sesión de Waymark",
+
+  // ---------------------------------------------------------------------
+  // La huella, como un ajuste sobre el que se puede cambiar de opinión
+  // ---------------------------------------------------------------------
+  "biometrics.label": "Desbloquear con la huella",
+  "biometrics.explains":
+    "Waymark puede guardar esta sesión tras el sensor de huella del teléfono, así abrir la aplicación no significa volver a escribir la contraseña.",
+
+  "biometrics.turnOnTitle": "¿Desbloquear con la huella?",
+  "biometrics.turnOnNote":
+    "El teléfono te pedirá la huella ahora, para guardar esta sesión tras su sensor. No queda nada legible al lado y tu contraseña sigue funcionando igual que siempre.",
+  "biometrics.turnOn": "Activarlo",
+
+  "biometrics.turnOffTitle": "¿Desactivar el desbloqueo con la huella?",
+  "biometrics.turnOffNote":
+    "Waymark olvidará esta sesión en este teléfono y la puerta de la huella desaparece de la pantalla de inicio de sesión, así que escribirás tu contraseña la próxima vez que abras Waymark. Ahora mismo sigues con la sesión iniciada y puedes volver a activarlo cuando quieras.",
+  "biometrics.turnOff": "Desactivarlo",
   "scan.cameraNeeded":
     "Waymark necesita permiso para usar la cámara y leer una etiqueta. El código impreso bajo el símbolo sirve igual de bien.",
   "units.emptyRootNote":
