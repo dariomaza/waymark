@@ -209,4 +209,23 @@ describe("turning background removal on reaches the sidecar", () => {
       expect(processorUrl.hostname).toBe("image-processor");
     });
   });
+
+  /**
+   * The deploy is how the overlay reaches the box, and a deploy that only ever
+   * runs `docker compose` against the base file cannot turn the feature on at
+   * all. `scripts/deploy.sh` names the files in `COMPOSE_FILE`; if either name
+   * drifts from a file that exists, every remote compose command fails — or,
+   * worse, silently runs without the sidecar.
+   */
+  it("can be deployed: the deploy script names both files, and both exist", () => {
+    const composeFile = /COMPOSE_FILE=([\w.:-]+)/u.exec(read("scripts/deploy.sh"))?.[1];
+
+    expect(composeFile, "scripts/deploy.sh no longer sets COMPOSE_FILE").toBeDefined();
+
+    const files = composeFile!.split(":");
+    expect(files).toEqual([BASE, OVERLAY]);
+    for (const file of files) {
+      expect(existsSync(join(repoRoot, file)), `${file} does not exist`).toBe(true);
+    }
+  });
 });
