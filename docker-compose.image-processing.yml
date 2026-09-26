@@ -10,10 +10,19 @@
 services:
   api:
     environment:
-      # `image-processor` is the compose service name, resolved on the project
-      # network. Nothing is published to the host: the only thing that should
-      # ever talk to this sidecar is the API.
-      WAYMARK_IMAGE_PROCESSOR_URL: http://image-processor:8000
+      # Loopback, and NOT the compose service name. The base file runs the API
+      # in the HOST's network namespace (`network_mode: host`, for the rate
+      # limiter's sake), and a process there has the host's resolver and the
+      # host's routes: `image-processor` does not resolve, and the project
+      # network the sidecar lives on is not reachable. The one address of the
+      # sidecar the API can reach is a port the host itself owns — the one
+      # published below, on loopback.
+      #
+      # `http://image-processor:8000` was right until the API moved, and then
+      # nothing failed at boot: every photo was unreachable, retried, and ended
+      # up FAILED. `apps/api/src/http/turning-background-removal-on-reaches-the-
+      # sidecar.test.ts` reads both files and watches this relationship.
+      WAYMARK_IMAGE_PROCESSOR_URL: http://127.0.0.1:8001
 
     # There is deliberately NO `depends_on`.
     #
@@ -47,10 +56,22 @@ services:
       # could be processed.
       - models:/models
 
-    # Not published, not even on loopback. It is reachable from the API over the
-    # project network and from nowhere else.
-    expose:
-      - "8000"
+    # Published on the host's loopback and nowhere else, because that is the
+    # only way the API — in the host namespace — can reach a container on the
+    # project network. 127.0.0.1 and never bare or 0.0.0.0: an unauthenticated
+    # image endpoint on every interface would be one for every device in the
+    # house, and the only caller that should ever exist is the API on this box.
+    #
+    # The base file refuses exactly this for the API itself, and the reason does
+    # not carry over. `docker-proxy` rewrites the source address of a published
+    # port to the bridge gateway, which blinds a rate limiter that must see the
+    # real caller. The sidecar has no such question to ask: its only caller is
+    # the API, and it does not care what address that call appears to come from.
+    #
+    # 8001 on the host, because 3000 is the API and 8000 is a common default
+    # for anything else a homelab box runs. Change both lines together.
+    ports:
+      - "127.0.0.1:8001:8000"
 
     deploy:
       resources:
