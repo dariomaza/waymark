@@ -522,6 +522,11 @@ timer: photos are uploaded, stored and served from their originals, and every
 one of them sits at `PENDING` until a sidecar appears. That is a complete
 installation.
 
+Turning it on is one flag: the second compose file by hand, or
+`WAYMARK_DEPLOY_IMAGE_PROCESSING=1` in `scripts/deploy.env` for the deploy
+script (see *Deployment*). The file brings the sidecar and the address the API
+needs together, so there is no URL to set.
+
 With a sidecar, an upload still answers `201` immediately and the work happens
 afterwards:
 
@@ -1134,6 +1139,18 @@ to be the same fact. Split across two switches, the interesting state is the
 broken one: an address configured with no container behind it, where every photo
 retries five times and ends up `FAILED`.
 
+**The sidecar is published on the host's loopback, `127.0.0.1:8001`, and the
+API is told exactly that address.** Not the compose service name: the API runs
+in the host's network namespace (so the rate limiter sees real callers), where
+`image-processor` does not resolve and the project network is not reachable.
+That mismatch shipped once, silently — the overlay predated the move and kept
+the service name, so turning the feature on would have left every photo
+`FAILED`. `apps/api/src/http/turning-background-removal-on-reaches-the-sidecar.test.ts`
+now reads both files and checks that the address and the published port agree,
+and that the port is bound to loopback and nowhere wider. The `docker-proxy`
+source rewriting that rules published ports out for the API does not matter
+here: the sidecar's only caller is the API, and it asks nothing of the address.
+
 **Photos and the database are named volumes, mounted outside the image.** That
 is the line that matters most in the compose file: an upgrade replaces the
 image, and anything durable inside it goes with the old one. The rembg model is
@@ -1217,6 +1234,22 @@ with no way past it does not get obeyed at two in the morning, it gets walked
 around by pasting the rsync out of the script, and that loses the proof as well
 as the checks.
 
+Background removal is an opt-in in the same file, because it describes the box
+rather than one deploy:
+
+```sh
+# scripts/deploy.env
+WAYMARK_DEPLOY_IMAGE_PROCESSING=1
+```
+
+It exports `COMPOSE_FILE=docker-compose.yml:docker-compose.image-processing.yml`
+for every compose command the script runs on the box, and for the `ps` and
+`logs` commands it prints when something fails. Unset or `0` is the deploy
+without it; any other value is refused before anything is touched. The proof is
+still the API's commit alone — the API is healthy with or without a sidecar
+(ADR 4), so a model still downloading is not a failed deploy. A `.env` on the
+box would not do: rsync `--delete` removes files the repository does not have.
+
 ### On the target host, one thing has to be set first
 
 The commands above are correct for an ordinary Docker host, and they are
@@ -1253,7 +1286,8 @@ This is not a workaround. ADR 4 made background removal an optional adapter for
 reasons that had nothing to do with this machine's memory, and a deployment
 without it is a supported configuration, not a degraded one: photos stay
 `PENDING`, originals are served, and the app's `/processing` screen shows the
-queue waiting. Add the second compose file later, once there is a real
+queue waiting. Add the second compose file later —
+`WAYMARK_DEPLOY_IMAGE_PROCESSING=1` in `scripts/deploy.env` — once there is a real
 inventory to
 judge the cost against.
 

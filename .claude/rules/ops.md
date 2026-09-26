@@ -23,6 +23,12 @@ paths:
   token — then builds before recreating the container and proves `/health`
   names the new commit. `WAYMARK_DEPLOY_WITHOUT_GITHUB=1` skips only the
   GitHub-dependent gates; nothing skips the clean-tree check or the proof.
+  `WAYMARK_DEPLOY_IMAGE_PROCESSING=1` deploys with the background-removal
+  overlay by exporting `COMPOSE_FILE` for every remote compose command.
+- **The API runs in the host's network namespace**, so anything it calls must
+  be reachable from the host: the rembg sidecar is published on
+  `127.0.0.1:8001` and the API is given that address, never a compose service
+  name. `turning-background-removal-on-reaches-the-sidecar.test.ts` guards it.
 - **Releases**: `release-please.yml` keeps a release PR open; merging it tags
   and calls `release.yml`, which verifies, builds on EAS, checks the build is the
   tagged commit and version, and attaches the APK. **A tag created with
