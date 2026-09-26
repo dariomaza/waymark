@@ -31,7 +31,10 @@
 # asserting it reports the commit it was built with.
 #
 # This script is not unit-tested. It is covered by having been run — every
-# refusal below, and one real deploy end to end.
+# refusal below, and one real deploy end to end. The one line a test does read
+# is the pair of compose files background removal deploys with:
+# `turning-background-removal-on-reaches-the-sidecar.test.ts` checks they are
+# the files that exist, in the order compose must merge them.
 #
 # ## Usage
 #
@@ -60,6 +63,24 @@
 #     does not weaken the proof, it makes it a lie.
 #   * The verification. Skipping it returns this deploy to exactly the state
 #     that caused the incident: green-looking, unproven.
+#
+# ## Background removal
+#
+#   WAYMARK_DEPLOY_IMAGE_PROCESSING=1 scripts/deploy.sh
+#
+# Usually set once in `scripts/deploy.env` rather than per run, because it
+# describes the box, not the deploy. It makes every compose command on the box —
+# the build, the recreate, and the ones this script prints when something fails —
+# use `docker-compose.image-processing.yml` on top of `docker-compose.yml`, by
+# exporting COMPOSE_FILE for them. Unset or 0 is exactly the deploy without it.
+#
+# Here and not in a `.env` on the box, because rsync `--delete` would remove a
+# file the repository does not have, and because a deploy that decides what it
+# ships from a file only the box can see is a deploy nobody can read.
+#
+# The proof below is still the API's commit and nothing else: the API is healthy
+# with or without a sidecar (ADR 4), so a sidecar still downloading its model is
+# not a failed deploy.
 set -euo pipefail
 
 # Where to deploy is one operator's fact, not the repository's. This file is
@@ -96,6 +117,12 @@ readonly GITHUB_REPO="$WAYMARK_DEPLOY_GITHUB_REPO"
 # `docker compose` exist on that box. Unset means the remote's own default,
 # which is right on any host that does not have that quirk.
 readonly REMOTE_DOCKER_CONFIG="${WAYMARK_DEPLOY_DOCKER_CONFIG:-}"
+
+# Whether the box runs the background-removal sidecar, and the one place the
+# pair of files is named. Order matters: compose merges left to right, and the
+# overlay is what adds to the base, never the other way round.
+readonly IMAGE_PROCESSING="${WAYMARK_DEPLOY_IMAGE_PROCESSING:-0}"
+readonly WITH_SIDECAR_COMPOSE_FILE=docker-compose.yml:docker-compose.image-processing.yml
 
 # The port the API listens on inside the host's network namespace. The compose
 # file binds it to loopback, so this is reachable only from the box itself,
@@ -135,7 +162,7 @@ refuse() {
 }
 
 usage() {
-  sed -n '3,60p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '3,83p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
 }
 
@@ -151,6 +178,16 @@ without_github=false
 if [ -n "${WAYMARK_DEPLOY_WITHOUT_GITHUB:-}" ]; then
   without_github=true
 fi
+
+# Exactly 0 or 1, refused otherwise, and before anything is touched. A typo such
+# as `yes` or `true` read as "off" would deploy a box without the sidecar its
+# operator asked for, and nothing afterwards would say so: the API is healthy
+# either way, and the photos would simply stay PENDING.
+case "$IMAGE_PROCESSING" in
+  0 | '') with_sidecar=false ;;
+  1) with_sidecar=true ;;
+  *) refuse "WAYMARK_DEPLOY_IMAGE_PROCESSING is \`$IMAGE_PROCESSING\`. It takes 1, or 0 / unset." ;;
+esac
 
 for tool in git rsync ssh curl jq; do
   command -v "$tool" >/dev/null 2>&1 ||
@@ -376,16 +413,30 @@ good "copied"
 # one, and the verification below is what makes that impossible.
 # ---------------------------------------------------------------------------
 remote_env=$(printf 'WAYMARK_COMMIT=%q WAYMARK_PUBLIC_BASE_URL=%q' "$commit" "$PUBLIC_URL")
+# What every compose command on the box needs to be talking about the same
+# stack: this script's own, and the ones it prints for a person to paste when
+# something fails. A `docker compose ps` pasted without the overlay would not
+# list the sidecar at all, and would send somebody looking for a container that
+# is there.
+compose_env=""
 # Only when the operator set one. An empty `DOCKER_CONFIG=` happens to mean
 # "the default" to the Docker CLI today, and relying on that is how a quirk of
 # one host becomes a failure on another.
-docker_env=""
 if [ -n "$REMOTE_DOCKER_CONFIG" ]; then
-  docker_env="DOCKER_CONFIG=$(printf '%q' "$REMOTE_DOCKER_CONFIG") "
-  remote_env="$docker_env$remote_env"
+  compose_env="DOCKER_CONFIG=$(printf '%q' "$REMOTE_DOCKER_CONFIG") "
 fi
+# Only when asked for. Unset, compose reads `docker-compose.yml` alone, which is
+# the deploy exactly as it was before this existed.
+if $with_sidecar; then
+  compose_env="${compose_env}COMPOSE_FILE=$(printf '%q' "$WITH_SIDECAR_COMPOSE_FILE") "
+fi
+remote_env="$compose_env$remote_env"
 
-step "Building the image on the box"
+if $with_sidecar; then
+  step "Building the images on the box, with background removal"
+else
+  step "Building the image on the box"
+fi
 ssh "$REMOTE" "cd $(printf '%q' "$REMOTE_PATH") && $remote_env docker compose build" ||
   refuse "The image did not build.
 
@@ -400,7 +451,7 @@ ssh "$REMOTE" "cd $(printf '%q' "$REMOTE_PATH") && $remote_env docker compose up
   refuse "\`docker compose up -d\` failed. The box may be serving the old commit,
 the new one, or nothing. Look:
 
-  ssh $REMOTE 'cd $REMOTE_PATH && ${docker_env}docker compose ps'"
+  ssh $REMOTE 'cd $REMOTE_PATH && ${compose_env}docker compose ps'"
 
 good "recreated"
 
@@ -449,7 +500,7 @@ case "$running" in
 The image built and the container was recreated, so it started and then did not
 come up. Migrations run before the port opens:
 
-  ssh $REMOTE 'cd $REMOTE_PATH && ${docker_env}docker compose logs --tail 80 api'"
+  ssh $REMOTE 'cd $REMOTE_PATH && ${compose_env}docker compose logs --tail 80 api'"
     ;;
   '<absent>')
     refuse "The running container answers /health with no \`commit\` at all.
