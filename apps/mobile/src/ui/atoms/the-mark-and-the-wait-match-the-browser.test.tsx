@@ -14,9 +14,10 @@ import { colors } from "../styles/tokens.js";
  * `ActivityIndicator`. Not a small difference: one is this product's mark
  * waiting, the other is Android's.
  *
- * The dot wins, for the reason ADR 20 kept `waypoints` hand-drawn. A platform
- * spinner is the platform's vocabulary, and a thing that is on every screen of
- * a product is the product's. It is also the one of the two that both
+ * The dot wins, for the reason the mark is drawn in the atom rather than
+ * taken from lucide (ADR 20, ADR 24). A platform spinner is the platform's
+ * vocabulary, and a thing that is on every screen of a product is the
+ * product's. It is also the one of the two that both
  * platforms can draw identically, which an `ActivityIndicator` is not.
  *
  * Left aligned rather than centred, on both, because a wait sits where the

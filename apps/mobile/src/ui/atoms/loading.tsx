@@ -19,10 +19,11 @@ const DIM = 0.3;
  * usually the first thing anybody sees, so the two clients disagreeing about
  * it meant every screen opened differently.
  *
- * The dot wins, for the reason ADR 20 kept `waypoints` hand-drawn rather than
- * taking lucide's: a platform spinner is the PLATFORM's vocabulary, and a
- * thing on every screen of a product is the product's. It is also the one of
- * the two shapes both platforms can draw identically.
+ * The dot wins, for the reason the product's mark is drawn in the atom rather
+ * than taken from lucide (ADR 20, ADR 24): a platform spinner is the
+ * PLATFORM's vocabulary, and a thing on every screen of a product is the
+ * product's. It is also the one of the two shapes both platforms can draw
+ * identically.
  *
  * Left aligned rather than centred, on both clients, because a wait sits where
  * the content is about to appear and then nothing jumps when it arrives.

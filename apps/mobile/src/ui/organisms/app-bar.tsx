@@ -1,11 +1,12 @@
 import type { JSX, ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Icon } from "../atoms/icon.js";
-import { colors, space, text } from "../styles/tokens.js";
+import { Logo } from "../atoms/logo.js";
+import { colors, space } from "../styles/tokens.js";
 
 export interface AppBarProps {
+  /** What the header is called for a screen reader: the name the logo draws. */
   readonly title: string;
   readonly actions?: ReactNode;
 }
@@ -14,10 +15,11 @@ export interface AppBarProps {
  * The top bar. Presentational to the bone: it is handed a title and some
  * controls and knows nothing about what any of them do.
  *
- * The mark is three waypoints on a descending path, which is what the product
- * is named after — and it is decorative here on purpose, because the name is
- * written beside it. An icon that repeats the word next to it makes a screen
- * reader say the same thing twice.
+ * The name is drawn rather than typed: the logo, the word with the pin over
+ * its w (ADR 24). It replaced the pair that stood here — the mark, then the
+ * word beside it — because the logo already IS both, and the browser's bar
+ * draws the same thing from the same numbers. The header carries the name for
+ * a screen reader, so the drawing inside it is hidden rather than read twice.
  *
  * It pads itself by the status bar inset rather than sitting inside a
  * `SafeAreaView`, because the screen below it must keep scrolling under the
@@ -32,10 +34,9 @@ export const AppBar = ({ title, actions }: AppBarProps): JSX.Element => {
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top + space.s2 }]}>
-      <Icon name="waypoints" size={24} color={colors.accent} />
-      <Text accessibilityRole="header" style={styles.title}>
-        {title}
-      </Text>
+      <View accessible accessibilityRole="header" accessibilityLabel={title}>
+        <Logo height={24} color={colors.accent} />
+      </View>
       <View style={styles.actions}>{actions}</View>
     </View>
   );
@@ -52,7 +53,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
-  title: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
   // Pushed to the far edge, where a thumb reaching across finds them.
   actions: { flex: 1, flexDirection: "row", justifyContent: "flex-end", gap: space.s2 },
 });
