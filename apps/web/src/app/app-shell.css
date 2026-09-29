@@ -23,14 +23,12 @@
 }
 
 /**
- * The product's mark, in the accent, which is what the phone client draws.
- *
- * `--color-accent-text` and not `--color-accent`: the mark is a stroke on the
- * bar, which is the FOREGROUND job, and the two are the same lime in the dark
- * scheme the phone has. Only the foreground one stays legible when the bar
- * turns white.
+ * The product's logo, in the mark's own colour: the lime on the dark and the
+ * ink on the light, because the brand never draws the lime on white (ADR 24).
+ * A token rather than a media query, so a CHOSEN scheme gets it right too
+ * (ADR 25).
  */
 .app-shell__mark {
   display: flex;
-  color: var(--color-accent-text);
+  color: var(--color-mark);
 }

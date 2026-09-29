@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { useTranslate } from "../../app/language-context.js";
 import { Button } from "../../ui/atoms/button.js";
 import { Sheet } from "../../ui/organisms/sheet.js";
-import { colors, space, text } from "../../ui/styles/tokens.js";
+import { space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 
 export interface BiometricUnlockSheetProps {
   /** Which way the switch is being moved. */
@@ -43,6 +44,7 @@ export const BiometricUnlockSheet = ({
   onConfirm,
   onClose,
 }: BiometricUnlockSheetProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   return (
@@ -68,7 +70,9 @@ export const BiometricUnlockSheet = ({
   );
 };
 
-const styles = StyleSheet.create({
-  block: { gap: space.s3 },
-  text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    block: { gap: space.s3 },
+    text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+  }),
+);

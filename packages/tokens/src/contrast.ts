@@ -93,9 +93,24 @@ export const MEASURED: readonly Measured[] = [
   { scheme: "light", of: "ink", on: "surfaceSunken", ratio: 16.21, needs: AA_TEXT },
 
   /**
+   * Measured when the phone gained this scheme (ADR 25): its bars are the
+   * raised plane, so the active tab's word and rule are `accentText` on
+   * `surfaceRaised`, and a primary button inside a sheet has its edge on it.
+   */
+  { scheme: "light", of: "accentText", on: "surfaceRaised", ratio: 7.64, needs: AA_TEXT },
+  { scheme: "light", of: "accentBorder", on: "surfaceRaised", ratio: 3.38, needs: AA_BOUNDARY },
+
+  /**
+   * The mark on the bar, in both clients and both schemes. It is a graphic
+   * rather than running text, so its job is a boundary's — but it clears text
+   * by a long way either way, which is what the ink-on-light rule buys.
+   */
+  { scheme: "dark", of: "mark", on: "surfaceRaised", ratio: 13.29, needs: AA_BOUNDARY },
+  { scheme: "light", of: "mark", on: "surfaceRaised", ratio: 18.44, needs: AA_BOUNDARY },
+
+  /**
    * The failure, recorded on purpose. A lime fill on near-white has no
-   * silhouette, and `accentBorder` is what gives it one — which is why the
-   * browser has that token and the phone does not.
+   * silhouette, and `accentBorder` is what gives it one, on both clients.
    */
   { scheme: "light", of: "accent", on: "surface", ratio: 1.26, needs: 0 },
   { scheme: "light", of: "accentBorder", on: "surface", ratio: 3.24, needs: AA_BOUNDARY },

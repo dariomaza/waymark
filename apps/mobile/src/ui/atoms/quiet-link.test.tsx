@@ -2,7 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 
 import { Button } from "./button.js";
 import { QuietLink } from "./quiet-link.js";
-import { colors, TAP_TARGET, text } from "../styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
+import { TAP_TARGET, text } from "../styles/tokens.js";
 
 /**
  * # A way somewhere that is not what the screen is for

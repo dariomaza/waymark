@@ -1,29 +1,33 @@
-import { render, screen } from "@testing-library/react-native";
-import { AccessibilityInfo, ActivityIndicator } from "react-native";
+import { render, screen, waitFor } from "@testing-library/react-native";
+import { AccessibilityInfo, ActivityIndicator, Animated } from "react-native";
 
 import { Avatar } from "./avatar.js";
 import { Loading } from "./loading.js";
-import { colors } from "../styles/tokens.js";
+import { DARK as colors, LIGHT, PIN_DROP, SYMBOL, WAIT_MARK_HEIGHT } from "@waymark/tokens";
+
+import { SchemeProvider } from "../styles/theme.js";
 
 /**
  * # Two atoms that made every screen look like a different app
  *
  * `Loading` is on every screen in the product, usually as the first thing
- * anybody sees. The browser drew a pulsing lime dot in a row, left aligned,
- * with a `prefers-reduced-motion` kill switch; this client drew a centred
- * `ActivityIndicator`. Not a small difference: one is this product's mark
- * waiting, the other is Android's.
+ * anybody sees. This client drew a centred `ActivityIndicator` and the browser
+ * a pulsing lime dot; they converged on the dot, because a platform spinner is
+ * the platform's vocabulary and a thing on every screen of a product is the
+ * product's (ADR 20, ADR 24).
  *
- * The dot wins, for the reason ADR 20 kept `waypoints` hand-drawn. A platform
- * spinner is the platform's vocabulary, and a thing that is on every screen of
- * a product is the product's. It is also the one of the two that both
- * platforms can draw identically, which an `ActivityIndicator` is not.
+ * The dot was a stand-in for a mark the product did not have yet. The owner:
+ * "quiero que hagas la carga animada con nuestro logo, para eso lo hemos
+ * creado". So both clients now draw the symbol — the logo's own w and pin —
+ * and only the pin moves: it drops onto the w, settles, rests and lifts, on
+ * the clock `PIN_DROP` in `@waymark/tokens`. The browser runs the same steps
+ * as generated keyframes; this one builds them into an `Animated` sequence.
  *
  * Left aligned rather than centred, on both, because a wait sits where the
  * content will appear and then nothing jumps when it arrives.
  */
 interface RenderedNode {
-  readonly props?: { readonly style?: unknown };
+  readonly props?: { readonly style?: unknown } & Record<string, unknown>;
   readonly children?: readonly unknown[] | null;
 }
 
@@ -32,24 +36,24 @@ const flatten = (style: unknown): Record<string, unknown> =>
     ? Object.assign({}, ...style.map(flatten))
     : ((style ?? {}) as Record<string, unknown>);
 
+const nodes = (tree: unknown): RenderedNode[] => {
+  if (tree === null || typeof tree !== "object") {
+    return [];
+  }
+
+  if (Array.isArray(tree)) {
+    return tree.flatMap(nodes);
+  }
+
+  const node = tree as RenderedNode;
+
+  return [node, ...(node.children ?? []).flatMap(nodes)];
+};
+
 const declaring = (tree: unknown, property: string): Record<string, unknown> => {
-  const found: Record<string, unknown>[] = [];
-
-  const walk = (node: unknown): void => {
-    if (node === null || typeof node !== "object") {
-      return;
-    }
-
-    found.push(flatten((node as RenderedNode).props?.style));
-
-    for (const child of (node as RenderedNode).children ?? []) {
-      walk(child);
-    }
-  };
-
-  walk(tree);
-
-  const style = found.find((entry) => entry[property] !== undefined);
+  const style = nodes(tree)
+    .map((node) => flatten(node.props?.style))
+    .find((entry) => entry[property] !== undefined);
   if (style === undefined) {
     throw new Error(`nothing in that tree declares ${property}`);
   }
@@ -60,6 +64,28 @@ const declaring = (tree: unknown, property: string): Record<string, unknown> => 
 /** Whether the platform's own spinner is anywhere in a rendered tree. */
 const spins = (tree: unknown): boolean =>
   JSON.stringify(tree)?.includes("ActivityIndicator") === true;
+
+/** Every outline drawn, by its `d`. */
+const outlines = (tree: unknown): string[] =>
+  nodes(tree)
+    .map((node) => node.props?.["d"])
+    .filter((d): d is string => typeof d === "string");
+
+/** The drawings, with the fill each is painted in. */
+const drawings = (tree: unknown): RenderedNode[] =>
+  nodes(tree).filter((node) => node.props?.["vbWidth"] === SYMBOL.width);
+
+const motionless = (): void => {
+  jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
+};
+
+const moving = (): void => {
+  jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
+};
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
 
 describe("waiting for something", () => {
   it("still says what it is waiting for, which is the whole point of it", async () => {
@@ -86,13 +112,36 @@ describe("waiting for something", () => {
     expect(spins(drawn.toJSON())).toBe(false);
   });
 
-  it("draws the browser's lime dot, at the browser's size", async () => {
+  it("draws the symbol: the approved w and the full pin, nothing else", async () => {
     const drawn = await render(<Loading label="Finding that box" />);
-    const dot = declaring(drawn.toJSON(), "borderRadius");
 
-    expect(dot["backgroundColor"]).toBe(colors.accent);
-    expect(dot["width"]).toBe(10);
-    expect(dot["height"]).toBe(10);
+    expect(outlines(drawn.toJSON()).sort()).toEqual(
+      [...SYMBOL.letters, ...SYMBOL.pin].map((shape) => shape.d).sort(),
+    );
+  });
+
+  it("draws it at the browser's height, in the mark's own colour", async () => {
+    const drawn = await render(<Loading label="Finding that box" />);
+    const svgs = drawings(drawn.toJSON());
+
+    expect(svgs.length).toBeGreaterThan(0);
+    for (const svg of svgs) {
+      expect(svg.props?.["height"]).toBe(WAIT_MARK_HEIGHT);
+      expect(svg.props?.["fill"]).toBe(colors.mark);
+    }
+  });
+
+  /** Never lime on white: on the light page the mark is ink (ADR 24). */
+  it("is ink on the light page", async () => {
+    const drawn = await render(
+      <SchemeProvider scheme="light">
+        <Loading label="Finding that box" />
+      </SchemeProvider>,
+    );
+
+    for (const svg of drawings(drawn.toJSON())) {
+      expect(svg.props?.["fill"]).toBe(LIGHT.mark);
+    }
   });
 
   it("sits at the start of the line, where the content will appear", async () => {
@@ -103,18 +152,53 @@ describe("waiting for something", () => {
   });
 
   /**
-   * The browser's kill switch, which this client had no equivalent of because
-   * it had nothing of its own to stop. A pulse is motion, and somebody who has
-   * asked their phone for less of it has asked this too.
+   * The browser's clock, step for step: the same stretches, the same length,
+   * the same curve. Each stretch is one `Animated.timing`, so what this
+   * client will run is read off what it asked for.
    */
-  it("asks the phone whether to move before it moves", async () => {
-    const asked = jest
-      .spyOn(AccessibilityInfo, "isReduceMotionEnabled")
-      .mockResolvedValue(true);
+  it("drops the pin on the browser's clock, and loops", async () => {
+    moving();
+    const timing = jest.spyOn(Animated, "timing");
+    const loop = jest.spyOn(Animated, "loop");
 
     await render(<Loading label="Finding that box" />);
 
-    expect(asked).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(loop).toHaveBeenCalled();
+    });
+
+    const stretches = timing.mock.calls.map(([, config]) => config);
+    const expected = PIN_DROP.steps.slice(1).map((step, index) => ({
+      toValue: step.y,
+      duration: (step.at - (PIN_DROP.steps[index]?.at ?? 0)) * PIN_DROP.durationMs,
+    }));
+
+    expect(stretches.map(({ toValue, duration }) => ({ toValue, duration }))).toEqual(
+      expected.map(({ toValue, duration }) => ({ toValue, duration: expect.closeTo(duration, 6) })),
+    );
+    for (const stretch of stretches) {
+      expect(stretch.useNativeDriver).toBe(true);
+      expect(stretch.easing).toBeInstanceOf(Function);
+    }
+  });
+
+  /**
+   * The browser's kill switch. A drop is motion, and somebody who has asked
+   * their phone for less of it has asked this too: the pin rests in its place,
+   * which is the mark as it is drawn everywhere else.
+   */
+  it("goes still, with the pin in its place, for somebody who asked for less motion", async () => {
+    motionless();
+    const loop = jest.spyOn(Animated, "loop");
+
+    const drawn = await render(<Loading label="Finding that box" />);
+
+    await waitFor(() => {
+      expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalled();
+    });
+
+    expect(loop).not.toHaveBeenCalled();
+    expect(declaring(drawn.toJSON(), "transform")["transform"]).toEqual([{ translateY: 0 }]);
   });
 });
 

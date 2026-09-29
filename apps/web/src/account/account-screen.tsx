@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 
 import { LanguageSwitcher } from "../app/language-switcher.js";
+import { ThemeSwitcher } from "../app/theme-switcher.js";
 import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
 import { PasskeysPanel } from "../auth/passkeys-panel.js";
 import { useSession, useSignOut } from "../auth/use-session.js";
@@ -47,6 +48,7 @@ export const AccountScreen = (): JSX.Element => {
       <AccountPanel
         username={session?.user.username ?? null}
         language={<LanguageSwitcher />}
+        appearance={<ThemeSwitcher />}
         /*
          * The devices that can open this account (ADR 19), and the one panel
          * this client has and the phone does not. Handed in rather than reached

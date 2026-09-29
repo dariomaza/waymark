@@ -3,7 +3,8 @@ import { useState, type JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../ui/atoms/button.js";
-import { colors, space, text } from "../ui/styles/tokens.js";
+import { space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { MoveItemsSheet } from "./move-items-sheet.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -28,6 +29,7 @@ export interface BulkMoveBarProps {
  * its job and the count takes the space.
  */
 export const BulkMoveBar = ({ itemIds, onDone }: BulkMoveBarProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const [open, setOpen] = useState(false);
@@ -67,16 +69,18 @@ export const BulkMoveBar = ({ itemIds, onDone }: BulkMoveBarProps): JSX.Element 
   );
 };
 
-const styles = StyleSheet.create({
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: space.s2,
-    paddingTop: space.s3,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-  },
-  hint: { color: colors.inkMuted, fontSize: text.s, flexShrink: 1, lineHeight: 18 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    bar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: space.s2,
+      paddingTop: space.s3,
+      borderTopWidth: 1,
+      borderTopColor: colors.line,
+    },
+    hint: { color: colors.inkMuted, fontSize: text.s, flexShrink: 1, lineHeight: 18 },
+  }),
+);

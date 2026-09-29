@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
-import { colors, radius, space, text } from "../../ui/styles/tokens.js";
+import { radius, space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { useLanguageChoice, useTranslate } from "../../app/language-context.js";
 
 /** Which confirmation this row is currently asking, if any. */
@@ -41,6 +42,7 @@ export const MachineTokenRow = ({
   onCancel,
   onConfirm,
 }: MachineTokenRowProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
   const { language } = useLanguageChoice();
 
@@ -150,28 +152,30 @@ export const MachineTokenRow = ({
   );
 };
 
-const styles = StyleSheet.create({
-  row: {
-    gap: space.s1,
-    padding: space.s3,
-    borderRadius: radius.m,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surfaceRaised,
-  },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.s2,
-  },
-  name: { color: colors.ink, fontSize: text.m, fontWeight: "700", flexShrink: 1 },
-  scope: { color: colors.inkMuted, fontSize: text.s },
-  fact: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: space.s2,
-    marginTop: space.s2,
-  },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    row: {
+      gap: space.s1,
+      padding: space.s3,
+      borderRadius: radius.m,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surfaceRaised,
+    },
+    head: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: space.s2,
+    },
+    name: { color: colors.ink, fontSize: text.m, fontWeight: "700", flexShrink: 1 },
+    scope: { color: colors.inkMuted, fontSize: text.s },
+    fact: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: space.s2,
+      marginTop: space.s2,
+    },
+  }),
+);

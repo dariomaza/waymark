@@ -2,7 +2,8 @@ import type { JSX } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { Icon, type IconName } from "./icon.js";
-import { colors, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { space, TAP_TARGET, text } from "../styles/tokens.js";
+import { themed, useColors } from "../styles/theme.js";
 
 export interface QuietLinkProps {
   /**
@@ -61,36 +62,43 @@ export interface QuietLinkProps {
  * this app draws things that are NOT controls, and a quiet control is still a
  * control.
  */
-export const QuietLink = ({ icon, onPress, children, label }: QuietLinkProps): JSX.Element => (
-  <Pressable
-    role="link"
-    accessibilityLabel={label ?? children}
-    onPress={onPress}
-    style={({ pressed }) => [styles.link, pressed ? styles.pressed : null]}
-  >
-    {/*
-      Hidden from assistive technology: the word is right beside it, and
-      announcing both says the same thing twice. The same rule `Button` keeps.
-    */}
-    <Icon name={icon} size={18} color={colors.accentText} />
-    <Text style={styles.word}>{children}</Text>
-  </Pressable>
-);
+export const QuietLink = ({ icon, onPress, children, label }: QuietLinkProps): JSX.Element => {
+  const colors = useColors();
+  const styles = useStyles();
 
-const styles = StyleSheet.create({
-  link: {
-    minHeight: TAP_TARGET,
-    minWidth: TAP_TARGET,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.s2,
-    /*
-      Horizontal only. The height is already the target, so padding here is
-      about not butting up against whatever sits next to it. No background and
-      no border, which is the whole point of the shape.
-    */
-    paddingHorizontal: space.s2,
-  },
-  pressed: { opacity: 0.7 },
-  word: { color: colors.accentText, fontSize: text.s },
-});
+  return (
+    <Pressable
+      role="link"
+      accessibilityLabel={label ?? children}
+      onPress={onPress}
+      style={({ pressed }) => [styles.link, pressed ? styles.pressed : null]}
+    >
+      {/*
+        Hidden from assistive technology: the word is right beside it, and
+        announcing both says the same thing twice. The same rule `Button` keeps.
+      */}
+      <Icon name={icon} size={18} color={colors.accentText} />
+      <Text style={styles.word}>{children}</Text>
+    </Pressable>
+  );
+};
+
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    link: {
+      minHeight: TAP_TARGET,
+      minWidth: TAP_TARGET,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: space.s2,
+      /*
+        Horizontal only. The height is already the target, so padding here is
+        about not butting up against whatever sits next to it. No background and
+        no border, which is the whole point of the shape.
+      */
+      paddingHorizontal: space.s2,
+    },
+    pressed: { opacity: 0.7 },
+    word: { color: colors.accentText, fontSize: text.s },
+  }),
+);

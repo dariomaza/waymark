@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { useSession } from "../auth/use-session.js";
 import { Avatar } from "../ui/atoms/avatar.js";
 import { Icon } from "../ui/atoms/icon.js";
+import { Logo } from "../ui/atoms/logo.js";
 import { useTranslate } from "./language-context.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { BottomNav } from "../ui/organisms/bottom-nav.js";
@@ -25,17 +26,18 @@ export const AppShell = (): JSX.Element => {
   return (
     <div className="app-shell">
       <AppBar
-        title="Waymark"
-        leading={
+        title={
           /*
-            * The product's MARK, and the phone draws it lime. It carried no
-            * colour here, so it inherited the ink beside it and came out
-            * white — one mark, two colours, on one phone. The wrapper is what
-            * the colour hangs on: `leading` is a slot, and a back arrow put
-            * in it later has no business being the accent.
+            * The product's name, drawn: the logo, the word with the pin over
+            * its w (ADR 24). It replaced the pair that stood here — the mark,
+            * then the word typed beside it — because the logo already IS both.
+            * The heading is still called Waymark; the picture says so.
+            *
+            * The wrapper is what the colour hangs on, and the colour is the
+            * phone's: the accent. See `app-shell.css` for the light scheme.
             */
           <span className="app-shell__mark">
-            <Icon name="waypoints" size={24} />
+            <Logo label="Waymark" />
           </span>
         }
       />

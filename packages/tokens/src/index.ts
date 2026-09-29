@@ -69,6 +69,23 @@ export {
 export { LABELS_PER_PAGE, LABEL_SHEET } from "./label-sheet.js";
 
 export {
+  DEFAULT_THEME_CHOICE,
+  isThemeChoice,
+  PALETTES,
+  schemeFor,
+  THEME_CHOICES,
+  THEME_KEY,
+  type Scheme,
+  type ThemeChoice,
+} from "./scheme.js";
+
+export { LOGO, MARK_SMALL, SYMBOL, shapesOf, type Drawing, type Shape } from "./mark.js";
+
+export { PIN_DROP, WAIT_MARK_HEIGHT, type MotionStep } from "./motion.js";
+
+export { inQuadrants, rasterise } from "./raster.js";
+
+export {
   AA_BOUNDARY,
   AA_LARGE_TEXT,
   AA_TEXT,

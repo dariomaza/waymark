@@ -7,7 +7,8 @@ import { Callout } from "../../ui/atoms/callout.js";
 import { PasswordField } from "../../ui/atoms/password-field.js";
 import { ScreenTitle } from "../../ui/atoms/screen-title.js";
 import { TextField } from "../../ui/atoms/text-field.js";
-import { colors, space, text } from "../../ui/styles/tokens.js";
+import { space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface LoginFormProps {
@@ -38,6 +39,7 @@ export const LoginForm = ({
   failure,
   biometrics,
 }: LoginFormProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const [username, setUsername] = useState("");
@@ -83,10 +85,12 @@ export const LoginForm = ({
   );
 };
 
-const styles = StyleSheet.create({
-  form: { gap: space.s4 },
-  // The tagline sits under the title and above the practical note, so it
-  // reads as part of the heading rather than as the first instruction.
-  tagline: { color: colors.accentText, fontSize: text.m, marginTop: -space.s3 },
-  lede: { color: colors.inkMuted, fontSize: text.s },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    form: { gap: space.s4 },
+    // The tagline sits under the title and above the practical note, so it
+    // reads as part of the heading rather than as the first instruction.
+    tagline: { color: colors.accentText, fontSize: text.m, marginTop: -space.s3 },
+    lede: { color: colors.inkMuted, fontSize: text.s },
+  }),
+);

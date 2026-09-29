@@ -2,7 +2,8 @@ import type { StorageUnitView } from "@waymark/api-client";
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, space, text } from "../styles/tokens.js";
+import { space, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface BreadcrumbProps {
@@ -19,6 +20,7 @@ export interface BreadcrumbProps {
  * is read at a glance.
  */
 export const Breadcrumb = ({ path, onOpen }: BreadcrumbProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   return (
@@ -41,9 +43,11 @@ export const Breadcrumb = ({ path, onOpen }: BreadcrumbProps): JSX.Element => {
 );
 };
 
-const styles = StyleSheet.create({
-  wrap: { flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
-  step: { flexDirection: "row", alignItems: "center" },
-  separator: { color: colors.inkMuted, paddingHorizontal: space.s1 },
-  name: { color: colors.inkMuted, fontSize: text.s, paddingVertical: space.s1 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: { flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
+    step: { flexDirection: "row", alignItems: "center" },
+    separator: { color: colors.inkMuted, paddingHorizontal: space.s1 },
+    name: { color: colors.inkMuted, fontSize: text.s, paddingVertical: space.s1 },
+  }),
+);

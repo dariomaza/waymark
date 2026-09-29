@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react-native";
 
+import { MARK_SMALL, shapesOf } from "@waymark/tokens";
+
 import { ICON_NAMES, Icon } from "./icon.js";
+import { DARK as colors } from "@waymark/tokens";
 
 /**
  * The drawings themselves are not asserted path by path — a test that repeats
@@ -28,7 +31,7 @@ describe("the icon set both clients draw", () => {
    */
   it("carries every symbol this product has, under this product's names", () => {
     expect([...ICON_NAMES]).toEqual([
-      "waypoints",
+      "pinnedW",
       "eye",
       "eyeOff",
       "scan",
@@ -53,6 +56,9 @@ describe("the icon set both clients draw", () => {
       "key",
       "signOut",
       "globe",
+      "sunMoon",
+      "sun",
+      "moon",
     ]);
   });
 
@@ -60,15 +66,16 @@ describe("the icon set both clients draw", () => {
    * # The assertion that made the library switch safe
    *
    * A common box and a common stroke weight are what stop a set from looking
-   * assembled over time — and the mark is still drawn by hand while the rest
-   * come from lucide, whose own default weight is 2. So the risk is precise
-   * and this is the test that stands in front of it: one shape landing
-   * heavier than the others, in a set nobody would think to re-measure.
+   * assembled over time — and lucide's own default weight is 2, not ours. So
+   * the risk is precise and this is the test that stands in front of it: one
+   * shape landing heavier than the others, in a set nobody would think to
+   * re-measure.
    *
    * They are the same 24 units the web client draws in, so the two clients
-   * look like one product rather than two teams.
+   * look like one product rather than two teams. The mark is the one name
+   * drawn on no pen (see below), so it is held to the box and not the weight.
    */
-  it("draws every symbol in the same 24-unit box, on one stroke weight", async () => {
+  it("draws every symbol in the same 24-unit box, and every stroked one on one weight", async () => {
     for (const name of ICON_NAMES) {
       const drawn = (await render(<Icon name={name} />)).toJSON();
       // `react-native-svg` takes the `viewBox` apart into these four, which
@@ -78,8 +85,25 @@ describe("the icon set both clients draw", () => {
       ).props;
 
       expect([minX, minY, vbWidth, vbHeight]).toEqual([0, 0, 24, 24]);
-      expect(strokeWidth).toBe(1.7);
+      if (name !== "pinnedW") {
+        expect(strokeWidth).toBe(1.7);
+      }
     }
+  });
+
+  /**
+   * The mark is a LETTER — the w of the name, with a pin over it — and a
+   * letter is an outline, not a line drawn with a pen. Stroked at 1.7 it would
+   * be a w drawn in wire, which is not the mark.
+   */
+  it("draws the mark filled, in the colour it is given, with no pen", async () => {
+    const drawn = (await render(<Icon name="pinnedW" color={colors.accent} />)).toJSON();
+    const { fill, stroke, strokeWidth } = (drawn as { readonly props: Record<string, unknown> })
+      .props;
+
+    expect(fill).toBe(colors.accent);
+    expect(stroke).toBeUndefined();
+    expect(strokeWidth).toBeUndefined();
   });
 
   /**
@@ -117,21 +141,25 @@ describe("the icon set both clients draw", () => {
   /**
    * The mark is OURS, and stays ours.
    *
-   * lucide ships a `waypoints` of its own. Taking it would have made the thing
-   * standing for Waymark in the top bar the same picture as a routing feature
-   * in a thousand other products, so this one drawing is still drawn in the
-   * atom — and this is what says so out loud, because an exception nobody
-   * asserts is an exception somebody tidies away.
+   * The one before it was three rings on a descending path, and lucide ships
+   * a `waypoints` that is very nearly the same picture — which is how the
+   * thing standing for Waymark came to look like a routing feature in a
+   * thousand other products (ADR 24). This one is drawn in the atom from the
+   * numbers in `@waymark/tokens`, the same numbers the browser draws, and this
+   * is what says so out loud: an exception nobody asserts is an exception
+   * somebody tidies away.
    */
-  it("keeps the product's mark out of the library", async () => {
-    const drawn = (await render(<Icon name="waypoints" />)).toJSON();
+  it("keeps the product's mark out of the library, and draws the one both clients share", async () => {
+    const drawn = JSON.stringify((await render(<Icon name="pinnedW" />)).toJSON());
 
-    expect(JSON.stringify(drawn)).toContain("M6.8 7.2l3.4 2.8M13.7 13.3l3.6 3.4");
+    for (const shape of shapesOf(MARK_SMALL)) {
+      expect(drawn).toContain(shape.d);
+    }
   });
 
   /** And when it is alone, it says what it MEANS, not what it is drawn as. */
   it("says what it means when it stands on its own", async () => {
-    await render(<Icon name="waypoints" label="Waymark" />);
+    await render(<Icon name="pinnedW" label="Waymark" />);
 
     expect(screen.getByLabelText("Waymark")).toBeOnTheScreen();
   });

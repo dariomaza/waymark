@@ -3,7 +3,8 @@ import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../ui/atoms/button.js";
-import { colors, radius, space, text } from "../ui/styles/tokens.js";
+import { radius, space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import type { CodeScanner, CodeScannerViewProps } from "./code-scanner.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -17,6 +18,7 @@ import { useTranslate } from "../app/language-context.js";
  * symbol is typed in instead, which is why it is printed there.
  */
 const ExpoCameraView = ({ onCode }: CodeScannerViewProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -56,16 +58,18 @@ const ExpoCameraView = ({ onCode }: CodeScannerViewProps): JSX.Element => {
 
 export const expoCameraScanner = (): CodeScanner => ({ View: ExpoCameraView });
 
-const styles = StyleSheet.create({
-  camera: { height: 320, borderRadius: radius.m, overflow: "hidden" },
-  frame: {
-    height: 320,
-    borderRadius: radius.m,
-    backgroundColor: colors.surfaceSunken,
-    justifyContent: "center",
-    alignItems: "flex-start",
-    padding: space.s4,
-    gap: space.s3,
-  },
-  message: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    camera: { height: 320, borderRadius: radius.m, overflow: "hidden" },
+    frame: {
+      height: 320,
+      borderRadius: radius.m,
+      backgroundColor: colors.surfaceSunken,
+      justifyContent: "center",
+      alignItems: "flex-start",
+      padding: space.s4,
+      gap: space.s3,
+    },
+    message: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+  }),
+);

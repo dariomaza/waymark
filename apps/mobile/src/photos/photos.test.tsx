@@ -5,7 +5,7 @@ import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js
 import { fakePhotoSource } from "../testing/fake-photo-source.js";
 import { fireEvent, renderApp, screen, waitFor, within } from "../testing/render-app.js";
 import { box, garage, theApiKnowsTheHouse } from "../testing/the-house.js";
-import { colors } from "../ui/styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
 
 const atTheDrill = { name: "Item", params: { id: "drill" } } as const;
 

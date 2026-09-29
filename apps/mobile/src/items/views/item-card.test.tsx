@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 
-import { colors } from "../../ui/styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
 import { ItemCard } from "./item-card.js";
 
 const nothing = (): void => {};

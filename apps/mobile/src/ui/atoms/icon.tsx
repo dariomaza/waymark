@@ -12,6 +12,7 @@ import {
   Image,
   Key,
   LogOut,
+  Moon,
   Move,
   Network,
   Pencil,
@@ -19,6 +20,8 @@ import {
   RotateCw,
   ScanQrCode,
   Search,
+  Sun,
+  SunMoon,
   Tag,
   Tags,
   Trash2,
@@ -26,9 +29,11 @@ import {
   type LucideIcon,
 } from "lucide-react-native";
 import type { JSX } from "react";
-import { Circle, Path, Svg } from "react-native-svg";
+import { Path, Svg } from "react-native-svg";
 
-import { colors } from "../styles/tokens.js";
+import { MARK_SMALL, shapesOf } from "@waymark/tokens";
+
+import { useColors } from "../styles/theme.js";
 
 /**
  * # The whole icon set, and the one seam it comes through
@@ -62,22 +67,26 @@ import { colors } from "../styles/tokens.js";
  */
 export const ICON_NAMES = [
   /**
-   * Three waypoints on a descending path: the product's MARK, and the one
-   * drawing in this file that is still drawn in this file.
+   * The w of the name with a pin over it: the product's MARK, and the one
+   * drawing in this file that lucide does not draw.
    *
    * It is not a generic symbol and it must not become somebody else's shape.
-   * lucide happens to ship a `waypoints` too; taking it would mean the thing
-   * standing for Waymark in the top bar was the same picture as a routing
-   * feature in a thousand other products. These are the same coordinates the
-   * web client draws, which is the one place the two files still have to be
-   * kept honest by hand.
+   * The mark before it was three rings on a descending path, and lucide ships
+   * a `waypoints` that is nearly the same picture — the thing standing for
+   * Waymark was a routing icon in a thousand other products (ADR 24).
+   *
+   * This is the SMALL cut, the one with a solid pin: at icon size the full
+   * pin's hole and core close up. It is drawn from `MARK_SMALL` in
+   * `@waymark/tokens`, the numbers the web client draws too — so the two
+   * files no longer keep a copy of the mark each, honest only by hand.
    *
    * Named for what is drawn and not for the product, the way every other name
-   * in this list is. The one before it was called `thread` — the thread out of
-   * a labyrinth — which named a story rather than a shape, and when the story
-   * changed the name was left pointing at nothing.
+   * in this list is. The ones before it were `thread` and `waypoints`, and
+   * both were left naming a drawing that no longer existed once the drawing
+   * changed; `pinnedW` will be too, and that is the right failure: a rename
+   * that touches every caller, rather than a name that quietly lies.
    */
-  "waypoints",
+  "pinnedW",
   /** The pair a password field toggles between. */
   "eye",
   "eyeOff",
@@ -131,6 +140,13 @@ export const ICON_NAMES = [
   "signOut",
   /** The language this is read in. A globe, because no flag is a language. */
   "globe",
+  /**
+   * The three answers to "how should this look" (ADR 25): whatever the phone
+   * says, which is both at once; the light; the dark.
+   */
+  "sunMoon",
+  "sun",
+  "moon",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -138,7 +154,7 @@ export type IconName = (typeof ICON_NAMES)[number];
 /**
  * The map from this product's vocabulary onto lucide's.
  *
- * `waypoints` is deliberately absent — it is the mark, and it is drawn below.
+ * `pinnedW` is deliberately absent — it is the mark, and it is drawn below.
  * Everything else is one of theirs, and the KEY is always ours: renaming
  * `things` to whatever lucide calls a stack of boxes would put somebody
  * else's vocabulary in front of every screen in this app.
@@ -146,7 +162,7 @@ export type IconName = (typeof ICON_NAMES)[number];
  * It is the same table, in the same order, as the web client's — which is now
  * the only thing the two files have to agree on, instead of forty paths.
  */
-const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "waypoints">, LucideIcon> = {
+const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "pinnedW">, LucideIcon> = {
   eye: Eye,
   eyeOff: EyeOff,
   /** Corner brackets around a code, which is exactly what the camera does. */
@@ -178,14 +194,18 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "waypoints">, LucideIcon> = {
   key: Key,
   signOut: LogOut,
   globe: Globe,
+  sunMoon: SunMoon,
+  sun: Sun,
+  moon: Moon,
 };
 
 /**
  * The one stroke weight the whole set is drawn on.
  *
  * lucide's own default is 2, which is heavier than this app has ever drawn.
- * Stated here once so the mark and the library agree, rather than at every
- * call site, where the first person to forget it would break the set.
+ * Stated here once, rather than at every call site, where the first person to
+ * forget it would break the set. The mark is the one drawing it does not
+ * reach: it is filled, not stroked.
  */
 const STROKE = 1.7;
 
@@ -193,7 +213,10 @@ export interface IconProps {
   readonly name: IconName;
   /** Points, square. Defaults to the size that reads on a phone. */
   readonly size?: number;
-  /** The stroke. The page's ink unless the caller means something by it. */
+  /**
+   * The stroke — or, for the mark, the fill. The page's ink unless the caller
+   * means something by it.
+   */
   readonly color?: string;
   /**
    * What this icon MEANS, when it carries meaning on its own.
@@ -232,35 +255,23 @@ const spokenAs = (
 export const Icon = ({
   name,
   size = 22,
-  color = colors.ink,
+  color: given,
   label,
 }: IconProps): JSX.Element => {
+  const colors = useColors();
+  const color = given ?? colors.ink;
   const spoken = spokenAs(label);
 
-  if (name === "waypoints") {
+  if (name === "pinnedW") {
     return (
-      <Svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth={STROKE}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        {...spoken}
-      >
+      <Svg width={size} height={size} viewBox={MARK_SMALL.viewBox} fill={color} {...spoken}>
         {/*
-          Rings and not dots, because a filled shape at this stroke weight
-          reads as a bullet point rather than as a marker — and the joining
-          strokes stop at each ring's edge rather than running under it, so the
-          path is a route BETWEEN the markers instead of a line with beads
-          threaded on it.
+          Filled and never stroked: the mark is a letter, and a letter is an
+          outline rather than a line drawn with a pen.
         */}
-        <Circle cx="5" cy="5.6" r="2.4" />
-        <Circle cx="12" cy="11.6" r="2.4" />
-        <Circle cx="19" cy="18.4" r="2.4" />
-        <Path d="M6.8 7.2l3.4 2.8M13.7 13.3l3.6 3.4" />
+        {shapesOf(MARK_SMALL).map((shape) => (
+          <Path key={shape.d} d={shape.d} />
+        ))}
       </Svg>
     );
   }

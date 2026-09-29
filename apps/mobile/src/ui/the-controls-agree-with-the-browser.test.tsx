@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react-native";
 import { Button } from "./atoms/button.js";
 import { Callout } from "./atoms/callout.js";
 import { TextField } from "./atoms/text-field.js";
-import { colors, space, TAP_TARGET } from "./styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
+import { space, TAP_TARGET } from "./styles/tokens.js";
 
 /**
  * # The small disagreements this client lost, and the ones it won

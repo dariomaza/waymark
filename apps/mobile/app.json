@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "waymark",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "backgroundColor": "#101011",
     "android": {
@@ -42,10 +42,14 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
+          "image": "./assets/splash-icon-light.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#101011"
+          "backgroundColor": "#fafafa",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#101011"
+          }
         }
       ]
     ],

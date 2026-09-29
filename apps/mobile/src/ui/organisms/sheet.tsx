@@ -2,7 +2,8 @@ import type { JSX, ReactNode } from "react";
 import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../atoms/button.js";
-import { colors, radius, space, text } from "../styles/tokens.js";
+import { radius, space, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface SheetProps {
@@ -20,6 +21,7 @@ export interface SheetProps {
  * empty, delete — uses the same one.
  */
 export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   return (
@@ -58,24 +60,26 @@ export const Sheet = ({ title, onClose, children }: SheetProps): JSX.Element => 
 );
 };
 
-const styles = StyleSheet.create({
-  // 0.67, the same as the browser's backdrop. It was `#000000aa`, which is the
-  // same number said in a way nobody can check against a stylesheet.
-  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0, 0, 0, 0.67)" },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.l,
-    borderTopRightRadius: radius.l,
-    maxHeight: "90%",
-  },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingLeft: space.s4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  title: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
-  body: { padding: space.s4, gap: space.s4, paddingBottom: space.s6 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    // 0.67, the same as the browser's backdrop. It was `#000000aa`, which is the
+    // same number said in a way nobody can check against a stylesheet.
+    backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0, 0, 0, 0.67)" },
+    sheet: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: radius.l,
+      borderTopRightRadius: radius.l,
+      maxHeight: "90%",
+    },
+    head: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingLeft: space.s4,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.line,
+    },
+    title: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
+    body: { padding: space.s4, gap: space.s4, paddingBottom: space.s6 },
+  }),
+);

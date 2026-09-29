@@ -9,6 +9,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { PlatformPressable } from "@react-navigation/elements";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import type { Palette, Scheme } from "@waymark/tokens";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { useMemo, useState, type JSX } from "react";
@@ -47,7 +48,8 @@ import { ClipboardProvider } from "../ui/clipboard-context.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { Screen } from "../ui/organisms/screen.js";
-import { colors, TAB_LABEL_WEIGHT, text } from "../ui/styles/tokens.js";
+import { TAB_LABEL_WEIGHT, text } from "../ui/styles/tokens.js";
+import { themed, useColors, useScheme } from "../ui/styles/theme.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
 import { LabelSheetScreen } from "../units/label-sheet-screen.js";
@@ -55,7 +57,10 @@ import { expoPrinter, type Printer } from "../units/printer.js";
 import { PrinterProvider } from "../units/printer-context.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { createDefaultClient } from "./create-client.js";
+import { appearanceDeviceScheme, type DeviceScheme } from "./device-scheme.js";
 import { createLanguageStore } from "./language.js";
+import { createThemeStore } from "./theme.js";
+import { ThemeProvider } from "./theme-context.js";
 import { LanguageProvider, useTranslate } from "./language-context.js";
 import { linking, type RootStackParamList, type TabParamList } from "./navigation.js";
 
@@ -92,6 +97,12 @@ export interface AppProps {
    * does not end.
    */
   readonly queries?: QueryClient;
+  /**
+   * The phone's own light-or-dark setting. A port for the same reason the
+   * others are: it is the operating system, and a test has to be able to set
+   * it and then change it (ADR 25).
+   */
+  readonly deviceScheme?: DeviceScheme;
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -115,6 +126,7 @@ export const App = ({
   printer,
   initialState,
   queries: given,
+  deviceScheme,
 }: AppProps = {}): JSX.Element => {
   const [queries] = useState(() => given ?? createQueryClient());
   // One store for the whole phone: the session, and the one preference there
@@ -122,6 +134,8 @@ export const App = ({
   const [store] = useState(() => storage ?? expoSecureStorage());
   const [sessions] = useState(() => createSessionStore(store));
   const [languages] = useState(() => createLanguageStore(store));
+  const [themes] = useState(() => createThemeStore(store));
+  const [device] = useState(() => deviceScheme ?? appearanceDeviceScheme());
   const [api] = useState(() => createDefaultClient(sessions, baseUrl));
   const [camera] = useState(() => scanner ?? expoCameraScanner());
   const [photoSource] = useState(() => photos ?? expoPhotoSource());
@@ -133,7 +147,8 @@ export const App = ({
     // is an empty screen while the insets are read, which on a cold start is a
     // black flash before the camera.
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? TEST_METRICS}>
-      <StatusBar style="light" />
+      <ThemeProvider store={themes} device={device}>
+      <SchemeStatusBar />
       <LanguageProvider store={languages}>
         <QueryClientProvider client={queries}>
           <SessionProvider store={sessions}>
@@ -151,9 +166,18 @@ export const App = ({
           </SessionProvider>
         </QueryClientProvider>
       </LanguageProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 };
+
+/**
+ * The clock and the battery, in whichever ink reads on the scheme below them:
+ * light glyphs on the dark, dark glyphs on the light.
+ */
+const SchemeStatusBar = (): JSX.Element => (
+  <StatusBar style={useScheme() === "dark" ? "light" : "dark"} />
+);
 
 /**
  * # The gate every screen but the login sits behind
@@ -223,6 +247,9 @@ const ConfirmedSession = ({
   const signOut = useSignOut();
   const t = useTranslate();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const scheme = useScheme();
+  const navigationTheme = useMemo(() => navigationThemeFor(colors, scheme), [colors, scheme]);
 
   /**
    * What the tree under the bar is told the insets are.
@@ -282,7 +309,7 @@ const ConfirmedSession = ({
   return (
     <NavigationContainer
       linking={linking}
-      theme={NAVIGATION_THEME}
+      theme={navigationTheme}
       {...(initialState === undefined ? {} : { initialState })}
     >
       {/*
@@ -332,6 +359,7 @@ const ConfirmedSession = ({
  * and burying that behind a menu would be burying the reason the app exists.
  */
 const Tabs = (): JSX.Element => {
+  const colors = useColors();
   const t = useTranslate();
   const state = useSessionState();
   const username = state.status === "known" ? (state.session?.user.username ?? "") : "";
@@ -341,7 +369,8 @@ const Tabs = (): JSX.Element => {
       initialRouteName="Scan"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
+        // The accent as a FOREGROUND: the lime fill cannot be read on the light bar.
+        tabBarActiveTintColor: colors.accentText,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarStyle: { backgroundColor: colors.surfaceRaised, borderTopColor: colors.line },
         /*
@@ -451,28 +480,39 @@ const Tabs = (): JSX.Element => {
  *
  * `accentText` and not `accent`: the rule is a foreground mark, which is the
  * job that token names — the same one the web client's `--color-accent-text`
- * does on the same rule. They are the same lime on this app's one scheme.
+ * does on the same rule. They are the same lime in the dark, and in the light
+ * the fill's lime would be a stain on the bar.
  *
  * `PlatformPressable` is what the navigator itself reaches for when nobody
  * hands it a button, so the ripple, the hover and the press behaviour are the
  * stock ones; the only thing added is the style. The focused flag arrives as
  * `aria-selected`, which is what the navigator puts on the button it builds.
  */
+const UnderlinedTab = (props: BottomTabBarButtonProps): JSX.Element => {
+  const styles = useStyles();
+
+  return (
+    <PlatformPressable
+      {...props}
+      style={[
+        props.style,
+        styles.tab,
+        props["aria-selected"] === true ? styles.currentTab : null,
+      ]}
+    />
+  );
+};
+
 const currentTabIsUnderlined = (props: BottomTabBarButtonProps): JSX.Element => (
-  <PlatformPressable
-    {...props}
-    style={[
-      props.style,
-      styles.tab,
-      props["aria-selected"] === true ? styles.currentTab : null,
-    ]}
-  />
+  <UnderlinedTab {...props} />
 );
 
-const styles = StyleSheet.create({
-  tab: { borderTopWidth: 2, borderTopColor: "transparent" },
-  currentTab: { borderTopColor: colors.accentText },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    tab: { borderTopWidth: 2, borderTopColor: "transparent" },
+    currentTab: { borderTopColor: colors.accentText },
+  }),
+);
 
 /**
  * A destination's drawing, in the colour the bar says it is.
@@ -498,8 +538,14 @@ const TEST_METRICS = {
   insets: { top: 24, left: 0, right: 0, bottom: 16 },
 };
 
-const NAVIGATION_THEME = {
-  dark: true,
+/**
+ * The navigator's own idea of the colours, for what it draws itself — the
+ * card behind a screen, a transition's background. Built per scheme, and
+ * `dark` tells it which one it is in.
+ */
+const navigationThemeFor = (colors: Palette, scheme: Scheme) =>
+  ({
+  dark: scheme === "dark",
   colors: {
     primary: colors.accent,
     background: colors.surface,
@@ -514,7 +560,7 @@ const NAVIGATION_THEME = {
     bold: { fontFamily: "System", fontWeight: "700" },
     heavy: { fontFamily: "System", fontWeight: "900" },
   },
-} as const;
+}) as const;
 
 /**
  * # Retrying, and why there is so little of it

@@ -1,7 +1,8 @@
 import type { JSX } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 
 export interface Option {
   readonly value: string;
@@ -43,51 +44,57 @@ export const OptionList = ({
   options,
   value,
   onChange,
-}: OptionListProps): JSX.Element => (
-  <View style={styles.wrap}>
-    <Text style={styles.label}>{label}</Text>
-    {hint === undefined ? null : <Text style={styles.hint}>{hint}</Text>}
-    <ScrollView
-      style={styles.list}
-      accessibilityLabel={label}
-      {...(hint === undefined ? {} : { accessibilityHint: hint })}
-    >
-      {options.map((option) => (
-        <Pressable
-          key={option.value}
-          role="radio"
-          accessibilityLabel={option.label}
-          accessibilityState={{ selected: option.value === value, checked: option.value === value }}
-          onPress={() => {
-            onChange(option.value);
-          }}
-          style={[styles.row, option.value === value ? styles.chosen : null]}
-        >
-          <Text style={styles.rowText}>{option.label}</Text>
-        </Pressable>
-      ))}
-    </ScrollView>
-  </View>
-);
+}: OptionListProps): JSX.Element => {
+  const styles = useStyles();
 
-const styles = StyleSheet.create({
-  wrap: { gap: space.s1 },
-  label: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
-  hint: { color: colors.inkMuted, fontSize: text.s },
-  list: {
-    maxHeight: 240,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.m,
-    backgroundColor: colors.surfaceSunken,
-  },
-  row: {
-    minHeight: TAP_TARGET,
-    justifyContent: "center",
-    paddingHorizontal: space.s3,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  chosen: { backgroundColor: colors.surfaceRaised },
-  rowText: { color: colors.ink, fontSize: text.m },
-});
+  return (
+    <View style={styles.wrap}>
+      <Text style={styles.label}>{label}</Text>
+      {hint === undefined ? null : <Text style={styles.hint}>{hint}</Text>}
+      <ScrollView
+        style={styles.list}
+        accessibilityLabel={label}
+        {...(hint === undefined ? {} : { accessibilityHint: hint })}
+      >
+        {options.map((option) => (
+          <Pressable
+            key={option.value}
+            role="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected: option.value === value, checked: option.value === value }}
+            onPress={() => {
+              onChange(option.value);
+            }}
+            style={[styles.row, option.value === value ? styles.chosen : null]}
+          >
+            <Text style={styles.rowText}>{option.label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: { gap: space.s1 },
+    label: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
+    hint: { color: colors.inkMuted, fontSize: text.s },
+    list: {
+      maxHeight: 240,
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radius.m,
+      backgroundColor: colors.surfaceSunken,
+    },
+    row: {
+      minHeight: TAP_TARGET,
+      justifyContent: "center",
+      paddingHorizontal: space.s3,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.line,
+    },
+    chosen: { backgroundColor: colors.surfaceRaised },
+    rowText: { color: colors.ink, fontSize: text.m },
+  }),
+);

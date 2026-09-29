@@ -8,7 +8,8 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
-import { colors, space, text } from "../ui/styles/tokens.js";
+import { space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { AuthenticatedImage } from "./authenticated-image.js";
 import {
   useDeleteItemPhoto,
@@ -43,6 +44,7 @@ export interface ItemPhotosProps {
  * moved.
  */
 export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const upload = useUploadItemPhoto(item.id);
@@ -151,11 +153,13 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  section: { gap: space.s3 },
-  heading: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
-  grid: { gap: space.s3 },
-  cell: { gap: space.s2 },
-  controls: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-  cover: { color: colors.accent, fontSize: text.s, fontWeight: "700" },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    section: { gap: space.s3 },
+    heading: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
+    grid: { gap: space.s3 },
+    cell: { gap: space.s2 },
+    controls: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
+    cover: { color: colors.accentText, fontSize: text.s, fontWeight: "700" },
+  }),
+);

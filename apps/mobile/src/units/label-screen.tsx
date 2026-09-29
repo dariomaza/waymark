@@ -12,7 +12,8 @@ import { Loading } from "../ui/atoms/loading.js";
 import { ScreenTitle } from "../ui/atoms/screen-title.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
-import { colors, space, text } from "../ui/styles/tokens.js";
+import { space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { useStorageUnit } from "./unit-queries.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -33,6 +34,7 @@ import { useTranslate } from "../app/language-context.js";
  * the sticker, so it can be read aloud across a garage.
  */
 export const LabelScreen = (): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const route = useRoute<RouteProp<RootStackParamList, "Label">>();
@@ -92,9 +94,11 @@ export const LabelScreen = (): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  label: { alignItems: "center", gap: space.s3 },
-  symbol: { width: 260, height: 260, backgroundColor: "#ffffff", borderRadius: space.s2 },
-  code: { color: colors.ink, fontSize: text.l, fontWeight: "700", letterSpacing: 2 },
-  hint: { color: colors.inkMuted, fontSize: text.s, textAlign: "center" },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    label: { alignItems: "center", gap: space.s3 },
+    symbol: { width: 260, height: 260, backgroundColor: "#ffffff", borderRadius: space.s2 },
+    code: { color: colors.ink, fontSize: text.l, fontWeight: "700", letterSpacing: 2 },
+    hint: { color: colors.inkMuted, fontSize: text.s, textAlign: "center" },
+  }),
+);

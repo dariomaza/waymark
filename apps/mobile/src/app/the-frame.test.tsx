@@ -1,5 +1,5 @@
 import { aSession } from "@waymark/api-client/testing";
-import { TAB_LABEL_WEIGHT, TEXT } from "@waymark/tokens";
+import { LOGO, MARK_SMALL, shapesOf, TAB_LABEL_WEIGHT, TEXT } from "@waymark/tokens";
 
 import { StyleSheet } from "react-native";
 
@@ -87,6 +87,29 @@ describe("the frame every signed-in screen sits in", () => {
       await renderApp({ session: aSession() });
 
       expect(await screen.findByRole("header", { name: "Waymark" })).toBeOnTheScreen();
+    });
+
+    /**
+     * # The name is the logo now
+     *
+     * The bar used to carry the mark and, beside it, the word typed in the
+     * system face — two things saying one name. The logo IS the name, with the
+     * pin over its w, so it replaces the pair (ADR 24), exactly as the browser
+     * does. The header is still called Waymark; the word is no longer typed.
+     */
+    it("draws the name as the logo, instead of a mark beside the typed word", async () => {
+      await renderApp({ session: aSession() });
+
+      const header = await screen.findByRole("header", { name: "Waymark" });
+      const drawn = JSON.stringify(header);
+
+      expect(screen.queryByText("Waymark")).toBeNull();
+      for (const shape of shapesOf(LOGO)) {
+        expect(drawn).toContain(shape.d);
+      }
+      for (const shape of shapesOf(MARK_SMALL)) {
+        expect(drawn).not.toContain(shape.d);
+      }
     });
 
     /**

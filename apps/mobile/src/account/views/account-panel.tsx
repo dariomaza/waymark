@@ -5,13 +5,16 @@ import { useTranslate } from "../../app/language-context.js";
 import { Avatar } from "../../ui/atoms/avatar.js";
 import { Button } from "../../ui/atoms/button.js";
 import { ScreenTitle } from "../../ui/atoms/screen-title.js";
-import { colors, space, text } from "../../ui/styles/tokens.js";
+import { space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 
 export interface AccountPanelProps {
   /** `null` only in the instant between the session going and the screen doing. */
   readonly username: string | null;
   /** The control that is ABOUT the language rather than written in it. */
   readonly language: ReactNode;
+  /** Light, dark or the phone's own (ADR 25). A setting, like the language. */
+  readonly appearance: ReactNode;
   /**
    * Whether this phone keeps the session behind its fingerprint sensor.
    *
@@ -46,11 +49,13 @@ export interface AccountPanelProps {
 export const AccountPanel = ({
   username,
   language,
+  appearance,
   biometrics,
   machineTokens,
   busy,
   onSignOut,
 }: AccountPanelProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   return (
@@ -73,6 +78,11 @@ export const AccountPanel = ({
       <View style={styles.setting}>
         <Text style={styles.settingLabel}>{t("language.label")}</Text>
         {language}
+      </View>
+
+      <View style={styles.setting}>
+        <Text style={styles.settingLabel}>{t("appearance.label")}</Text>
+        {appearance}
       </View>
 
       {/*
@@ -103,11 +113,13 @@ export const AccountPanel = ({
   );
 };
 
-const styles = StyleSheet.create({
-  panel: { gap: space.s4 },
-  lede: { color: colors.inkMuted, fontSize: text.s, marginTop: -space.s3 },
-  who: { flexDirection: "row", alignItems: "center", gap: space.s3 },
-  name: { color: colors.ink, fontSize: text.m, fontWeight: "600", flexShrink: 1 },
-  setting: { gap: space.s2, alignItems: "flex-start" },
-  settingLabel: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    panel: { gap: space.s4 },
+    lede: { color: colors.inkMuted, fontSize: text.s, marginTop: -space.s3 },
+    who: { flexDirection: "row", alignItems: "center", gap: space.s3 },
+    name: { color: colors.ink, fontSize: text.m, fontWeight: "600", flexShrink: 1 },
+    setting: { gap: space.s2, alignItems: "flex-start" },
+    settingLabel: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
+  }),
+);

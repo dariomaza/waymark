@@ -6,7 +6,8 @@ import { StyleSheet, Text } from "react-native";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Sheet } from "../ui/organisms/sheet.js";
-import { colors, text } from "../ui/styles/tokens.js";
+import { text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { useDeleteItem } from "./item-mutations.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -23,6 +24,7 @@ export const DeleteItemSheet = ({
   readonly onClose: () => void;
   readonly onDeleted: () => void;
 }): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const remove = useDeleteItem(item.id);
@@ -54,6 +56,8 @@ export const DeleteItemSheet = ({
   );
 };
 
-const styles = StyleSheet.create({
-  text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+  }),
+);

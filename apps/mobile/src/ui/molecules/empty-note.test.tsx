@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 
-import { colors, text } from "../styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
+import { text } from "../styles/tokens.js";
 import { EmptyNote } from "./empty-note.js";
 
 /**

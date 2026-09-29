@@ -24,7 +24,7 @@ Area-specific rules load on their own from `.claude/rules/` when you touch
 | `apps/mcp` | stdio MCP server over `api-client`, authenticated with a machine token. |
 | `services/image-processor` | Optional rembg sidecar (ADR 4). |
 
-Decisions are in `docs/decisions/` (23 ADRs, indexed in its README). What is
+Decisions are in `docs/decisions/` (24 ADRs, indexed in its README). What is
 pending, unproven or deliberately postponed is in `docs/roadmap.md` — read it
 before proposing something, it may already have been argued.
 
@@ -61,7 +61,8 @@ contract 152, api-client 90, mcp 88, i18n 1434, api 1329, web 555, mobile 303.
   `apps/web/src/ui/styles/tokens.css` is generated from it and checked byte for
   byte — never edit it by hand.
 - **Icons only through `ui/atoms/icon.tsx`** (lucide behind it, ADR 20). The
-  `waypoints` mark is hand-drawn and must stay so.
+  mark — `pinnedW`, the w with the pin, and the logo — is never lucide's: it
+  is drawn from `packages/tokens/src/mark.ts` and must stay so (ADR 24).
 - **48×48 minimum tap target.** It is used one-handed in a garage.
 - **The two clients are one product.** A visible change in one is made in the
   other in the same piece of work, unless an ADR says why not. Where they differ,

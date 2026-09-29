@@ -8,6 +8,7 @@ import {
   type WebOnlyPalette,
 } from "./palette.js";
 import { LABEL_SHEET } from "./label-sheet.js";
+import { PIN_DROP } from "./motion.js";
 import { BAR_HEIGHT, RADIUS, SPACE, TAB_LABEL_WEIGHT, TEXT } from "./scale.js";
 
 /**
@@ -62,6 +63,29 @@ const labelSheetLines = (): string =>
     )
     .join("\n");
 
+/**
+ * # The wait's clock, handed to a stylesheet
+ *
+ * `motion.ts` is the pin's drop as data; this is the same data as the
+ * keyframes `loading.css` runs. A step's `ease` belongs to the stretch that
+ * FOLLOWS it, which is exactly what `animation-timing-function` means inside a
+ * keyframe, so the last step carries none. The offsets are in the symbol's
+ * own units, which is what `px` means on an element inside an SVG.
+ */
+const pinDropFrames = (): string =>
+  PIN_DROP.steps
+    .map((step, index) => {
+      const at = `${String(Math.round(step.at * 1000) / 10)}%`;
+      const move = `transform: translateY(${String(step.y)}px);`;
+      const ease =
+        index === PIN_DROP.steps.length - 1
+          ? ""
+          : ` animation-timing-function: cubic-bezier(${step.ease.join(", ")});`;
+
+      return `  ${at} {\n    ${move}${ease === "" ? "" : `\n   ${ease}`}\n  }`;
+    })
+    .join("\n");
+
 const colorLines = (palette: Palette, webOnly: WebOnlyPalette, indent: string): string =>
   [
     ...Object.entries(palette).map(([name, value]) => `${indent}--color-${kebab(name)}: ${value};`),
@@ -111,11 +135,11 @@ ${evidenceFor("dark")}
  * light
 ${evidenceFor("light")}
  *
- * The mobile client carries the same dark values, from the same package. It
- * has no light scheme on purpose: a phone held over a box does not get that
- * choice, because the camera screen is black either way.
+ * The mobile client carries the same values, from the same package, and since
+ * ADR 25 the same two schemes and the same three-way choice between them.
  */
 :root {
+  color-scheme: dark;
 ${colorLines(DARK, DARK_WEB_ONLY, "  ")}
 
 ${Object.entries(SPACE)
@@ -136,10 +160,21 @@ ${Object.entries(TEXT)
 
   /* The printed page. Millimetres, because it is paper. */
 ${labelSheetLines()}
+
+  /* One loop of the wait. See \`motion.ts\`. */
+  --pin-drop-duration: ${String(PIN_DROP.durationMs)}ms;
 }
 
 /**
- * The second scheme, which only this client has.
+ * The wait: the pin drops onto the w, settles, rests, and lifts. The phone
+ * builds the same steps into an \`Animated\` sequence, from the same numbers.
+ */
+@keyframes pin-drop {
+${pinDropFrames()}
+}
+
+/**
+ * The second scheme, when the device asks for it and nobody chose the dark.
  *
  * The lime fill is the token that changes character here and it is the one
  * that does NOT change value: the same \`--color-accent\` with the same ink on
@@ -147,13 +182,29 @@ ${labelSheetLines()}
  * which is unreadable as lime on near-white, and the fill's EDGE — because
  * here the fill has only ${contrastRatio(LIGHT.accent, LIGHT.surface).toFixed(2)} against the page. It LOOKS visible, the
  * hue being loud, but its silhouette is not, and a component boundary needs
- * ${String(3)}. \`--color-accent-border\` is ${contrastRatio(LIGHT_WEB_ONLY.accentBorder, LIGHT.surface).toFixed(2)} here, so the button has a shape as
+ * ${String(3)}. \`--color-accent-border\` is ${contrastRatio(LIGHT.accentBorder, LIGHT.surface).toFixed(2)} here, so the button has a shape as
  * well as a colour; without it the button reads fine on a desk and disappears
  * on a phone in daylight.
+ *
+ * \`:not([data-theme="dark"])\` is the choice winning one way: somebody who
+ * picked the dark on a device set to light keeps the dark.
  */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
 ${colorLines(LIGHT, LIGHT_WEB_ONLY, "    ")}
   }
+}
+
+/**
+ * The choice winning the other way: the light scheme, chosen on a device set
+ * to dark. \`data-theme\` is set on the root before the first paint (see
+ * \`apps/web/public/theme.js\`) and by the account screen's switch after it.
+ * Nothing sets \`data-theme="system"\`: following the device is the ABSENCE
+ * of a choice, so it is the absence of the attribute.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+${colorLines(LIGHT, LIGHT_WEB_ONLY, "  ")}
 }
 `;

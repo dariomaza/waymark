@@ -2,7 +2,8 @@ import { LANGUAGE_NAMES, LANGUAGES } from "@waymark/i18n";
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, space, TAP_TARGET, text } from "../ui/styles/tokens.js";
+import { radius, space, TAP_TARGET, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { useLanguageChoice, useTranslate } from "./language-context.js";
 
 /**
@@ -21,6 +22,7 @@ import { useLanguageChoice, useTranslate } from "./language-context.js";
  * somebody — see `language-context.tsx`.
  */
 export const LanguageSwitcher = (): JSX.Element => {
+  const styles = useStyles();
   const { language, choose } = useLanguageChoice();
   const t = useTranslate();
 
@@ -57,23 +59,25 @@ export const LanguageSwitcher = (): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  group: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.s,
-    overflow: "hidden",
-  },
-  // Tall enough to hit without looking, like everything else in this app: a
-  // bar control is still tapped one-handed, standing up (see `TAP_TARGET`).
-  option: {
-    minHeight: TAP_TARGET,
-    minWidth: 40,
-    paddingHorizontal: space.s2,
-    justifyContent: "center",
-  },
-  chosen: { backgroundColor: colors.accent },
-  code: { color: colors.inkMuted, fontSize: text.s, fontWeight: "700", textAlign: "center" },
-  chosenCode: { color: colors.accentInk },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    group: {
+      flexDirection: "row",
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radius.s,
+      overflow: "hidden",
+    },
+    // Tall enough to hit without looking, like everything else in this app: a
+    // bar control is still tapped one-handed, standing up (see `TAP_TARGET`).
+    option: {
+      minHeight: TAP_TARGET,
+      minWidth: 40,
+      paddingHorizontal: space.s2,
+      justifyContent: "center",
+    },
+    chosen: { backgroundColor: colors.accent },
+    code: { color: colors.inkMuted, fontSize: text.s, fontWeight: "700", textAlign: "center" },
+    chosenCode: { color: colors.accentInk },
+  }),
+);

@@ -3,7 +3,8 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
 import { CopyableValue } from "../../ui/molecules/copyable-value.js";
-import { colors, radius, space, text } from "../../ui/styles/tokens.js";
+import { radius, space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 import { mcpSettings } from "../mcp-settings.js";
 
@@ -60,6 +61,7 @@ export const IssuedSecret = ({
   endpoint,
   onDismiss,
 }: IssuedSecretProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const pair = mcpSettings(endpoint, secret);
@@ -126,26 +128,28 @@ export const IssuedSecret = ({
   );
 };
 
-const styles = StyleSheet.create({
-  panel: {
-    gap: space.s2,
-    padding: space.s4,
-    borderRadius: radius.m,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.warning,
-    backgroundColor: colors.surfaceRaised,
-    alignItems: "flex-start",
-  },
-  title: { color: colors.ink, fontSize: text.m, fontWeight: "700" },
-  warning: { color: colors.ink, fontSize: text.s, lineHeight: 20 },
-  how: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-  note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-  pair: {
-    gap: space.s2,
-    alignSelf: "stretch",
-    paddingTop: space.s3,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-    alignItems: "flex-start",
-  },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    panel: {
+      gap: space.s2,
+      padding: space.s4,
+      borderRadius: radius.m,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.warning,
+      backgroundColor: colors.surfaceRaised,
+      alignItems: "flex-start",
+    },
+    title: { color: colors.ink, fontSize: text.m, fontWeight: "700" },
+    warning: { color: colors.ink, fontSize: text.s, lineHeight: 20 },
+    how: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+    note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+    pair: {
+      gap: space.s2,
+      alignSelf: "stretch",
+      paddingTop: space.s3,
+      borderTopWidth: 1,
+      borderTopColor: colors.line,
+      alignItems: "flex-start",
+    },
+  }),
+);

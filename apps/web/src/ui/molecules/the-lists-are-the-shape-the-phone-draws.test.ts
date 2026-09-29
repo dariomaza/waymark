@@ -128,10 +128,14 @@ describe("a unit a search found", () => {
     expect(pixels(drawn(HIT_MARKUP, ".search-hit-list", { sheets: [HIT] }).rowGap)).toBe(8);
   });
 
-  /** Unchanged, and worth keeping asserted: the breadcrumb IS the answer. */
+  /**
+   * Worth keeping asserted: the breadcrumb IS the answer. The accent as a
+   * FOREGROUND, which is `accent-text` — the fill's lime is unreadable on the
+   * light page (ADR 25).
+   */
   it("keeps the accent on the breadcrumb, which is what was actually asked for", () => {
     expect(drawn(HIT_MARKUP, ".search-hit__where", { sheets: [HIT] }).color).toBe(
-      "var(--color-accent)",
+      "var(--color-accent-text)",
     );
   });
 });

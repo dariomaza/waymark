@@ -6,26 +6,29 @@
   margin: var(--space-4) 0;
 }
 
-.loading__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  animation: loading-pulse 1s ease-in-out infinite;
+/*
+ * The symbol, in the mark's own colour. `overflow: visible` because the pin
+ * lifts above the symbol's own box — into the row's margin — before it drops.
+ */
+.loading__mark {
+  flex: none;
+  color: var(--color-mark);
+  overflow: visible;
 }
 
-@keyframes loading-pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 1;
-  }
+/*
+ * Only the pin moves. The keyframes and the clock are generated into
+ * `tokens.css` from `PIN_DROP`, the steps the phone runs too.
+ */
+.loading__pin {
+  animation-name: pin-drop;
+  animation-duration: var(--pin-drop-duration);
+  animation-iteration-count: infinite;
 }
 
+/* Still, with the pin in its place: the mark as it is drawn everywhere else. */
 @media (prefers-reduced-motion: reduce) {
-  .loading__dot {
-    animation: none;
+  .loading__pin {
+    animation-name: none;
   }
 }

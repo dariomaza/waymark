@@ -24,7 +24,16 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
+    <!--
+      The dark surface until the app starts; `src/app/theme.ts` sets it to the
+      scheme actually painted from then on.
+    -->
     <meta name="theme-color" content="#101011" />
+    <!--
+      Before anything is drawn: the scheme chosen on the account screen, so a
+      page chosen light never flashes dark first. See the file.
+    -->
+    <script src="/theme.js"></script>
     <meta name="description" content="Find anything in the house again." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

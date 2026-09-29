@@ -24,6 +24,7 @@ import { LabelSheetScreen } from "../units/label-sheet-screen.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { AppShell } from "./app-shell.js";
 import { LanguageProvider } from "./language-context.js";
+import { ThemeProvider } from "./theme-context.js";
 import { createDefaultClient } from "./create-client.js";
 import { NotFoundScreen } from "./not-found-screen.js";
 import { ROUTES } from "./routes.js";
@@ -68,6 +69,7 @@ export const App = ({ client, scanner, passkeys }: AppProps = {}): JSX.Element =
   const [authenticators] = useState(() => passkeys ?? defaultPasskeyPlatform());
 
   return (
+    <ThemeProvider>
     <LanguageProvider>
       <QueryClientProvider client={queries}>
         <ApiProvider client={api}>
@@ -106,6 +108,7 @@ export const App = ({ client, scanner, passkeys }: AppProps = {}): JSX.Element =
         </ApiProvider>
       </QueryClientProvider>
     </LanguageProvider>
+    </ThemeProvider>
   );
 };
 

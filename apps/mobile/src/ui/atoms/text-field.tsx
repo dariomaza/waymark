@@ -2,7 +2,8 @@ import type { JSX } from "react";
 import type { ReactNode } from "react";
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 
-import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { themed, useColors } from "../styles/theme.js";
 
 export interface TextFieldProps extends Omit<TextInputProps, "style"> {
   /** What a screen reader says, and what a test asks for. */
@@ -33,74 +34,81 @@ export const TextField = ({
   problem,
   trailing,
   ...rest
-}: TextFieldProps): JSX.Element => (
-  <View style={styles.field}>
-    <Text style={styles.label}>{label}</Text>
-    {hint === undefined ? null : <Text style={styles.hint}>{hint}</Text>}
-    <View>
-      <TextInput
-        accessibilityLabel={label}
-        placeholderTextColor={colors.inkMuted}
-        style={[
-          styles.input,
-          rest.multiline === true ? styles.inputArea : null,
-          problem == null ? null : styles.inputWrong,
-          trailing === undefined ? null : styles.inputWithTrailing,
-        ]}
-        {...rest}
-      />
-      {trailing === undefined ? null : <View style={styles.trailing}>{trailing}</View>}
-    </View>
-    {problem == null ? null : <Text style={styles.problem}>{problem}</Text>}
-  </View>
-);
+}: TextFieldProps): JSX.Element => {
+  const colors = useColors();
+  const styles = useStyles();
 
-const styles = StyleSheet.create({
-  field: { gap: space.s1 },
-  label: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
-  hint: { color: colors.inkMuted, fontSize: text.s },
-  input: {
-    minHeight: TAP_TARGET,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.m,
-    backgroundColor: colors.surfaceSunken,
-    color: colors.ink,
-    paddingHorizontal: space.s3,
-    fontSize: text.m,
-  },
-  /**
-   * A box for several lines has to LOOK like one.
-   *
-   * Without a minimum it was a one-line-tall box that happened to accept
-   * newlines, which tells somebody the opposite of what it means — and the
-   * browser has said 84 since it was written (ADR 22).
-   *
-   * `textAlignVertical` is the other half on Android: a tall input still
-   * centres its first line without it, so an empty description box looks like
-   * a short one that has been stretched.
-   */
-  inputArea: {
-    minHeight: 84,
-    paddingVertical: space.s2,
-    textAlignVertical: "top",
-  },
-  /** Room for the control, so text stops before it rather than under it. */
-  inputWithTrailing: { paddingRight: TAP_TARGET + space.s2 },
-  /**
-   * Pinned to the input's own box. The full tap target fits because the input
-   * is already TAP_TARGET tall — which is what makes the usual objection to an
-   * inset control ("it shrinks below the minimum") not apply here.
-   */
-  trailing: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: TAP_TARGET,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  inputWrong: { borderColor: colors.danger },
-  problem: { color: colors.danger, fontSize: text.s },
-});
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      {hint === undefined ? null : <Text style={styles.hint}>{hint}</Text>}
+      <View>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={colors.inkMuted}
+          style={[
+            styles.input,
+            rest.multiline === true ? styles.inputArea : null,
+            problem == null ? null : styles.inputWrong,
+            trailing === undefined ? null : styles.inputWithTrailing,
+          ]}
+          {...rest}
+        />
+        {trailing === undefined ? null : <View style={styles.trailing}>{trailing}</View>}
+      </View>
+      {problem == null ? null : <Text style={styles.problem}>{problem}</Text>}
+    </View>
+  );
+};
+
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    field: { gap: space.s1 },
+    label: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
+    hint: { color: colors.inkMuted, fontSize: text.s },
+    input: {
+      minHeight: TAP_TARGET,
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radius.m,
+      backgroundColor: colors.surfaceSunken,
+      color: colors.ink,
+      paddingHorizontal: space.s3,
+      fontSize: text.m,
+    },
+    /**
+     * A box for several lines has to LOOK like one.
+     *
+     * Without a minimum it was a one-line-tall box that happened to accept
+     * newlines, which tells somebody the opposite of what it means — and the
+     * browser has said 84 since it was written (ADR 22).
+     *
+     * `textAlignVertical` is the other half on Android: a tall input still
+     * centres its first line without it, so an empty description box looks like
+     * a short one that has been stretched.
+     */
+    inputArea: {
+      minHeight: 84,
+      paddingVertical: space.s2,
+      textAlignVertical: "top",
+    },
+    /** Room for the control, so text stops before it rather than under it. */
+    inputWithTrailing: { paddingRight: TAP_TARGET + space.s2 },
+    /**
+     * Pinned to the input's own box. The full tap target fits because the input
+     * is already TAP_TARGET tall — which is what makes the usual objection to an
+     * inset control ("it shrinks below the minimum") not apply here.
+     */
+    trailing: {
+      position: "absolute",
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: TAP_TARGET,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    inputWrong: { borderColor: colors.danger },
+    problem: { color: colors.danger, fontSize: text.s },
+  }),
+);

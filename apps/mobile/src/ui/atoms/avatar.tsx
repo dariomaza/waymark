@@ -2,7 +2,8 @@ import { initialsOf } from "@waymark/api-client";
 import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, space, text } from "../styles/tokens.js";
+import { space, text } from "../styles/tokens.js";
+import { themed, useColors } from "../styles/theme.js";
 
 export interface AvatarProps {
   /** Whoever this stands for. The initials are read off it. */
@@ -51,36 +52,44 @@ export interface AvatarProps {
 export const Avatar = ({
   name,
   size = 26,
-  color = colors.inkMuted,
+  color,
   label,
   filled = false,
-}: AvatarProps): JSX.Element => (
-  <View
-    style={[
-      styles.ring,
-      filled ? styles.filled : null,
-      { width: size, height: size, borderRadius: size / 2 },
-      filled ? null : { borderColor: color },
-    ]}
-    accessible={label !== undefined}
-    accessibilityElementsHidden={label === undefined}
-    importantForAccessibility={label === undefined ? "no-hide-descendants" : "yes"}
-    {...(label === undefined ? {} : { accessibilityRole: "image" as const, accessibilityLabel: label })}
-  >
-    <Text style={[styles.initials, { color: filled ? colors.accentInk : color }]} numberOfLines={1}>
-      {initialsOf(name)}
-    </Text>
-  </View>
-);
+}: AvatarProps): JSX.Element => {
+  const colors = useColors();
+  const ring = color ?? colors.inkMuted;
+  const styles = useStyles();
 
-const styles = StyleSheet.create({
-  ring: {
-    borderWidth: 1.7,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: space.s1 / 2,
-  },
-  /** The accent's own ink on the accent, which is 13.85 in either scheme. */
-  filled: { backgroundColor: colors.accent, borderWidth: 0 },
-  initials: { fontSize: text.s - 2, fontWeight: "700" },
-});
+  return (
+    <View
+      style={[
+        styles.ring,
+        filled ? styles.filled : null,
+        { width: size, height: size, borderRadius: size / 2 },
+        filled ? null : { borderColor: ring },
+      ]}
+      accessible={label !== undefined}
+      accessibilityElementsHidden={label === undefined}
+      importantForAccessibility={label === undefined ? "no-hide-descendants" : "yes"}
+      {...(label === undefined ? {} : { accessibilityRole: "image" as const, accessibilityLabel: label })}
+    >
+      <Text style={[styles.initials, { color: filled ? colors.accentInk : ring }]} numberOfLines={1}>
+        {initialsOf(name)}
+      </Text>
+    </View>
+  );
+};
+
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    ring: {
+      borderWidth: 1.7,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: space.s1 / 2,
+    },
+    /** The accent's own ink on the accent, which is 13.85 in either scheme. */
+    filled: { backgroundColor: colors.accent, borderWidth: 0 },
+    initials: { fontSize: text.s - 2, fontWeight: "700" },
+  }),
+);

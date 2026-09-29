@@ -14,6 +14,15 @@ describe("saying something in the language that was asked for", () => {
     expect(translator("es")("nav.places")).toBe("Lugares");
   });
 
+  /**
+   * The owner approved this wording: the account screen names what it holds
+   * — the account, its language and its look — without the roundabout
+   * "how this app speaks and looks" that reads as a translation.
+   */
+  it("tells a Spanish reader in few words what the account screen holds", () => {
+    expect(translator("es")("account.lede")).toBe("Tu cuenta, su idioma y su aspecto.");
+  });
+
   it("puts a value into the sentence", () => {
     expect(translator("en")("shell.signedInAs", { username: "dario" })).toBe(
       "Signed in as dario",

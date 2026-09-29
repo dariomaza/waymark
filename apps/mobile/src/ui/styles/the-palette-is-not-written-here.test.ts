@@ -1,9 +1,24 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { DARK, RADIUS, SPACE, TAP_TARGET as SHARED_TAP_TARGET, TEXT } from "@waymark/tokens";
+import { DARK, LIGHT, RADIUS, SPACE, TAP_TARGET as SHARED_TAP_TARGET, TEXT } from "@waymark/tokens";
+import { renderHook } from "@testing-library/react-native";
+import { createElement, type ReactNode } from "react";
 
-import { colors, radius, space, TAP_TARGET, text } from "./tokens.js";
+import { SchemeProvider, useColors } from "./theme.js";
+import { radius, space, TAP_TARGET, text } from "./tokens.js";
+
+const colorsIn = async (scheme?: "light" | "dark"): Promise<unknown> => {
+  const { result } =
+    scheme === undefined
+      ? await renderHook(() => useColors())
+      : await renderHook(() => useColors(), {
+          wrapper: ({ children }: { readonly children: ReactNode }) =>
+            createElement(SchemeProvider, { scheme, children }),
+        });
+
+  return result.current;
+};
 
 /**
  * # The phone and the browser cannot hold different values, because there is
@@ -27,8 +42,16 @@ import { colors, radius, space, TAP_TARGET, text } from "./tokens.js";
  * to make impossible.
  */
 describe("the palette this client draws with", () => {
-  it("is the shared one, and not a copy that currently agrees with it", () => {
-    expect(colors).toBe(DARK);
+  it.each([
+    ["dark", DARK],
+    ["light", LIGHT],
+  ] as const)("is the shared %s one, and not a copy that currently agrees with it", async (scheme, palette) => {
+    expect(await colorsIn(scheme)).toBe(palette);
+  });
+
+  /** An atom rendered on its own — in a test, say — gets the dark. */
+  it("is the dark one where nothing has said which", async () => {
+    expect(await colorsIn()).toBe(DARK);
   });
 
   it("takes its spacing, radii and type sizes from the same place", () => {
@@ -58,23 +81,20 @@ describe("this file", () => {
 });
 
 /**
- * The accent's border is the token this arrangement had to keep ASYMMETRIC.
+ * The keyboard's ring is the token this arrangement keeps ASYMMETRIC.
  *
- * On the light scheme the lime fill has 1.26 contrast against the page and
- * needs an edge to have a silhouette at all; in the dark it is at 14.51 and
- * needs none. So the browser has `--color-accent-border` and this client has
- * no such token — absent rather than transparent, to keep this file honest
- * about what the platform actually needs.
+ * React Native has no `:focus-visible` and no keyboard focus to draw a ring
+ * around, so the browser has `--color-focus` and this client has no such
+ * token — absent rather than transparent, to keep the phone honest about what
+ * the platform actually needs.
  *
- * A shared palette that had quietly given both clients every token would have
- * traded that honesty for tidiness. This says it did not.
+ * The accent's border used to be the other one. It rescues the lime fill's
+ * silhouette in the light scheme, which only the browser had; the phone has
+ * that scheme now (ADR 25), so it has the edge too.
  */
 describe("the tokens the browser has and this client does not", () => {
-  it("does not hand the phone an accent border it has no use for", () => {
-    expect(colors).not.toHaveProperty("accentBorder");
-  });
-
-  it("does not hand it a focus ring either, there being no keyboard focus to ring", () => {
-    expect(colors).not.toHaveProperty("focus");
+  it("does not hand it a focus ring, there being no keyboard focus to ring", async () => {
+    expect(await colorsIn("dark")).not.toHaveProperty("focus");
+    expect(await colorsIn("light")).not.toHaveProperty("focus");
   });
 });

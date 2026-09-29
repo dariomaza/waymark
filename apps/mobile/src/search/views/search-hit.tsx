@@ -3,7 +3,8 @@ import type { MessageKey, Translate } from "@waymark/i18n";
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, space, TAP_TARGET, text } from "../../ui/styles/tokens.js";
+import { radius, space, TAP_TARGET, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface SearchHitProps {
@@ -53,6 +54,7 @@ export const SearchHit = ({
   detail,
   onPress,
 }: SearchHitProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   return (
@@ -74,15 +76,17 @@ export const SearchHit = ({
   );
 };
 
-const styles = StyleSheet.create({
-  hit: {
-    minHeight: TAP_TARGET,
-    justifyContent: "center",
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: radius.m,
-    padding: space.s3,
-  },
-  title: { color: colors.ink, fontSize: text.m, fontWeight: "600" },
-  where: { color: colors.accent, fontSize: text.s },
-  why: { color: colors.inkMuted, fontSize: text.s },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    hit: {
+      minHeight: TAP_TARGET,
+      justifyContent: "center",
+      backgroundColor: colors.surfaceRaised,
+      borderRadius: radius.m,
+      padding: space.s3,
+    },
+    title: { color: colors.ink, fontSize: text.m, fontWeight: "600" },
+    where: { color: colors.accentText, fontSize: text.s },
+    why: { color: colors.inkMuted, fontSize: text.s },
+  }),
+);

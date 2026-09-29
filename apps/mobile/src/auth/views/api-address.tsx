@@ -2,7 +2,8 @@ import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { CopyableValue } from "../../ui/molecules/copyable-value.js";
-import { colors, radius, space, text } from "../../ui/styles/tokens.js";
+import { radius, space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface ApiAddressProps {
@@ -36,6 +37,7 @@ export interface ApiAddressProps {
  * which reads as six different addresses at a glance.
  */
 export const ApiAddress = ({ endpoint }: ApiAddressProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   return (
@@ -58,14 +60,16 @@ export const ApiAddress = ({ endpoint }: ApiAddressProps): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  wrap: {
-    gap: space.s2,
-    padding: space.s3,
-    borderRadius: radius.m,
-    backgroundColor: colors.surfaceRaised,
-    alignItems: "flex-start",
-  },
-  title: { color: colors.ink, fontSize: text.s, fontWeight: "700" },
-  note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: {
+      gap: space.s2,
+      padding: space.s3,
+      borderRadius: radius.m,
+      backgroundColor: colors.surfaceRaised,
+      alignItems: "flex-start",
+    },
+    title: { color: colors.ink, fontSize: text.s, fontWeight: "700" },
+    note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+  }),
+);

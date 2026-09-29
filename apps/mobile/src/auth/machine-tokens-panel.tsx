@@ -10,7 +10,8 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { OptionList } from "../ui/atoms/option-list.js";
 import { TextField } from "../ui/atoms/text-field.js";
-import { colors, space, text } from "../ui/styles/tokens.js";
+import { space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import {
   useCreateMachineToken,
   useMachineTokens,
@@ -63,6 +64,7 @@ interface ShownSecret {
  * the same lifetime.
  */
 export const MachineTokensPanel = (): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const tokens = useMachineTokens();
@@ -249,12 +251,14 @@ export const MachineTokensPanel = (): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  panel: { gap: space.s3, alignItems: "flex-start", alignSelf: "stretch" },
-  title: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
-  explains: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-  none: { color: colors.inkMuted, fontSize: text.m },
-  list: { gap: space.s2, alignSelf: "stretch" },
-  form: { gap: space.s3, alignSelf: "stretch" },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    panel: { gap: space.s3, alignItems: "flex-start", alignSelf: "stretch" },
+    title: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
+    explains: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+    none: { color: colors.inkMuted, fontSize: text.m },
+    list: { gap: space.s2, alignSelf: "stretch" },
+    form: { gap: space.s3, alignSelf: "stretch" },
+    actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
+  }),
+);

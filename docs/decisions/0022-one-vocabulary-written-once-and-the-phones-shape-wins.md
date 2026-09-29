@@ -135,7 +135,8 @@ same platform. `DARK_WEB_ONLY` holds what only the browser has, and each entry
 earns its place by a fact about the PLATFORM rather than about the design:
 
 - `accentBorder`, because the light scheme's lime fill has no silhouette
-  without it, and the phone has no light scheme.
+  without it, and the phone has no light scheme. *(Amended 2026-09-29: the
+  phone has one now, and `accentBorder` is shared — see [ADR 25](0025-light-dark-or-the-device-and-the-phone-follows-it-too.md).)*
 - `focus`, because React Native has no `:focus-visible` and no keyboard focus
   to draw a ring around. A token for a ring nothing can draw is a colour with
   no job.

@@ -10,6 +10,8 @@ export interface AccountPanelProps {
   readonly username: string | null;
   /** The control that is ABOUT the language rather than written in it. */
   readonly language: ReactNode;
+  /** Light, dark or the device's own (ADR 25). A setting, like the language. */
+  readonly appearance: ReactNode;
   /** The devices that can open this account. Injected; it fetches and mutates. */
   readonly passkeys: ReactNode;
   /**
@@ -39,6 +41,7 @@ export interface AccountPanelProps {
 export const AccountPanel = ({
   username,
   language,
+  appearance,
   passkeys,
   machineTokens,
   busy,
@@ -64,6 +67,8 @@ export const AccountPanel = ({
       )}
 
       <div className="account-panel__setting">{language}</div>
+
+      <div className="account-panel__setting">{appearance}</div>
 
       {passkeys}
 

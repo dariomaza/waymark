@@ -11,6 +11,7 @@ import {
   Image,
   Key,
   LogOut,
+  Moon,
   Move,
   Network,
   Pencil,
@@ -18,6 +19,8 @@ import {
   RotateCw,
   ScanQrCode,
   Search,
+  Sun,
+  SunMoon,
   Tag,
   Tags,
   Trash2,
@@ -25,6 +28,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { JSX } from "react";
+
+import { MARK_SMALL, shapesOf } from "@waymark/tokens";
 
 /**
  * # The whole icon set, and the one seam it comes through
@@ -58,24 +63,30 @@ import type { JSX } from "react";
  *
  * Every icon is a 24-unit square on one stroke weight, which is what stops a
  * set drawn over time from looking like a set collected over time — and is
- * now, simply, true of every shape in the family.
+ * now, simply, true of every shape in the family. The mark keeps the square
+ * and not the weight: it is a letter, filled, not a line.
  */
 export const ICON_NAMES = [
   /**
-   * Three waypoints on a descending path: the product's MARK, and the one
-   * drawing in this file that is still drawn in this file.
+   * The w of the name with a pin over it: the product's MARK, and the one
+   * drawing in this file that lucide does not draw.
    *
    * It is not a generic symbol and it must not become somebody else's shape.
-   * lucide happens to ship a `waypoints` too; taking it would mean the thing
-   * standing for Waymark in the top bar was the same picture as a routing
-   * feature in a thousand other products.
+   * The mark before it was three rings on a descending path, and lucide ships
+   * a `waypoints` that is nearly the same picture — the thing standing for
+   * Waymark was a routing icon in a thousand other products (ADR 24).
+   *
+   * This is the SMALL cut, the one with a solid pin: at icon size the full
+   * pin's hole and core close up. It is drawn from `MARK_SMALL` in
+   * `@waymark/tokens`, the numbers the phone draws too.
    *
    * Named for what is drawn and not for the product, the way every other name
-   * in this list is. The one before it was called `thread` — the thread out of
-   * a labyrinth — which named a story rather than a shape, and when the story
-   * changed the name was left pointing at nothing.
+   * in this list is. The ones before it were `thread` and `waypoints`, and
+   * both were left naming a drawing that no longer existed once the drawing
+   * changed; `pinnedW` will be too, and that is the right failure: a rename
+   * that touches every caller, rather than a name that quietly lies.
    */
-  "waypoints",
+  "pinnedW",
   /**
    * The reveal on a password field. It never changes with the state: the
    * control means "showing the password", and whether it is ON is carried by
@@ -140,6 +151,13 @@ export const ICON_NAMES = [
   "signOut",
   /** The language this is read in. A globe, because no flag is a language. */
   "globe",
+  /**
+   * The three answers to "how should this look" (ADR 25): whatever the device
+   * says, which is both at once; the light; the dark.
+   */
+  "sunMoon",
+  "sun",
+  "moon",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -147,12 +165,12 @@ export type IconName = (typeof ICON_NAMES)[number];
 /**
  * The map from this product's vocabulary onto lucide's.
  *
- * `waypoints` is deliberately absent — it is the mark, and it is drawn below.
+ * `pinnedW` is deliberately absent — it is the mark, and it is drawn below.
  * Everything else is one of theirs, and the KEY is always ours: renaming
  * `things` to whatever lucide calls a stack of boxes would put somebody
  * else's vocabulary in front of every screen in this app.
  */
-const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "waypoints">, LucideIcon> = {
+const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "pinnedW">, LucideIcon> = {
   eye: Eye,
   /** Corner brackets around a code, which is exactly what the camera does. */
   scan: ScanQrCode,
@@ -183,29 +201,24 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "waypoints">, LucideIcon> = {
   key: Key,
   signOut: LogOut,
   globe: Globe,
+  sunMoon: SunMoon,
+  sun: Sun,
+  moon: Moon,
 };
 
 /**
- * Rings and not dots, because a filled shape at this stroke weight reads as a
- * bullet point rather than as a marker — and the joining strokes stop at each
- * ring's edge rather than running under it, so the path is a route BETWEEN the
- * markers instead of a line with beads threaded on it.
+ * The mark's outlines, one `<path>` each. Filled and never stroked: it is a
+ * letter, and a letter is an outline rather than a line drawn with a pen.
  */
-const WAYPOINTS = (
-  <>
-    <circle cx="5" cy="5.6" r="2.4" />
-    <circle cx="12" cy="11.6" r="2.4" />
-    <circle cx="19" cy="18.4" r="2.4" />
-    <path d="M6.8 7.2l3.4 2.8M13.7 13.3l3.6 3.4" />
-  </>
-);
+const PINNED_W = shapesOf(MARK_SMALL).map((shape) => <path key={shape.d} d={shape.d} />);
 
 /**
  * The one stroke weight the whole set is drawn on.
  *
  * lucide's own default is 2, which is heavier than this app has ever drawn.
- * Stated here once so the mark and the library agree, rather than at every
- * call site, where the first person to forget it would break the set.
+ * Stated here once, rather than at every call site, where the first person to
+ * forget it would break the set. The mark is the one drawing it does not
+ * reach: it is filled, not stroked.
  */
 const STROKE = 1.7;
 
@@ -235,22 +248,18 @@ export const Icon = ({ name, size = 22, label }: IconProps): JSX.Element => {
       ? ({ "aria-hidden": true } as const)
       : ({ role: "img", "aria-label": label } as const);
 
-  if (name === "waypoints") {
+  if (name === "pinnedW") {
     return (
       <svg
         className="icon"
         width={size}
         height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={STROKE}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        viewBox={MARK_SMALL.viewBox}
+        fill="currentColor"
         focusable={false}
         {...spoken}
       >
-        {WAYPOINTS}
+        {PINNED_W}
       </svg>
     );
   }

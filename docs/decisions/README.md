@@ -47,9 +47,11 @@ was tried first and failed.
 |---|---|
 | [13](0013-the-pwa-caches-a-shell-and-never-queues-a-write.md) | Offline, the PWA shows what it has and never pretends a change was saved. |
 | [16](0016-the-api-serves-the-web-client-from-one-origin.md) | One container serves the API and the web client from one origin, behind one tunnel hostname. |
-| [20](0020-the-icons-come-from-one-family-the-mark-does-not.md) | Icons come from lucide behind one atom; the product's mark is drawn by hand. |
+| [20](0020-the-icons-come-from-one-family-the-mark-does-not.md) | Icons come from lucide behind one atom; the product's mark is drawn by hand. *Amended: which mark is ADR 24.* |
 | [21](0021-a-screen-has-one-primary-action-and-a-menu-for-the-rest.md) | One primary action per screen, at most one secondary, the rest behind a menu beside the subject's name. *Amended: phones print; the home screen is a row of two.* |
 | [22](0022-one-vocabulary-written-once-and-the-phones-shape-wins.md) | Design tokens are written once in `packages/tokens`, and where the clients differ in shape, the phone wins. *Amended: one tab bar for both.* |
+| [24](0024-the-mark-is-the-name-with-a-pin-over-its-w.md) | The mark is the name with a QR finder square turned into a pin over its w: the logo in the bar, the symbol on the launcher, a solid-pin cut at 24px and below. Lime on ink, never on white. |
+| [25](0025-light-dark-or-the-device-and-the-phone-follows-it-too.md) | Both clients offer System, Light and Dark on the account screen; the phone now follows the device instead of being always dark. The mark has its own colour token, ink on the light. |
 
 ## Shipping
 
@@ -60,7 +62,7 @@ was tried first and failed.
 
 ## Writing a new one
 
-- Number it next, name it with the decision as a sentence (`0024-…`), and keep
+- Number it next, name it with the decision as a sentence (`0025-…`), and keep
   the voice of the others: the reasoning, not just the conclusion.
 - **Name the cost.** A decision that lists no cost has not been made.
 - **Amend, do not contradict.** When a later change reverses part of an ADR,
