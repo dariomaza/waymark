@@ -17,8 +17,10 @@ paths:
   `render-app.tsx`.
 - **The real proof that it bundles** is `npx expo export --platform android`.
   jest does not run Metro.
-- **Dark only, by design.** No light palette. No hex literals — a test fails on
-  any; colours come from `@waymark/tokens` through `ui/styles/tokens.ts`.
+- **Light, dark or the phone's own (ADR 25).** Every colour is read from the
+  scheme on screen through `useColors()` / `themed()` in `ui/styles/theme.tsx`;
+  never import a palette statically. No hex literals — a test fails on any;
+  colours come from `@waymark/tokens`. The mark is lime on dark, ink on light.
 - **`app.config.ts` spreads `app.json`** and overrides only the deep-link host.
   The version lives in `app.json` (`expo.version`), which release-please bumps.
 - **`EXPO_PUBLIC_WAYMARK_API_URL` is baked in at build time.** Without it the app
