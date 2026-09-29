@@ -79,7 +79,9 @@ export {
   type ThemeChoice,
 } from "./scheme.js";
 
-export { LOGO, MARK_SMALL, shapesOf, type Drawing, type Shape } from "./mark.js";
+export { LOGO, MARK_SMALL, SYMBOL, shapesOf, type Drawing, type Shape } from "./mark.js";
+
+export { PIN_DROP, WAIT_MARK_HEIGHT, type MotionStep } from "./motion.js";
 
 export {
   AA_BOUNDARY,

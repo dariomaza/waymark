@@ -8,6 +8,7 @@ import {
   type WebOnlyPalette,
 } from "./palette.js";
 import { LABEL_SHEET } from "./label-sheet.js";
+import { PIN_DROP } from "./motion.js";
 import { BAR_HEIGHT, RADIUS, SPACE, TAB_LABEL_WEIGHT, TEXT } from "./scale.js";
 
 /**
@@ -60,6 +61,29 @@ const labelSheetLines = (): string =>
         ? `  --label-${kebab(name.slice(0, -2))}: ${String(value)}mm;`
         : `  --label-${kebab(name)}: ${String(value)};`,
     )
+    .join("\n");
+
+/**
+ * # The wait's clock, handed to a stylesheet
+ *
+ * `motion.ts` is the pin's drop as data; this is the same data as the
+ * keyframes `loading.css` runs. A step's `ease` belongs to the stretch that
+ * FOLLOWS it, which is exactly what `animation-timing-function` means inside a
+ * keyframe, so the last step carries none. The offsets are in the symbol's
+ * own units, which is what `px` means on an element inside an SVG.
+ */
+const pinDropFrames = (): string =>
+  PIN_DROP.steps
+    .map((step, index) => {
+      const at = `${String(Math.round(step.at * 1000) / 10)}%`;
+      const move = `transform: translateY(${String(step.y)}px);`;
+      const ease =
+        index === PIN_DROP.steps.length - 1
+          ? ""
+          : ` animation-timing-function: cubic-bezier(${step.ease.join(", ")});`;
+
+      return `  ${at} {\n    ${move}${ease === "" ? "" : `\n   ${ease}`}\n  }`;
+    })
     .join("\n");
 
 const colorLines = (palette: Palette, webOnly: WebOnlyPalette, indent: string): string =>
@@ -136,6 +160,17 @@ ${Object.entries(TEXT)
 
   /* The printed page. Millimetres, because it is paper. */
 ${labelSheetLines()}
+
+  /* One loop of the wait. See \`motion.ts\`. */
+  --pin-drop-duration: ${String(PIN_DROP.durationMs)}ms;
+}
+
+/**
+ * The wait: the pin drops onto the w, settles, rests, and lifts. The phone
+ * builds the same steps into an \`Animated\` sequence, from the same numbers.
+ */
+@keyframes pin-drop {
+${pinDropFrames()}
 }
 
 /**

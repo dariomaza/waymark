@@ -143,3 +143,25 @@ export const LOGO: Drawing & {
     },
   ],
 };
+
+/**
+ * # The symbol: the w and the full pin, without the rest of the name
+ *
+ * The logo's own w and the logo's own pin — the same objects, not a copy —
+ * framed from the pin's top down to the baseline. It is what a wait draws:
+ * larger than an icon, so it takes the full pin with its ring and core
+ * rather than the small cut. The loading animation moves `pin` and leaves
+ * `letters` where they are (see `motion.ts`).
+ */
+const [W] = LOGO.letters as readonly [Shape, ...Shape[]];
+
+export const SYMBOL: Drawing & {
+  readonly width: number;
+  readonly height: number;
+} = {
+  viewBox: "20 -1033 971 1033",
+  width: 971,
+  height: 1033,
+  letters: [W],
+  pin: LOGO.pin,
+};

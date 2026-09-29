@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { LOGO, MARK_SMALL, shapesOf, type Drawing, type Shape } from "./mark.js";
+import { LOGO, MARK_SMALL, SYMBOL, shapesOf, type Drawing, type Shape } from "./mark.js";
 
 /**
  * # The mark, as arithmetic that has to keep holding
@@ -138,6 +138,18 @@ describe("the mark, at icon size", () => {
   });
 });
 
+describe("the symbol, the w with the full pin", () => {
+  it("fits the w and the pin inside its own box", () => {
+    const frame = viewBoxOf(SYMBOL);
+    const drawn = boxOf(pointsOf(shapesOf(SYMBOL)));
+
+    expect(drawn.left).toBeGreaterThanOrEqual(frame.left);
+    expect(drawn.top).toBeGreaterThanOrEqual(frame.top);
+    expect(drawn.right).toBeLessThanOrEqual(frame.right);
+    expect(drawn.bottom).toBeLessThanOrEqual(frame.bottom);
+  });
+});
+
 describe("the logo, the name with the pin over its w", () => {
   /**
    * The kit this was taken from framed the logo 21 units short at the bottom,
@@ -179,6 +191,7 @@ describe("the logo, the name with the pin over its w", () => {
 describe.each([
   ["the mark", MARK_SMALL, 0],
   ["the logo", LOGO, 0],
+  ["the symbol", SYMBOL, 0],
 ] as const)("the pin in %s", (_, drawing, wIndex) => {
   /**
    * The whole idea, in geometry: the label on the box is the place you are
