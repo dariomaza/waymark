@@ -3,7 +3,12 @@ import type { JSX, ReactNode } from "react";
 import "./app-bar.css";
 
 export interface AppBarProps {
-  readonly title: string;
+  /**
+   * The heading. A node rather than a string because the product's bar draws
+   * the name as the logo — a picture that carries the name for a screen
+   * reader — rather than typing it out.
+   */
+  readonly title: ReactNode;
   /** Sits on the left, before the title. A back link, usually. */
   readonly leading?: ReactNode;
   readonly actions?: ReactNode;

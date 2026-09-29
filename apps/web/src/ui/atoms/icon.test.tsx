@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { MARK_SMALL, shapesOf } from "@waymark/tokens";
+
 import { ICON_NAMES, Icon } from "./icon.js";
 
 /**
@@ -24,7 +26,7 @@ describe("the icon set both clients draw", () => {
    */
   it("carries every symbol this product has, under this product's names", () => {
     expect([...ICON_NAMES]).toEqual([
-      "waypoints",
+      "pinnedW",
       "eye",
       "scan",
       "search",
@@ -55,36 +57,59 @@ describe("the icon set both clients draw", () => {
    * # The assertion that made the library switch safe
    *
    * A common box and a common stroke weight are what stop a set from looking
-   * assembled over time — and the mark is still drawn by hand while the other
-   * twenty-one come from lucide, whose own default weight is 2. So the risk is
-   * precise and this is the test that stands in front of it: one shape landing
-   * heavier than the rest, in a set nobody would think to re-measure.
+   * assembled over time — and lucide's own default weight is 2, not ours. So
+   * the risk is precise and this is the test that stands in front of it: one
+   * shape landing heavier than the rest, in a set nobody would think to
+   * re-measure.
+   *
+   * The mark is the one name drawn on no pen at all (see the next test), so it
+   * is held to the box and not to the weight.
    */
-  it("draws every symbol in the same 24-unit box, on one stroke weight", () => {
+  it("draws every symbol in the same 24-unit box, and every stroked one on one weight", () => {
     for (const name of ICON_NAMES) {
       const { container } = render(<Icon name={name} />);
       const svg = container.querySelector("svg");
 
       expect(svg).toHaveAttribute("viewBox", "0 0 24 24");
-      expect(svg).toHaveAttribute("stroke-width", "1.7");
-      expect(svg).toHaveAttribute("fill", "none");
+      if (name !== "pinnedW") {
+        expect(svg).toHaveAttribute("stroke-width", "1.7");
+        expect(svg).toHaveAttribute("fill", "none");
+      }
     }
+  });
+
+  /**
+   * The mark is a LETTER — the w of the name, with a pin over it — and a
+   * letter is an outline, not a line drawn with a pen. Stroked at 1.7 it would
+   * be a w drawn in wire, which is not the mark.
+   */
+  it("draws the mark filled, in the colour around it, with no pen", () => {
+    const { container } = render(<Icon name="pinnedW" />);
+    const svg = container.querySelector("svg");
+
+    expect(svg).toHaveAttribute("fill", "currentColor");
+    expect(svg).not.toHaveAttribute("stroke");
+    expect(svg).not.toHaveAttribute("stroke-width");
   });
 
   /**
    * The mark is OURS, and stays ours.
    *
-   * lucide ships a `waypoints` of its own. Taking it would have made the thing
-   * standing for Waymark in the top bar the same picture as a routing feature
-   * in a thousand other products, so this one drawing is still drawn in the
-   * atom — and this is what says so out loud, because an exception nobody
-   * asserts is an exception somebody tidies away.
+   * The one before it was three rings on a descending path, and lucide ships
+   * a `waypoints` that is very nearly the same picture — which is how the
+   * thing standing for Waymark came to look like a routing feature in a
+   * thousand other products (ADR 24). This one is drawn in the atom from the
+   * numbers in `@waymark/tokens`, the same numbers the phone draws, and this
+   * is what says so out loud: an exception nobody asserts is an exception
+   * somebody tidies away.
    */
-  it("keeps the product's mark out of the library", () => {
-    const { container } = render(<Icon name="waypoints" />);
+  it("keeps the product's mark out of the library, and draws the one both clients share", () => {
+    const { container } = render(<Icon name="pinnedW" />);
 
     expect(container.querySelector("svg")).not.toHaveClass("lucide");
-    expect(container.querySelectorAll("svg circle")).toHaveLength(3);
+    expect([...container.querySelectorAll("svg path")].map((path) => path.getAttribute("d"))).toEqual(
+      shapesOf(MARK_SMALL).map((shape) => shape.d),
+    );
   });
 
   /**
@@ -127,7 +152,7 @@ describe("the icon set both clients draw", () => {
 
   /** And when it is alone, it says what it MEANS, not what it is drawn as. */
   it("says what it means when it stands on its own", () => {
-    render(<Icon name="waypoints" label="Waymark" />);
+    render(<Icon name="pinnedW" label="Waymark" />);
 
     expect(screen.getByRole("img", { name: "Waymark" })).toBeInTheDocument();
   });

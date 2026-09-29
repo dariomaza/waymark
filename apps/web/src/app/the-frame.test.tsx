@@ -122,6 +122,25 @@ describe("the frame every signed-in screen sits in", () => {
     });
 
     /**
+     * # The name is the logo now
+     *
+     * The bar used to carry the mark and, beside it, the word typed in the
+     * body face — two things saying one name. The logo IS the name, with the
+     * pin over its w, so it replaces the pair (ADR 24). The heading is still
+     * a heading, and still called Waymark: the picture carries the name for a
+     * screen reader, and the word is no longer typed out beside it.
+     */
+    it("draws the name as the logo, instead of a mark beside the typed word", async () => {
+      renderApp({ route: "/" });
+
+      const heading = await screen.findByRole("heading", { name: "Waymark" });
+
+      expect(within(heading).getByRole("img", { name: "Waymark" })).toBeVisible();
+      expect(heading.textContent).toBe("");
+      expect(heading.closest("header")?.querySelectorAll("svg")).toHaveLength(1);
+    });
+
+    /**
      * # A line of chrome on the screen you look at most is rent
      *
      * "Signed in as dario" was printed above every single screen to answer a

@@ -140,28 +140,51 @@ describe("the surface the chrome is painted on", () => {
 /**
  * # The mark is the product's, and a product has one colour
  *
- * Three waypoints on a descending path, drawn from the same twelve numbers in
- * both clients — and drawn white here and lime on the phone, because this one
- * passed no colour and inherited the ink around it. A mark that is two colours
- * in two places is not a mark.
+ * The logo in the top bar — the name with the pin over its w — is drawn lime
+ * on the phone, and it once came out white here because this client passed
+ * no colour and it inherited the ink around it. A mark that is two colours in
+ * two places is not a mark.
  *
- * It takes `--color-accent-text` and not `--color-accent`: the mark is a
- * STROKE on the bar, which is the foreground job, and the two tokens are the
- * same lime in the dark — the scheme the phone has — while only the foreground
- * one stays readable when the bar turns white.
+ * It takes `--color-accent-text` and not `--color-accent`: the logo is a
+ * FOREGROUND on the bar, and the two tokens are the same lime in the dark —
+ * the scheme the phone has.
+ *
+ * In the light scheme it is neither. The brand's one hard rule is that the
+ * lime is never drawn on white (1.26:1, which is not a mark but a stain), and
+ * that on a light surface the mark is INK. Not the darker green that
+ * `--color-accent-text` becomes there: that is a link's colour, and a logo
+ * that is the same colour as the links beside it reads as one of them.
  */
+const lightRulesOf = (sheet: string): string => {
+  const found = /@media\s*\(prefers-color-scheme:\s*light\)\s*\{([\s\S]*)\}\s*$/u.exec(sheet);
+  if (found?.[1] === undefined) {
+    throw new Error("that sheet says nothing about the light scheme");
+  }
+
+  return found[1];
+};
+
 describe("the product's mark in the top bar", () => {
+  const MARKUP = `<header class="app-bar"><span class="app-shell__mark"></span></header>`;
+
   it("is drawn in the accent, the way the phone draws it", () => {
-    expect(
-      paintedOn(
-        ".app-shell__mark",
-        `<header class="app-bar"><span class="app-shell__mark"></span></header>`,
-        [APP_BAR, APP_SHELL],
-      ).color,
-    ).toBe("var(--color-accent-text)");
+    expect(paintedOn(".app-shell__mark", MARKUP, [APP_BAR, APP_SHELL]).color).toBe(
+      "var(--color-accent-text)",
+    );
   });
 
   it("is not the ink the words around it are, which is what it inherited before", () => {
     expect(tokenIn("dark", "--color-accent-text")).not.toBe(tokenIn("dark", "--color-ink"));
+  });
+
+  /**
+   * jsdom evaluates no media query, so the light rules are lifted out and
+   * applied on their own — the declarations a browser in the light scheme
+   * would use — the same way `schemes()` lifts the light tokens.
+   */
+  it("is ink in the light scheme, because the lime is never drawn on white", () => {
+    expect(
+      paintedOn(".app-shell__mark", MARKUP, [APP_BAR, APP_SHELL, lightRulesOf(APP_SHELL)]).color,
+    ).toBe("var(--color-ink)");
   });
 });
