@@ -10,6 +10,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { OptionList } from "../ui/atoms/option-list.js";
 import { TextField } from "../ui/atoms/text-field.js";
+import { SettingsGroup } from "../ui/molecules/settings-group.js";
 import { space, text } from "../ui/styles/tokens.js";
 import { themed } from "../ui/styles/theme.js";
 import {
@@ -45,7 +46,8 @@ interface ShownSecret {
  *
  * It owns the list, the three mutations, which row is asking a question and
  * which secret is on screen. Everything it draws — the rows, the address, the
- * issued secret — takes props and knows nothing about any of that.
+ * issued secret — takes props and knows nothing about any of that. It is drawn
+ * as the account screen's connected programs group, as on the browser.
  *
  * ## The secret never leaves this component's state
  *
@@ -121,69 +123,88 @@ export const MachineTokensPanel = (): JSX.Element => {
     });
   };
 
-  return (
-    <View style={styles.panel}>
-      <Text accessibilityRole="header" style={styles.title}>
-        {t("tokens.title")}
-      </Text>
-      <Text style={styles.explains}>{t("tokens.explains")}</Text>
+  const title = t("account.programs");
 
+  return (
+    <SettingsGroup
+      title={title}
+      about={[t("tokens.explains"), t("tokens.addressNote")]}
+      aboutLabel={t("account.moreAbout", { group: title })}
+      action={
+        composing ? null : (
+          <Button
+            tone="quiet"
+            icon="plus"
+            label={t("tokens.newAction")}
+            onPress={() => {
+              setComposing(true);
+            }}
+          />
+        )
+      }
+      notes={
+        <>
+          {shown === null ? null : (
+            <IssuedSecret
+              name={shown.name}
+              secret={shown.secret}
+              endpoint={endpoint}
+              onDismiss={() => {
+                setShown(null);
+              }}
+            />
+          )}
+
+          {refusal === null ? null : (
+            <Callout tone="wrong">
+              {t(machineTokenFailureMessage(refusal) ?? describeFailure(refusal))}
+            </Callout>
+          )}
+        </>
+      }
+    >
       {/*
-        The address belongs to the LIST, not to the panel that appears once.
-        The secret is shown one time and is then gone for ever; the address is
-        not a secret, does not change, and is exactly what somebody coming
-        back a month later to rotate a credential needs — at a moment that has
-        no issued-secret panel anywhere on it.
+        The address belongs to the LIST, not to the panel that appears once:
+        it is not a secret, does not change, and is exactly what somebody
+        coming back a month later to rotate a credential needs. So it is the
+        card's first row.
       */}
       <ApiAddress endpoint={endpoint} />
 
-      {shown === null ? null : (
-        <IssuedSecret
-          name={shown.name}
-          secret={shown.secret}
-          endpoint={endpoint}
-          onDismiss={() => {
-            setShown(null);
-          }}
-        />
-      )}
-
-      {refusal === null ? null : (
-        <Callout tone="wrong">
-          {t(machineTokenFailureMessage(refusal) ?? describeFailure(refusal))}
-        </Callout>
-      )}
-
       {tokens.isPending ? (
-        <Loading label={t("tokens.loading")} />
-      ) : tokens.isError ? (
-        <Callout tone="wrong">{t(describeFailure(tokens.error))}</Callout>
-      ) : tokens.data.machineTokens.length === 0 ? (
-        <Text style={styles.none}>{t("tokens.none")}</Text>
-      ) : (
-        <View style={styles.list} accessibilityLabel={t("tokens.title")}>
-          {tokens.data.machineTokens.map((token) => (
-            <MachineTokenRow
-              key={token.id}
-              token={token}
-              pending={asking?.name === token.name ? asking.act : null}
-              busy={rotate.isPending || revoke.isPending}
-              onAsk={(act) => {
-                setAsking({ name: token.name, act });
-              }}
-              onCancel={() => {
-                setAsking(null);
-              }}
-              onConfirm={(act) => {
-                onConfirm(token, act);
-              }}
-            />
-          ))}
+        <View style={styles.block}>
+          <Loading label={t("tokens.loading")} />
         </View>
+      ) : tokens.isError ? (
+        <View style={styles.block}>
+          <Callout tone="wrong">{t(describeFailure(tokens.error))}</Callout>
+        </View>
+      ) : tokens.data.machineTokens.length === 0 ? (
+        <View style={styles.block}>
+          <Text style={styles.none}>{t("tokens.none")}</Text>
+        </View>
+      ) : (
+        tokens.data.machineTokens.map((token) => (
+          <MachineTokenRow
+            key={token.id}
+            token={token}
+            pending={asking?.name === token.name ? asking.act : null}
+            busy={rotate.isPending || revoke.isPending}
+            onAsk={(act) => {
+              setAsking({ name: token.name, act });
+            }}
+            onCancel={() => {
+              setAsking(null);
+            }}
+            onConfirm={(act) => {
+              onConfirm(token, act);
+            }}
+          />
+        ))
       )}
 
       {composing ? (
-        <View style={styles.form}>
+        <View style={styles.block}>
           <TextField
             label={t("tokens.nameLabel")}
             hint={t("tokens.nameHint")}
@@ -235,30 +256,16 @@ export const MachineTokensPanel = (): JSX.Element => {
             </Button>
           </View>
         </View>
-      ) : (
-        <Button
-          tone="secondary"
-          icon="plus"
-          label={t("tokens.newAction")}
-          onPress={() => {
-            setComposing(true);
-          }}
-        >
-          {t("tokens.newAction")}
-        </Button>
-      )}
-    </View>
+      ) : null}
+    </SettingsGroup>
   );
 };
 
 const useStyles = themed((colors) =>
   StyleSheet.create({
-    panel: { gap: space.s3, alignItems: "flex-start", alignSelf: "stretch" },
-    title: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
-    explains: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-    none: { color: colors.inkMuted, fontSize: text.m },
-    list: { gap: space.s2, alignSelf: "stretch" },
-    form: { gap: space.s3, alignSelf: "stretch" },
+    // Anything in the card that is not a row of its own gets the rows' inset.
+    block: { gap: space.s3, paddingVertical: space.s3, paddingHorizontal: space.s4 },
+    none: { color: colors.inkMuted, fontSize: text.s },
     actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
   }),
 );

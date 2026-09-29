@@ -23,6 +23,11 @@ export interface CopyableValueProps {
    * an environment file and then has to split by hand.
    */
   readonly multiline?: boolean;
+  /**
+   * Drawn as a row's plain text rather than in a sunken box: for the API
+   * address, which is a fact somebody looks up and not a secret to transcribe.
+   */
+  readonly plain?: boolean;
 }
 
 /**
@@ -65,6 +70,7 @@ export const CopyableValue = ({
   copiedLabel,
   failedLabel,
   multiline = false,
+  plain = false,
 }: CopyableValueProps): JSX.Element => {
   const colors = useColors();
   const styles = useStyles();
@@ -73,11 +79,11 @@ export const CopyableValue = ({
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.row}>
+      <View style={[styles.row, plain ? styles.plainRow : null]}>
         <Text
           accessibilityLabel={valueLabel}
           selectable
-          style={[styles.value, multiline ? styles.multiline : null]}
+          style={[styles.value, multiline ? styles.multiline : null, plain ? styles.plain : null]}
         >
           {value}
         </Text>
@@ -134,6 +140,9 @@ const useStyles = themed((colors) =>
       padding: space.s2,
     },
     multiline: { lineHeight: 22 },
+    /** A fact on a row of a card rather than a string in a box of its own. */
+    plain: { backgroundColor: "transparent", borderWidth: 0, padding: 0 },
+    plainRow: { alignItems: "center" },
     /** Never smaller than a thumb, and never squeezed by a long value. */
     copy: {
       width: TAP_TARGET,

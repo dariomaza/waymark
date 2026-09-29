@@ -658,12 +658,10 @@ export const EN = {
   "tokens.scopeReadWrite": "Read and write",
   "tokens.scopeLabel": "What it may do",
 
-  "tokens.createdOn": "Made {when}",
   "tokens.lastUsedOn": "Last used {when}",
   /** The answer that makes an abandoned credential visible. */
   "tokens.neverUsed": "Never used",
   "tokens.lapsesOn": "Lapses {when}",
-  "tokens.neverLapses": "Never lapses",
 
   /**
    * # The other half of a credential
@@ -674,7 +672,6 @@ export const EN = {
    * appears once. Somebody coming back a month later to rotate a token needs
    * it then, and the secret panel is long gone by then.
    */
-  "tokens.addressTitle": "Where to point it",
   "tokens.addressNote":
     "This is the Waymark a program calls. It is not a secret, so take it as often as you need it.",
   "tokens.addressLabel": "The address of this Waymark",
@@ -796,7 +793,6 @@ export const EN = {
     "Whatever you would call it out loud — Pixel 8, Work laptop. It is how you tell them apart later.",
   "passkeys.addConfirm": "Add it",
 
-  "passkeys.addedOn": "Added {when}",
   "passkeys.lastUsedOn": "Last used {when}",
   /** The answer that makes a device nobody uses visible. */
   "passkeys.neverUsed": "Never used",

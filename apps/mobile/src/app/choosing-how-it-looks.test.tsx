@@ -31,7 +31,7 @@ const theCamera = /scan a label/i;
 const openAccount = async (): Promise<void> => {
   await screen.findByText(theCamera);
   await fireEvent.press(screen.getByRole("button", { name: "You, signed in as dario" }));
-  await screen.findByText("Signed in as dario");
+  await screen.findByText("Signed in");
 };
 
 /**
