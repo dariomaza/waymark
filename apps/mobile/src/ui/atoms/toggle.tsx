@@ -1,7 +1,8 @@
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 
 export interface ToggleProps {
   /** What the setting IS, read and heard. The whole accessible name. */
@@ -50,67 +51,73 @@ export const Toggle = ({
   checked,
   disabled = false,
   onPress,
-}: ToggleProps): JSX.Element => (
-  <Pressable
-    role="switch"
-    accessibilityLabel={label}
-    accessibilityState={{ checked, disabled }}
-    disabled={disabled}
-    onPress={onPress}
-    style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
-  >
-    <View style={styles.words}>
-      <Text style={styles.label}>{label}</Text>
-      {explains === undefined ? null : <Text style={styles.explains}>{explains}</Text>}
-    </View>
-    <View
-      accessible={false}
-      importantForAccessibility="no-hide-descendants"
-      accessibilityElementsHidden
-      style={[styles.track, checked ? styles.trackOn : null]}
+}: ToggleProps): JSX.Element => {
+  const styles = useStyles();
+
+  return (
+    <Pressable
+      role="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked, disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
     >
-      <View style={[styles.thumb, checked ? styles.thumbOn : null]} />
-    </View>
-  </Pressable>
-);
+      <View style={styles.words}>
+        <Text style={styles.label}>{label}</Text>
+        {explains === undefined ? null : <Text style={styles.explains}>{explains}</Text>}
+      </View>
+      <View
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+        style={[styles.track, checked ? styles.trackOn : null]}
+      >
+        <View style={[styles.thumb, checked ? styles.thumbOn : null]} />
+      </View>
+    </Pressable>
+  );
+};
 
 const TRACK_WIDTH = 48;
 const TRACK_HEIGHT = 28;
 const THUMB = 22;
 
-const styles = StyleSheet.create({
-  row: {
-    minHeight: TAP_TARGET,
-    alignSelf: "stretch",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.s4,
-    paddingVertical: space.s2,
-  },
-  pressed: { opacity: 0.7 },
-  // The words take whatever is left, so a long explanation wraps rather than
-  // pushing the track off the side of a phone.
-  words: { flex: 1, gap: space.s1 },
-  label: { color: colors.ink, fontSize: text.m, fontWeight: "600" },
-  explains: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-  track: {
-    width: TRACK_WIDTH,
-    height: TRACK_HEIGHT,
-    borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surfaceSunken,
-    justifyContent: "center",
-    paddingHorizontal: 2,
-  },
-  trackOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-  thumb: {
-    width: THUMB,
-    height: THUMB,
-    borderRadius: THUMB / 2,
-    backgroundColor: colors.inkMuted,
-    alignSelf: "flex-start",
-  },
-  thumbOn: { backgroundColor: colors.accentInk, alignSelf: "flex-end" },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    row: {
+      minHeight: TAP_TARGET,
+      alignSelf: "stretch",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: space.s4,
+      paddingVertical: space.s2,
+    },
+    pressed: { opacity: 0.7 },
+    // The words take whatever is left, so a long explanation wraps rather than
+    // pushing the track off the side of a phone.
+    words: { flex: 1, gap: space.s1 },
+    label: { color: colors.ink, fontSize: text.m, fontWeight: "600" },
+    explains: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+    track: {
+      width: TRACK_WIDTH,
+      height: TRACK_HEIGHT,
+      borderRadius: radius.l,
+      borderWidth: 1,
+      borderColor: colors.line,
+      backgroundColor: colors.surfaceSunken,
+      justifyContent: "center",
+      paddingHorizontal: 2,
+    },
+    trackOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+    thumb: {
+      width: THUMB,
+      height: THUMB,
+      borderRadius: THUMB / 2,
+      backgroundColor: colors.inkMuted,
+      alignSelf: "flex-start",
+    },
+    thumbOn: { backgroundColor: colors.accentInk, alignSelf: "flex-end" },
+  }),
+);

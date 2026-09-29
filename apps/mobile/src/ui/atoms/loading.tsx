@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { AccessibilityInfo, Animated, StyleSheet, Text, View } from "react-native";
 
-import { colors, space, text } from "../styles/tokens.js";
+import { space, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 
 /** How long one half of the pulse takes. The browser's keyframes say 1s round. */
 const HALF_A_PULSE = 500;
@@ -38,6 +39,7 @@ const DIM = 0.3;
  * disappearing, because it is still saying that something is happening.
  */
 export const Loading = ({ label }: { readonly label: string }): JSX.Element => {
+  const styles = useStyles();
   const opacity = useRef(new Animated.Value(DIM)).current;
   const [still, setStill] = useState(false);
 
@@ -110,19 +112,21 @@ export const Loading = ({ label }: { readonly label: string }): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  wrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.s2,
-    paddingVertical: space.s4,
-  },
-  /** The browser's 10px dot, at the browser's size, in the browser's lime. */
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.accent,
-  },
-  label: { color: colors.inkMuted, fontSize: text.s },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: space.s2,
+      paddingVertical: space.s4,
+    },
+    /** The browser's 10px dot, at the browser's size, in the browser's lime. */
+    dot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.accent,
+    },
+    label: { color: colors.inkMuted, fontSize: text.s },
+  }),
+);

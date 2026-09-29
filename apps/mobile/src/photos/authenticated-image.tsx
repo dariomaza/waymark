@@ -4,7 +4,8 @@ import { Image, StyleSheet, View } from "react-native";
 import { useApi } from "../api/api-context.js";
 import { useSessionStore } from "../auth/session-context.js";
 import { useTranslate } from "../app/language-context.js";
-import { colors, radius } from "../ui/styles/tokens.js";
+import { radius } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 
 export interface AuthenticatedImageProps {
   /** The path the API gave out, e.g. `/photos/abc/thumbnail`. */
@@ -61,6 +62,7 @@ export const AuthenticatedImage = ({
   size = 96,
   fill = false,
 }: AuthenticatedImageProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const api = useApi();
@@ -108,11 +110,13 @@ export const AuthenticatedImage = ({
   );
 };
 
-const styles = StyleSheet.create({
-  photo: {
-    borderRadius: radius.m,
-    backgroundColor: colors.surfaceSunken,
-  },
-  // No corner of its own: the box it fills already has one and clips to it.
-  filling: { width: "100%", height: "100%", backgroundColor: colors.surfaceSunken },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    photo: {
+      borderRadius: radius.m,
+      backgroundColor: colors.surfaceSunken,
+    },
+    // No corner of its own: the box it fills already has one and clips to it.
+    filling: { width: "100%", height: "100%", backgroundColor: colors.surfaceSunken },
+  }),
+);

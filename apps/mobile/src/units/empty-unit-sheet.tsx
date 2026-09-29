@@ -8,7 +8,8 @@ import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { OptionList } from "../ui/atoms/option-list.js";
 import { Sheet } from "../ui/organisms/sheet.js";
-import { colors, text } from "../ui/styles/tokens.js";
+import { text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { useEmptyUnit } from "./unit-mutations.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { unitOptions } from "./views/unit-options.js";
@@ -32,6 +33,7 @@ export const EmptyUnitSheet = ({
   parent,
   onClose,
 }: EmptyUnitSheetProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const tree = useStorageUnitTree();
@@ -83,4 +85,6 @@ export const EmptyUnitSheet = ({
   );
 };
 
-const styles = { text: { color: colors.ink, fontSize: text.m, lineHeight: 22 } } as const;
+const useStyles = themed(
+  (colors) => ({ text: { color: colors.ink, fontSize: text.m, lineHeight: 22 } }) as const,
+);

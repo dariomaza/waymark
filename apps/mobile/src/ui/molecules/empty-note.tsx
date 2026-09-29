@@ -1,7 +1,8 @@
 import type { JSX, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, space, text } from "../styles/tokens.js";
+import { space, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 
 export interface EmptyNoteProps {
   /** The sentence. Reads as a statement about this place, not as an error. */
@@ -27,16 +28,22 @@ export interface EmptyNoteProps {
  * content. What the place is FOR goes underneath it, quietly, and the thing to
  * do about it goes last.
  */
-export const EmptyNote = ({ children, explains, action }: EmptyNoteProps): JSX.Element => (
-  <View style={styles.wrap}>
-    <Text style={styles.text}>{children}</Text>
-    {explains === undefined ? null : <Text style={styles.explains}>{explains}</Text>}
-    {action === undefined ? null : action}
-  </View>
-);
+export const EmptyNote = ({ children, explains, action }: EmptyNoteProps): JSX.Element => {
+  const styles = useStyles();
 
-const styles = StyleSheet.create({
-  wrap: { gap: space.s2, paddingVertical: space.s4, alignItems: "flex-start" },
-  text: { color: colors.ink, fontSize: text.l, fontWeight: "600", lineHeight: 26 },
-  explains: { color: colors.inkMuted, fontSize: text.m, lineHeight: 22 },
-});
+  return (
+    <View style={styles.wrap}>
+      <Text style={styles.text}>{children}</Text>
+      {explains === undefined ? null : <Text style={styles.explains}>{explains}</Text>}
+      {action === undefined ? null : action}
+    </View>
+  );
+};
+
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: { gap: space.s2, paddingVertical: space.s4, alignItems: "flex-start" },
+    text: { color: colors.ink, fontSize: text.l, fontWeight: "600", lineHeight: 26 },
+    explains: { color: colors.inkMuted, fontSize: text.m, lineHeight: 22 },
+  }),
+);

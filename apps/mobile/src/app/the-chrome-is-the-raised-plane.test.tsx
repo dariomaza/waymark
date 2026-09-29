@@ -2,7 +2,8 @@ import { aSession } from "@waymark/api-client/testing";
 
 import { fireEvent, renderApp, screen, waitFor } from "../testing/render-app.js";
 import { theApiKnowsTheHouse } from "../testing/the-house.js";
-import { colors, text } from "../ui/styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
+import { text } from "../ui/styles/tokens.js";
 
 /**
  * # The bar at the top and the bar at the bottom are the same plane

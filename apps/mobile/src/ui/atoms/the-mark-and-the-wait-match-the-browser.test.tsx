@@ -3,7 +3,7 @@ import { AccessibilityInfo, ActivityIndicator } from "react-native";
 
 import { Avatar } from "./avatar.js";
 import { Loading } from "./loading.js";
-import { colors } from "../styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
 
 /**
  * # Two atoms that made every screen look like a different app

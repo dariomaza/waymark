@@ -4,7 +4,8 @@ import { StyleSheet, View } from "react-native";
 import { Button, type ButtonTone } from "../atoms/button.js";
 import type { IconName } from "../atoms/icon.js";
 import { Sheet } from "../organisms/sheet.js";
-import { colors, space } from "../styles/tokens.js";
+import { space } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 
 /**
  * One line in the menu: a word, and something to do.
@@ -69,6 +70,7 @@ export interface OverflowMenuProps {
  * hover to hesitate in and no cursor to aim with.
  */
 export const OverflowMenu = ({ label, actions }: OverflowMenuProps): JSX.Element => {
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
 
   const close = (): void => {
@@ -122,12 +124,14 @@ export const OverflowMenu = ({ label, actions }: OverflowMenuProps): JSX.Element
   );
 };
 
-const styles = StyleSheet.create({
-  list: { gap: space.s2 },
-  apart: {
-    marginTop: space.s3,
-    paddingTop: space.s3,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-  },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    list: { gap: space.s2 },
+    apart: {
+      marginTop: space.s3,
+      paddingTop: space.s3,
+      borderTopWidth: 1,
+      borderTopColor: colors.line,
+    },
+  }),
+);

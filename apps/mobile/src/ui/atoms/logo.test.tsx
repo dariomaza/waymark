@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react-native";
 import { LOGO, shapesOf } from "@waymark/tokens";
 
 import { Logo } from "./logo.js";
-import { colors } from "../styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
 
 /**
  * # The name, drawn

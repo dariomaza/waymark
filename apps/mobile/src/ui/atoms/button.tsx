@@ -2,7 +2,8 @@ import type { JSX, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon, type IconName } from "./icon.js";
-import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 
 /**
  * What a button MEANS, not what it looks like.
@@ -77,84 +78,94 @@ export const Button = ({
   icon,
   align = "center",
   share = false,
-}: ButtonProps): JSX.Element => (
-  <Pressable
-    role="button"
-    accessibilityLabel={label ?? (typeof children === "string" ? children : undefined)}
-    accessibilityState={{ disabled }}
-    disabled={disabled}
-    onPress={onPress}
-    style={({ pressed }) => [
-      styles.base,
-      styles[tone],
-      block ? styles.block : null,
-      share ? styles.share : null,
-      align === "start" ? styles.leading : null,
-      disabled ? styles.disabled : null,
-      pressed ? styles.pressed : null,
-    ]}
-  >
-    <View style={styles.row}>
-      {icon === undefined ? null : (
-        <Icon name={icon} size={18} color={iconColors[tone]} />
-      )}
-      {children === undefined ? null : (
-        <Text style={[styles.label, textStyles[tone]]}>{children}</Text>
-      )}
-    </View>
-  </Pressable>
+}: ButtonProps): JSX.Element => {
+  const styles = useStyles();
+  const textStyles = useTextStyles();
+  const iconColors = useIconColors();
+
+  return (
+    <Pressable
+      role="button"
+      accessibilityLabel={label ?? (typeof children === "string" ? children : undefined)}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.base,
+        styles[tone],
+        block ? styles.block : null,
+        share ? styles.share : null,
+        align === "start" ? styles.leading : null,
+        disabled ? styles.disabled : null,
+        pressed ? styles.pressed : null,
+      ]}
+    >
+      <View style={styles.row}>
+        {icon === undefined ? null : (
+          <Icon name={icon} size={18} color={iconColors[tone]} />
+        )}
+        {children === undefined ? null : (
+          <Text style={[styles.label, textStyles[tone]]}>{children}</Text>
+        )}
+      </View>
+    </Pressable>
+  );
+};
+
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    base: {
+      // Both directions. A button that has dropped its word for a picture has
+      // nothing but its padding left to keep it wide enough to hit.
+      minHeight: TAP_TARGET,
+      minWidth: TAP_TARGET,
+      paddingHorizontal: space.s4,
+      // No vertical padding, which is what the browser has always done. With it,
+      // a button whose label wrapped grew taller than the button beside it — two
+      // controls in one row at two heights, which is the one thing a row of
+      // peers must not be. The floor above does the work instead (ADR 22).
+      borderRadius: radius.m,
+      borderWidth: 1,
+      borderColor: colors.line,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    row: { flexDirection: "row", alignItems: "center", gap: space.s2, flexShrink: 1 },
+    block: { alignSelf: "stretch" },
+    /** An equal share of the row's width, and the whole of its height. */
+    share: { flexGrow: 1, flexBasis: 0, alignSelf: "stretch" },
+    /**
+     * A list is read down, so its words start where a list starts.
+     *
+     * `alignItems`, not `justifyContent`: this Pressable has no `flexDirection`,
+     * so its main axis is vertical and `justifyContent` would move the label UP
+     * rather than left. The cross axis is the horizontal one here.
+     */
+    leading: { alignItems: "flex-start" },
+    disabled: { opacity: 0.5 },
+    pressed: { opacity: 0.7 },
+    primary: { backgroundColor: colors.accent, borderColor: colors.accent },
+    secondary: { backgroundColor: colors.surfaceRaised },
+    danger: { backgroundColor: colors.surfaceRaised, borderColor: colors.danger },
+    quiet: { backgroundColor: "transparent", borderColor: "transparent" },
+    /**
+     * `flexShrink` because a word must be allowed to wrap rather than run off the
+     * side. React Native defaults a flex child to not shrinking, so a long label
+     * in a narrow rectangle — "Añadir un espacio" in a half-width button at
+     * 360px — would otherwise overflow instead of taking a second line.
+     */
+    label: { fontSize: text.m, fontWeight: "600", flexShrink: 1 },
+  }),
 );
 
-const styles = StyleSheet.create({
-  base: {
-    // Both directions. A button that has dropped its word for a picture has
-    // nothing but its padding left to keep it wide enough to hit.
-    minHeight: TAP_TARGET,
-    minWidth: TAP_TARGET,
-    paddingHorizontal: space.s4,
-    // No vertical padding, which is what the browser has always done. With it,
-    // a button whose label wrapped grew taller than the button beside it — two
-    // controls in one row at two heights, which is the one thing a row of
-    // peers must not be. The floor above does the work instead (ADR 22).
-    borderRadius: radius.m,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  row: { flexDirection: "row", alignItems: "center", gap: space.s2, flexShrink: 1 },
-  block: { alignSelf: "stretch" },
-  /** An equal share of the row's width, and the whole of its height. */
-  share: { flexGrow: 1, flexBasis: 0, alignSelf: "stretch" },
-  /**
-   * A list is read down, so its words start where a list starts.
-   *
-   * `alignItems`, not `justifyContent`: this Pressable has no `flexDirection`,
-   * so its main axis is vertical and `justifyContent` would move the label UP
-   * rather than left. The cross axis is the horizontal one here.
-   */
-  leading: { alignItems: "flex-start" },
-  disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.7 },
-  primary: { backgroundColor: colors.accent, borderColor: colors.accent },
-  secondary: { backgroundColor: colors.surfaceRaised },
-  danger: { backgroundColor: colors.surfaceRaised, borderColor: colors.danger },
-  quiet: { backgroundColor: "transparent", borderColor: "transparent" },
-  /**
-   * `flexShrink` because a word must be allowed to wrap rather than run off the
-   * side. React Native defaults a flex child to not shrinking, so a long label
-   * in a narrow rectangle — "Añadir un espacio" in a half-width button at
-   * 360px — would otherwise overflow instead of taking a second line.
-   */
-  label: { fontSize: text.m, fontWeight: "600", flexShrink: 1 },
-});
-
-const textStyles = StyleSheet.create({
-  primary: { color: colors.accentInk },
-  secondary: { color: colors.ink },
-  danger: { color: colors.danger },
-  quiet: { color: colors.inkMuted },
-});
+const useTextStyles = themed((colors) =>
+  StyleSheet.create({
+    primary: { color: colors.accentInk },
+    secondary: { color: colors.ink },
+    danger: { color: colors.danger },
+    quiet: { color: colors.inkMuted },
+  }),
+);
 
 /**
  * The drawing takes the same ink as the word beside it. `currentColor` does
@@ -162,9 +173,11 @@ const textStyles = StyleSheet.create({
  * and stated from the same table, or the two would drift the first time a
  * tone changed.
  */
-const iconColors: Record<ButtonTone, string> = {
-  primary: colors.accentInk,
-  secondary: colors.ink,
-  danger: colors.danger,
-  quiet: colors.inkMuted,
-};
+const useIconColors = themed(
+  (colors): Record<ButtonTone, string> => ({
+    primary: colors.accentInk,
+    secondary: colors.ink,
+    danger: colors.danger,
+    quiet: colors.inkMuted,
+  }),
+);

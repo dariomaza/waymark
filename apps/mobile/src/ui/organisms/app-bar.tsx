@@ -3,7 +3,8 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Logo } from "../atoms/logo.js";
-import { colors, space } from "../styles/tokens.js";
+import { space } from "../styles/tokens.js";
+import { themed, useColors } from "../styles/theme.js";
 
 export interface AppBarProps {
   /** What the header is called for a screen reader: the name the logo draws. */
@@ -30,6 +31,8 @@ export interface AppBarProps {
  * else, and the camera screen is black either way.
  */
 export const AppBar = ({ title, actions }: AppBarProps): JSX.Element => {
+  const colors = useColors();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
 
   return (
@@ -42,17 +45,19 @@ export const AppBar = ({ title, actions }: AppBarProps): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.s2,
-    paddingHorizontal: space.s4,
-    paddingBottom: space.s2,
-    backgroundColor: colors.surfaceRaised,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  // Pushed to the far edge, where a thumb reaching across finds them.
-  actions: { flex: 1, flexDirection: "row", justifyContent: "flex-end", gap: space.s2 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    bar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: space.s2,
+      paddingHorizontal: space.s4,
+      paddingBottom: space.s2,
+      backgroundColor: colors.surfaceRaised,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.line,
+    },
+    // Pushed to the far edge, where a thumb reaching across finds them.
+    actions: { flex: 1, flexDirection: "row", justifyContent: "flex-end", gap: space.s2 },
+  }),
+);

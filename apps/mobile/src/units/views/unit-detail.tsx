@@ -9,7 +9,8 @@ import { ScreenTitle } from "../../ui/atoms/screen-title.js";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
-import { colors, space, text } from "../../ui/styles/tokens.js";
+import { space, text } from "../../ui/styles/tokens.js";
+import { themed, useColors } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface UnitDetailProps {
@@ -94,6 +95,8 @@ export const UnitDetail = ({
   picking,
   belowItems,
 }: UnitDetailProps): JSX.Element => {
+  const colors = useColors();
+  const styles = useStyles();
   const t = useTranslate();
 
   const grid = (
@@ -209,20 +212,22 @@ export const UnitDetail = ({
   );
 };
 
-const styles = StyleSheet.create({
-  head: { gap: space.s3 },
-  /*
-   * `flex-start`, not `center`: a long name wraps to two lines and the control
-   * stays level with the first of them, which is where the eye already is.
-   * `flex: 1` on the title is what lets the name wrap rather than push the
-   * control off the edge.
-   */
-  title: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
-  titleText: { flex: 1 },
-  kind: { color: colors.inkMuted, fontSize: text.s },
-  description: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-  heading: { color: colors.ink, fontSize: text.l, fontWeight: "700", marginTop: space.s3 },
-  list: { gap: space.s2 },
-  withBar: { flex: 1, gap: space.s3 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    head: { gap: space.s3 },
+    /*
+     * `flex-start`, not `center`: a long name wraps to two lines and the control
+     * stays level with the first of them, which is where the eye already is.
+     * `flex: 1` on the title is what lets the name wrap rather than push the
+     * control off the edge.
+     */
+    title: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
+    titleText: { flex: 1 },
+    kind: { color: colors.inkMuted, fontSize: text.s },
+    description: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+    actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
+    heading: { color: colors.ink, fontSize: text.l, fontWeight: "700", marginTop: space.s3 },
+    list: { gap: space.s2 },
+    withBar: { flex: 1, gap: space.s3 },
+  }),
+);

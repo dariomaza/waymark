@@ -6,7 +6,8 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Callout } from "../../ui/atoms/callout.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
-import { colors, radius, space, text } from "../../ui/styles/tokens.js";
+import { radius, space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface ProcessingDetailProps {
@@ -35,6 +36,7 @@ export const ProcessingDetail = ({
   bulkRetry,
   rowAction,
 }: ProcessingDetailProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const { processor, counts, abandoned } = processing;
@@ -146,34 +148,36 @@ const stateLabels = (t: Translate): Readonly<Record<PhotoProcessingStatus, strin
   [PhotoProcessingStatus.SKIPPED]: t("photos.nothingToRemove"),
 });
 
-const styles = StyleSheet.create({
-  sentence: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-  address: { color: colors.inkMuted, fontFamily: "monospace", fontSize: text.s },
-  section: { gap: space.s2 },
-  heading: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
-  counts: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-  count: {
-    flexGrow: 1,
-    flexBasis: "45%",
-    gap: space.s1,
-    padding: space.s3,
-    borderRadius: radius.m,
-    backgroundColor: colors.surfaceRaised,
-  },
-  number: { color: colors.ink, fontSize: text.xl, fontWeight: "700" },
-  state: { color: colors.inkMuted, fontSize: text.s },
-  failedCount: { color: colors.ink, fontSize: text.m },
-  rows: { gap: space.s2 },
-  row: {
-    gap: space.s1,
-    padding: space.s3,
-    borderRadius: radius.m,
-    borderWidth: 1,
-    borderColor: colors.line,
-    alignItems: "flex-start",
-  },
-  photoId: { color: colors.ink, fontFamily: "monospace", fontSize: text.s, fontWeight: "700" },
-  reason: { color: colors.danger, fontSize: text.s, lineHeight: 20 },
-  spent: { color: colors.inkMuted, fontSize: text.s },
-  sample: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    sentence: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+    address: { color: colors.inkMuted, fontFamily: "monospace", fontSize: text.s },
+    section: { gap: space.s2 },
+    heading: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
+    counts: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
+    count: {
+      flexGrow: 1,
+      flexBasis: "45%",
+      gap: space.s1,
+      padding: space.s3,
+      borderRadius: radius.m,
+      backgroundColor: colors.surfaceRaised,
+    },
+    number: { color: colors.ink, fontSize: text.xl, fontWeight: "700" },
+    state: { color: colors.inkMuted, fontSize: text.s },
+    failedCount: { color: colors.ink, fontSize: text.m },
+    rows: { gap: space.s2 },
+    row: {
+      gap: space.s1,
+      padding: space.s3,
+      borderRadius: radius.m,
+      borderWidth: 1,
+      borderColor: colors.line,
+      alignItems: "flex-start",
+    },
+    photoId: { color: colors.ink, fontFamily: "monospace", fontSize: text.s, fontWeight: "700" },
+    reason: { color: colors.danger, fontSize: text.s, lineHeight: 20 },
+    spent: { color: colors.inkMuted, fontSize: text.s },
+    sample: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
+  }),
+);

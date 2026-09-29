@@ -20,7 +20,8 @@ import { TextField } from "../ui/atoms/text-field.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
-import { colors, space, text } from "../ui/styles/tokens.js";
+import { space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { useStorageUnitTree } from "../units/unit-queries.js";
 import { useSearch } from "./search-queries.js";
 import { useDebouncedValue } from "./use-debounced-value.js";
@@ -71,6 +72,7 @@ type SearchNavigation = CompositeNavigationProp<
 >;
 
 export const SearchScreen = (): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const route = useRoute<RouteProp<TabParamList, "Search">>();
@@ -150,12 +152,14 @@ export const SearchScreen = (): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  scope: {
-    gap: space.s2,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: space.s2,
-    padding: space.s3,
-  },
-  scopeText: { color: colors.ink, fontSize: text.s },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    scope: {
+      gap: space.s2,
+      backgroundColor: colors.surfaceRaised,
+      borderRadius: space.s2,
+      padding: space.s3,
+    },
+    scopeText: { color: colors.ink, fontSize: text.s },
+  }),
+);

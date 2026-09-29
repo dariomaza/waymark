@@ -9,6 +9,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { PlatformPressable } from "@react-navigation/elements";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import type { Palette, Scheme } from "@waymark/tokens";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { useMemo, useState, type JSX } from "react";
@@ -47,7 +48,8 @@ import { ClipboardProvider } from "../ui/clipboard-context.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { AppBar } from "../ui/organisms/app-bar.js";
 import { Screen } from "../ui/organisms/screen.js";
-import { colors, TAB_LABEL_WEIGHT, text } from "../ui/styles/tokens.js";
+import { TAB_LABEL_WEIGHT, text } from "../ui/styles/tokens.js";
+import { themed, useColors, useScheme } from "../ui/styles/theme.js";
 import { InventoryScreen } from "../units/inventory-screen.js";
 import { LabelScreen } from "../units/label-screen.js";
 import { LabelSheetScreen } from "../units/label-sheet-screen.js";
@@ -223,6 +225,9 @@ const ConfirmedSession = ({
   const signOut = useSignOut();
   const t = useTranslate();
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const scheme = useScheme();
+  const navigationTheme = useMemo(() => navigationThemeFor(colors, scheme), [colors, scheme]);
 
   /**
    * What the tree under the bar is told the insets are.
@@ -282,7 +287,7 @@ const ConfirmedSession = ({
   return (
     <NavigationContainer
       linking={linking}
-      theme={NAVIGATION_THEME}
+      theme={navigationTheme}
       {...(initialState === undefined ? {} : { initialState })}
     >
       {/*
@@ -332,6 +337,7 @@ const ConfirmedSession = ({
  * and burying that behind a menu would be burying the reason the app exists.
  */
 const Tabs = (): JSX.Element => {
+  const colors = useColors();
   const t = useTranslate();
   const state = useSessionState();
   const username = state.status === "known" ? (state.session?.user.username ?? "") : "";
@@ -458,21 +464,31 @@ const Tabs = (): JSX.Element => {
  * stock ones; the only thing added is the style. The focused flag arrives as
  * `aria-selected`, which is what the navigator puts on the button it builds.
  */
+const UnderlinedTab = (props: BottomTabBarButtonProps): JSX.Element => {
+  const styles = useStyles();
+
+  return (
+    <PlatformPressable
+      {...props}
+      style={[
+        props.style,
+        styles.tab,
+        props["aria-selected"] === true ? styles.currentTab : null,
+      ]}
+    />
+  );
+};
+
 const currentTabIsUnderlined = (props: BottomTabBarButtonProps): JSX.Element => (
-  <PlatformPressable
-    {...props}
-    style={[
-      props.style,
-      styles.tab,
-      props["aria-selected"] === true ? styles.currentTab : null,
-    ]}
-  />
+  <UnderlinedTab {...props} />
 );
 
-const styles = StyleSheet.create({
-  tab: { borderTopWidth: 2, borderTopColor: "transparent" },
-  currentTab: { borderTopColor: colors.accentText },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    tab: { borderTopWidth: 2, borderTopColor: "transparent" },
+    currentTab: { borderTopColor: colors.accentText },
+  }),
+);
 
 /**
  * A destination's drawing, in the colour the bar says it is.
@@ -498,8 +514,14 @@ const TEST_METRICS = {
   insets: { top: 24, left: 0, right: 0, bottom: 16 },
 };
 
-const NAVIGATION_THEME = {
-  dark: true,
+/**
+ * The navigator's own idea of the colours, for what it draws itself — the
+ * card behind a screen, a transition's background. Built per scheme, and
+ * `dark` tells it which one it is in.
+ */
+const navigationThemeFor = (colors: Palette, scheme: Scheme) =>
+  ({
+  dark: scheme === "dark",
   colors: {
     primary: colors.accent,
     background: colors.surface,
@@ -514,7 +536,7 @@ const NAVIGATION_THEME = {
     bold: { fontFamily: "System", fontWeight: "700" },
     heavy: { fontFamily: "System", fontWeight: "900" },
   },
-} as const;
+}) as const;
 
 /**
  * # Retrying, and why there is so little of it

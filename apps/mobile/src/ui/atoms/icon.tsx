@@ -30,7 +30,7 @@ import { Path, Svg } from "react-native-svg";
 
 import { MARK_SMALL, shapesOf } from "@waymark/tokens";
 
-import { colors } from "../styles/tokens.js";
+import { useColors } from "../styles/theme.js";
 
 /**
  * # The whole icon set, and the one seam it comes through
@@ -242,9 +242,11 @@ const spokenAs = (
 export const Icon = ({
   name,
   size = 22,
-  color = colors.ink,
+  color: given,
   label,
 }: IconProps): JSX.Element => {
+  const colors = useColors();
+  const color = given ?? colors.ink;
   const spoken = spokenAs(label);
 
   if (name === "pinnedW") {

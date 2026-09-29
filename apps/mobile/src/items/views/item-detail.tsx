@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { ScreenTitle } from "../../ui/atoms/screen-title.js";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
-import { colors, space, text } from "../../ui/styles/tokens.js";
+import { space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface ItemDetailProps {
@@ -32,6 +33,7 @@ export const ItemDetail = ({
   menu,
   onOpenUnit,
 }: ItemDetailProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   return (
@@ -67,12 +69,14 @@ export const ItemDetail = ({
 );
 };
 
-const styles = StyleSheet.create({
-  wrap: { gap: space.s3 },
-  /* `flex-start`, so a name that wraps keeps the control level with its first line. */
-  title: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
-  titleText: { flex: 1 },
-  quiet: { color: colors.inkMuted, fontSize: text.s },
-  description: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: { gap: space.s3 },
+    /* `flex-start`, so a name that wraps keeps the control level with its first line. */
+    title: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
+    titleText: { flex: 1 },
+    quiet: { color: colors.inkMuted, fontSize: text.s },
+    description: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+    actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
+  }),
+);

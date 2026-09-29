@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "../atoms/icon.js";
 import { useClipboard } from "../clipboard-context.js";
-import { colors, radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { radius, space, TAP_TARGET, text } from "../styles/tokens.js";
+import { themed, useColors } from "../styles/theme.js";
 
 export interface CopyableValueProps {
   /** The exact string shown, and the exact string handed to the clipboard. */
@@ -65,6 +66,8 @@ export const CopyableValue = ({
   failedLabel,
   multiline = false,
 }: CopyableValueProps): JSX.Element => {
+  const colors = useColors();
+  const styles = useStyles();
   const clipboard = useClipboard();
   const [copied, setCopied] = useState<boolean | null>(null);
 
@@ -103,42 +106,44 @@ export const CopyableValue = ({
   );
 };
 
-const styles = StyleSheet.create({
-  wrap: { gap: space.s1, alignSelf: "stretch" },
-  /*
-   * `flex-start` keeps the control at the TOP of the block: a 43-character
-   * secret wraps onto four lines on a phone, and a control centred on four
-   * lines is one somebody has to go looking for.
-   */
-  row: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
-  /**
-   * Monospaced and sunken, because everything this holds is a string to be
-   * TRANSCRIBED rather than prose to be read. It wraps rather than truncating:
-   * an address with its last eight characters off the right-hand edge of a
-   * phone is one somebody retypes wrongly.
-   */
-  value: {
-    flex: 1,
-    color: colors.ink,
-    fontFamily: "monospace",
-    fontSize: text.s,
-    lineHeight: 20,
-    backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.s,
-    padding: space.s2,
-  },
-  multiline: { lineHeight: 22 },
-  /** Never smaller than a thumb, and never squeezed by a long value. */
-  copy: {
-    width: TAP_TARGET,
-    height: TAP_TARGET,
-    flexShrink: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.m,
-  },
-  pressed: { opacity: 0.7 },
-  failed: { color: colors.danger, fontSize: text.s, lineHeight: 20 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: { gap: space.s1, alignSelf: "stretch" },
+    /*
+     * `flex-start` keeps the control at the TOP of the block: a 43-character
+     * secret wraps onto four lines on a phone, and a control centred on four
+     * lines is one somebody has to go looking for.
+     */
+    row: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
+    /**
+     * Monospaced and sunken, because everything this holds is a string to be
+     * TRANSCRIBED rather than prose to be read. It wraps rather than truncating:
+     * an address with its last eight characters off the right-hand edge of a
+     * phone is one somebody retypes wrongly.
+     */
+    value: {
+      flex: 1,
+      color: colors.ink,
+      fontFamily: "monospace",
+      fontSize: text.s,
+      lineHeight: 20,
+      backgroundColor: colors.surfaceSunken,
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radius.s,
+      padding: space.s2,
+    },
+    multiline: { lineHeight: 22 },
+    /** Never smaller than a thumb, and never squeezed by a long value. */
+    copy: {
+      width: TAP_TARGET,
+      height: TAP_TARGET,
+      flexShrink: 0,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radius.m,
+    },
+    pressed: { opacity: 0.7 },
+    failed: { color: colors.danger, fontSize: text.s, lineHeight: 20 },
+  }),
+);

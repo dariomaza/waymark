@@ -3,12 +3,15 @@ import { Path, Svg } from "react-native-svg";
 
 import { LOGO, shapesOf } from "@waymark/tokens";
 
-import { colors } from "../styles/tokens.js";
+import { useColors } from "../styles/theme.js";
 
 export interface LogoProps {
   /** Points. The width follows from the drawing's own proportions. */
   readonly height?: number;
-  /** The fill. The accent unless the caller means something by it. */
+  /**
+   * The fill. The mark's own colour unless the caller means something by it:
+   * lime on the dark, ink on the light, never lime on white (ADR 24).
+   */
   readonly color?: string;
   /**
    * What the logo says, when it stands for the name on its own. Left out, it
@@ -32,26 +35,31 @@ export interface LogoProps {
  * The default height is the icon size, which draws the letters at roughly
  * the size the name used to be typed in the top bar.
  */
-export const Logo = ({ height = 24, color = colors.accent, label }: LogoProps): JSX.Element => (
-  <Svg
-    width={(height * LOGO.width) / LOGO.height}
-    height={height}
-    viewBox={LOGO.viewBox}
-    fill={color}
-    {...(label === undefined
-      ? {
-          accessible: false,
-          accessibilityElementsHidden: true,
-          importantForAccessibility: "no-hide-descendants" as const,
-        }
-      : { accessible: true, accessibilityRole: "image" as const, accessibilityLabel: label })}
-  >
-    {shapesOf(LOGO).map((shape) => (
-      <Path
-        key={shape.d}
-        d={shape.d}
-        {...(shape.evenOdd === true ? { fillRule: "evenodd" as const } : {})}
-      />
-    ))}
-  </Svg>
-);
+export const Logo = ({ height = 24, color: given, label }: LogoProps): JSX.Element => {
+  const colors = useColors();
+  const color = given ?? colors.mark;
+
+  return (
+    <Svg
+      width={(height * LOGO.width) / LOGO.height}
+      height={height}
+      viewBox={LOGO.viewBox}
+      fill={color}
+      {...(label === undefined
+        ? {
+            accessible: false,
+            accessibilityElementsHidden: true,
+            importantForAccessibility: "no-hide-descendants" as const,
+          }
+        : { accessible: true, accessibilityRole: "image" as const, accessibilityLabel: label })}
+    >
+      {shapesOf(LOGO).map((shape) => (
+        <Path
+          key={shape.d}
+          d={shape.d}
+          {...(shape.evenOdd === true ? { fillRule: "evenodd" as const } : {})}
+        />
+      ))}
+    </Svg>
+  );
+};

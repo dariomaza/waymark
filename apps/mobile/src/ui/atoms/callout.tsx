@@ -1,7 +1,8 @@
 import type { JSX, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, space, text } from "../styles/tokens.js";
+import { radius, space, text } from "../styles/tokens.js";
+import { themed } from "../styles/theme.js";
 
 /**
  * The three things this app has to say, and they are not interchangeable.
@@ -22,35 +23,41 @@ export interface CalloutProps {
   readonly action?: ReactNode;
 }
 
-export const Callout = ({ tone, title, children, action }: CalloutProps): JSX.Element => (
-  <View
-    // A refusal interrupts; a note does not.
-    role={tone === "note" ? "status" : "alert"}
-    style={[styles.base, styles[tone]]}
-  >
-    {title === undefined ? null : <Text style={styles.title}>{title}</Text>}
-    {typeof children === "string" ? <Text style={styles.text}>{children}</Text> : children}
-    {action === undefined ? null : <View style={styles.action}>{action}</View>}
-  </View>
-);
+export const Callout = ({ tone, title, children, action }: CalloutProps): JSX.Element => {
+  const styles = useStyles();
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.m,
-    borderLeftWidth: 4,
-    backgroundColor: colors.surfaceRaised,
-    padding: space.s4,
-    gap: space.s2,
-  },
-  blocked: { borderLeftColor: colors.warning },
-  wrong: { borderLeftColor: colors.danger },
-  /*
-   * The accent, not `line`. A grey edge on a grey plate is a 4px stripe nobody
-   * can see, and an accent edge that does not read is not a quieter accent —
-   * it is an absent one. The browser had this right (ADR 22).
-   */
-  note: { borderLeftColor: colors.accent },
-  title: { color: colors.ink, fontSize: text.m, fontWeight: "700" },
-  text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-  action: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-});
+  return (
+    <View
+      // A refusal interrupts; a note does not.
+      role={tone === "note" ? "status" : "alert"}
+      style={[styles.base, styles[tone]]}
+    >
+      {title === undefined ? null : <Text style={styles.title}>{title}</Text>}
+      {typeof children === "string" ? <Text style={styles.text}>{children}</Text> : children}
+      {action === undefined ? null : <View style={styles.action}>{action}</View>}
+    </View>
+  );
+};
+
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    base: {
+      borderRadius: radius.m,
+      borderLeftWidth: 4,
+      backgroundColor: colors.surfaceRaised,
+      padding: space.s4,
+      gap: space.s2,
+    },
+    blocked: { borderLeftColor: colors.warning },
+    wrong: { borderLeftColor: colors.danger },
+    /*
+     * The accent, not `line`. A grey edge on a grey plate is a 4px stripe nobody
+     * can see, and an accent edge that does not read is not a quieter accent —
+     * it is an absent one. The browser had this right (ADR 22).
+     */
+    note: { borderLeftColor: colors.accent },
+    title: { color: colors.ink, fontSize: text.m, fontWeight: "700" },
+    text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+    action: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
+  }),
+);

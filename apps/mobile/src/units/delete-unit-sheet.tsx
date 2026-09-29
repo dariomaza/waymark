@@ -8,7 +8,8 @@ import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { OptionList } from "../ui/atoms/option-list.js";
 import { Sheet } from "../ui/organisms/sheet.js";
-import { colors, space, text } from "../ui/styles/tokens.js";
+import { space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { useDeleteUnit, useEmptyAndDeleteUnit } from "./unit-mutations.js";
 import { useStorageUnitTree } from "./unit-queries.js";
 import { unitOptions } from "./views/unit-options.js";
@@ -41,6 +42,7 @@ export const DeleteUnitSheet = ({
   onClose,
   onDeleted,
 }: DeleteUnitSheetProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const tree = useStorageUnitTree();
@@ -119,7 +121,9 @@ export const DeleteUnitSheet = ({
   );
 };
 
-const styles = StyleSheet.create({
-  block: { gap: space.s3 },
-  text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    block: { gap: space.s3 },
+    text: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
+  }),
+);

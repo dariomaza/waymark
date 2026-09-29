@@ -2,7 +2,8 @@ import { useState, type JSX } from "react";
 import { Pressable, StyleSheet } from "react-native";
 
 import { useTranslate } from "../../app/language-context.js";
-import { colors, radius, TAP_TARGET } from "../styles/tokens.js";
+import { radius, TAP_TARGET } from "../styles/tokens.js";
+import { useColors } from "../styles/theme.js";
 import { Icon } from "./icon.js";
 import { TextField } from "./text-field.js";
 
@@ -70,6 +71,7 @@ export const PasswordField = ({
   onChangeText,
   onSubmitEditing,
 }: PasswordFieldProps): JSX.Element => {
+  const colors = useColors();
   const t = useTranslate();
   const [shown, setShown] = useState(false);
 

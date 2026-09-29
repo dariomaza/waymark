@@ -2,7 +2,8 @@ import { initialsOf } from "@waymark/api-client";
 import type { JSX, ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, space, text } from "../../ui/styles/tokens.js";
+import { radius, space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 
 export interface ItemCardProps {
   readonly name: string;
@@ -71,6 +72,7 @@ export const ItemCard = ({
   selected = false,
   onLongPress,
 }: ItemCardProps): JSX.Element => {
+  const styles = useStyles();
   const line = secondary === undefined || secondary === "" ? undefined : secondary;
 
   return (
@@ -143,59 +145,61 @@ export const ItemCard = ({
   );
 };
 
-const styles = StyleSheet.create({
-  card: { gap: space.s1 },
-  pressed: { opacity: 0.7 },
-  /**
-   * `sunken`, not `raised`. This is the one row of the cross-client audit where
-   * THIS client moved rather than the browser (ADR 22): a photo's backing is
-   * the recess token everywhere else in this product — a field, an option list
-   * — and this app's own `TextField` uses it for exactly that. A tile here was
-   * this file breaking a rule the rest of the app keeps.
-   *
-   * It shows most in the state most of a new inventory is in: forty cells with
-   * no photograph yet, which read as holes waiting for a picture rather than as
-   * forty raised tiles with letters on them.
-   */
-  image: {
-    aspectRatio: 1,
-    borderRadius: radius.m,
-    backgroundColor: colors.surfaceSunken,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  initials: { color: colors.inkMuted, fontSize: text.xl, fontWeight: "700" },
-  /**
-   * The picked state is drawn on the PHOTO's box rather than around the whole
-   * card, so the name underneath keeps its position — a border that appeared
-   * around the card would shift every name in the row by a pixel as things
-   * are ticked.
-   */
-  picked: { borderWidth: 3, borderColor: colors.accent },
-  tick: {
-    position: "absolute",
-    top: space.s1,
-    right: space.s1,
-    width: 24,
-    height: 24,
-    borderRadius: radius.m,
-    backgroundColor: colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tickMark: { color: colors.accentInk, fontSize: text.s, fontWeight: "700" },
-  quantity: {
-    position: "absolute",
-    top: space.s1,
-    right: space.s1,
-    paddingHorizontal: space.s1,
-    paddingVertical: 1,
-    borderRadius: radius.s,
-    // Opaque, because it sits on a photograph of unknown colour.
-    backgroundColor: colors.surfaceSunken,
-  },
-  quantityText: { color: colors.ink, fontSize: text.s, fontWeight: "700" },
-  name: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
-  secondary: { color: colors.inkMuted, fontSize: text.s },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    card: { gap: space.s1 },
+    pressed: { opacity: 0.7 },
+    /**
+     * `sunken`, not `raised`. This is the one row of the cross-client audit where
+     * THIS client moved rather than the browser (ADR 22): a photo's backing is
+     * the recess token everywhere else in this product — a field, an option list
+     * — and this app's own `TextField` uses it for exactly that. A tile here was
+     * this file breaking a rule the rest of the app keeps.
+     *
+     * It shows most in the state most of a new inventory is in: forty cells with
+     * no photograph yet, which read as holes waiting for a picture rather than as
+     * forty raised tiles with letters on them.
+     */
+    image: {
+      aspectRatio: 1,
+      borderRadius: radius.m,
+      backgroundColor: colors.surfaceSunken,
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+    },
+    initials: { color: colors.inkMuted, fontSize: text.xl, fontWeight: "700" },
+    /**
+     * The picked state is drawn on the PHOTO's box rather than around the whole
+     * card, so the name underneath keeps its position — a border that appeared
+     * around the card would shift every name in the row by a pixel as things
+     * are ticked.
+     */
+    picked: { borderWidth: 3, borderColor: colors.accent },
+    tick: {
+      position: "absolute",
+      top: space.s1,
+      right: space.s1,
+      width: 24,
+      height: 24,
+      borderRadius: radius.m,
+      backgroundColor: colors.accent,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    tickMark: { color: colors.accentInk, fontSize: text.s, fontWeight: "700" },
+    quantity: {
+      position: "absolute",
+      top: space.s1,
+      right: space.s1,
+      paddingHorizontal: space.s1,
+      paddingVertical: 1,
+      borderRadius: radius.s,
+      // Opaque, because it sits on a photograph of unknown colour.
+      backgroundColor: colors.surfaceSunken,
+    },
+    quantityText: { color: colors.ink, fontSize: text.s, fontWeight: "700" },
+    name: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
+    secondary: { color: colors.inkMuted, fontSize: text.s },
+  }),
+);

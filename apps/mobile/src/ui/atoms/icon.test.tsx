@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react-native";
 import { MARK_SMALL, shapesOf } from "@waymark/tokens";
 
 import { ICON_NAMES, Icon } from "./icon.js";
-import { colors } from "../styles/tokens.js";
+import { DARK as colors } from "@waymark/tokens";
 
 /**
  * The drawings themselves are not asserted path by path — a test that repeats

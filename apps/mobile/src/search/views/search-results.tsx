@@ -6,7 +6,8 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { ItemGrid } from "../../items/views/item-grid.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
-import { colors, space, text } from "../../ui/styles/tokens.js";
+import { space, text } from "../../ui/styles/tokens.js";
+import { themed } from "../../ui/styles/theme.js";
 import { FIELD_KEYS, SearchHit, whyItMatched } from "./search-hit.js";
 import { useTranslate } from "../../app/language-context.js";
 
@@ -51,6 +52,7 @@ export const SearchResults = ({
   onOpenUnit,
   itemPhoto,
 }: SearchResultsProps): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   if (results.items.length === 0 && results.storageUnits.length === 0) {
@@ -143,9 +145,11 @@ const spokenName = (t: Translate, hit: ItemSearchResultView): string => {
 const explainable = (matched: readonly SearchMatchField[]): readonly SearchMatchField[] =>
   matched.filter((field) => field !== SearchMatchField.NAME);
 
-const styles = StyleSheet.create({
-  wrap: { flex: 1 },
-  section: { gap: space.s2, marginTop: space.s4 },
-  heading: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
-  list: { gap: space.s2 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    wrap: { flex: 1 },
+    section: { gap: space.s2, marginTop: space.s4 },
+    heading: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
+    list: { gap: space.s2 },
+  }),
+);

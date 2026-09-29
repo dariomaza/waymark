@@ -13,7 +13,8 @@ import { ScreenTitle } from "../ui/atoms/screen-title.js";
 import { EmptyNote } from "../ui/molecules/empty-note.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
-import { colors, space, text } from "../ui/styles/tokens.js";
+import { space, text } from "../ui/styles/tokens.js";
+import { themed } from "../ui/styles/theme.js";
 import { useLabelSymbols } from "./label-symbols.js";
 import { usePrinter } from "./printer-context.js";
 import { useStorageUnitTree } from "./unit-queries.js";
@@ -49,6 +50,7 @@ import { UnitChecklist } from "./views/unit-checklist.js";
  * have arrived and what the printer said. Everything it draws is presentational.
  */
 export const LabelSheetScreen = (): JSX.Element => {
+  const styles = useStyles();
   const t = useTranslate();
 
   const printer = usePrinter();
@@ -180,8 +182,10 @@ export const LabelSheetScreen = (): JSX.Element => {
   );
 };
 
-const styles = StyleSheet.create({
-  count: { color: colors.ink, fontSize: text.m },
-  hint: { color: colors.inkMuted, fontSize: text.s },
-  row: { flexDirection: "row", gap: space.s2 },
-});
+const useStyles = themed((colors) =>
+  StyleSheet.create({
+    count: { color: colors.ink, fontSize: text.m },
+    hint: { color: colors.inkMuted, fontSize: text.s },
+    row: { flexDirection: "row", gap: space.s2 },
+  }),
+);
