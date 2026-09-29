@@ -194,9 +194,12 @@ the same name differently — which is the thing two hand-maintained files could
 never promise, and the strongest argument that had been FOR drawing them here.
 `ui/atoms/icon.tsx` stays the seam in both clients: screens ask for a name out
 of this product's vocabulary and nothing outside that file knows lucide exists.
-The mark — `waypoints`, the three rings in the top bar — is still drawn by
-hand, because the picture that means Waymark may not also mean "routing" in a
-thousand other products.
+The mark is not lucide's either. It is the name with the corner square of a QR
+code turned into a pin over its w — the label on the box is the place you are
+looking for — and its outlines live once, in `packages/tokens/src/mark.ts`:
+the whole logo in the top bar of both clients, and `pinnedW`, the cut with a
+solid pin, at icon size. ADR 24 says why it replaced the three rings, which
+turned out to be very nearly lucide's own `waypoints`.
 
 **Expo instead of native Kotlin.** Expo lets the Android app share
 `packages/domain` and the API client with the web app, in one language, with no

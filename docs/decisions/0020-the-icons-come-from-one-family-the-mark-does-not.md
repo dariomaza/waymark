@@ -1,6 +1,6 @@
 # 20. The icons come from one family, the mark does not
 
-- Status: accepted
+- Status: accepted; its mark superseded by [ADR 24](0024-the-mark-is-the-name-with-a-pin-over-its-w.md)
 - Date: 2026-09-23
 
 Supersedes the inline rule in `apps/web/src/ui/atoms/icon.tsx`, and corrects
@@ -43,7 +43,8 @@ hand because nine shapes are not worth a package."*
 **The icon set comes from lucide. The product's mark does not.**
 
 `lucide-react` in `apps/web`, `lucide-react-native` in `apps/mobile`, both at
-1.47.0. `waypoints` stays hand-drawn in both atoms.
+1.47.0. ~~`waypoints` stays hand-drawn in both atoms.~~ The mark stays drawn
+in both atoms; which mark it is changed in ADR 24.
 
 ### Both halves of the old argument failed, and they failed differently
 
@@ -129,25 +130,29 @@ Two consequences follow and are worth stating:
 
 ### The mark is not for sale
 
-`waypoints` — three rings on a descending path — is what stands for Waymark in
-the top bar of both clients. It is the product's mark, not a symbol for a
-concept.
+**Superseded by ADR 24.** The rule survives — the mark is drawn in the atom
+and never taken from lucide — and the drawing it defended does not. See
+"Amended: the mark itself was somebody else's" below.
 
-Lucide ships a `waypoints`. Taking it would have meant the picture that means
+~~`waypoints` — three rings on a descending path — is what stands for Waymark in
+the top bar of both clients. It is the product's mark, not a symbol for a
+concept.~~
+
+~~Lucide ships a `waypoints`. Taking it would have meant the picture that means
 *this product* was the same picture that means "routing" in a thousand other
 products, which is the one thing a mark may not be. So it stays drawn in the
-atom, in both files, and it is the single asymmetry in the map.
+atom, in both files, and it is the single asymmetry in the map.~~
 
-An exception nobody asserts is an exception somebody tidies away, so both
+~~An exception nobody asserts is an exception somebody tidies away, so both
 clients have a test that says the mark is not lucide's: the browser's checks
 that the rendered `<svg>` carries no `lucide` class and has the mark's three
 rings, the phone's checks for the mark's own path data. Someone completing the
-map "for consistency" fails a test that tells them why.
+map "for consistency" fails a test that tells them why.~~
 
-This is also the one place where the drift problem the library solves still
+~~This is also the one place where the drift problem the library solves still
 exists — the mark's coordinates are written out twice. It is four shapes rather
 than forty, it is the one drawing nobody will ever edit casually, and both
-copies are asserted.
+copies are asserted.~~
 
 ### Where lucide's shape is different from ours, and whether that was allowed
 
@@ -230,3 +235,20 @@ Named, because a decision that lists no cost has not been made:
   and fails by looking wrong to the person holding the phone.
 - The measured cost of this change to the person who uses the app is 2.48 kB
   gzipped, once, and an app that stops making him report the same defect twice.
+
+### Amended: the mark itself was somebody else's
+
+2026-09-29. This ADR claimed the mark was "not for sale" because it was drawn
+here rather than taken from lucide. Drawing it here kept the FILE ours, but
+the picture was still lucide's: three circles on a path, which is what their
+`waypoints` is, at our weight and in our box. Hand-drawing a near-identical
+shape does not make it a different mark, and three waypoints read as a
+route, which Waymark is not.
+
+The owner approved a new mark, and ADR 24 records it: the name with the
+corner square of a QR code turned into a pin over its w. What stands from
+this ADR is the rule — the mark is drawn in the atom, never from the
+library, and its exception is asserted in both clients' icon tests. What
+does not stand is the drawing, its name (`pinnedW` now), the claim that it
+is on the common stroke weight (it is a fill), and the drift this section
+accepted: its numbers now live once, in `packages/tokens/src/mark.ts`.
