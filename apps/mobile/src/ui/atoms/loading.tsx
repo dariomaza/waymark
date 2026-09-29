@@ -1,47 +1,75 @@
+import { PIN_DROP, SYMBOL, WAIT_MARK_HEIGHT, type Shape } from "@waymark/tokens";
 import { useEffect, useRef, useState, type JSX } from "react";
-import { AccessibilityInfo, Animated, StyleSheet, Text, View } from "react-native";
+import { AccessibilityInfo, Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Path, Svg } from "react-native-svg";
 
 import { space, text } from "../styles/tokens.js";
-import { themed } from "../styles/theme.js";
+import { themed, useColors } from "../styles/theme.js";
 
-/** How long one half of the pulse takes. The browser's keyframes say 1s round. */
-const HALF_A_PULSE = 500;
+const WIDTH = (WAIT_MARK_HEIGHT * SYMBOL.width) / SYMBOL.height;
 
-const DIM = 0.3;
+/** From the symbol's units to points, for the pin's offset. */
+const SCALE = WAIT_MARK_HEIGHT / SYMBOL.height;
+
+const [FIRST] = PIN_DROP.steps;
 
 /**
- * # A mark that says what it is waiting for
+ * The browser's keyframes, as an `Animated` sequence: one timing per stretch,
+ * each as long as its share of the loop and eased by the curve its starting
+ * step names. A stretch that starts and ends at rest is the pause.
+ */
+const dropOf = (offset: Animated.Value): Animated.CompositeAnimation =>
+  Animated.loop(
+    Animated.sequence(
+      PIN_DROP.steps.slice(1).map((step, index) => {
+        const from = PIN_DROP.steps[index] ?? step;
+
+        return Animated.timing(offset, {
+          toValue: step.y,
+          duration: (step.at - from.at) * PIN_DROP.durationMs,
+          easing: Easing.bezier(...from.ease),
+          useNativeDriver: true,
+        });
+      }),
+    ),
+  );
+
+const outlines = (shapes: readonly Shape[]): JSX.Element[] =>
+  shapes.map((shape) => (
+    <Path
+      key={shape.d}
+      d={shape.d}
+      {...(shape.evenOdd === true ? { fillRule: "evenodd" as const } : {})}
+    />
+  ));
+
+/**
+ * # A wait that is the mark finding its place
  *
  * "Loading" alone tells somebody standing in a garage nothing; "Finding that
- * box" tells them whether to keep waiting.
+ * box" tells them whether to keep waiting. Beside the words, the owner asked
+ * for the logo: it is what the logo was made for. So the w stays put and the
+ * pin drops onto it, settles, rests and lifts, on the clock `PIN_DROP` in
+ * `@waymark/tokens` — the steps the browser runs as keyframes.
  *
- * This was a centred `ActivityIndicator`, and the browser drew a pulsing lime
- * dot in a left-aligned row. A wait is on every screen in this product and is
- * usually the first thing anybody sees, so the two clients disagreeing about
- * it meant every screen opened differently.
- *
- * The dot wins, for the reason the product's mark is drawn in the atom rather
- * than taken from lucide (ADR 20, ADR 24): a platform spinner is the
- * PLATFORM's vocabulary, and a thing on every screen of a product is the
- * product's. It is also the one of the two shapes both platforms can draw
- * identically.
- *
- * Left aligned rather than centred, on both clients, because a wait sits where
- * the content is about to appear and then nothing jumps when it arrives.
+ * Two drawings of the same box, one over the other: the w, still, and the pin
+ * in an `Animated.View` above it, because a transform on a view is what the
+ * native driver can move without a round trip through JavaScript on every
+ * frame. Both are the logo's own outlines (`SYMBOL`), in the mark's colour:
+ * lime on the dark, ink on the light (ADR 24).
  *
  * ## Reduced motion
  *
- * The browser has had a `prefers-reduced-motion` kill switch since it was
- * written. This client had nothing to switch off, having no motion of its own
- * — the platform spinner was the platform's business. Now that the pulse is
- * ours, so is the question, and somebody who has asked their phone for less
- * movement has asked this too: the dot goes still and stays lit, rather than
- * disappearing, because it is still saying that something is happening.
+ * Somebody who has asked their phone for less movement has asked this too:
+ * the pin rests in its place, which is the mark as it is drawn everywhere
+ * else. The question is answered before anything moves, so the pin never
+ * starts dropping only to stop.
  */
 export const Loading = ({ label }: { readonly label: string }): JSX.Element => {
   const styles = useStyles();
-  const opacity = useRef(new Animated.Value(DIM)).current;
-  const [still, setStill] = useState(false);
+  const colors = useColors();
+  const offset = useRef(new Animated.Value(0)).current;
+  const [still, setStill] = useState<boolean | null>(null);
 
   useEffect(() => {
     let listening = true;
@@ -58,34 +86,21 @@ export const Loading = ({ label }: { readonly label: string }): JSX.Element => {
   }, []);
 
   useEffect(() => {
-    if (still) {
-      opacity.setValue(1);
+    if (still !== false) {
+      offset.setValue(0);
 
       return;
     }
 
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: HALF_A_PULSE,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: DIM,
-          duration: HALF_A_PULSE,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    pulse.start();
+    offset.setValue(FIRST?.y ?? 0);
+    const drop = dropOf(offset);
+    drop.start();
 
     // A loop left running after the screen has gone is a timer nobody owns.
     return () => {
-      pulse.stop();
+      drop.stop();
     };
-  }, [opacity, still]);
+  }, [offset, still]);
 
   return (
     <View
@@ -100,13 +115,24 @@ export const Loading = ({ label }: { readonly label: string }): JSX.Element => {
     >
       {/*
         Hidden from assistive technology: the row already carries the label,
-        and a dot has nothing of its own to say.
+        and a drawing has nothing of its own to say.
       */}
-      <Animated.View
+      <View
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
-        style={[styles.dot, { opacity }]}
-      />
+        style={styles.mark}
+      >
+        <Svg width={WIDTH} height={WAIT_MARK_HEIGHT} viewBox={SYMBOL.viewBox} fill={colors.mark}>
+          {outlines(SYMBOL.letters)}
+        </Svg>
+        <Animated.View
+          style={[styles.pin, { transform: [{ translateY: Animated.multiply(offset, SCALE) }] }]}
+        >
+          <Svg width={WIDTH} height={WAIT_MARK_HEIGHT} viewBox={SYMBOL.viewBox} fill={colors.mark}>
+            {outlines(SYMBOL.pin)}
+          </Svg>
+        </Animated.View>
+      </View>
       <Text style={styles.label}>{label}</Text>
     </View>
   );
@@ -120,13 +146,9 @@ const useStyles = themed((colors) =>
       gap: space.s2,
       paddingVertical: space.s4,
     },
-    /** The browser's 10px dot, at the browser's size, in the browser's lime. */
-    dot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: colors.accent,
-    },
+    /** The browser's size; the pin lifts above it into the row's padding. */
+    mark: { width: WIDTH, height: WAIT_MARK_HEIGHT },
+    pin: { position: "absolute", top: 0, left: 0 },
     label: { color: colors.inkMuted, fontSize: text.s },
   }),
 );
