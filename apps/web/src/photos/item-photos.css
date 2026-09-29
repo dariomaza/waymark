@@ -48,7 +48,7 @@
 .item-photos__cover {
   font-size: var(--text-s);
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   padding: var(--space-1) var(--space-2);
 }
 

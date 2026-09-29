@@ -1,0 +1,62 @@
+.theme-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* Visible, the way the phone labels its settings. */
+.theme-switcher__legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  color: var(--color-ink);
+  font-size: var(--text-s);
+  font-weight: 600;
+}
+
+.theme-switcher__options {
+  display: flex;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+/* A thumb is about 9mm across: 48px is the floor, as it is for a button. */
+.theme-switcher__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-s);
+  font-weight: 600;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+.theme-switcher__option + .theme-switcher__option {
+  border-left: 1px solid var(--color-line);
+}
+
+/* The control itself is the label; the input is only the mechanism. */
+.theme-switcher__option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theme-switcher__option:has(input:checked) {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+/* The ring comes from the label, the input it belongs to being invisible. */
+.theme-switcher__option:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}

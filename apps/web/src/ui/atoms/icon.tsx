@@ -11,6 +11,7 @@ import {
   Image,
   Key,
   LogOut,
+  Moon,
   Move,
   Network,
   Pencil,
@@ -18,6 +19,8 @@ import {
   RotateCw,
   ScanQrCode,
   Search,
+  Sun,
+  SunMoon,
   Tag,
   Tags,
   Trash2,
@@ -148,6 +151,13 @@ export const ICON_NAMES = [
   "signOut",
   /** The language this is read in. A globe, because no flag is a language. */
   "globe",
+  /**
+   * The three answers to "how should this look" (ADR 25): whatever the device
+   * says, which is both at once; the light; the dark.
+   */
+  "sunMoon",
+  "sun",
+  "moon",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -191,6 +201,9 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "pinnedW">, LucideIcon> = {
   key: Key,
   signOut: LogOut,
   globe: Globe,
+  sunMoon: SunMoon,
+  sun: Sun,
+  moon: Moon,
 };
 
 /**
