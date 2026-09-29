@@ -34,6 +34,10 @@ export const ES: Dictionary = {
   // The frame around every signed-in screen
   // ---------------------------------------------------------------------
   "language.label": "Idioma",
+  "appearance.label": "Apariencia",
+  "appearance.system": "Sistema",
+  "appearance.light": "Claro",
+  "appearance.dark": "Oscuro",
   "shell.signedInAs": "Sesión iniciada como {username}",
   "shell.signOut": "Cerrar sesión",
   "shell.offline":
@@ -395,7 +399,7 @@ export const ES: Dictionary = {
   "nav.you": "Tú",
   "nav.youNamed": "Tú, sesión iniciada como {username}",
   "account.title": "Tú",
-  "account.lede": "Tu cuenta y el idioma en el que habla esta aplicación.",
+  "account.lede": "Tu cuenta, y cómo habla y se ve esta aplicación.",
   "login.show": "Mostrar",
   "login.hide": "Ocultar",
   "login.withBiometrics": "Iniciar sesión con la huella",

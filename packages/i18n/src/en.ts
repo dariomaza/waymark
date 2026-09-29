@@ -26,6 +26,18 @@ export const EN = {
   // The frame around every signed-in screen
   // ---------------------------------------------------------------------
   "language.label": "Language",
+  /**
+   * The name of the setting that chooses light, dark or the device's own
+   * scheme, on the account screen of both clients (ADR 25). "Appearance"
+   * rather than "Theme": it is the word both phones' own settings use.
+   */
+  "appearance.label": "Appearance",
+  /** Follow whatever the device is set to. The default. */
+  "appearance.system": "System",
+  /** Always the light scheme, whatever the device says. */
+  "appearance.light": "Light",
+  /** Always the dark scheme, whatever the device says. */
+  "appearance.dark": "Dark",
   "shell.signedInAs": "Signed in as {username}",
   "shell.signOut": "Sign out",
 
@@ -531,9 +543,9 @@ export const EN = {
   "account.title": "You",
   /**
    * Nothing on this screen is the inventory's, so it says what IS its own:
-   * the account, the language, and the way out.
+   * the account, the language, how it looks, and the way out.
    */
-  "account.lede": "Your account and the language this app speaks.",
+  "account.lede": "Your account, and how this app speaks and looks.",
   "login.show": "Show",
   "login.hide": "Hide",
   /**
