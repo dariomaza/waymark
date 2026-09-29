@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Waymark's mark: the w of the name with a pin over it — the corner square of
+  a QR code turned into a location pin, pointing down at the w (ADR 24).
+
+  The SAME drawing the clients draw, from the same numbers: `LOGO` in
+  `packages/tokens/src/mark.ts` is the whole name in Sora SemiBold's font
+  units, and this is its w and its pin alone. It is the FULL cut, with the
+  ring's hole and the core: a launcher icon is 48dp and up, where they read.
+  The small cut with the solid pin is for 24px and below, and it is what the
+  icon atoms and the browser's favicon draw.
+
+  # Why this file is not those numbers as they stand
+
+  Two things decide it, and both are ImageMagick's internal SVG renderer,
+  which is the only one on this machine — there is no librsvg delegate, so
+  `magick` falls back to MSVG.
+
+  MSVG draws fills and silently DROPS every stroke. This mark is all fills
+  already — it is a letterform, and a letter is an outline — so the rule
+  costs nothing now; it is why the mark before this one had to have its
+  strokes written out as the shapes they covered. Keep it that way: a stroke
+  added here rasterises to nothing, with no error.
+
+  MSVG also flattens arcs in USER units rather than at the raster resolution,
+  so a small radius comes out as a visible polygon however many pixels it is
+  rendered into. The pin's corners are arcs, and the core's are the smallest:
+  8 units in the kit's pin box, 20.3 in font units. So there is no transform
+  in this file for the renderer to flatten inside, and the box is 24000
+  units: every point is the font-unit point times 20, moved so the drawing's
+  own box — x 20 to 990.94, y -1032.45 to 0 in font units, centred on
+  (505.47, -516.23) — is centred on (12000, 12000). The core's corners come
+  out 406 units round, and the pin is round rather than cut.
+
+  Nothing here is a redrawing. If the mark changes, these are re-derived from
+  `mark.ts` — never traced off a picture of it.
+
+  The drawing spans x 2290.6..21709.4 and y 1675.5..22324.5, centred on the
+  centre of the box, so centring this square centres the mark. Its furthest
+  point from that centre — the foot of the w's left arm — is 12334.9 away,
+  which is what `render-icons.sh` sizes the adaptive icon by.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 24000 24000">
+  <!-- The w. -->
+  <path fill="#c8f04a" d="M7190.6 22324.5L9250.6 11824.5L12450.6 11824.5L14830.6 22324.5L12630.6 22324.5L10210.6 11884.5L11370.6 11884.5L9220.6 22324.5ZM6360.6 22324.5L6350.6 20044.5L8560.6 20044.5L8570.6 22324.5ZM5250.6 22324.5L2290.6 11464.5L4990.6 11464.5L7800.6 22324.5ZM13320.6 22324.5L13330.6 20044.5L15540.6 20044.5L15530.6 22324.5ZM14210.6 22324.5L16700.6 11464.5L19230.6 11464.5L16600.6 22324.5Z" />
+  <!--
+    The pin: its ring, then the core inside the ring. `evenodd` is what keeps
+    the ring's hole a HOLE: the adaptive icon's foreground is transparent,
+    and a hole painted in the background colour stops matching the day
+    somebody changes that colour.
+  -->
+  <path fill="#c8f04a" fill-rule="evenodd" d="M18959.2 2270.6L21114.3 4425.7A2031.8 2031.8 0 0 1 21114.3 7299.2L17522.5 10891L13930.7 7299.2A2031.8 2031.8 0 0 1 13930.7 4425.7L16085.8 2270.6A2031.8 2031.8 0 0 1 18959.2 2270.6ZM17594.3 3779.2L19605.7 5790.6A609.6 609.6 0 0 1 19605.7 6652.6L17163.3 9095.1L14720.9 6652.6A609.6 609.6 0 0 1 14720.9 5790.6L16732.3 3779.2A609.6 609.6 0 0 1 17594.3 3779.2Z" />
+  <path fill="#c8f04a" d="M17450.6 4928.6L18456.4 5934.3A406.4 406.4 0 0 1 18456.4 6509L17163.3 7802L15870.2 6509A406.4 406.4 0 0 1 15870.2 5934.3L16876 4928.6A406.4 406.4 0 0 1 17450.6 4928.6Z" />
+</svg>

@@ -16,10 +16,10 @@ import { resolve } from "node:path";
  * `render-icons.sh` run in the wrong directory, a PNG left out of a commit.
  * `expo prebuild` would say so too, on a build machine, ten minutes later.
  *
- * The mark itself is `assets/waypoints.svg`, and it is the same drawing as
- * `src/ui/atoms/icon.tsx` — the three waypoints in the top bar. That one is
- * kept honest by the comment at the head of the SVG and by eye; two
- * renderings of a shape are not comparable as text.
+ * The mark itself is `assets/pinned-w.svg`: the w with the full pin over it,
+ * the same numbers as `LOGO` in `@waymark/tokens` pushed into a larger box.
+ * The PNGs drawn from it are kept honest by eye; what is asserted is what the
+ * only rasteriser on this machine needs the source to be (see below).
  *
  * The file is READ rather than imported, because this is a test about what is
  * on disk. An import would be type-checked against a snapshot of today's keys
@@ -102,5 +102,44 @@ describe("what Android is handed to draw", () => {
    */
   it("uses the app's own surface colour behind everything it draws", () => {
     expect(config.expo.backgroundColor).toBe("#101011");
+  });
+});
+
+/**
+ * # The source the PNGs are drawn from
+ *
+ * `render-icons.sh` runs ImageMagick's internal SVG renderer, the only one on
+ * this machine, and it has two habits that decide how the source is written:
+ * it silently DROPS every stroke, and it flattens curves in user units, so a
+ * transform that shrinks a large drawing into a small box turns its arcs into
+ * polygons. A stroked or transformed source does not fail; it renders an
+ * empty square or a faceted pin, and the first person to see it is somebody
+ * looking at their launcher.
+ */
+describe("what the launcher icons are drawn from", () => {
+  const script = readFileSync(resolve(MOBILE, "assets/render-icons.sh"), "utf8");
+  const named = /^SVG=(\S+)$/mu.exec(script)?.[1];
+  const source = (): string => readFileSync(resolve(MOBILE, "assets", String(named)), "utf8");
+
+  it("names a source that is in the tree", () => {
+    expect(named).toBe("pinned-w.svg");
+    expect(existsSync(resolve(MOBILE, "assets", String(named)))).toBe(true);
+  });
+
+  it("is written in fills alone, with no transform for the renderer to flatten", () => {
+    const drawing = source().replace(/<!--[\s\S]*?-->/gu, "");
+
+    expect(drawing).not.toMatch(/stroke/u);
+    expect(drawing).not.toMatch(/transform/u);
+    expect(drawing).toMatch(/<path[^>]* fill="#c8f04a"/u);
+  });
+
+  /**
+   * The full cut. A launcher icon is 48dp and more, where the ring's hole and
+   * its core read — the small cut with the solid pin is for 24px and below.
+   * The hole is a HOLE, because the adaptive foreground is transparent.
+   */
+  it("draws the pin with its ring and core", () => {
+    expect(source()).toMatch(/fill-rule="evenodd"/u);
   });
 });
