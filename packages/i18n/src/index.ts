@@ -37,6 +37,7 @@ export {
 
 export { message, type Dictionary, type Message, type MessageKey } from "./dictionary.js";
 export { translator, type Translate } from "./translate.js";
+export { shortDate } from "./short-date.js";
 
 /**
  * What a refusal MEANS, as something that can still be said in two languages.

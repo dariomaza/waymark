@@ -15,12 +15,17 @@ describe("saying something in the language that was asked for", () => {
   });
 
   /**
-   * The owner approved this wording: the account screen names what it holds
-   * — the account, its language and its look — without the roundabout
-   * "how this app speaks and looks" that reads as a translation.
+   * The account screen lost its lede when it became grouped settings: the
+   * group titles say what it holds, in the words the owner approved for them.
    */
-  it("tells a Spanish reader in few words what the account screen holds", () => {
-    expect(translator("es")("account.lede")).toBe("Tu cuenta, su idioma y su aspecto.");
+  it("names the account screen's groups for a Spanish reader in the words approved", () => {
+    const t = translator("es");
+
+    expect([t("account.preferences"), t("account.security"), t("account.programs")]).toEqual([
+      "Preferencias",
+      "Seguridad",
+      "Programas conectados",
+    ]);
   });
 
   it("puts a value into the sentence", () => {

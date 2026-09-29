@@ -1,8 +1,10 @@
 import { MachineTokenScope, type MachineTokenView } from "@waymark/api-client";
+import { shortDate } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
+import { Icon } from "../../ui/atoms/icon.js";
 import { useLanguage, useTranslate } from "../../app/language-context.js";
 import "./machine-token-row.css";
 
@@ -19,14 +21,16 @@ export interface MachineTokenRowProps {
 }
 
 /**
- * One credential, and the two things that can be done to it.
+ * One credential, and the two things that can be done to it: a row of the
+ * connected programs card, its scope a chip under its name and its two acts
+ * two icons at the end — rotate, and the bin that revokes.
  *
  * Presentational to the bone: it is handed a token and some callbacks, and it
  * knows nothing about requests, caches or which of these is in flight.
  *
- * ## Why the confirmation is inline rather than a second sheet
+ * ## Why the confirmation is inline rather than a sheet
  *
- * Because this row is already inside one. A sheet opened from inside a sheet
+ * It was first written for a row inside a sheet. A sheet opened from inside a sheet
  * is two overlapping modals, each claiming with `aria-modal` that nothing
  * outside it matters, which cannot both be true — and the focus trap of the
  * first would be fighting the second's.
@@ -47,62 +51,58 @@ export const MachineTokenRow = ({
   const t = useTranslate();
   const language = useLanguage();
 
-  const when = (moment: string): string =>
-    new Date(moment).toLocaleDateString(language, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const when = (moment: string): string => shortDate(moment, language);
 
   return (
-    <li className="machine-token">
-      <div className="machine-token__head">
-        <span className="machine-token__name">{token.name}</span>
-        <span className="machine-token__scope">
-          {token.scope === MachineTokenScope.ReadWrite
-            ? t("tokens.scopeReadWrite")
-            : t("tokens.scopeRead")}
-        </span>
-      </div>
-
-      <p className="machine-token__facts">
+    <li className="settings-item">
+      {/* A key handed to a program: the same picture its row's words describe. */}
+      <Icon name="key" size={20} />
+      <span className="settings-item__text">
+        <span className="settings-item__name machine-token__name">{token.name}</span>
         {/*
-          `lastUsedAt` first, because it is the column somebody came for: a
-          credential nobody can see being used is one nobody will ever revoke.
+          One line of facts, what it may do first as a chip. Then `lastUsedAt`,
+          because it is the column somebody came for: a credential nobody can
+          see being used is one nobody will ever revoke. When it lapses is said
+          only when it does.
         */}
-        <span>
-          {token.lastUsedAt === null
-            ? t("tokens.neverUsed")
-            : t("tokens.lastUsedOn", { when: when(token.lastUsedAt) })}
+        <span className="machine-token__facts">
+          <span className="machine-token__scope">
+            {token.scope === MachineTokenScope.ReadWrite
+              ? t("tokens.scopeReadWrite")
+              : t("tokens.scopeRead")}
+          </span>
+          <span className="settings-item__fact">
+            {token.lastUsedAt === null
+              ? t("tokens.neverUsed")
+              : t("tokens.lastUsedOn", { when: when(token.lastUsedAt) })}
+          </span>
+          {token.expiresAt === null ? null : (
+            <span className="settings-item__fact">
+              {t("tokens.lapsesOn", { when: when(token.expiresAt) })}
+            </span>
+          )}
         </span>
-        <span>{t("tokens.createdOn", { when: when(token.createdAt) })}</span>
-        <span>
-          {token.expiresAt === null
-            ? t("tokens.neverLapses")
-            : t("tokens.lapsesOn", { when: when(token.expiresAt) })}
-        </span>
-      </p>
+      </span>
 
       {pending === null ? (
-        <div className="machine-token__actions">
+        <span className="settings-item__actions">
           <Button
-            tone="secondary"
+            tone="quiet"
             icon="rotate"
+            aria-label={t("tokens.rotateAction")}
             onClick={() => {
               onAsk("rotate");
             }}
-          >
-            {t("tokens.rotateAction")}
-          </Button>
+          />
           <Button
-            tone="danger"
+            tone="quiet"
+            icon="trash"
+            aria-label={t("tokens.revokeAction")}
             onClick={() => {
               onAsk("revoke");
             }}
-          >
-            {t("tokens.revokeAction")}
-          </Button>
-        </div>
+          />
+        </span>
       ) : (
         /**
          * `blocked` rather than `wrong`: this is a statement about the WORLD
@@ -122,7 +122,7 @@ export const MachineTokenRow = ({
               ? t("tokens.rotateWarning", { name: token.name })
               : t("tokens.revokeWarning", { name: token.name })}
           </p>
-          <div className="machine-token__actions">
+          <div className="settings-group__buttons">
             <Button
               tone={pending === "revoke" ? "danger" : "primary"}
               disabled={busy}

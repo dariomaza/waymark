@@ -7,6 +7,7 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { SelectField } from "../ui/atoms/select-field.js";
 import { TextField } from "../ui/atoms/text-field.js";
+import { SettingsGroup } from "../ui/molecules/settings-group.js";
 import { apiEndpoint } from "../app/api-endpoint.js";
 import { useTranslate } from "../app/language-context.js";
 import {
@@ -18,7 +19,6 @@ import {
 import { ApiAddress } from "./views/api-address.js";
 import { IssuedSecret } from "./views/issued-secret.js";
 import { MachineTokenRow, type PendingAct } from "./views/machine-token-row.js";
-import "./machine-tokens-panel.css";
 
 /** The secret currently on screen, and which credential it belongs to. */
 interface ShownSecret {
@@ -42,13 +42,15 @@ interface ShownSecret {
  *
  * It owns the list, the three mutations, which row is asking a question and
  * which secret is on screen. Everything it draws — the rows, the issued secret
- * — takes props and knows nothing about any of that.
+ * — takes props and knows nothing about any of that. It is drawn as the
+ * account screen's connected programs group: the address and the tokens are
+ * rows of one card, and a new one is the [+] in the group's title line.
  *
  * ## The secret never leaves this component's state
  *
  * Not into the query cache, not into `localStorage`, not into a URL. It is
  * rendered by `IssuedSecret` and it goes when this unmounts, which is when the
- * account sheet closes. That is the whole lifetime, on purpose.
+ * account screen is left. That is the whole lifetime, on purpose.
  *
  * ## The address is the opposite kind of thing
  *
@@ -125,49 +127,71 @@ export const MachineTokensPanel = (): JSX.Element => {
     });
   };
 
-  return (
-    <section className="machine-tokens" aria-labelledby={`${formId}-title`}>
-      <h4 className="machine-tokens__title" id={`${formId}-title`}>
-        {t("tokens.title")}
-      </h4>
-      <p className="machine-tokens__explains">{t("tokens.explains")}</p>
+  const title = t("account.programs");
 
+  return (
+    <SettingsGroup
+      title={title}
+      about={[t("tokens.explains"), t("tokens.addressNote")]}
+      aboutLabel={t("account.moreAbout", { group: title })}
+      action={
+        composing ? null : (
+          <Button
+            tone="quiet"
+            icon="plus"
+            aria-label={t("tokens.newAction")}
+            onClick={() => {
+              setComposing(true);
+            }}
+          />
+        )
+      }
+      notes={
+        <>
+          {shown === null ? null : (
+            <IssuedSecret
+              name={shown.name}
+              secret={shown.secret}
+              endpoint={endpoint}
+              onDismiss={() => {
+                setShown(null);
+              }}
+            />
+          )}
+
+          {refusal === null ? null : (
+            <Callout tone="wrong">
+              <p>{t(machineTokenFailureMessage(refusal) ?? describeFailure(refusal))}</p>
+            </Callout>
+          )}
+        </>
+      }
+    >
       {/*
         The address belongs to the LIST, not to the panel that appears once.
         The secret is shown one time and is then gone for ever; the address is
         not a secret, does not change, and is exactly what somebody coming
         back a month later to rotate a credential needs — at a moment that has
-        no issued-secret panel anywhere on it.
+        no issued-secret panel anywhere on it. So it is the card's first row.
       */}
       <ApiAddress endpoint={endpoint} />
 
-      {shown === null ? null : (
-        <IssuedSecret
-          name={shown.name}
-          secret={shown.secret}
-          endpoint={endpoint}
-          onDismiss={() => {
-            setShown(null);
-          }}
-        />
-      )}
-
-      {refusal === null ? null : (
-        <Callout tone="wrong">
-          <p>{t(machineTokenFailureMessage(refusal) ?? describeFailure(refusal))}</p>
-        </Callout>
-      )}
-
       {tokens.isPending ? (
-        <Loading label={t("tokens.loading")} />
+        <div className="settings-group__block">
+          <Loading label={t("tokens.loading")} />
+        </div>
       ) : tokens.isError ? (
-        <Callout tone="wrong">
-          <p>{t(describeFailure(tokens.error))}</p>
-        </Callout>
+        <div className="settings-group__block">
+          <Callout tone="wrong">
+            <p>{t(describeFailure(tokens.error))}</p>
+          </Callout>
+        </div>
       ) : tokens.data.machineTokens.length === 0 ? (
-        <p className="machine-tokens__none">{t("tokens.none")}</p>
+        <div className="settings-group__block">
+          <p className="settings-group__empty">{t("tokens.none")}</p>
+        </div>
       ) : (
-        <ul className="machine-tokens__list">
+        <ul aria-label={t("tokens.title")}>
           {tokens.data.machineTokens.map((token) => (
             <MachineTokenRow
               key={token.id}
@@ -189,7 +213,7 @@ export const MachineTokensPanel = (): JSX.Element => {
       )}
 
       {composing ? (
-        <form className="machine-tokens__form" onSubmit={onCreate}>
+        <form className="settings-group__block" onSubmit={onCreate}>
           <TextField
             id={`${formId}-name`}
             label={t("tokens.nameLabel")}
@@ -223,7 +247,7 @@ export const MachineTokensPanel = (): JSX.Element => {
               },
             ]}
           />
-          <div className="machine-tokens__actions">
+          <div className="settings-group__buttons">
             <Button type="submit" tone="primary" disabled={create.isPending}>
               {create.isPending ? t("tokens.creating") : t("tokens.createAction")}
             </Button>
@@ -238,17 +262,7 @@ export const MachineTokensPanel = (): JSX.Element => {
             </Button>
           </div>
         </form>
-      ) : (
-        <Button
-          tone="secondary"
-          icon="plus"
-          onClick={() => {
-            setComposing(true);
-          }}
-        >
-          {t("tokens.newAction")}
-        </Button>
-      )}
-    </section>
+      ) : null}
+    </SettingsGroup>
   );
 };

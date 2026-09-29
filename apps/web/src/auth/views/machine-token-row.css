@@ -1,49 +1,29 @@
-.machine-token {
+.machine-token__facts {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-m);
-  padding: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
 }
 
-.machine-token__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
+/* A credential's name is a literal somebody types into a shell. */
 .machine-token__name {
-  font-weight: 650;
-  /* A credential's name is a literal somebody types into a shell. */
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  /* It cannot wrap mid-name and it cannot push the scope off the row. */
-  overflow-wrap: anywhere;
+  font-size: var(--text-s);
 }
 
+/* What it may do, as a small chip rather than a sentence. */
 .machine-token__scope {
-  font-size: var(--text-s);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
   color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.6;
   white-space: nowrap;
 }
 
-/*
- * Three short facts, wrapping rather than truncating: on a narrow phone the
- * one that would be cut off is the one somebody came to read.
- */
-.machine-token__facts {
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  font-size: var(--text-s);
-  color: var(--color-ink-muted);
-}
-
-.machine-token__actions {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+/* A date is never broken across two lines: the whole fact moves down instead. */
+.machine-token__facts > .settings-item__fact {
+  white-space: nowrap;
 }

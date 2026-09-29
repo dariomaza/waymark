@@ -1,37 +1,56 @@
 /**
- * The phone's account screen, laid out the way the phone lays it out: a lede
- * under the heading, the person beside their own initial, then the settings in
- * order of how personal each one is, then the way out.
+ * Who is signed in, with the way out beside the name, then the groups: the
+ * shape of both phones' own settings screens, and of the phone client's.
  */
 .account-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
-.account-panel__lede {
-  margin: calc(var(--space-3) * -1) 0 0;
-  color: var(--color-ink-muted);
-  font-size: var(--text-s);
+/*
+ * Read by a screen reader, not drawn: the bar already names this screen.
+ * Clipped rather than `display: none`, which would take it out of the tree.
+ */
+.account-panel__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .account-panel__who {
   display: flex;
-  flex-direction: row;
   align-items: center;
   gap: var(--space-3);
+  padding-left: var(--space-2);
 }
 
 .account-panel__name {
-  margin: 0;
-  color: var(--color-ink);
-  font-weight: 600;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
   min-width: 0;
+  margin: 0;
 }
 
-.account-panel__setting {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
+.account-panel__username {
+  color: var(--color-ink);
+  font-size: var(--text-l);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.account-panel__state {
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+}
+
+.account-panel__out {
+  margin-left: auto;
 }

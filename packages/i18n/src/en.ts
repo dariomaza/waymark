@@ -542,10 +542,23 @@ export const EN = {
   "nav.youNamed": "You, signed in as {username}",
   "account.title": "You",
   /**
-   * Nothing on this screen is the inventory's, so it says what IS its own:
-   * the account, the language, how it looks, and the way out.
+   * The small muted line under the name at the top of the account screen. The
+   * name is drawn above it on its own, so this says only what the name is.
    */
-  "account.lede": "Your account, and how this app speaks and looks.",
+  "account.signedIn": "Signed in",
+  /**
+   * The three small uppercase group titles the account screen is made of, in
+   * the order they are drawn: how the app speaks and looks, what can open this
+   * account, and the programs that were given a key to it.
+   */
+  "account.preferences": "Preferences",
+  "account.security": "Security",
+  "account.programs": "Connected programs",
+  /**
+   * The name of the ⓘ beside a group's title, which unfolds the one or two
+   * sentences explaining it. `{group}` is that group's title.
+   */
+  "account.moreAbout": "More about {group}",
   "login.show": "Show",
   "login.hide": "Hide",
   /**

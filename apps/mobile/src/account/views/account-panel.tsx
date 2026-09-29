@@ -61,7 +61,6 @@ export const AccountPanel = ({
   return (
     <View style={styles.panel}>
       <ScreenTitle>{t("account.title")}</ScreenTitle>
-      <Text style={styles.lede}>{t("account.lede")}</Text>
 
       {username === null ? null : (
         <View style={styles.who}>
