@@ -49,10 +49,19 @@
 # `splash-icon.png` is the launch screen, which is masked by nothing and sits
 # alone on the background colour, so the mark can be bigger: 69% tall. The plugin in
 # `app.json` scales it to `imageWidth` dp; this file is the master.
+#
+# `splash-icon-light.png` is the same launch screen for a phone in the light
+# scheme (ADR 25): the same size, the mark in the light scheme's `mark` — the
+# ink, never lime on white (ADR 24). It is the lime render recoloured, not a
+# second source: `-colorize 100%` replaces every pixel's colour with the ink
+# and leaves its alpha alone, so the antialiased edge and the ring's hole come
+# through unchanged.
 set -eu
 
 SVG=pinned-w.svg
 SURFACE='#101011'
+# The light scheme's `mark` in `@waymark/tokens`; a test holds the two equal.
+INK='#131415'
 
 # Mark 62% of 1024 tall, on the near-black surface.
 magick -background none "$SVG" -resize 744x744 \
@@ -67,3 +76,8 @@ magick -background none "$SVG" -resize 607x607 \
 # Mark 69% of 1024 tall, transparent, for the launch screen.
 magick -background none "$SVG" -resize 820x820 \
   -background none -gravity center -extent 1024x1024 PNG32:splash-icon.png
+
+# The same, in ink, for the light launch screen.
+magick -background none "$SVG" -resize 820x820 \
+  -background none -gravity center -extent 1024x1024 \
+  -fill "$INK" -colorize 100% PNG32:splash-icon-light.png

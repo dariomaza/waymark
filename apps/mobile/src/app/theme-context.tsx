@@ -35,7 +35,8 @@ export interface ThemeProviderProps {
  * the stored one a frame later is a flash on every launch for exactly the
  * people who made a choice. The read is issued at the same moment as the
  * session's and the language's, so the app was going to wait for the keystore
- * anyway; until then the launch screen's own dark background shows.
+ * anyway; until then the launch screen shows, on the device scheme's own
+ * surface (ADR 25).
  *
  * While the choice is System the phone's setting is followed live: somebody
  * whose phone goes dark at sunset does not have to reopen the app.

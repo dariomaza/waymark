@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { DARK, LIGHT } from "@waymark/tokens";
+
 /**
  * # The half of the app that is not JavaScript
  *
@@ -32,6 +34,8 @@ interface SplashOptions {
   readonly imageWidth?: number;
   readonly resizeMode?: string;
   readonly backgroundColor?: string;
+  /** The plugin's night variant: `drawable-night-*` and `values-night`. */
+  readonly dark?: { readonly image?: string; readonly backgroundColor?: string };
 }
 
 interface AppConfig {
@@ -81,27 +85,48 @@ describe("what Android is handed to draw", () => {
    * is the quietest way to ship an app with no launch screen at all — so this
    * asserts the plugin, and asserts the old key is absent rather than wrong.
    */
-  it("names a splash image through the plugin the SDK reads, and it is there", () => {
-    const splash = (config.expo.plugins ?? []).find(
+  const splash = (): SplashOptions | undefined =>
+    (config.expo.plugins ?? []).find(
       (plugin): plugin is readonly [string, SplashOptions] =>
         Array.isArray(plugin) && plugin[0] === "expo-splash-screen",
-    );
+    )?.[1];
 
-    expect(splash).toBeDefined();
-    expect(splash?.[1].image).toBe("./assets/splash-icon.png");
-    expect(isThere(splash?.[1].image)).toBe(true);
-    expect(splash?.[1].backgroundColor).toBe("#101011");
+  it("names a splash image through the plugin the SDK reads, and it is there", () => {
+    expect(splash()).toBeDefined();
+    expect(isThere(splash()?.image)).toBe(true);
     expect(config.expo.splash).toBeUndefined();
   });
 
   /**
-   * One near-black, in four places: the tokens the app is drawn with, the
-   * window behind the first frame, the adaptive icon's back layer and the
-   * launch screen. A splash in a different dark to the app it opens is a
-   * flicker on every cold start.
+   * The launch screen follows the phone's own scheme, as the app it opens
+   * does (ADR 25). The plugin's top level is the light phone's; its `dark`
+   * block becomes the night resources Android picks by itself. The mark is
+   * the scheme's `mark` — never lime on the light surface (ADR 24) — and the
+   * colour behind it is the scheme's `surface`, so the first frame the app
+   * draws is the same colour the splash already was.
+   *
+   * It follows the DEVICE, not the choice on the account screen: Android
+   * draws it before any JavaScript has run, so no stored choice can reach it.
    */
-  it("uses the app's own surface colour behind everything it draws", () => {
-    expect(config.expo.backgroundColor).toBe("#101011");
+  it("opens a light phone on the light surface with the mark in ink", () => {
+    expect(splash()?.image).toBe("./assets/splash-icon-light.png");
+    expect(isThere(splash()?.image)).toBe(true);
+    expect(splash()?.backgroundColor).toBe(LIGHT.surface);
+  });
+
+  it("opens a dark phone on the dark surface with the mark in lime", () => {
+    expect(splash()?.dark?.image).toBe("./assets/splash-icon.png");
+    expect(isThere(splash()?.dark?.image)).toBe(true);
+    expect(splash()?.dark?.backgroundColor).toBe(DARK.surface);
+  });
+
+  /**
+   * The native root view has ONE colour: `expo-system-ui` writes it to
+   * `values/colors.xml` and has no night variant, so it stays the dark
+   * surface on both schemes. Nothing shows it once the app has drawn.
+   */
+  it("uses the app's own dark surface behind the native root view", () => {
+    expect(config.expo.backgroundColor).toBe(DARK.surface);
   });
 });
 
@@ -141,5 +166,15 @@ describe("what the launcher icons are drawn from", () => {
    */
   it("draws the pin with its ring and core", () => {
     expect(source()).toMatch(/fill-rule="evenodd"/u);
+  });
+
+  /**
+   * The light launch screen's mark is the same drawing in the light scheme's
+   * `mark`. The script cannot import the tokens, so this holds its colour to
+   * them, and holds it to writing the file `app.json` names.
+   */
+  it("draws the light splash in the light scheme's own mark colour", () => {
+    expect(/^INK='(#[0-9a-f]{6})'$/mu.exec(script)?.[1]).toBe(LIGHT.mark);
+    expect(script).toMatch(/PNG32:splash-icon-light\.png$/mu);
   });
 });

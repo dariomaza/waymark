@@ -63,13 +63,30 @@ on both clients.
   from `StyleSheet.create` at import to `themed()`, and a component that
   forgets `useStyles()` does not compile — but a colour computed outside a
   component would still have to be caught by review.
-- **A launch screen and a root background that stay dark.** The Android
-  splash is the lime mark on the ink, and on a light phone it opens dark and
-  then turns light. A light splash would need a second icon drawn in ink,
-  and the native root view's own colour is still the dark from `app.json`;
-  neither is visible once the app has drawn.
+- **A root background that stays dark.** The native root view's own colour
+  is the dark surface from `app.json` on both schemes; it is not visible once
+  the app has drawn. (The launch screen used to stay dark too — see the
+  amendment below.)
 - **A second reader of the stored key.** `public/theme.js` cannot import the
   store, so a test holds the two to each other.
 - **The web's pre-paint script cannot set the browser's bar colour** without
   a literal colour of its own; the bar is the dark surface for the moment
   between the document arriving and the bundle starting.
+
+## Amendment, 2026-09-29: the launch screen follows the device
+
+- **The Android splash follows the phone's scheme.** On a light phone it is
+  the mark in the light scheme's `mark` — the ink — on the light `surface`;
+  on a dark phone it is today's lime on the dark `surface`. It is declared
+  through `expo-splash-screen`'s own light/dark support in `app.json`: the
+  top level is the light phone's, the `dark` block becomes Android's night
+  resources. The ink PNG, `splash-icon-light.png`, is drawn by
+  `render-icons.sh` from the same source at the same size as the lime one.
+  A test holds both colours in `app.json`, and the script's ink, to the
+  tokens.
+- **It follows the device, not the choice on the account screen.** Android
+  draws it before any JavaScript runs, so a phone set to Light in the app
+  but Dark in the system still opens on the dark splash.
+- **The root view's colour cannot follow.** `expo-system-ui` writes one
+  `backgroundColor` into `values/colors.xml` with no night variant, so it
+  stays the dark surface. The launcher icon stays lime on ink on both.

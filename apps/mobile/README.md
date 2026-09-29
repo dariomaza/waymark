@@ -83,8 +83,10 @@ so the PNGs are **generated and committed**:
 cd assets && sh render-icons.sh      # needs ImageMagick 7 (`brew install imagemagick`)
 ```
 
-Nobody edits `icon.png`, `adaptive-icon.png` or `splash-icon.png` by hand.
-Change the mark, run that, commit all four files. The head of the SVG says why
+Nobody edits `icon.png`, `adaptive-icon.png`, `splash-icon.png` or
+`splash-icon-light.png` by hand. Change the mark, run that, commit all five
+files. The launch screen follows the phone's scheme (ADR 25): the ink mark on
+the light surface, the lime one on the dark. The head of the SVG says why
 it is written in a 24000-unit box with no transforms, and the head of the
 script says how each size is chosen — in particular why the adaptive icon's
 mark is only half the height of its canvas, which is the difference between a
