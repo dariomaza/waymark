@@ -68,6 +68,8 @@ export {
 
 export { LABELS_PER_PAGE, LABEL_SHEET } from "./label-sheet.js";
 
+export { LOGO, MARK_SMALL, shapesOf, type Drawing, type Shape } from "./mark.js";
+
 export {
   AA_BOUNDARY,
   AA_LARGE_TEXT,
