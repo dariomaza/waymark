@@ -61,8 +61,9 @@ describe("every ratio this package publishes", () => {
  * at 1.26 is not one. `accentBorder` is what rescues it, at 3.24.
  *
  * This is asserted rather than described because it is the entire argument for
- * a token that exists on one client and not the other, and an argument nobody
- * can re-run is an argument the next person deletes.
+ * the token, and an argument nobody can re-run is an argument the next person
+ * deletes. It used to be the argument for a token only the browser had; since
+ * the phone gained the light scheme (ADR 25), both clients draw the edge.
  */
 describe("the lime fill on the light scheme", () => {
   it("has no silhouette of its own", () => {
@@ -70,10 +71,10 @@ describe("the lime fill on the light scheme", () => {
   });
 
   it("is given one by the border token, which is why that token exists", () => {
-    expect(contrastRatio(LIGHT_WEB_ONLY.accentBorder, LIGHT.surface)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(LIGHT.accentBorder, LIGHT.surface)).toBeGreaterThanOrEqual(3);
   });
 
-  it("needs no such rescue in the dark, which is why the phone has no such token", () => {
+  it("needs no such rescue in the dark, which is why the edge is transparent there", () => {
     expect(contrastRatio(DARK.accent, DARK.surface)).toBeGreaterThanOrEqual(3);
   });
 });

@@ -111,11 +111,11 @@ ${evidenceFor("dark")}
  * light
 ${evidenceFor("light")}
  *
- * The mobile client carries the same dark values, from the same package. It
- * has no light scheme on purpose: a phone held over a box does not get that
- * choice, because the camera screen is black either way.
+ * The mobile client carries the same values, from the same package, and since
+ * ADR 25 the same two schemes and the same three-way choice between them.
  */
 :root {
+  color-scheme: dark;
 ${colorLines(DARK, DARK_WEB_ONLY, "  ")}
 
 ${Object.entries(SPACE)
@@ -139,7 +139,7 @@ ${labelSheetLines()}
 }
 
 /**
- * The second scheme, which only this client has.
+ * The second scheme, when the device asks for it and nobody chose the dark.
  *
  * The lime fill is the token that changes character here and it is the one
  * that does NOT change value: the same \`--color-accent\` with the same ink on
@@ -147,13 +147,29 @@ ${labelSheetLines()}
  * which is unreadable as lime on near-white, and the fill's EDGE — because
  * here the fill has only ${contrastRatio(LIGHT.accent, LIGHT.surface).toFixed(2)} against the page. It LOOKS visible, the
  * hue being loud, but its silhouette is not, and a component boundary needs
- * ${String(3)}. \`--color-accent-border\` is ${contrastRatio(LIGHT_WEB_ONLY.accentBorder, LIGHT.surface).toFixed(2)} here, so the button has a shape as
+ * ${String(3)}. \`--color-accent-border\` is ${contrastRatio(LIGHT.accentBorder, LIGHT.surface).toFixed(2)} here, so the button has a shape as
  * well as a colour; without it the button reads fine on a desk and disappears
  * on a phone in daylight.
+ *
+ * \`:not([data-theme="dark"])\` is the choice winning one way: somebody who
+ * picked the dark on a device set to light keeps the dark.
  */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
 ${colorLines(LIGHT, LIGHT_WEB_ONLY, "    ")}
   }
+}
+
+/**
+ * The choice winning the other way: the light scheme, chosen on a device set
+ * to dark. \`data-theme\` is set on the root before the first paint (see
+ * \`apps/web/public/theme.js\`) and by the account screen's switch after it.
+ * Nothing sets \`data-theme="system"\`: following the device is the ABSENCE
+ * of a choice, so it is the absence of the attribute.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+${colorLines(LIGHT, LIGHT_WEB_ONLY, "  ")}
 }
 `;

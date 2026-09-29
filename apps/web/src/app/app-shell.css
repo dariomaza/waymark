@@ -23,26 +23,12 @@
 }
 
 /**
- * The product's logo, in the accent, which is what the phone client draws.
- *
- * `--color-accent-text` and not `--color-accent`: the logo is a foreground on
- * the bar, and the two are the same lime in the dark scheme the phone has.
+ * The product's logo, in the mark's own colour: the lime on the dark and the
+ * ink on the light, because the brand never draws the lime on white (ADR 24).
+ * A token rather than a media query, so a CHOSEN scheme gets it right too
+ * (ADR 25).
  */
 .app-shell__mark {
   display: flex;
-  color: var(--color-accent-text);
-}
-
-/**
- * On a light bar the logo is ink: the brand never draws the lime on white,
- * and the dark green `--color-accent-text` turns into here is the colour of
- * a link, which a logo must not be mistaken for (ADR 24).
- *
- * Kept last in this file: the test lifts this block out to apply it, since
- * jsdom evaluates no media query.
- */
-@media (prefers-color-scheme: light) {
-  .app-shell__mark {
-    color: var(--color-ink);
-  }
+  color: var(--color-mark);
 }

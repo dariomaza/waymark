@@ -68,6 +68,17 @@ export {
 
 export { LABELS_PER_PAGE, LABEL_SHEET } from "./label-sheet.js";
 
+export {
+  DEFAULT_THEME_CHOICE,
+  isThemeChoice,
+  PALETTES,
+  schemeFor,
+  THEME_CHOICES,
+  THEME_KEY,
+  type Scheme,
+  type ThemeChoice,
+} from "./scheme.js";
+
 export { LOGO, MARK_SMALL, shapesOf, type Drawing, type Shape } from "./mark.js";
 
 export {

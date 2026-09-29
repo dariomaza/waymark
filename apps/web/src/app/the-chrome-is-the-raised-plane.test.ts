@@ -40,13 +40,14 @@ const TOKENS = readFileSync(join(STYLES, "tokens.css"), "utf8");
 const BASE = readFileSync(join(STYLES, "base.css"), "utf8");
 
 /**
- * The two schemes, each as its own `:root` block. The light one is inside a
- * media query, which jsdom will not evaluate, so it is lifted out and applied
- * on its own — the same declarations a browser would use at that width.
+ * The two schemes: the plain `:root` block, and the one a light choice
+ * applies. The system's light is the same declarations inside a media query,
+ * which jsdom will not evaluate — and `a-scheme-can-be-chosen.test.ts` holds
+ * the two copies to each other — so the chosen block stands for both.
  */
 const schemes = (): ReadonlyMap<string, string> => {
-  const blocks = [...TOKENS.matchAll(/:root\s*\{([^}]*)\}/gu)].map(([, body]) => String(body));
-  const [dark, light] = blocks;
+  const dark = /:root\s*\{([^}]*)\}/u.exec(TOKENS)?.[1];
+  const light = /:root\[data-theme="light"\]\s*\{([^}]*)\}/u.exec(TOKENS)?.[1];
   if (dark === undefined || light === undefined) {
     throw new Error("tokens.css no longer has a dark and a light :root");
   }
@@ -145,46 +146,31 @@ describe("the surface the chrome is painted on", () => {
  * no colour and it inherited the ink around it. A mark that is two colours in
  * two places is not a mark.
  *
- * It takes `--color-accent-text` and not `--color-accent`: the logo is a
- * FOREGROUND on the bar, and the two tokens are the same lime in the dark —
- * the scheme the phone has.
+ * It takes `--color-mark`, which exists for exactly this: lime on the dark,
+ * and INK on the light. The brand's one hard rule is that the lime is never
+ * drawn on white (1.26:1, which is not a mark but a stain) — and not the
+ * darker green `--color-accent-text` becomes there either, which is a link's
+ * colour, and a logo the colour of the links beside it reads as one of them.
  *
- * In the light scheme it is neither. The brand's one hard rule is that the
- * lime is never drawn on white (1.26:1, which is not a mark but a stain), and
- * that on a light surface the mark is INK. Not the darker green that
- * `--color-accent-text` becomes there: that is a link's colour, and a logo
- * that is the same colour as the links beside it reads as one of them.
+ * It used to be `--color-accent-text` plus a `prefers-color-scheme` override
+ * in the shell's stylesheet. A scheme can be CHOSEN now (ADR 25), and a media
+ * query cannot see a choice; a token that each scheme sets can.
  */
-const lightRulesOf = (sheet: string): string => {
-  const found = /@media\s*\(prefers-color-scheme:\s*light\)\s*\{([\s\S]*)\}\s*$/u.exec(sheet);
-  if (found?.[1] === undefined) {
-    throw new Error("that sheet says nothing about the light scheme");
-  }
-
-  return found[1];
-};
-
 describe("the product's mark in the top bar", () => {
   const MARKUP = `<header class="app-bar"><span class="app-shell__mark"></span></header>`;
 
-  it("is drawn in the accent, the way the phone draws it", () => {
+  it("is drawn in the mark's own colour, the way the phone draws it", () => {
     expect(paintedOn(".app-shell__mark", MARKUP, [APP_BAR, APP_SHELL]).color).toBe(
-      "var(--color-accent-text)",
+      "var(--color-mark)",
     );
   });
 
-  it("is not the ink the words around it are, which is what it inherited before", () => {
-    expect(tokenIn("dark", "--color-accent-text")).not.toBe(tokenIn("dark", "--color-ink"));
+  it("is the lime in the dark, not the ink the words around it are", () => {
+    expect(tokenIn("dark", "--color-mark")).toBe(tokenIn("dark", "--color-accent"));
+    expect(tokenIn("dark", "--color-mark")).not.toBe(tokenIn("dark", "--color-ink"));
   });
 
-  /**
-   * jsdom evaluates no media query, so the light rules are lifted out and
-   * applied on their own — the declarations a browser in the light scheme
-   * would use — the same way `schemes()` lifts the light tokens.
-   */
   it("is ink in the light scheme, because the lime is never drawn on white", () => {
-    expect(
-      paintedOn(".app-shell__mark", MARKUP, [APP_BAR, APP_SHELL, lightRulesOf(APP_SHELL)]).color,
-    ).toBe("var(--color-ink)");
+    expect(tokenIn("light", "--color-mark")).toBe(tokenIn("light", "--color-ink"));
   });
 });

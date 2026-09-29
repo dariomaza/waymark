@@ -33,7 +33,8 @@
  */
 
 /**
- * Dark, and it is the one every client has.
+ * Dark, the scheme this product was drawn in first, and the one a device with
+ * no opinion of its own is given.
  *
  * This is opened in a storage room at night as often as anywhere else, and a
  * white screen at arm's length in the dark is the difference between reading
@@ -56,6 +57,17 @@ export const DARK = {
   accentInk: "#14170a",
   /** The accent as a foreground: a link, the active tab, an outline button. */
   accentText: "#c8f04a",
+  /**
+   * The lime fill's EDGE. None is needed here: the lime sits at 14.51 against
+   * this surface, so its silhouette is unmistakable. See the light scheme,
+   * where it is not.
+   */
+  accentBorder: "transparent",
+  /**
+   * The mark's own colour (ADR 24): lime on the ink. It is its own token
+   * because in the light scheme it is neither the accent nor `accentText`.
+   */
+  mark: "#c8f04a",
 
   danger: "#ff8a7a",
   dangerInk: "#2a0d08",
@@ -83,16 +95,15 @@ export type ColorName = keyof typeof DARK;
 export type Palette = { readonly [K in ColorName]: string };
 
 /**
- * Light, which only the browser has.
+ * Light, the SECOND scheme — and since ADR 25, one both clients have.
  *
- * The phone has no light scheme on purpose: a phone held over a box does not
- * get that choice, because the camera screen is black either way. The browser
- * follows the system, because a laptop at a desk in daylight is a real place
- * this is used from.
+ * The phone used to be dark only, on the argument that a phone held over a
+ * box gets no choice because the camera screen is black either way. That
+ * argued about ONE screen; the owner asked for a light scheme and a switch on
+ * both clients, and every other screen of the app is read, not aimed. So both
+ * clients follow the device by default and let a person override it (ADR 25).
  *
- * So this is not "the web's palette". It is the SECOND scheme, and the one
- * client that has a second scheme uses it. Nothing here is forced onto React
- * Native, and nothing here may be a colour the dark scheme does not also name.
+ * Nothing here may be a colour the dark scheme does not also name.
  */
 export const LIGHT: Palette = {
   surface: "#fafafa",
@@ -107,6 +118,17 @@ export const LIGHT: Palette = {
   accentInk: "#14170a",
   /** A lime foreground on near-white is unreadable, so this one must move. */
   accentText: "#3f5c0c",
+  /**
+   * Here the edge is load bearing: the fill has 1.26 against the page and a
+   * component boundary needs 3. `the-measurements-are-real.test.ts` is where
+   * that stops being a claim.
+   */
+  accentBorder: "#7a9620",
+  /**
+   * Never lime on white, so the mark is the ink here — not the dark green
+   * `accentText` becomes, which is the colour of a link (ADR 24).
+   */
+  mark: "#131415",
 
   danger: "#a92c14",
   dangerInk: "#ffffff",
@@ -114,37 +136,23 @@ export const LIGHT: Palette = {
 };
 
 /**
- * # The tokens only the browser needs, and the honest reason for each
+ * # The token only the browser needs, and the honest reason for it
  *
  * A shared palette is worth nothing if it makes the two clients pretend to be
- * the same platform. These are ABSENT from the phone rather than transparent
- * or unused there, which is what keeps the mobile file honest about what the
- * platform actually needs — and what keeps this one honest about what is
- * genuinely shared.
+ * the same platform. `focus` is ABSENT from the phone rather than transparent
+ * or unused there, which keeps the mobile side honest about what the platform
+ * actually needs.
  *
- * Both entries earn their place by a fact about the platform, not by a fact
- * about the design:
+ * It is the keyboard's ring. React Native has no `:focus-visible` and no
+ * keyboard focus model to draw one for; a phone's affordance is the press
+ * state, which every control already carries. A token for a ring nothing can
+ * draw would be a colour with no job.
  *
- * - `accentBorder` is the lime fill's EDGE. In the light scheme the fill has
- *   1.26 contrast against the page — it LOOKS visible, because the hue is
- *   loud, but its silhouette is not, and a component boundary needs 3. This
- *   border is 3.24, so the button has a shape as well as a colour. In the dark
- *   the fill is already at 14.51 and needs no rescue, which is why it is
- *   `transparent` there and why the phone has no such token at all.
- * - `focus` is the keyboard's ring. React Native has no `:focus-visible` and
- *   no keyboard focus model to draw one for; a phone's affordance is the press
- *   state, which every control already carries. A token for a ring nothing can
- *   draw would be a colour with no job.
- *
- * `contrast.ts` asserts the 1.26 and the 3.24, so the argument for the first
- * of these can be re-run rather than believed.
+ * `accentBorder` used to be here too, on the argument that only the browser
+ * had a light scheme for the lime fill to need rescuing in. The phone has one
+ * now (ADR 25), so the edge moved into the shared palette.
  */
 export const DARK_WEB_ONLY = {
-  /**
-   * None is needed here: the lime sits at 14.51 against this surface, so its
-   * silhouette is unmistakable. See the light scheme, where it is not.
-   */
-  accentBorder: "transparent",
   focus: "#8fd0ff",
 } as const;
 
@@ -154,11 +162,6 @@ export type WebOnlyName = keyof typeof DARK_WEB_ONLY;
 export type WebOnlyPalette = { readonly [K in WebOnlyName]: string };
 
 export const LIGHT_WEB_ONLY: WebOnlyPalette = {
-  /**
-   * Here the edge is load bearing, and `the-measurements-are-real.test.ts`
-   * is where that stops being a claim.
-   */
-  accentBorder: "#7a9620",
   focus: "#12558a",
 };
 

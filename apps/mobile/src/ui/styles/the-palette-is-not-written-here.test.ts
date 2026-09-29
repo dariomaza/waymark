@@ -58,23 +58,19 @@ describe("this file", () => {
 });
 
 /**
- * The accent's border is the token this arrangement had to keep ASYMMETRIC.
+ * The keyboard's ring is the token this arrangement keeps ASYMMETRIC.
  *
- * On the light scheme the lime fill has 1.26 contrast against the page and
- * needs an edge to have a silhouette at all; in the dark it is at 14.51 and
- * needs none. So the browser has `--color-accent-border` and this client has
- * no such token — absent rather than transparent, to keep this file honest
- * about what the platform actually needs.
+ * React Native has no `:focus-visible` and no keyboard focus to draw a ring
+ * around, so the browser has `--color-focus` and this client has no such
+ * token — absent rather than transparent, to keep the phone honest about what
+ * the platform actually needs.
  *
- * A shared palette that had quietly given both clients every token would have
- * traded that honesty for tidiness. This says it did not.
+ * The accent's border used to be the other one. It rescues the lime fill's
+ * silhouette in the light scheme, which only the browser had; the phone has
+ * that scheme now (ADR 25), so it has the edge too.
  */
 describe("the tokens the browser has and this client does not", () => {
-  it("does not hand the phone an accent border it has no use for", () => {
-    expect(colors).not.toHaveProperty("accentBorder");
-  });
-
-  it("does not hand it a focus ring either, there being no keyboard focus to ring", () => {
+  it("does not hand it a focus ring, there being no keyboard focus to ring", () => {
     expect(colors).not.toHaveProperty("focus");
   });
 });

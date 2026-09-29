@@ -50,7 +50,7 @@ describe("the stylesheet this client actually loads", () => {
     }
   });
 
-  it("keeps a light scheme, which is the one thing the phone deliberately has not", () => {
+  it("keeps a light scheme", () => {
     const css = readFileSync(TOKENS, "utf8");
 
     expect(css).toContain("@media (prefers-color-scheme: light)");
@@ -58,15 +58,14 @@ describe("the stylesheet this client actually loads", () => {
   });
 
   /**
-   * The web-only token, asserted from this side too. `accentBorder` is what
-   * gives the lime fill a silhouette on near-white, the phone has no such
-   * token, and a shared palette that quietly grew one for both clients would
-   * have taken the honesty out of the arrangement.
+   * The lime fill's edge, asserted from this side too: transparent in the
+   * dark, where the fill needs no rescue, and load bearing in the light. Both
+   * clients have it since the phone gained the light scheme (ADR 25).
    */
-  it("still has the accent border the light scheme needs and the phone does not", () => {
+  it("still has the accent border the light scheme needs", () => {
     const css = readFileSync(TOKENS, "utf8");
 
     expect(css).toContain("--color-accent-border: transparent;");
-    expect(css).toContain("--color-accent-border: #7a9620;");
+    expect(css).toContain(`--color-accent-border: ${LIGHT.accentBorder};`);
   });
 });
