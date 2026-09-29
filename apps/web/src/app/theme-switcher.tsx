@@ -1,10 +1,11 @@
 import { THEME_CHOICES, type ThemeChoice } from "@waymark/tokens";
-import type { JSX } from "react";
+import { useId, type JSX } from "react";
 
-import { Icon, type IconName } from "../ui/atoms/icon.js";
+import type { IconName } from "../ui/atoms/icon.js";
+import { Segmented } from "../ui/atoms/segmented.js";
+import { SettingRow } from "../ui/molecules/setting-row.js";
 import { useTranslate } from "./language-context.js";
 import { useThemeChoice } from "./theme-context.js";
-import "./theme-switcher.css";
 
 /** Each answer's drawing: the device's own is both at once. */
 const DRAWN: Readonly<Record<ThemeChoice, IconName>> = {
@@ -16,38 +17,32 @@ const DRAWN: Readonly<Record<ThemeChoice, IconName>> = {
 /**
  * # How the app looks: the device's scheme, the light, or the dark (ADR 25)
  *
- * A setting, not an action, so it is a row of three radios and not a button
- * (ADR 21): one of them is always the answer. Real radios, as the language
- * switcher's are, so a keyboard and a screen reader get the grouping and the
- * current answer for free. Each is a word under a picture — three words that
- * fit, where the language switcher's two codes did not need them.
+ * A setting, not an action, so it is three radios and not a button (ADR 21):
+ * one of them is always the answer. Drawn by `Segmented`, the same control the
+ * language uses, so the two are one shape: the answers are pictures, and each
+ * picture's word is its name aloud — three words in a row were what made this
+ * control wider than the other.
  *
  * The phone draws the same three, in the same order, with the same pictures.
  */
 export const ThemeSwitcher = (): JSX.Element => {
   const { choice, choose } = useThemeChoice();
   const t = useTranslate();
+  const labelId = useId();
 
   return (
-    <fieldset className="theme-switcher">
-      <legend className="theme-switcher__legend">{t("appearance.label")}</legend>
-      <div className="theme-switcher__options">
-        {THEME_CHOICES.map((option) => (
-          <label key={option} className="theme-switcher__option">
-            <input
-              type="radio"
-              name="appearance"
-              value={option}
-              checked={choice === option}
-              onChange={() => {
-                choose(option);
-              }}
-            />
-            <Icon name={DRAWN[option]} size={20} />
-            <span>{t(`appearance.${option}`)}</span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
+    <SettingRow icon="sunMoon" label={t("appearance.label")} labelId={labelId}>
+      <Segmented<ThemeChoice>
+        group="appearance"
+        labelledBy={labelId}
+        value={choice}
+        onChoose={choose}
+        options={THEME_CHOICES.map((option) => ({
+          value: option,
+          name: t(`appearance.${option}`),
+          drawn: { icon: DRAWN[option] },
+        }))}
+      />
+    </SettingRow>
   );
 };

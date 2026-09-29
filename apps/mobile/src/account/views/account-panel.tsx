@@ -75,15 +75,9 @@ export const AccountPanel = ({
         </View>
       )}
 
-      <View style={styles.setting}>
-        <Text style={styles.settingLabel}>{t("language.label")}</Text>
-        {language}
-      </View>
+      {language}
 
-      <View style={styles.setting}>
-        <Text style={styles.settingLabel}>{t("appearance.label")}</Text>
-        {appearance}
-      </View>
+      {appearance}
 
       {/*
         Under the language and above the credentials, which is the order of how
@@ -119,7 +113,5 @@ const useStyles = themed((colors) =>
     lede: { color: colors.inkMuted, fontSize: text.s, marginTop: -space.s3 },
     who: { flexDirection: "row", alignItems: "center", gap: space.s3 },
     name: { color: colors.ink, fontSize: text.m, fontWeight: "600", flexShrink: 1 },
-    setting: { gap: space.s2, alignItems: "flex-start" },
-    settingLabel: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
   }),
 );
