@@ -83,6 +83,8 @@ export { LOGO, MARK_SMALL, SYMBOL, shapesOf, type Drawing, type Shape } from "./
 
 export { PIN_DROP, WAIT_MARK_HEIGHT, type MotionStep } from "./motion.js";
 
+export { inQuadrants, rasterise } from "./raster.js";
+
 export {
   AA_BOUNDARY,
   AA_LARGE_TEXT,
