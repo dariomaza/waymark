@@ -94,10 +94,11 @@ longer existed. When this drawing changes, the name should change with it.
 - The logo kit's own `waymark-logo.svg` frames the drawing 21 units short at
   the bottom and cuts off the tail of the y. `LOGO` uses the drawing's real
   box, and a test holds every point inside it.
-- The loading atom is unchanged: it is a pulsing dot, not the mark, and its
+- ~~The loading atom is unchanged: it is a pulsing dot, not the mark, and its
   argument — the product's vocabulary rather than the platform's — only
-  cited the old mark as the example.
-- The console greeting prints the word, not the mark, and is unchanged.
+  cited the old mark as the example.~~ See *Amended* below.
+- ~~The console greeting prints the word, not the mark, and is unchanged.~~
+  See *Amended* below.
 
 ## What it costs
 
@@ -115,3 +116,27 @@ longer existed. When this drawing changes, the name should change with it.
 - **The kit is outside the repository.** `mark.ts` is the copy that counts
   now; a revised kit means re-deriving it, the favicon and the Android source,
   and re-running `render-icons.sh`.
+
+## Amended — 2026-09-29: the wait and the console greeting draw the mark
+
+The owner: "quiero que hagas la carga animada con nuestro logo, para eso lo
+hemos creado". The two consequences above that kept the old dot and the plain
+greeting were wrong about what the mark was for.
+
+- **The wait is the pin finding its place.** Both loading atoms draw
+  `SYMBOL` — the logo's own w and full pin, the same objects — in the
+  `mark` colour, and only the pin moves: it drops onto the w, goes a little
+  past and settles, rests, and lifts, in 1.4 s (`PIN_DROP` in
+  `packages/tokens/src/motion.ts`). The browser runs it as `@keyframes
+  pin-drop`, generated into `tokens.css`; the phone builds the same steps
+  into a native-driven `Animated` sequence. Reduced motion leaves the pin
+  still in its place on both.
+- **The console greeting draws the small cut** in quadrant blocks,
+  rasterised from `MARK_SMALL` by `rasterise()` and checked against it, with
+  the name, the tagline and the repository beside it — nine lines and
+  forty-eight columns, so a docked panel does not wrap it. The lime on a
+  dark console, the ink on a light one.
+- **Cost:** the overshoot is bounded by the 28.68 units between the pin's
+  tip and the w's arm, which a test holds; a pin redrawn lower would have to
+  bring the motion with it. The console art is committed, so a revised
+  mark means re-running the rasteriser, which the test does for you.
