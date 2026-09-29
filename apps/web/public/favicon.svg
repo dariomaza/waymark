@@ -1,15 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Waymark">
+  <!--
+    The mark on the ink tile: the small cut, the one with the solid pin, which
+    is the cut for anything 24 pixels or smaller (ADR 24). The paths are
+    MARK_SMALL from @waymark/tokens, the very outlines the icon atoms draw, in
+    their own 24-unit box; a test compares them. The box is 57.6 wide so the
+    mark stands 48 of the tile high, where the logo kit put it.
+  -->
   <rect width="64" height="64" rx="14" fill="#101011" />
-  <g
-    fill="none"
-    stroke="#c8f04a"
-    stroke-width="4.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <circle cx="13.3" cy="14.9" r="6.4" />
-    <circle cx="32" cy="30.9" r="6.4" />
-    <circle cx="50.7" cy="49.1" r="6.4" />
-    <path d="M18.1 19.2l9.1 7.5M36.5 35.5l9.6 9" />
-  </g>
+  <svg x="3.2" y="3.2" width="57.6" height="57.6" viewBox="0 0 24 24" fill="#c8f04a">
+    <path d="M7.342 22L9.337 11.83L12.436 11.83L14.742 22L12.611 22L10.267 11.888L11.39 11.888L9.308 22ZM6.538 22L6.528 19.792L8.669 19.792L8.678 22ZM5.463 22L2.596 11.481L5.211 11.481L7.933 22ZM13.279 22L13.289 19.792L15.429 19.792L15.42 22ZM14.141 22L16.553 11.481L19.003 11.481L16.456 22Z" />
+    <path d="M18.74 2.576L20.828 4.664A1.968 1.968 0 0 1 20.828 7.447L17.349 10.926L13.87 7.447A1.968 1.968 0 0 1 13.87 4.664L15.957 2.576A1.968 1.968 0 0 1 18.74 2.576Z" />
+  </svg>
 </svg>
