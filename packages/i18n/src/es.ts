@@ -399,7 +399,7 @@ export const ES: Dictionary = {
   "nav.you": "Tú",
   "nav.youNamed": "Tú, sesión iniciada como {username}",
   "account.title": "Tú",
-  "account.lede": "Tu cuenta, y cómo habla y se ve esta aplicación.",
+  "account.lede": "Tu cuenta, su idioma y su aspecto.",
   "login.show": "Mostrar",
   "login.hide": "Ocultar",
   "login.withBiometrics": "Iniciar sesión con la huella",
