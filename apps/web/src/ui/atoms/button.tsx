@@ -45,7 +45,14 @@ export const Button = ({
     // Never `submit` by accident: a button inside a form that submits it
     // without saying so is how a delete confirmation turns into a save.
     type={type}
-    className={[`button button--${tone}`, block ? "button--block" : "", className ?? ""]
+    className={[
+      `button button--${tone}`,
+      block ? "button--block" : "",
+      // A picture and no word: a square, drawn once here rather than undone
+      // per screen (see `button.css`).
+      icon !== undefined && children === undefined ? "button--icon" : "",
+      className ?? "",
+    ]
       .filter(Boolean)
       .join(" ")}
     {...rest}

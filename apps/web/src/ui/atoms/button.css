@@ -91,3 +91,14 @@
 .button--block {
   width: 100%;
 }
+
+/*
+ * A picture with no word is a square at the floor a thumb needs. The word's
+ * padding would make it 50 wide, and the sheet's close control and the
+ * overflow trigger each used to take it off again by hand.
+ */
+.button--icon {
+  padding: 0;
+  width: 48px;
+  flex: 0 0 auto;
+}

@@ -95,6 +95,7 @@ export const Button = ({
         styles[tone],
         block ? styles.block : null,
         share ? styles.share : null,
+        icon !== undefined && children === undefined ? styles.iconOnly : null,
         align === "start" ? styles.leading : null,
         disabled ? styles.disabled : null,
         pressed ? styles.pressed : null,
@@ -132,6 +133,11 @@ const useStyles = themed((colors) =>
     },
     row: { flexDirection: "row", alignItems: "center", gap: space.s2, flexShrink: 1 },
     block: { alignSelf: "stretch" },
+    /**
+     * A picture and no word: a square at the floor a thumb needs, the same 48
+     * the browser draws. The word's padding would make it 50 wide.
+     */
+    iconOnly: { paddingHorizontal: 0, width: TAP_TARGET },
     /** An equal share of the row's width, and the whole of its height. */
     share: { flexGrow: 1, flexBasis: 0, alignSelf: "stretch" },
     /**
