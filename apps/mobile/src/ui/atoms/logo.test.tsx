@@ -33,10 +33,11 @@ describe("the logo", () => {
   });
 
   /**
-   * Lime by default, because this app is dark always and the lime on the ink
-   * IS the mark; the brand never draws it on white, and this app has no white.
+   * In the mark's own colour by default — the lime, outside any scheme, which
+   * is the dark. The light scheme's ink is asserted with the switch, in
+   * `choosing-how-it-looks.test.tsx`: the brand never draws the lime on white.
    */
-  it("is drawn filled, in the accent unless it is told otherwise", async () => {
+  it("is drawn filled, in the mark's colour unless it is told otherwise", async () => {
     const lime = JSON.stringify((await render(<Logo />)).toJSON());
     const ink = JSON.stringify((await render(<Logo color={colors.ink} />)).toJSON());
 

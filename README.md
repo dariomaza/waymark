@@ -821,8 +821,9 @@ inventory lie about where something is (ADR 14).
 
 - **Mobile first.** Tap targets of 48px and up, navigation at the bottom
   where the thumb is, sheets that slide up from the bottom rather than
-  dialogs in the middle, safe-area insets, and a dark theme by default
-  because half of this happens in a storage room at night.
+  dialogs in the middle, safe-area insets, and the device's own light or
+  dark scheme — dark when it has no opinion, because half of this happens in
+  a storage room at night — which the account screen can override (ADR 25).
 - **Every image is fetched with the session.** `GET /photos/:id` and the QR
   routes are behind the bearer token, so a plain `<img src>` would answer
   401; the bytes are fetched like any other request and handed to the DOM as

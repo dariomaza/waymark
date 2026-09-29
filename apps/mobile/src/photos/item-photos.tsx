@@ -160,6 +160,6 @@ const useStyles = themed((colors) =>
     grid: { gap: space.s3 },
     cell: { gap: space.s2 },
     controls: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
-    cover: { color: colors.accent, fontSize: text.s, fontWeight: "700" },
+    cover: { color: colors.accentText, fontSize: text.s, fontWeight: "700" },
   }),
 );

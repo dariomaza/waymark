@@ -86,7 +86,7 @@ const useStyles = themed((colors) =>
       padding: space.s3,
     },
     title: { color: colors.ink, fontSize: text.m, fontWeight: "600" },
-    where: { color: colors.accent, fontSize: text.s },
+    where: { color: colors.accentText, fontSize: text.s },
     why: { color: colors.inkMuted, fontSize: text.s },
   }),
 );

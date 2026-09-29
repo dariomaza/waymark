@@ -57,7 +57,10 @@ import { expoPrinter, type Printer } from "../units/printer.js";
 import { PrinterProvider } from "../units/printer-context.js";
 import { UnitScreen } from "../units/unit-screen.js";
 import { createDefaultClient } from "./create-client.js";
+import { appearanceDeviceScheme, type DeviceScheme } from "./device-scheme.js";
 import { createLanguageStore } from "./language.js";
+import { createThemeStore } from "./theme.js";
+import { ThemeProvider } from "./theme-context.js";
 import { LanguageProvider, useTranslate } from "./language-context.js";
 import { linking, type RootStackParamList, type TabParamList } from "./navigation.js";
 
@@ -94,6 +97,12 @@ export interface AppProps {
    * does not end.
    */
   readonly queries?: QueryClient;
+  /**
+   * The phone's own light-or-dark setting. A port for the same reason the
+   * others are: it is the operating system, and a test has to be able to set
+   * it and then change it (ADR 25).
+   */
+  readonly deviceScheme?: DeviceScheme;
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -117,6 +126,7 @@ export const App = ({
   printer,
   initialState,
   queries: given,
+  deviceScheme,
 }: AppProps = {}): JSX.Element => {
   const [queries] = useState(() => given ?? createQueryClient());
   // One store for the whole phone: the session, and the one preference there
@@ -124,6 +134,8 @@ export const App = ({
   const [store] = useState(() => storage ?? expoSecureStorage());
   const [sessions] = useState(() => createSessionStore(store));
   const [languages] = useState(() => createLanguageStore(store));
+  const [themes] = useState(() => createThemeStore(store));
+  const [device] = useState(() => deviceScheme ?? appearanceDeviceScheme());
   const [api] = useState(() => createDefaultClient(sessions, baseUrl));
   const [camera] = useState(() => scanner ?? expoCameraScanner());
   const [photoSource] = useState(() => photos ?? expoPhotoSource());
@@ -135,7 +147,8 @@ export const App = ({
     // is an empty screen while the insets are read, which on a cold start is a
     // black flash before the camera.
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? TEST_METRICS}>
-      <StatusBar style="light" />
+      <ThemeProvider store={themes} device={device}>
+      <SchemeStatusBar />
       <LanguageProvider store={languages}>
         <QueryClientProvider client={queries}>
           <SessionProvider store={sessions}>
@@ -153,9 +166,18 @@ export const App = ({
           </SessionProvider>
         </QueryClientProvider>
       </LanguageProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 };
+
+/**
+ * The clock and the battery, in whichever ink reads on the scheme below them:
+ * light glyphs on the dark, dark glyphs on the light.
+ */
+const SchemeStatusBar = (): JSX.Element => (
+  <StatusBar style={useScheme() === "dark" ? "light" : "dark"} />
+);
 
 /**
  * # The gate every screen but the login sits behind
@@ -347,7 +369,8 @@ const Tabs = (): JSX.Element => {
       initialRouteName="Scan"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
+        // The accent as a FOREGROUND: the lime fill cannot be read on the light bar.
+        tabBarActiveTintColor: colors.accentText,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarStyle: { backgroundColor: colors.surfaceRaised, borderTopColor: colors.line },
         /*
@@ -457,7 +480,8 @@ const Tabs = (): JSX.Element => {
  *
  * `accentText` and not `accent`: the rule is a foreground mark, which is the
  * job that token names — the same one the web client's `--color-accent-text`
- * does on the same rule. They are the same lime on this app's one scheme.
+ * does on the same rule. They are the same lime in the dark, and in the light
+ * the fill's lime would be a stain on the bar.
  *
  * `PlatformPressable` is what the navigator itself reaches for when nobody
  * hands it a button, so the ripple, the hover and the press behaviour are the

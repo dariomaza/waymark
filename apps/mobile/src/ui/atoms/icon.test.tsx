@@ -56,6 +56,9 @@ describe("the icon set both clients draw", () => {
       "key",
       "signOut",
       "globe",
+      "sunMoon",
+      "sun",
+      "moon",
     ]);
   });
 

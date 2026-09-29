@@ -11,7 +11,9 @@ import type { PhotoSource } from "../photos/photo-source.js";
 import type { Clipboard } from "../ui/clipboard.js";
 import type { Printer } from "../units/printer.js";
 import { API_URL } from "./api-server.js";
+import type { DeviceScheme } from "../app/device-scheme.js";
 import { fakeClipboard } from "./fake-clipboard.js";
+import { fakeDeviceScheme } from "./fake-device-scheme.js";
 import { fakePhotoSource } from "./fake-photo-source.js";
 import { fakePrinter } from "./fake-printer.js";
 import { fakeScanner } from "./fake-scanner.js";
@@ -71,6 +73,8 @@ export interface RenderAppOptions {
    * is then not the thing doing the seeding.
    */
   readonly storage?: SecureStorage;
+  /** The phone's own light-or-dark setting. Dark unless a test says otherwise. */
+  readonly deviceScheme?: DeviceScheme;
 }
 
 const SESSION_KEY = "waymark.session";
@@ -121,6 +125,7 @@ export const renderApp = async ({
   printer,
   language,
   storage,
+  deviceScheme,
 }: RenderAppOptions = {}): Promise<RenderResult> => {
   const state: PartialState<NavigationState> | undefined =
     screen === undefined
@@ -153,6 +158,7 @@ export const renderApp = async ({
       photos={photos ?? fakePhotoSource()}
       clipboard={clipboard ?? fakeClipboard()}
       printer={printer ?? fakePrinter()}
+      deviceScheme={deviceScheme ?? fakeDeviceScheme("dark")}
     />,
   );
 };

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Logo } from "../atoms/logo.js";
 import { space } from "../styles/tokens.js";
-import { themed, useColors } from "../styles/theme.js";
+import { themed } from "../styles/theme.js";
 
 export interface AppBarProps {
   /** What the header is called for a screen reader: the name the logo draws. */
@@ -26,19 +26,18 @@ export interface AppBarProps {
  * `SafeAreaView`, because the screen below it must keep scrolling under the
  * navigation bar at the bottom; only the top edge is this component's problem.
  *
- * There is no light scheme to answer to. This app is dark always (see
- * `tokens.ts`): it is opened in a storage room at night as often as anywhere
- * else, and the camera screen is black either way.
+ * The logo takes the mark's own colour, which follows the scheme: lime on the
+ * dark, ink on the light, and never lime on white (ADR 24, ADR 25).
  */
 export const AppBar = ({ title, actions }: AppBarProps): JSX.Element => {
-  const colors = useColors();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top + space.s2 }]}>
       <View accessible accessibilityRole="header" accessibilityLabel={title}>
-        <Logo height={24} color={colors.accent} />
+        {/* The mark's own colour: lime on the dark, ink on the light (ADR 24). */}
+        <Logo height={24} />
       </View>
       <View style={styles.actions}>{actions}</View>
     </View>

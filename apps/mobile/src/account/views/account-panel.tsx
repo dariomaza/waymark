@@ -13,6 +13,8 @@ export interface AccountPanelProps {
   readonly username: string | null;
   /** The control that is ABOUT the language rather than written in it. */
   readonly language: ReactNode;
+  /** Light, dark or the phone's own (ADR 25). A setting, like the language. */
+  readonly appearance: ReactNode;
   /**
    * Whether this phone keeps the session behind its fingerprint sensor.
    *
@@ -47,6 +49,7 @@ export interface AccountPanelProps {
 export const AccountPanel = ({
   username,
   language,
+  appearance,
   biometrics,
   machineTokens,
   busy,
@@ -75,6 +78,11 @@ export const AccountPanel = ({
       <View style={styles.setting}>
         <Text style={styles.settingLabel}>{t("language.label")}</Text>
         {language}
+      </View>
+
+      <View style={styles.setting}>
+        <Text style={styles.settingLabel}>{t("appearance.label")}</Text>
+        {appearance}
       </View>
 
       {/*

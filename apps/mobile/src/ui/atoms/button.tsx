@@ -144,7 +144,8 @@ const useStyles = themed((colors) =>
     leading: { alignItems: "flex-start" },
     disabled: { opacity: 0.5 },
     pressed: { opacity: 0.7 },
-    primary: { backgroundColor: colors.accent, borderColor: colors.accent },
+    // The edge is what gives the lime a silhouette on the light page (1.26 alone).
+    primary: { backgroundColor: colors.accent, borderColor: colors.accentBorder },
     secondary: { backgroundColor: colors.surfaceRaised },
     danger: { backgroundColor: colors.surfaceRaised, borderColor: colors.danger },
     quiet: { backgroundColor: "transparent", borderColor: "transparent" },
