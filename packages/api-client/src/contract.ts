@@ -5,6 +5,7 @@ import type {
   PublicId,
   Role,
   SearchMatchField,
+  ShareLevel,
   StorageUnitKind,
   UnitId,
 } from "@waymark/domain";
@@ -66,7 +67,40 @@ export interface StorageUnitWithPhotoView extends StorageUnitView {
   readonly photo: PhotoView | null;
 }
 
+/**
+ * # What the caller may do with a space, said before they try (ADR 26)
+ *
+ * The API refuses on its own; this is there so a client never OFFERS what it
+ * would refuse. It decides nothing: a stale tree still meets the refusal,
+ * which is why every one of them keeps its sentence.
+ */
+export interface SpacePermissionsView {
+  /** `view` hides every act that changes the space or anything in it. */
+  readonly access: ShareLevel;
+  /** Whether it may leave where it is: edit on it and on its place. */
+  readonly mayMove: boolean;
+  /** Whether it may be a top-level space where it lands: its owner's call. */
+  readonly mayMoveToTop: boolean;
+}
+
+/** The person whose inventory a space is in. */
+export interface OwnerView {
+  readonly id: string;
+  readonly username: string;
+}
+
+/**
+ * A node of the home screen's tree, and what the caller may do with it.
+ *
+ * `owner` is named for an administrator only, so their home screen can group
+ * other people's spaces under their names; anybody else reads `null`.
+ * `shared` says the space reached the caller through a share rather than
+ * being theirs, and is never true for an administrator.
+ */
 export interface StorageUnitTreeView extends StorageUnitView {
+  readonly permissions: SpacePermissionsView;
+  readonly owner: OwnerView | null;
+  readonly shared: boolean;
   readonly children: readonly StorageUnitTreeView[];
 }
 
@@ -359,6 +393,28 @@ export const isMachineCaller = (
 
 export interface StorageUnitTreeResponse {
   readonly tree: readonly StorageUnitTreeView[];
+  /** Whether a new top-level space may be made. False only for a narrowed token. */
+  readonly mayMakeRoot: boolean;
+}
+
+/**
+ * # A space shared with one person (ADR 26)
+ *
+ * Only the shares placed on that space itself; one placed on a space above it
+ * covers it too, and is listed there. An administrator reads these, and only
+ * an administrator.
+ */
+export interface ShareView {
+  readonly account: OwnerView;
+  readonly access: ShareLevel;
+}
+
+export interface ShareListResponse {
+  readonly shares: readonly ShareView[];
+}
+
+export interface ShareResponse {
+  readonly share: ShareView;
 }
 
 /** One screen in one response: the unit, its breadcrumb, and what it holds. */

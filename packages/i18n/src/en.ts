@@ -264,6 +264,16 @@ export const EN = {
    * way is a key that should go when the two clients agree.
    */
   "inventory.emptyTitle": "Nothing is registered yet",
+  /**
+   * The heading of a person's home screen group of spaces an administrator
+   * shared with them (ADR 26), below their own.
+   */
+  "inventory.sharedWithYou": "Shared with you",
+  /**
+   * What a screen reader calls one person's group of spaces on an
+   * administrator's home screen. The heading itself is the username.
+   */
+  "inventory.spacesOf": "Spaces of {username}",
   "inventory.emptyExplains":
     "Start with somewhere you would name out loud: a room, the garage, the shed.",
 
@@ -444,6 +454,17 @@ export const EN = {
    * what it does. A key that exists only because a row was cramped is a key
    * that should go when the row does — see ADR 21.
    */
+  /**
+   * A space's menu entry that opens the Share sheet (ADR 21, ADR 26). Drawn
+   * only for an administrator, the only one who shares.
+   */
+  "units.share": "Share",
+  /**
+   * Beside a space on the home screen, and under its name on its own screen,
+   * when it was shared with this person to look at and not to change. Every
+   * act that would change it is hidden there.
+   */
+  "units.viewOnly": "View only",
   "units.showLabel": "Show the label",
   "label.sheet": "Label sheet",
 
@@ -899,6 +920,44 @@ export const EN = {
    */
   "people.notForMachines":
     "A machine token cannot manage accounts. An administrator does that, signed in.",
+
+  // ---------------------------------------------------------------------
+  // Sharing a space: the administrator's Share sheet (ADR 26)
+  // ---------------------------------------------------------------------
+
+  /** The Share sheet's title, naming the space being shared. */
+  "share.title": "Share {name}",
+  /**
+   * The one line the sheet says before its list, because it is the thing
+   * somebody would otherwise get wrong: a share is not on one box.
+   */
+  "share.cascades": "Sharing a space shares everything inside it.",
+  /** While the sheet asks who the space is shared with. */
+  "share.loading": "Loading who this is shared with",
+  /**
+   * Nobody may be given a share: everybody else is an administrator, is
+   * disabled, or owns this space. People are added on the account screen.
+   */
+  "share.nobody":
+    "There is nobody to share this with. Add people on the account screen; an administrator already sees everything.",
+  /**
+   * The three answers for each person, read aloud; each is drawn as a
+   * picture (ADR 20): a cross, an eye, a pencil.
+   */
+  "share.levelNone": "Not shared",
+  "share.levelView": "View",
+  "share.levelEdit": "View and edit",
+  /** The refusals the sheet has its own answer for. */
+  "share.ownsIt": "They own this space, so they can already change it.",
+  "share.isAdministrator": "They are an administrator, so they can already change everything.",
+  "share.accountDisabled":
+    "That account is disabled. Enable it under People before sharing anything with it.",
+  /**
+   * Only a program holding a machine token meets this, and neither app holds
+   * one; it exists so the refusal is never described as a session problem.
+   */
+  "share.notForMachines":
+    "A machine token cannot share spaces. An administrator does that, signed in.",
 
   // ---------------------------------------------------------------------
   // Passkeys: an additional door, never a replacement (ADR 19)

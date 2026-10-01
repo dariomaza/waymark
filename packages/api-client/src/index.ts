@@ -52,11 +52,15 @@ export { movedEarlier, withCoverFirst } from "./photo-order.js";
 export { INVENTORY_ROOTS, queryKeys } from "./query-keys.js";
 export { publicIdFromScannedText } from "./scanned-label.js";
 export {
+  editableUnits,
   findById,
   findByPublicId,
+  findTreeNode,
   flattenUnits,
+  rootsByWhose,
   subtreeOf,
   type FlatUnit,
+  type RootsByWhose,
 } from "./storage-unit-tree.js";
 export { isMachineCaller, MachineTokenScope, mayWriteWith } from "./contract.js";
 export type {
@@ -104,6 +108,11 @@ export type {
   SearchQuery,
   SearchResponse,
   SessionView,
+  ShareListResponse,
+  ShareResponse,
+  ShareView,
+  SpacePermissionsView,
+  OwnerView,
   StorageUnitDetailResponse,
   StorageUnitPhotoResponse,
   StorageUnitResponse,

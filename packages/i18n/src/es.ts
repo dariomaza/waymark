@@ -167,6 +167,10 @@ export const ES: Dictionary = {
   "inventory.failed": "No se ha podido cargar tu inventario",
   "inventory.addSpace": "Añadir un espacio",
   "inventory.emptyTitle": "Todavía no hay nada registrado",
+  /** A person's group of spaces shared with them (ADR 26). */
+  "inventory.sharedWithYou": "Compartido contigo",
+  /** One person's group on an administrator's home screen, read aloud. */
+  "inventory.spacesOf": "Espacios de {username}",
   "inventory.emptyExplains":
     "Empieza por un sitio que llamarías por su nombre en voz alta: una habitación, el garaje, la caseta.",
 
@@ -311,6 +315,10 @@ export const ES: Dictionary = {
   "label.drawFailed": "No se ha podido dibujar esa etiqueta",
   "label.print": "Imprimir esta etiqueta",
   "label.backToUnit": "Volver a la unidad",
+  /** The Share entry in a space's menu, for an administrator (ADR 26). */
+  "units.share": "Compartir",
+  /** A space shared with this person to look at, not to change. */
+  "units.viewOnly": "Solo ver",
   "units.showLabel": "Ver la etiqueta",
   "label.sheet": "Hoja de etiquetas",
 
@@ -586,6 +594,25 @@ export const ES: Dictionary = {
   "people.alreadyGone": "Esa cuenta ya no está. Cierra esta pantalla y vuelve a abrirla.",
   "people.notForMachines":
     "Un token de máquina no puede gestionar cuentas. Lo hace un administrador con su sesión iniciada.",
+
+  // ---------------------------------------------------------------------
+  // Compartir un espacio (ADR 26)
+  // ---------------------------------------------------------------------
+
+  "share.title": "Compartir {name}",
+  "share.cascades": "Compartir un espacio comparte todo lo que hay dentro.",
+  "share.loading": "Cargando con quién se comparte",
+  "share.nobody":
+    "No hay nadie con quien compartirlo. Añade personas en la pantalla de tu cuenta; un administrador ya lo ve todo.",
+  "share.levelNone": "Sin compartir",
+  "share.levelView": "Ver",
+  "share.levelEdit": "Ver y editar",
+  "share.ownsIt": "Este espacio es suyo, así que ya puede cambiarlo.",
+  "share.isAdministrator": "Tiene el rol de administrador, así que ya puede cambiarlo todo.",
+  "share.accountDisabled":
+    "Esa cuenta está desactivada. Actívala en Personas antes de compartir nada con ella.",
+  "share.notForMachines":
+    "Un token de máquina no puede compartir espacios. Lo hace un administrador con su sesión iniciada.",
 
   // ---------------------------------------------------------------------
   // Passkeys: una puerta más, nunca un reemplazo (ADR 19)

@@ -1,4 +1,4 @@
-import type { ItemId, PhotoId, Role, UnitId } from "@waymark/domain";
+import type { ItemId, PhotoId, Role, ShareLevel, UnitId } from "@waymark/domain";
 
 import { ApiError, OFFLINE_STATUS } from "./api-error.js";
 import type {
@@ -33,6 +33,8 @@ import type {
   SearchQuery,
   SearchResponse,
   SessionView,
+  ShareListResponse,
+  ShareResponse,
   StorageUnitDetailResponse,
   StorageUnitPhotoResponse,
   StorageUnitResponse,
@@ -202,6 +204,19 @@ export interface WaymarkClient<TFile> {
   /** Signs them out everywhere and revokes every machine token they issued. */
   disableAccount(id: string): Promise<AccountResponse>;
   enableAccount(id: string): Promise<AccountResponse>;
+
+  /**
+   * # Sharing a space (ADR 26)
+   *
+   * An administrator's calls, like the People group's: anybody else is
+   * refused 403 (`ADMINISTRATOR_ONLY`), and a machine token always is. A
+   * share covers everything under the space. Sharing again replaces the
+   * level; there is one share per space and person.
+   */
+  shares(id: UnitId): Promise<ShareListResponse>;
+  shareSpace(id: UnitId, accountId: string, access: ShareLevel): Promise<ShareResponse>;
+  /** Not shared already is not an error. */
+  stopSharing(id: UnitId, accountId: string): Promise<void>;
 
   /**
    * # A passkey: an additional door, never a replacement (ADR 19)
@@ -465,6 +480,24 @@ export const createWaymarkClient = <TFile>(
 
     async enableAccount(id) {
       return post<AccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/enable`);
+    },
+
+    async shares(id) {
+      return readJson<ShareListResponse>(`/storage-units/${encodeURIComponent(id)}/shares`);
+    },
+
+    async shareSpace(id, accountId, access) {
+      return post<ShareResponse>(
+        `/storage-units/${encodeURIComponent(id)}/shares/${encodeURIComponent(accountId)}`,
+        { access },
+      );
+    },
+
+    async stopSharing(id, accountId) {
+      await send(
+        `/storage-units/${encodeURIComponent(id)}/shares/${encodeURIComponent(accountId)}`,
+        { method: "DELETE" },
+      );
     },
 
     async beginPasskeyRegistration() {

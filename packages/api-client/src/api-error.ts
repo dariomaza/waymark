@@ -214,6 +214,23 @@ export const ApiErrorCode = {
   PASSWORD_TOO_SHORT: "PASSWORD_TOO_SHORT",
   /** A username that is nothing once trimmed (422). */
   INVALID_USERNAME: "INVALID_USERNAME",
+  /**
+   * # The refusals of sharing a space (ADR 26)
+   *
+   * Only the Share sheet meets these, and only an administrator sees that.
+   */
+  /**
+   * A machine token asked to share (403). Never seen by the two apps that
+   * hold a person's session; here because the code is part of the contract.
+   */
+  MACHINE_TOKEN_CANNOT_SHARE: "MACHINE_TOKEN_CANNOT_SHARE",
+  /** The account is disabled (409). Enable it first. `details.accountId`. */
+  ACCOUNT_DISABLED: "ACCOUNT_DISABLED",
+  /**
+   * The person already has edit (409): they own the tree the space is in, or
+   * they are an administrator. `details.because` says which.
+   */
+  ALREADY_HAS_EDIT: "ALREADY_HAS_EDIT",
   VALIDATION_FAILED: "VALIDATION_FAILED",
 } as const;
 

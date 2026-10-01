@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   accountFailureMessage,
   cyclicMoveMessage,
+  shareFailureMessage,
   describeFailure,
   fieldComplaints,
   loginFailureMessage,
@@ -691,5 +692,41 @@ describe("what refusing to manage an account becomes", () => {
 
     expect(said.key).toBe("failure.administratorOnly");
     expect(en(said)).not.toMatch(/session has ended/iu);
+  });
+});
+
+/**
+ * # What refusing to share a space becomes (ADR 26)
+ *
+ * Each is a different next step: they already have edit, so nothing is
+ * needed; enable the account first; the account is gone. Compared by key.
+ */
+describe("what refusing to share a space becomes", () => {
+  const refusal = (status: number, code: string, details: Record<string, unknown> = {}) =>
+    new ApiError(status, code, "the API's own words", details);
+
+  it("gives each refusal a sentence of its own", () => {
+    const keys = [
+      shareFailureMessage(refusal(409, "ALREADY_HAS_EDIT", { because: "owner" })),
+      shareFailureMessage(refusal(409, "ALREADY_HAS_EDIT", { because: "administrator" })),
+      shareFailureMessage(refusal(409, "ACCOUNT_DISABLED")),
+      shareFailureMessage(refusal(404, "ACCOUNT_NOT_FOUND")),
+      shareFailureMessage(refusal(403, "ADMINISTRATOR_ONLY")),
+      shareFailureMessage(refusal(403, "MACHINE_TOKEN_CANNOT_SHARE")),
+    ].map((said) => said?.key);
+
+    expect(keys).toEqual([
+      "share.ownsIt",
+      "share.isAdministrator",
+      "share.accountDisabled",
+      "people.alreadyGone",
+      "failure.administratorOnly",
+      "share.notForMachines",
+    ]);
+  });
+
+  it("stays out of the way of every other failure", () => {
+    expect(shareFailureMessage(refusal(404, "STORAGE_UNIT_NOT_FOUND"))).toBeNull();
+    expect(shareFailureMessage(new Error("not from the API"))).toBeNull();
   });
 });

@@ -17,6 +17,8 @@ export {
   aSession,
   aStorageUnit,
   aTree,
+  EVERYTHING_PERMITTED,
+  VIEW_ONLY,
   aUnitHit,
   withPhoto,
   type ItemOverrides,

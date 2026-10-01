@@ -5,6 +5,7 @@ import {
   PhotoProcessingStatus,
   Role,
   SearchMatchField,
+  ShareLevel,
   StorageUnitKind,
   unitId,
 } from "@waymark/domain";
@@ -70,10 +71,36 @@ export const withPhoto = (
   photo: typeof photo === "string" ? aPhoto({ id: photo }) : photo,
 });
 
+/**
+ * A node of the tree. By default the caller owns it and may do everything
+ * with it, which is what every test about something else wants; a test about
+ * who may do what (ADR 26) says so in `overrides`.
+ */
 export const aTree = (
   unit: StorageUnitView,
   children: readonly StorageUnitTreeView[] = [],
-): StorageUnitTreeView => ({ ...unit, children });
+  overrides: Partial<Pick<StorageUnitTreeView, "permissions" | "owner" | "shared">> = {},
+): StorageUnitTreeView => ({
+  ...unit,
+  permissions: overrides.permissions ?? EVERYTHING_PERMITTED,
+  owner: overrides.owner ?? null,
+  shared: overrides.shared ?? false,
+  children,
+});
+
+/** What an owner may do with a space in their own tree. */
+export const EVERYTHING_PERMITTED = {
+  access: ShareLevel.EDIT,
+  mayMove: true,
+  mayMoveToTop: true,
+} as const;
+
+/** What somebody a space was shared with to view may do: look. */
+export const VIEW_ONLY = {
+  access: ShareLevel.VIEW,
+  mayMove: false,
+  mayMoveToTop: false,
+} as const;
 
 export interface ItemOverrides {
   readonly id?: string;

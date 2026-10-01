@@ -53,6 +53,12 @@ export const queryKeys = {
    * account.
    */
   accounts: () => ["accounts"] as const,
+  /**
+   * Who one space is shared with (ADR 26). Outside `INVENTORY_ROOTS`: moving
+   * a box does not change who it is shared with, and an administrator, the
+   * only one who reads this, sees the same tree whatever is shared.
+   */
+  shares: (id: UnitId) => ["shares", id] as const,
 } as const;
 
 /** What a change to the inventory makes stale. Used by every mutation. */
