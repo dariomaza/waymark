@@ -17,6 +17,7 @@ export {
 
 // Who may see what (ADR 26)
 export {
+  cutPathToReach,
   mayEditSpace,
   mayViewSpace,
   resolveAccess,
@@ -77,6 +78,15 @@ export {
   type EmptyStorageUnitDependencies,
   type EmptyStorageUnitResult,
 } from "./storage-units/empty-storage-unit.js";
+export {
+  ListStorageUnits,
+  type ListStorageUnitsDependencies,
+} from "./storage-units/list-storage-units.js";
+export {
+  GetStorageUnit,
+  type GetStorageUnitDependencies,
+  type StorageUnitContents,
+} from "./storage-units/get-storage-unit.js";
 export {
   formatStorageUnitPath,
   GetStorageUnitPath,

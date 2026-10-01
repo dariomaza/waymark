@@ -154,7 +154,8 @@ export class SearchInventory {
       return cached;
     }
 
-    const path = this.#paths.execute(id);
+    // Unscoped until search takes the caller's access (ADR 26).
+    const path = this.#paths.execute({ kind: "everything" }, id);
     this.#cachedPaths.set(id, path);
 
     return path;

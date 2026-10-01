@@ -1299,25 +1299,24 @@ describe("inventory over HTTP", () => {
     });
   });
 
-  // Still true until reads and writes are scoped by ADR 26 (roadmap slices 3
-  // and 4), which turn these two cases into their opposites.
-  describe("one shared inventory", () => {
-    it("shows a second account exactly what the first one created", async () => {
+  // ADR 26 turned ADR 5's shared inventory around. Reads are scoped (roadmap
+  // slice 3); the write below is still open until slice 4 turns it too.
+  describe("each person's own inventory", () => {
+    it("shows a second account nothing the first one created", async () => {
       const box = await createUnit("Box 3");
       await createItem("Ski boots", box.id);
 
       await api.createUser("marta", "another-password");
       const martasToken = await api.login("marta", "another-password");
+      const asMarta = async (url: string) =>
+        api.app.inject({ method: "GET", url, headers: api.authHeaders(martasToken) });
 
-      const response = await api.app.inject({
-        method: "GET",
-        url: `/storage-units/${box.id}`,
-        headers: api.authHeaders(martasToken),
-      });
+      const single = await asMarta(`/storage-units/${box.id}`);
+      expect(single.statusCode).toBe(404);
+      expect(errorCodeOf(single)).toBe(errorCodeOf(await asMarta("/storage-units/nothing")));
 
-      expect(response.statusCode).toBe(200);
-      const body = response.json() as { items: ItemView[] };
-      expect(body.items.map((item) => item.name)).toEqual(["Ski boots"]);
+      const tree = await asMarta("/storage-units");
+      expect((tree.json() as { tree: unknown[] }).tree).toEqual([]);
     });
 
     it("lets a second account delete what the first one created", async () => {

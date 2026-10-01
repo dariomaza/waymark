@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { unitId, userId, type UnitId, type UserId } from "../shared/identity.js";
 import {
+  cutPathToReach,
   mayEditSpace,
   mayViewSpace,
   resolveAccess,
@@ -221,5 +222,40 @@ describe("what a person may see", () => {
     expect(mayViewSpace(access, unitId(`level-${depth}`))).toBe(true);
     expect(mayViewSpace(access, unitId("level-2"))).toBe(false);
     expect(visibleRootsOf(access, deep)).toEqual(ids("level-3"));
+  });
+});
+
+describe("a breadcrumb a person may read", () => {
+  const pathTo = (...names: string[]): SpaceInTree[] =>
+    names.map((name) => household.find((unit) => unit.id === name) as SpaceInTree);
+
+  it("starts at the shared space, so no name above it is ever read", () => {
+    const access = accessOf(ben, [share("shelf", ben, ShareLevel.VIEW)]);
+
+    expect(
+      cutPathToReach(access, pathTo("garage", "shelf", "box", "jar")).map(
+        (unit) => unit.id,
+      ),
+    ).toEqual(ids("shelf", "box", "jar"));
+  });
+
+  it("is whole for an owner, whose reach starts at the root", () => {
+    const access = accessOf(ana);
+
+    expect(
+      cutPathToReach(access, pathTo("garage", "shelf", "box")).map((unit) => unit.id),
+    ).toEqual(ids("garage", "shelf", "box"));
+  });
+
+  it("is whole for an administrator", () => {
+    const access: Access = { kind: "everything" };
+
+    expect(
+      cutPathToReach(access, pathTo("garage", "shelf", "box")).map((unit) => unit.id),
+    ).toEqual(ids("garage", "shelf", "box"));
+  });
+
+  it("is empty for a space the person cannot see at all", () => {
+    expect(cutPathToReach(accessOf(ben), pathTo("garage", "shelf"))).toEqual([]);
   });
 });

@@ -8,8 +8,10 @@ import {
 } from "@waymark/domain/testing";
 
 import { domainUseCaseContract } from "./domain-use-case.contract.js";
+import { invisibilityContract } from "./invisibility.contract.js";
 import type {
   DomainUseCaseContext,
+  InvisibilityContext,
   ItemRepositoryContext,
   PhotoRepositoryContext,
   SearchRepositoryContext,
@@ -98,5 +100,21 @@ domainUseCaseContract({
     storageUnits: newStorageUnits(),
     items: new InMemoryItemRepository(),
   }),
+  tearDown: async () => {},
+});
+
+invisibilityContract({
+  name: "in-memory repositories",
+  setUp: async (): Promise<InvisibilityContext> => {
+    const storageUnits = newStorageUnits();
+    const items = new InMemoryItemRepository();
+    return {
+      storageUnits,
+      items,
+      photos: new InMemoryPhotoRepository(),
+      search: new InMemorySearchRepository({ items, storageUnits }),
+      shares: new InMemoryShareRepository(),
+    };
+  },
   tearDown: async () => {},
 });

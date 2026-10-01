@@ -2,12 +2,14 @@ import type { UnitId } from "@waymark/domain";
 import {
   CONTRACT_PEOPLE,
   domainUseCaseContract,
+  invisibilityContract,
   itemRepositoryContract,
   photoRepositoryContract,
   searchRepositoryContract,
   shareRepositoryContract,
   storageUnitRepositoryContract,
   type DomainUseCaseContext,
+  type InvisibilityContext,
   type ItemRepositoryContext,
   type PhotoRepositoryContext,
   type SearchRepositoryContext,
@@ -132,6 +134,21 @@ domainUseCaseContract({
     return {
       storageUnits: new PrismaStorageUnitRepository(database.client),
       items: new PrismaItemRepository(database.client),
+    };
+  },
+  tearDown: async () => {},
+});
+
+invisibilityContract({
+  name: "Prisma repositories on real SQLite",
+  setUp: async (): Promise<InvisibilityContext> => {
+    await emptyHouseOfContractPeople();
+    return {
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+      items: new PrismaItemRepository(database.client),
+      photos: new PrismaPhotoRepository(database.client),
+      search: new PrismaSearchRepository(database.client),
+      shares: new PrismaShareRepository(database.client),
     };
   },
   tearDown: async () => {},

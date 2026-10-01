@@ -25,6 +25,7 @@ export {
 } from "./builders.js";
 export type {
   DomainUseCaseContext,
+  InvisibilityContext,
   ItemRepositoryContext,
   PhotoRepositoryContext,
   RepositoryHarness,
@@ -38,3 +39,4 @@ export { photoRepositoryContract } from "./photo-repository.contract.js";
 export { searchRepositoryContract } from "./search-repository.contract.js";
 export { shareRepositoryContract } from "./share-repository.contract.js";
 export { domainUseCaseContract } from "./domain-use-case.contract.js";
+export { invisibilityContract } from "./invisibility.contract.js";

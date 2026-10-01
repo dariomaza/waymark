@@ -70,6 +70,19 @@ export interface DomainUseCaseContext {
 }
 
 /**
+ * Every port a read can reach, for the invisibility fixture (ADR 26). It is
+ * seeded through the real repositories, so what each person sees is decided
+ * against what the adapter actually stored.
+ */
+export interface InvisibilityContext {
+  readonly storageUnits: StorageUnitRepository;
+  readonly items: ItemRepository;
+  readonly photos: PhotoRepository;
+  readonly search: SearchRepository;
+  readonly shares: ShareRepository;
+}
+
+/**
  * How one implementation plugs itself into a contract suite.
  *
  * `setUp` must hand back EMPTY storage every time; a contract that leaks state

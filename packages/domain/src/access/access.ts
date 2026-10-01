@@ -153,3 +153,24 @@ export const visibleRootsOf = (
         (unit.parentId === null || !mayViewSpace(access, unit.parentId)),
     )
     .map((unit) => unit.id);
+
+/**
+ * A breadcrumb, root first, cut at the edge of what the person may see
+ * (ADR 26). A space shared from inside somebody else's tree is a root for the
+ * person it was shared with, so their breadcrumb starts there and never names
+ * a space above it.
+ *
+ * Reach runs down the tree, so what may be seen of a path is always its tail:
+ * the walk goes up from the far end and stops at the first space out of reach.
+ */
+export const cutPathToReach = <T extends { readonly id: UnitId }>(
+  access: Access,
+  path: readonly T[],
+): T[] => {
+  let start = path.length;
+  while (start > 0 && mayViewSpace(access, (path[start - 1] as T).id)) {
+    start -= 1;
+  }
+
+  return path.slice(start);
+};

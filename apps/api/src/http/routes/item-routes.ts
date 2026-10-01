@@ -138,7 +138,10 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
 
     // "Where is it" is the question the product exists to answer, so the path
     // ships with the item instead of costing a second round trip.
-    const path = await options.getStorageUnitPath.execute(item.storageUnitId);
+    const path = await options.getStorageUnitPath.execute(
+      request.access,
+      item.storageUnitId,
+    );
     const storageUnit = path.at(-1);
 
     return reply.code(200).send({

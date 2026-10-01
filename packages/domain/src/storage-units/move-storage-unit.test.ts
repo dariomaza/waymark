@@ -199,7 +199,7 @@ describe("MoveStorageUnit", () => {
         targetParentId: garage.id,
       });
 
-      const path = await getStorageUnitPath.execute(box.id);
+      const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
 
       expect(formatStorageUnitPath(path)).toBe("Garage > Wardrobe > Box");
     });
@@ -219,7 +219,7 @@ describe("MoveStorageUnit", () => {
 
       const stored = await storageUnits.findById(box.id);
       expect(stored?.parentId).toBe(wardrobe.id);
-      const path = await getStorageUnitPath.execute(box.id);
+      const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
       expect(path.map((unit) => unit.name)).toEqual([
         "Garage",
         "Wardrobe",

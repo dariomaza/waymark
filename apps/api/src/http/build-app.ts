@@ -7,8 +7,10 @@ import {
   DetachItemPhoto,
   DomainError,
   EmptyStorageUnit,
+  GetStorageUnit,
   GetStorageUnitPath,
   ListItems,
+  ListStorageUnits,
   MoveItems,
   MoveStorageUnit,
   ReorderItemPhotos,
@@ -268,6 +270,11 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     }),
     getStorageUnitPath: new GetStorageUnitPath({
       storageUnits: deps.storageUnits,
+    }),
+    listStorageUnits: new ListStorageUnits({ storageUnits: deps.storageUnits }),
+    getStorageUnit: new GetStorageUnit({
+      storageUnits: deps.storageUnits,
+      items: deps.items,
     }),
     createItem: new CreateItem({
       items: deps.items,
@@ -545,8 +552,6 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       finishPasskeyRegistration,
     });
     void scope.register(storageUnitRoutes, {
-      storageUnits: deps.storageUnits,
-      items: deps.items,
       itemViews,
       storageUnitViews,
       ...useCases,

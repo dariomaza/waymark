@@ -12,6 +12,8 @@ describe("@waymark/domain public surface", () => {
         "DeleteStorageUnit",
         "EmptyStorageUnit",
         "GetStorageUnitPath",
+        "ListStorageUnits",
+        "GetStorageUnit",
         "CreateItem",
         "MoveItems",
         "ListItems",

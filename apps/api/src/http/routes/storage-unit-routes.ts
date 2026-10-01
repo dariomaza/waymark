@@ -1,14 +1,12 @@
 import {
-  StorageUnitNotFound,
   photoId as toPhotoId,
   unitId,
   type CreateStorageUnit,
   type DeleteStorageUnit,
   type EmptyStorageUnit,
-  type GetStorageUnitPath,
-  type ItemRepository,
+  type GetStorageUnit,
+  type ListStorageUnits,
   type MoveStorageUnit,
-  type StorageUnitRepository,
   type UpdateStorageUnit,
 } from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
@@ -27,14 +25,13 @@ import {
 import { storageUnitTreeView, storageUnitView } from "../views.js";
 
 export interface StorageUnitRouteOptions {
-  readonly storageUnits: StorageUnitRepository;
-  readonly items: ItemRepository;
+  readonly listStorageUnits: ListStorageUnits;
+  readonly getStorageUnit: GetStorageUnit;
   readonly createStorageUnit: CreateStorageUnit;
   readonly moveStorageUnit: MoveStorageUnit;
   readonly updateStorageUnit: UpdateStorageUnit;
   readonly deleteStorageUnit: DeleteStorageUnit;
   readonly emptyStorageUnit: EmptyStorageUnit;
-  readonly getStorageUnitPath: GetStorageUnitPath;
   readonly itemViews: ItemViews;
   /** Only the unit an answer is ABOUT carries its photo; rows never do. */
   readonly storageUnitViews: StorageUnitViews;
@@ -84,8 +81,11 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
   app,
   options,
 ) => {
-  app.get("/storage-units", async (_request, reply) => {
-    const units = await options.storageUnits.findAll();
+  app.get("/storage-units", async (request, reply) => {
+    // Only what this person may see (ADR 26). A space whose parent is not
+    // among them becomes a root of the forest, which is how a space shared
+    // from inside somebody else's tree arrives at the top of the screen.
+    const units = await options.listStorageUnits.execute(request.access);
 
     return reply.code(200).send({
       tree: buildStorageUnitForest(units).map(storageUnitTreeView),
@@ -114,18 +114,13 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
   app.get("/storage-units/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    // Throws `StorageUnitNotFound` when the unit is not there, which the error
-    // mapping turns into a 404 because the id came from the path.
-    const path = await options.getStorageUnitPath.execute(unitId(id));
-    const unit = path.at(-1);
-    if (unit === undefined) {
-      throw new StorageUnitNotFound(unitId(id));
-    }
-
-    const [children, items] = await Promise.all([
-      options.storageUnits.findChildren(unitId(id)),
-      options.items.findByStorageUnit(unitId(id)),
-    ]);
+    // Throws `StorageUnitNotFound` when the unit is not there or may not be
+    // seen, which the error mapping turns into the same 404 for both because
+    // the id came from the path (ADR 26).
+    const { unit, path, children, items } = await options.getStorageUnit.execute(
+      request.access,
+      unitId(id),
+    );
 
     return reply.code(200).send({
       unit: await options.storageUnitViews.of(unit),

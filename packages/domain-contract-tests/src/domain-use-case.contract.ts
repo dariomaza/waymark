@@ -190,7 +190,7 @@ export const domainUseCaseContract = (
         const wardrobe = await aUnit("Metal wardrobe", room.id);
         const box = await aUnit("Box 3", wardrobe.id);
 
-        const path = await getStorageUnitPath.execute(box.id);
+        const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
 
         expect(formatStorageUnitPath(path)).toBe(
           "Storage room > Metal wardrobe > Box 3",
@@ -208,7 +208,7 @@ export const domainUseCaseContract = (
           targetParentId: garage.id,
         });
 
-        const path = await getStorageUnitPath.execute(box.id);
+        const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
         expect(formatStorageUnitPath(path)).toBe(
           "Garage > Metal wardrobe > Box 3",
         );
@@ -258,7 +258,7 @@ export const domainUseCaseContract = (
 
         const stillThere = await storageUnits.findById(room.id);
         expect(stillThere?.parentId).toBeNull();
-        await expect(getStorageUnitPath.execute(box.id)).resolves.toHaveLength(
+        await expect(getStorageUnitPath.execute({ kind: "everything" }, box.id)).resolves.toHaveLength(
           3,
         );
       });
@@ -511,7 +511,7 @@ export const domainUseCaseContract = (
 
         const revised = await storageUnits.findById(wardrobe.id);
         expect(revised?.parentId).toBe(room.id);
-        expect(formatStorageUnitPath(await getStorageUnitPath.execute(box.id))).toBe(
+        expect(formatStorageUnitPath(await getStorageUnitPath.execute({ kind: "everything" }, box.id))).toBe(
           "Storage room > Wooden wardrobe > Box 3",
         );
       });

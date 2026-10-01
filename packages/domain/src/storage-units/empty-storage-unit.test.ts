@@ -148,7 +148,7 @@ describe("EmptyStorageUnit", () => {
 
       await emptyStorageUnit.execute(wardrobe.id);
 
-      const path = await getStorageUnitPath.execute(box.id);
+      const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
       expect(path.map((unit) => unit.name)).toEqual(["Storage room", "Box 3"]);
     });
 

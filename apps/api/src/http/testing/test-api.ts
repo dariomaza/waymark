@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { FakeClock } from "@waymark/domain/testing";
 import type { FastifyInstance } from "fastify";
 
-import type { PhotoId } from "@waymark/domain";
+import { unitId, userId, type PhotoId, type ShareLevel } from "@waymark/domain";
 
 import { UuidIdGenerator } from "../../adapters/uuid-id-generator.js";
 import { Base32PublicIdGenerator } from "../../adapters/public-id-generator.js";
@@ -140,6 +140,11 @@ export interface TestApi {
   /** Re-points the processor, for the cases about a sidecar going away. */
   pointProcessorAt(baseUrl: string): void;
   createUser(username: string, password: string): Promise<void>;
+  /**
+   * Shares a space with somebody, straight through the repository: there is
+   * no route that shares yet (ADR 26, roadmap slice 7).
+   */
+  share(storageUnitId: string, username: string, level: ShareLevel): Promise<void>;
   /**
    * Issues one and returns the secret, exactly as the CLI prints it once. It
    * belongs to `issuedBy` (ADR 26), whose account must already exist.
@@ -313,6 +318,23 @@ export const createTestApi = async (
       await new CreateUser({ users, hasher, ids, clock: api.clock }).execute({
         username,
         password,
+      });
+    },
+
+    async share(
+      storageUnitId: string,
+      username: string,
+      level: ShareLevel,
+    ): Promise<void> {
+      const person = await users.findByUsername(username);
+      if (person === null) {
+        throw new Error(`Create "${username}" before sharing anything with them`);
+      }
+
+      await shares.set({
+        storageUnitId: unitId(storageUnitId),
+        userId: userId(person.id),
+        access: level,
       });
     },
 
