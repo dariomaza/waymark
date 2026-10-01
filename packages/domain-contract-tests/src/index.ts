@@ -41,3 +41,4 @@ export { shareRepositoryContract } from "./share-repository.contract.js";
 export { domainUseCaseContract } from "./domain-use-case.contract.js";
 export { invisibilityContract } from "./invisibility.contract.js";
 export { whatEachPersonMayChangeContract } from "./what-each-person-may-change.contract.js";
+export { aNarrowedTokenContract } from "./a-narrowed-token.contract.js";

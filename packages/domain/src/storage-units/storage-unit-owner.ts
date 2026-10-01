@@ -1,4 +1,4 @@
-import { OwnerOnly } from "../access/access-errors.js";
+import { OutsideTokenSpaces, OwnerOnly } from "../access/access-errors.js";
 import type { Access } from "../access/access.js";
 import type { UserId } from "../shared/identity.js";
 import type { StorageUnit } from "./storage-unit.js";
@@ -43,6 +43,10 @@ export const refuseUnlessOwner = async (
 ): Promise<void> => {
   if (access.kind === "everything") {
     return;
+  }
+  // The top of the tree is outside every space a narrowed token was given.
+  if (access.narrowed) {
+    throw new OutsideTokenSpaces(unit.id);
   }
 
   if ((await ownerOfTreeHolding(storageUnits, unit)) !== callerId) {

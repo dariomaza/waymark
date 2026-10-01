@@ -5,6 +5,7 @@ import {
   InvalidQuantity,
   ItemNotFound,
   MissingEmptyTarget,
+  OutsideTokenSpaces,
   OwnerOnly,
   PhotoNotOnItem,
   SpaceIsViewOnly,
@@ -166,6 +167,32 @@ describe("mapDomainError", () => {
     });
   });
 
+  /**
+   * A machine token narrowed to chosen spaces, acting at the top of the tree
+   * (ADR 26). The request and the world are both fine; the credential is too
+   * narrow, so it is 403 like a view share, with a code of its own because
+   * the fix is a different token, not a different share.
+   */
+  describe("a narrowed machine token", () => {
+    it("answers 403 OUTSIDE_TOKEN_SPACES naming the space it would have moved", () => {
+      expect(
+        mapDomainError(new OutsideTokenSpaces(unitId("a-trunk")), NOTHING_ADDRESSED),
+      ).toEqual({
+        status: 403,
+        code: "OUTSIDE_TOKEN_SPACES",
+        details: { storageUnitId: "a-trunk" },
+      });
+    });
+
+    it("answers it with no space for a root that would have been made", () => {
+      expect(mapDomainError(new OutsideTokenSpaces(null), NOTHING_ADDRESSED)).toEqual({
+        status: 403,
+        code: "OUTSIDE_TOKEN_SPACES",
+        details: { storageUnitId: null },
+      });
+    });
+  });
+
   describe("corrupt stored data (500)", () => {
     it("answers 500 for a stored cycle, because nothing the client sent is wrong", () => {
       const mapped = mapDomainError(
@@ -220,6 +247,7 @@ describe("mapDomainError", () => {
         "InvalidQuantity",
         "ItemNotFound",
         "MissingEmptyTarget",
+        "OutsideTokenSpaces",
         "OwnerOnly",
         "PhotoNotOnItem",
         "SpaceIsViewOnly",

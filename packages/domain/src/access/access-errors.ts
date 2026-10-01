@@ -35,3 +35,23 @@ export class OwnerOnly extends DomainError {
     );
   }
 }
+
+/**
+ * Raised when a machine token narrowed to chosen spaces tries to act at the
+ * top of the tree, which is outside every space chosen for it (ADR 26): to
+ * make a root, or to move a space to or from the top.
+ *
+ * Its issuer may own the tree and be free to do it. The token is narrower
+ * than its issuer on purpose, so it is refused for authority, like a view
+ * share. `storageUnitId` is the space that would have become or stopped
+ * being a root, or `null` for a root that would have been made.
+ */
+export class OutsideTokenSpaces extends DomainError {
+  constructor(readonly storageUnitId: UnitId | null) {
+    super(
+      storageUnitId === null
+        ? "This machine token is narrowed to chosen spaces, and a new root would be outside them"
+        : `This machine token is narrowed to chosen spaces, and moving storage unit ${storageUnitId} to or from the top of the tree would act outside them`,
+    );
+  }
+}

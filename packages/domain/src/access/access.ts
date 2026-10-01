@@ -26,12 +26,17 @@ export type ShareLevel = (typeof ShareLevel)[keyof typeof ShareLevel];
  * `scoped.spaces` is already expanded down the tree: every space below a space
  * the person owns or was shared is listed with its effective level. A space
  * that is absent is one the person may not see at all.
+ *
+ * `narrowed` is true for a machine token narrowed to chosen spaces: the top of
+ * the tree is outside those spaces, so it may neither make a root nor move
+ * anything to or from the top (ADR 26).
  */
 export type Access =
   | { readonly kind: "everything" }
   | {
       readonly kind: "scoped";
       readonly spaces: ReadonlyMap<UnitId, ShareLevel>;
+      readonly narrowed: boolean;
     };
 
 /** The caller whose access is being resolved. */
@@ -125,7 +130,110 @@ export const resolveAccess = ({
     }
   }
 
-  return { kind: "scoped", spaces };
+  return { kind: "scoped", spaces, narrowed: false };
+};
+
+/**
+ * The spaces a machine token was narrowed to, or the fact that it was not
+ * (ADR 26).
+ *
+ * "Narrowed" is its own fact, never inferred from the list: a token whose
+ * chosen spaces have all since been deleted has an empty list, and must reach
+ * nothing rather than fall back to its issuer's whole reach.
+ */
+export type ChosenSpaces =
+  | { readonly narrowed: false }
+  | { readonly narrowed: true; readonly spaceIds: readonly UnitId[] };
+
+/** No spaces chosen: the issuer's whole reach. */
+export const WHOLE_REACH: ChosenSpaces = { narrowed: false };
+
+const subtreesOf = (
+  tops: readonly UnitId[],
+  storageUnits: readonly Pick<SpaceInTree, "id" | "parentId">[],
+): Set<UnitId> => {
+  const childrenOf = new Map<UnitId, UnitId[]>();
+  const known = new Set<UnitId>();
+  for (const unit of storageUnits) {
+    known.add(unit.id);
+    if (unit.parentId !== null) {
+      const siblings = childrenOf.get(unit.parentId) ?? [];
+      siblings.push(unit.id);
+      childrenOf.set(unit.parentId, siblings);
+    }
+  }
+
+  const within = new Set<UnitId>();
+  const pending = tops.filter((id) => known.has(id));
+  while (pending.length > 0) {
+    const id = pending.pop() as UnitId;
+    if (within.has(id)) {
+      continue;
+    }
+    within.add(id);
+    pending.push(...(childrenOf.get(id) ?? []));
+  }
+
+  return within;
+};
+
+/**
+ * What a machine token may reach (ADR 26): its issuer's access intersected
+ * with the subtrees of the spaces chosen for it, computed on every request so
+ * that nothing is copied. When the issuer loses a share, the token loses it.
+ *
+ * Each space keeps the issuer's level and never more; for an administrator,
+ * whose access is everything, the chosen subtrees are reached at edit. The
+ * token's scope (ADR 17) still applies on top, at the transport.
+ */
+export const narrowAccess = (
+  access: Access,
+  chosen: ChosenSpaces,
+  storageUnits: readonly Pick<SpaceInTree, "id" | "parentId">[],
+): Access => {
+  if (!chosen.narrowed) {
+    return access;
+  }
+
+  const spaces = new Map<UnitId, ShareLevel>();
+  for (const id of subtreesOf(chosen.spaceIds, storageUnits)) {
+    const level = access.kind === "everything" ? ShareLevel.EDIT : access.spaces.get(id);
+    if (level !== undefined) {
+      spaces.set(id, level);
+    }
+  }
+
+  return { kind: "scoped", spaces, narrowed: true };
+};
+
+/**
+ * The spaces chosen for a token, as they are kept: each once, in the order
+ * given, and without any that lies inside another choice, which would add
+ * nothing to the subtree already chosen.
+ */
+export const outermostChoices = (
+  chosen: readonly UnitId[],
+  storageUnits: readonly Pick<SpaceInTree, "id" | "parentId">[],
+): UnitId[] => {
+  const unique = [...new Set(chosen)];
+  const parentOf = new Map(storageUnits.map((unit) => [unit.id, unit.parentId]));
+  const picked = new Set(unique);
+
+  const insideAnother = (id: UnitId): boolean => {
+    const seen = new Set<UnitId>([id]);
+    let parent = parentOf.get(id) ?? null;
+    while (parent !== null && !seen.has(parent)) {
+      if (picked.has(parent)) {
+        return true;
+      }
+      seen.add(parent);
+      parent = parentOf.get(parent) ?? null;
+    }
+
+    return false;
+  };
+
+  return unique.filter((id) => !insideAnother(id));
 };
 
 /** Whether the person may see a space and what it holds. */

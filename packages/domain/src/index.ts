@@ -20,20 +20,28 @@ export {
   cutPathToReach,
   mayEditSpace,
   mayViewSpace,
+  narrowAccess,
+  outermostChoices,
   reachOf,
   reaches,
   resolveAccess,
   Role,
   ShareLevel,
   visibleRootsOf,
+  WHOLE_REACH,
   type Access,
   type AccessCaller,
+  type ChosenSpaces,
   type ResolveAccessInput,
   type ShareOfSpace,
   type SpaceInTree,
   type SpaceReach,
 } from "./access/access.js";
-export { OwnerOnly, SpaceIsViewOnly } from "./access/access-errors.js";
+export {
+  OutsideTokenSpaces,
+  OwnerOnly,
+  SpaceIsViewOnly,
+} from "./access/access-errors.js";
 
 // Shares (ADR 26)
 export type { Share, ShareRepository } from "./shares/share-repository.js";

@@ -3,6 +3,7 @@ import {
   InvalidQuantity,
   ItemNotFound,
   MissingEmptyTarget,
+  OutsideTokenSpaces,
   OwnerOnly,
   PhotoNotOnItem,
   SpaceIsViewOnly,
@@ -47,6 +48,7 @@ export interface MappedDomainError {
  * | `PhotoNotOnItem`               | 422    | The request names a photo this item does not hold.                  |
  * | `SpaceIsViewOnly`              | 403    | Seen, and shared to view only: authority is missing (ADR 26).        |
  * | `OwnerOnly`                    | 403    | Only the tree's owner makes or moves a root (ADR 26).                |
+ * | `OutsideTokenSpaces`           | 403    | A narrowed machine token acting at the top of the tree (ADR 26).     |
  * | `CorruptStorageUnitHierarchy`  | 500    | The stored data is broken. Nothing the caller sent is wrong.        |
  * | `UnknownStorageUnitKind`       | 500    | Same: a column holds something the domain says cannot exist.        |
  * | `UnknownPhotoProcessingStatus` | 500    | Same, for a photo row that contradicts itself.                      |
@@ -220,6 +222,14 @@ const MAPPINGS = new Map<unknown, Mapper>([
       status: 403,
       code: "OWNER_ONLY",
       details: { storageUnitId: (error as OwnerOnly).storageUnitId },
+    }),
+  ],
+  [
+    OutsideTokenSpaces,
+    (error): MappedDomainError => ({
+      status: 403,
+      code: "OUTSIDE_TOKEN_SPACES",
+      details: { storageUnitId: (error as OutsideTokenSpaces).storageUnitId },
     }),
   ],
   [
