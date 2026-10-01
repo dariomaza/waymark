@@ -53,19 +53,22 @@ install in five lines, and a link to the site.
 
 ### Each person's inventory, an administrator, and shares (ADR 26)
 
-Decided 2026-10-01; the ADR is the design. `Access`, ownership and shares in
-the schema, every read scoped and every write checked are built (slices 1-4),
-and so are machine tokens that belong to their issuer (5) and tokens narrowed
-to chosen spaces (5b): people manage the tokens they issued and an
-administrator all of them; a narrowed token reaches its issuer's `Access`
-intersected with the chosen subtrees, never acts at the top of the tree
+Decided 2026-10-01; the ADR is the design. Slices 1-6 are built: `Access`,
+ownership and shares in the schema, every read scoped and every write checked
+(1-4); machine tokens that belong to their issuer (5) and tokens narrowed to
+chosen spaces (5b): people manage the tokens they issued and an administrator
+all of them; a narrowed token reaches its issuer's `Access` intersected with
+the chosen subtrees, never acts at the top of the tree
 (`OUTSIDE_TOKEN_SPACES`), and reaches nothing once its spaces are all gone.
-What is left, in order, each slice shipped and mutation-tested before the
-next, both clients together where visible:
+And roles and accounts (6): `create-user` makes the first administrator, and
+the *People* group on the account screen, in both clients and only for an
+administrator, creates accounts, changes roles, resets passwords and disables
+or enables (`/auth/accounts`); never the last active administrator
+(`LAST_ADMINISTRATOR`), never your own account (`OWN_ACCOUNT`), and a disabled
+account opens nothing, whatever was left behind.
+What is left, each slice shipped and mutation-tested, both clients together
+where visible:
 
-6. **Roles and accounts**: `create-user` makes the first administrator; the
-   *People* group on the account screen (create, role, reset, disable; never
-   the last administrator).
 7. **Sharing**: *Share* in a space's menu, view or edit; the administrator's
    home groups other people's spaces by owner.
 

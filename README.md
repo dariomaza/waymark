@@ -597,12 +597,18 @@ There are three kinds of credential: a password, a passkey (ADR 19) and a
 machine token (ADR 17). The first two open the same session for a person; the
 third is not a person at all.
 
-- **No sign-up, ever.** Accounts are created from a shell on the server with
-  `pnpm --filter @waymark/api create-user`. The password is never an argument;
-  it is prompted for with echo off, or piped on standard input.
+- **No sign-up, ever.** The first account is created from a shell on the
+  server with `pnpm --filter @waymark/api create-user`. The password is never
+  an argument; it is prompted for with echo off, or piped on standard input.
 - **The first account is the administrator.** `create-user` makes an
   administrator when no account exists yet, and a user after that unless it
   is given `--admin`.
+- **The rest can be created from the app** (ADR 26). An administrator's account
+  screen has a *People* group: add a person with a password they type and hand
+  over, change a role, reset a password, disable and enable. The same 12
+  character minimum applies; disabling signs the person out everywhere and
+  revokes their machine tokens, and the last active administrator can be
+  neither demoted nor disabled. Accounts are never deleted.
 - **Opaque session tokens** in an `Authorization: Bearer` header — no JWT, no
   cookies. 256 random bits, stored as a SHA-256 hash, revoked by deleting the
   row. The same mechanism works unchanged for the PWA and for the Expo app.
