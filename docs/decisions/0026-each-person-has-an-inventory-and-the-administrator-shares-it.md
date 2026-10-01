@@ -99,7 +99,7 @@ and every use case takes it.
 ```ts
 type Access =
   | { kind: "everything" }                      // an administrator
-  | { kind: "scoped"; spaces: ReadonlyMap<StorageUnitId, "view" | "edit"> };
+  | { kind: "scoped"; spaces: ReadonlyMap<UnitId, "view" | "edit"> };
 ```
 
 - **`scoped.spaces` lists every space the person may reach, already expanded
