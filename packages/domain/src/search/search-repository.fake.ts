@@ -1,3 +1,4 @@
+import { reaches, type SpaceReach } from "../access/access.js";
 import type { Item } from "../items/item.js";
 import type { InMemoryItemRepository } from "../items/item-repository.fake.js";
 import type { StorageUnit } from "../storage-units/storage-unit.js";
@@ -22,18 +23,24 @@ export interface InMemorySearchRepositoryDependencies {
 export class InMemorySearchRepository implements SearchRepository {
   constructor(private readonly deps: InMemorySearchRepositoryDependencies) {}
 
-  async findItemsMatching(terms: readonly string[]): Promise<Item[]> {
+  async findItemsMatching(
+    terms: readonly string[],
+    reach: SpaceReach,
+  ): Promise<Item[]> {
     if (terms.length === 0) {
       return [];
     }
 
     const items = await this.deps.items.findAll();
 
-    return items.filter((item) => matchItem(item, terms) !== null);
+    return items.filter(
+      (item) => reaches(reach, item.storageUnitId) && matchItem(item, terms) !== null,
+    );
   }
 
   async findStorageUnitsMatching(
     terms: readonly string[],
+    reach: SpaceReach,
   ): Promise<StorageUnit[]> {
     if (terms.length === 0) {
       return [];
@@ -41,6 +48,8 @@ export class InMemorySearchRepository implements SearchRepository {
 
     const units = await this.deps.storageUnits.findAll();
 
-    return units.filter((unit) => matchStorageUnit(unit, terms) !== null);
+    return units.filter(
+      (unit) => reaches(reach, unit.id) && matchStorageUnit(unit, terms) !== null,
+    );
   }
 }

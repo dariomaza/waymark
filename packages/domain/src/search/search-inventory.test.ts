@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
+
 import { CreateItem } from "../items/create-item.js";
 import { InMemoryItemRepository } from "../items/item-repository.fake.js";
 import { MoveItems } from "../items/move-items.js";
@@ -28,9 +30,13 @@ describe("SearchInventory", () => {
 
   const clock = new FakeClock(new Date("2026-04-01T10:00:00.000Z"));
 
-  const unit = async (name: string, parentId: UnitId | null = null) =>
+  const unit = async (
+    name: string,
+    parentId: UnitId | null = null,
+    owner = "dario",
+  ) =>
     createStorageUnit.execute({
-      callerId: userId("dario"),
+      callerId: userId(owner),
       parentId,
       name,
       kind: StorageUnitKind.BOX,
@@ -50,8 +56,15 @@ describe("SearchInventory", () => {
 
   const search = async (
     query: string,
-    options: { readonly withinUnitId?: UnitId; readonly limit?: number } = {},
-  ) => searchInventory.execute({ query, ...options });
+    {
+      access = { kind: "everything" },
+      ...options
+    }: {
+      readonly withinUnitId?: UnitId;
+      readonly limit?: number;
+      readonly access?: Access;
+    } = {},
+  ) => searchInventory.execute(access, { query, ...options });
 
   const itemNames = async (query: string, options = {}): Promise<string[]> =>
     (await search(query, options)).items.map((result) => result.item.name);
@@ -423,6 +436,19 @@ describe("SearchInventory", () => {
       expect(formatStorageUnitPath(result?.path ?? [])).toBe("Kitchen");
     });
 
+    it("answers with the new breadcrumb once the box holding it is moved, however often it was searched before", async () => {
+      const garage = await unit("Garage");
+      const kitchen = await unit("Kitchen");
+      const box = await unit("Box 3", garage.id);
+      await item("Cordless drill", box.id);
+      await search("drill");
+
+      await storageUnits.save({ ...box, parentId: kitchen.id });
+
+      const [result] = (await search("drill")).items;
+      expect(formatStorageUnitPath(result?.path ?? [])).toBe("Kitchen > Box 3");
+    });
+
     it("stops finding an item once it is deleted", async () => {
       const box = await unit("Box 3");
       const drill = await item("Cordless drill", box.id);
@@ -438,6 +464,78 @@ describe("SearchInventory", () => {
       await storageUnits.delete(box.id);
 
       await expect(unitNames("crate")).resolves.toEqual([]);
+    });
+  });
+
+  describe("for a person who may not see the whole house (ADR 26)", () => {
+    const accessOf = async (
+      who: string,
+      shared: readonly UnitId[] = [],
+    ): Promise<Access> =>
+      resolveAccess({
+        caller: { userId: userId(who), role: Role.USER },
+        storageUnits: await storageUnits.findAll(),
+        shares: shared.map((storageUnitId) => ({
+          storageUnitId,
+          userId: userId(who),
+          access: ShareLevel.VIEW,
+        })),
+      });
+
+    it("finds only what is in spaces the person may see", async () => {
+      const garage = await unit("Ana garage", null, "ana");
+      await item("Ana drill", garage.id);
+      const flat = await unit("Bea flat", null, "bea");
+      await item("Bea drill", flat.id);
+
+      const access = await accessOf("bea");
+
+      await expect(itemNames("drill", { access })).resolves.toEqual(["Bea drill"]);
+      await expect(unitNames("garage", { access })).resolves.toEqual([]);
+    });
+
+    it("never lets somebody else's matches fill the limit", async () => {
+      const garage = await unit("Ana garage", null, "ana");
+      await item("Drill a", garage.id);
+      await item("Drill b", garage.id);
+      await item("Drill c", garage.id);
+      const flat = await unit("Bea flat", null, "bea");
+      await item("Drill z", flat.id);
+
+      await expect(
+        itemNames("drill", { access: await accessOf("bea"), limit: 1 }),
+      ).resolves.toEqual(["Drill z"]);
+    });
+
+    it("cuts every breadcrumb at the space shared with the person", async () => {
+      const garage = await unit("Ana garage", null, "ana");
+      const shelf = await unit("Ana shelf", garage.id, "ana");
+      await item("Drill", shelf.id);
+
+      const [result] = (await search("drill", { access: await accessOf("bea", [shelf.id]) }))
+        .items;
+
+      expect(formatStorageUnitPath(result?.path ?? [])).toBe("Ana shelf");
+    });
+
+    it("cuts the breadcrumb for each person, whoever searched before them", async () => {
+      const garage = await unit("Ana garage", null, "ana");
+      const shelf = await unit("Ana shelf", garage.id, "ana");
+      await item("Drill", shelf.id);
+      await search("drill");
+
+      const [result] = (await search("drill", { access: await accessOf("bea", [shelf.id]) }))
+        .items;
+
+      expect(formatStorageUnitPath(result?.path ?? [])).toBe("Ana shelf");
+    });
+
+    it("treats a space the person may not see, named as the scope, as one that does not exist", async () => {
+      const garage = await unit("Ana garage", null, "ana");
+
+      await expect(
+        search("drill", { access: await accessOf("bea"), withinUnitId: garage.id }),
+      ).rejects.toBeInstanceOf(StorageUnitNotFound);
     });
   });
 });

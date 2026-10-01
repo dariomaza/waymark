@@ -1,3 +1,4 @@
+import type { SpaceReach } from "../access/access.js";
 import type { Item } from "../items/item.js";
 import type { StorageUnit } from "../storage-units/storage-unit.js";
 
@@ -8,7 +9,12 @@ import type { StorageUnit } from "../storage-units/storage-unit.js";
  *
  * This port does one job: hand back everything that could match, fast. It is
  * NOT asked to order results, to score them, to scope them to a subtree or to
- * cut them to a limit. All of that is `SearchInventory`'s, computed from the
+ * cut them to a limit.
+ *
+ * It IS asked to stay within the spaces the person may reach (ADR 26), and to
+ * do it in the query itself. That is not ranking or scoping, it is who is
+ * asking: a row the person may not see must never become a candidate, so that
+ * nothing cut later can let another person's matches crowd out theirs. All of that is `SearchInventory`'s, computed from the
  * entities themselves with `matchItem` and `matchStorageUnit`.
  *
  * The split is deliberate. An adapter over SQLite FTS5 and the in-memory one
@@ -42,9 +48,15 @@ import type { StorageUnit } from "../storage-units/storage-unit.js";
  * that share a word with a query are few.
  */
 export interface SearchRepository {
-  /** Every item whose name, tags or description contain every term. */
-  findItemsMatching(terms: readonly string[]): Promise<Item[]>;
+  /**
+   * Every item whose name, tags or description contain every term, held by
+   * a space within `reach`.
+   */
+  findItemsMatching(terms: readonly string[], reach: SpaceReach): Promise<Item[]>;
 
-  /** Every storage unit whose name contains every term. */
-  findStorageUnitsMatching(terms: readonly string[]): Promise<StorageUnit[]>;
+  /** Every storage unit within `reach` whose name contains every term. */
+  findStorageUnitsMatching(
+    terms: readonly string[],
+    reach: SpaceReach,
+  ): Promise<StorageUnit[]>;
 }

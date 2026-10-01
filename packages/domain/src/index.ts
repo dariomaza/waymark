@@ -20,6 +20,8 @@ export {
   cutPathToReach,
   mayEditSpace,
   mayViewSpace,
+  reachOf,
+  reaches,
   resolveAccess,
   Role,
   ShareLevel,
@@ -29,6 +31,7 @@ export {
   type ResolveAccessInput,
   type ShareOfSpace,
   type SpaceInTree,
+  type SpaceReach,
 } from "./access/access.js";
 
 // Shares (ADR 26)

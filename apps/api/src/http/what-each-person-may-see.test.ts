@@ -335,4 +335,70 @@ describe("what each person may see over HTTP (ADR 26)", () => {
       expect(response.statusCode).toBe(200);
     });
   });
+
+  describe("GET /search", () => {
+    interface Answer {
+      readonly items: readonly { readonly item: ItemView; readonly path: UnitView[] }[];
+      readonly storageUnits: readonly { readonly unit: UnitView }[];
+    }
+
+    const search = async (person: Person, query: string) =>
+      as(person, { method: "GET", url: `/search?${query}` });
+
+    const namesFound = (response: LightMyRequestResponse) => {
+      const body = response.json() as Answer;
+
+      return {
+        items: body.items.map((result) => result.item.name),
+        storageUnits: body.storageUnits.map((result) => result.unit.name).sort(),
+      };
+    };
+
+    it("finds for Bea only what was shared with her, located from the share down", async () => {
+      const response = await search("bea", "q=ana");
+
+      expect(response.statusCode).toBe(200);
+      expect(namesFound(response)).toEqual({
+        items: ["Ana drill", "Ana lamp"],
+        storageUnits: ["Ana attic", "Ana garage", "Ana shelf"],
+      });
+      expect(namesIn(response, HIDDEN_FROM_BEA)).toEqual([]);
+    });
+
+    it("finds for Bea within a shared space", async () => {
+      const response = await search("bea", `q=ana&within=${idOf("Ana garage")}`);
+
+      expect(namesFound(response)).toEqual({
+        items: ["Ana drill"],
+        storageUnits: ["Ana shelf"],
+      });
+    });
+
+    it("answers Bea about a scope she may not see exactly as about one that does not exist", async () => {
+      const unseen = await search("bea", `q=ana&within=${idOf("Ana safe")}`);
+      const absent = await search("bea", "q=ana&within=never-issued");
+
+      expect(errorOf(unseen)).toEqual(errorOf(absent));
+      expect(namesIn(unseen, HIDDEN_FROM_BEA)).toEqual([]);
+    });
+
+    it("never lets Ana's matches fill Bea's limit", async () => {
+      await item("ana", "Thing a1", "Ana safe");
+      await item("ana", "Thing a2", "Ana safe");
+      await item("bea", "Thing z", "Bea wardrobe");
+
+      expect(namesFound(await search("bea", "q=thing&limit=1")).items).toEqual(["Thing z"]);
+    });
+
+    it("finds nothing of Bea's for Ana and everything for the administrator", async () => {
+      expect(namesFound(await search("ana", "q=bea"))).toEqual({
+        items: [],
+        storageUnits: [],
+      });
+      expect(namesFound(await search("admin", "q=bea"))).toEqual({
+        items: ["Bea scarf"],
+        storageUnits: ["Bea flat", "Bea wardrobe"],
+      });
+    });
+  });
 });

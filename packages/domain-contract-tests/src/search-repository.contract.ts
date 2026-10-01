@@ -3,6 +3,7 @@ import {
   toSearchTerms,
   type ItemRepository,
   type SearchRepository,
+  type SpaceReach,
   type StorageUnitRepository,
 } from "@waymark/domain";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -12,6 +13,8 @@ import type {
   RepositoryHarness,
   SearchRepositoryContext,
 } from "./harness.js";
+
+const EVERYWHERE: SpaceReach = { kind: "everywhere" };
 
 /**
  * The behaviour EVERY `SearchRepository` owes its callers, whatever finds the
@@ -53,20 +56,69 @@ export const searchRepositoryContract = (
     });
 
     const itemNamesFor = async (query: string): Promise<string[]> =>
-      (await search.findItemsMatching(toSearchTerms(query)))
+      (await search.findItemsMatching(toSearchTerms(query), EVERYWHERE))
         .map((item) => item.name)
         .sort();
 
     const unitNamesFor = async (query: string): Promise<string[]> =>
-      (await search.findStorageUnitsMatching(toSearchTerms(query)))
+      (await search.findStorageUnitsMatching(toSearchTerms(query), EVERYWHERE))
         .map((unit) => unit.name)
         .sort();
+
+    /**
+     * The reach is applied in the query itself (ADR 26), so nothing that one
+     * person may not see is ever a candidate, and nothing cut later can push
+     * another person's results off the page.
+     */
+    describe("staying within the spaces a person may reach", () => {
+      const onlyThe = (...ids: string[]): SpaceReach => ({
+        kind: "within",
+        spaceIds: ids.map((id) => (id === "box" ? box.id : crate.id)),
+      });
+
+      beforeEach(async () => {
+        await items.saveAll([
+          anItem("drill-in-box", box.id, { name: "Box drill" }),
+          anItem("drill-in-crate", crate.id, { name: "Crate drill" }),
+        ]);
+      });
+
+      it("finds only the items held by the spaces it is given", async () => {
+        const found = await search.findItemsMatching(toSearchTerms("drill"), onlyThe("box"));
+
+        expect(found.map((item) => item.name)).toEqual(["Box drill"]);
+      });
+
+      it("finds only the spaces among those it is given", async () => {
+        await expect(
+          search.findStorageUnitsMatching(toSearchTerms("wooden"), onlyThe("box")),
+        ).resolves.toEqual([]);
+        await expect(
+          search.findStorageUnitsMatching(toSearchTerms("wooden"), onlyThe("crate")),
+        ).resolves.toHaveLength(1);
+      });
+
+      it("finds nothing at all for a person who may reach no space", async () => {
+        const nowhere: SpaceReach = { kind: "within", spaceIds: [] };
+
+        await expect(
+          search.findItemsMatching(toSearchTerms("drill"), nowhere),
+        ).resolves.toEqual([]);
+        await expect(
+          search.findStorageUnitsMatching(toSearchTerms("box"), nowhere),
+        ).resolves.toEqual([]);
+      });
+
+      it("finds everything that matches when it may look everywhere", async () => {
+        await expect(itemNamesFor("drill")).resolves.toEqual(["Box drill", "Crate drill"]);
+      });
+    });
 
     describe("findItemsMatching", () => {
       it("answers nothing when there are no terms", async () => {
         await items.save(anItem("drill", box.id, { name: "Cordless drill" }));
 
-        await expect(search.findItemsMatching([])).resolves.toEqual([]);
+        await expect(search.findItemsMatching([], EVERYWHERE)).resolves.toEqual([]);
       });
 
       it("answers nothing when nothing matches", async () => {
@@ -110,7 +162,7 @@ export const searchRepositoryContract = (
         await items.save(drill);
 
         await expect(
-          search.findItemsMatching(toSearchTerms("drill")),
+          search.findItemsMatching(toSearchTerms("drill"), EVERYWHERE),
         ).resolves.toEqual([drill]);
       });
 
@@ -194,7 +246,7 @@ export const searchRepositoryContract = (
 
     describe("findStorageUnitsMatching", () => {
       it("answers nothing when there are no terms", async () => {
-        await expect(search.findStorageUnitsMatching([])).resolves.toEqual([]);
+        await expect(search.findStorageUnitsMatching([], EVERYWHERE)).resolves.toEqual([]);
       });
 
       it("finds a unit by a word in its name", async () => {
@@ -203,7 +255,7 @@ export const searchRepositoryContract = (
 
       it("returns the whole unit, not a projection of it", async () => {
         await expect(
-          search.findStorageUnitsMatching(toSearchTerms("wooden")),
+          search.findStorageUnitsMatching(toSearchTerms("wooden"), EVERYWHERE),
         ).resolves.toEqual([crate]);
       });
 
@@ -341,7 +393,7 @@ export const searchRepositoryContract = (
           updatedAt: A_LATER_MOMENT,
         });
 
-        const [found] = await search.findItemsMatching(toSearchTerms("drill"));
+        const [found] = await search.findItemsMatching(toSearchTerms("drill"), EVERYWHERE);
         expect(found?.storageUnitId).toBe(crate.id);
       });
 

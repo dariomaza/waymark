@@ -1,7 +1,10 @@
+import type { SpaceReach } from "@waymark/domain";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { PrismaSearchRepository } from "./prisma-search-repository.js";
 import { createTestDatabase, type TestDatabase } from "./testing/test-database.js";
+
+const EVERYWHERE: SpaceReach = { kind: "everywhere" };
 
 /**
  * The search index is a hand-written migration, and `schema.prisma` cannot
@@ -112,7 +115,7 @@ describe("the search index", () => {
     it("is indexed when a unit is inserted behind the adapter's back", async () => {
       await writeUnitDirectly("unit", "Armario metálico");
 
-      const found = await search.findStorageUnitsMatching(["metalico"]);
+      const found = await search.findStorageUnitsMatching(["metalico"], EVERYWHERE);
 
       expect(found.map((unit) => unit.name)).toEqual(["Armario metálico"]);
     });
@@ -121,7 +124,7 @@ describe("the search index", () => {
       await writeUnitDirectly("unit", "Box 3");
       await writeItemDirectly("item", "unit", "Cámara réflex");
 
-      const found = await search.findItemsMatching(["camara"]);
+      const found = await search.findItemsMatching(["camara"], EVERYWHERE);
 
       expect(found.map((item) => item.name)).toEqual(["Cámara réflex"]);
     });
@@ -133,9 +136,9 @@ describe("the search index", () => {
       await database.client
         .$executeRaw`UPDATE "Item" SET "name" = 'Angle grinder' WHERE "id" = 'item'`;
 
-      await expect(search.findItemsMatching(["drill"])).resolves.toEqual([]);
+      await expect(search.findItemsMatching(["drill"], EVERYWHERE)).resolves.toEqual([]);
       expect(
-        (await search.findItemsMatching(["grinder"])).map((item) => item.name),
+        (await search.findItemsMatching(["grinder"], EVERYWHERE)).map((item) => item.name),
       ).toEqual(["Angle grinder"]);
     });
 
@@ -148,7 +151,7 @@ describe("the search index", () => {
       `;
 
       expect(
-        (await search.findItemsMatching(["cables"])).map((item) => item.name),
+        (await search.findItemsMatching(["cables"], EVERYWHERE)).map((item) => item.name),
       ).toEqual(["HDMI 2.1"]);
     });
 
@@ -158,7 +161,7 @@ describe("the search index", () => {
 
       await database.client.$executeRaw`DELETE FROM "Item" WHERE "id" = 'item'`;
 
-      await expect(search.findItemsMatching(["drill"])).resolves.toEqual([]);
+      await expect(search.findItemsMatching(["drill"], EVERYWHERE)).resolves.toEqual([]);
     });
 
     it("cannot be left behind by a transaction that rolled back", async () => {
@@ -174,7 +177,7 @@ describe("the search index", () => {
         }),
       ).rejects.toThrow("the write is abandoned halfway");
 
-      await expect(search.findItemsMatching(["drill"])).resolves.toEqual([]);
+      await expect(search.findItemsMatching(["drill"], EVERYWHERE)).resolves.toEqual([]);
     });
   });
 });

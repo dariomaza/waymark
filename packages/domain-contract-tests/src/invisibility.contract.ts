@@ -5,6 +5,7 @@ import {
   ItemNotFound,
   ListItems,
   ListStorageUnits,
+  SearchInventory,
   resolveAccess,
   Role,
   ShareLevel,
@@ -310,6 +311,84 @@ export const invisibilityContract = (
         await expect(open(await asAdmin(), "scarf")).resolves.toMatchObject({
           item: { id: ITEMS.scarf.id },
         });
+      });
+    });
+
+    describe("search", () => {
+      const find = async (
+        access: Access,
+        query: string,
+        options: { readonly withinUnitId?: UnitId; readonly limit?: number } = {},
+      ) =>
+        new SearchInventory({
+          search: context.search,
+          storageUnits: context.storageUnits,
+        }).execute(access, { query, ...options });
+
+      const idsOf = (answer: Awaited<ReturnType<typeof find>>) => ({
+        items: sortedIdsOf(answer.items.map((result) => result.item)),
+        storageUnits: sortedIdsOf(answer.storageUnits.map((result) => result.unit)),
+      });
+
+      it("finds for Bea only what was shared with her, located from the share down", async () => {
+        const answer = await find(await asBea(), "ana");
+
+        expect(idsOf(answer)).toEqual({
+          items: ANAS_ITEMS_SHARED_WITH_BEA,
+          storageUnits: SHARED_WITH_BEA,
+        });
+        const drill = answer.items.find((result) => result.item.id === ITEMS.drill.id);
+        expect(drill?.path.map((unit) => unit.name)).toEqual(["Ana garage", "Ana shelf"]);
+        expect(namesIn(answer, NAMES_HIDDEN_FROM_BEA)).toEqual([]);
+      });
+
+      it("finds for Bea within a shared space only what is under it", async () => {
+        const answer = await find(await asBea(), "ana", { withinUnitId: SPACES.garage.id });
+
+        expect(idsOf(answer)).toEqual({ items: ["ana-drill"], storageUnits: ["ana-shelf"] });
+      });
+
+      it.each([["ana-house"], ["ana-safe"]])(
+        "treats %s as a scope that does not exist for Bea",
+        async (id) => {
+          await expect(
+            find(await asBea(), "ana", { withinUnitId: unitId(id) }),
+          ).rejects.toBeInstanceOf(StorageUnitNotFound);
+        },
+      );
+
+      it("never lets Ana's matches fill Bea's limit", async () => {
+        await context.items.saveAll([
+          anItem("crowd-1", SPACES.safe.id, { name: "Thing a1" }),
+          anItem("crowd-2", SPACES.safe.id, { name: "Thing a2" }),
+          anItem("crowd-3", SPACES.safe.id, { name: "Thing a3" }),
+          anItem("beas-thing", SPACES.wardrobe.id, { name: "Thing z" }),
+        ]);
+
+        const answer = await find(await asBea(), "thing", { limit: 1 });
+
+        expect(answer.items.map((result) => result.item.name)).toEqual(["Thing z"]);
+      });
+
+      it("finds nothing of Bea's for Ana, and all of hers", async () => {
+        expect(idsOf(await find(await asAna(), "bea"))).toEqual({
+          items: [],
+          storageUnits: [],
+        });
+        expect(idsOf(await find(await asAna(), "ana"))).toEqual({
+          items: ANAS_ITEMS,
+          storageUnits: ANAS_SPACES,
+        });
+      });
+
+      it("finds everything for the administrator, inside any scope", async () => {
+        expect(idsOf(await find(await asAdmin(), "bea"))).toEqual({
+          items: ["bea-scarf"],
+          storageUnits: BEAS_SPACES,
+        });
+        expect(
+          idsOf(await find(await asAdmin(), "ana", { withinUnitId: SPACES.safe.id })),
+        ).toEqual({ items: ["ana-passport", "ana-ring"], storageUnits: ["ana-jewels"] });
       });
     });
 

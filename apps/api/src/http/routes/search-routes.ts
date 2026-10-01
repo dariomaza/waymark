@@ -40,8 +40,9 @@ export const searchRoutes: FastifyPluginAsync<SearchRouteOptions> = async (
     // A `within` that names nothing raises `StorageUnitNotFound`, which the
     // error mapping turns into a 422 rather than a 404: the id came from the
     // query string and not from the path, so a 404 would be a claim about
-    // this route (ADR 8).
-    const results = await options.searchInventory.execute({
+    // this route (ADR 8). A `within` the person may not see is answered the
+    // same way, because for them it does not exist (ADR 26).
+    const results = await options.searchInventory.execute(request.access, {
       query: q,
       withinUnitId: within === undefined ? null : unitId(within),
       ...(limit === undefined ? {} : { limit }),

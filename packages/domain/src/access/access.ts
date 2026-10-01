@@ -174,3 +174,23 @@ export const cutPathToReach = <T extends { readonly id: UnitId }>(
 
   return path.slice(start);
 };
+
+/**
+ * Where a repository may look on a person's behalf (ADR 26), for the reads
+ * that must filter inside the query rather than after it: anything cut to a
+ * limit, where another person's rows would otherwise push this person's off
+ * the page.
+ */
+export type SpaceReach =
+  | { readonly kind: "everywhere" }
+  | { readonly kind: "within"; readonly spaceIds: readonly UnitId[] };
+
+/** The reach a person's access gives a query. */
+export const reachOf = (access: Access): SpaceReach =>
+  access.kind === "everything"
+    ? { kind: "everywhere" }
+    : { kind: "within", spaceIds: [...access.spaces.keys()] };
+
+/** Whether a reach takes in a space. */
+export const reaches = (reach: SpaceReach, id: UnitId): boolean =>
+  reach.kind === "everywhere" || reach.spaceIds.includes(id);
