@@ -80,6 +80,7 @@ export type {
   IssuedMachineTokenResponse,
   MachineCallerResponse,
   MachineTokenListResponse,
+  ListedMachineTokenView,
   MachineTokenView,
   MovedItemsResponse,
   FinishPasskeyLoginInput,

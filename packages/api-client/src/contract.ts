@@ -171,7 +171,17 @@ export interface MachineTokenView {
  * reads to decide whether a credential is still in use.
  */
 export interface MachineTokenListResponse {
-  readonly machineTokens: readonly MachineTokenView[];
+  readonly machineTokens: readonly ListedMachineTokenView[];
+}
+
+/**
+ * A row of that list (ADR 26). A person lists the tokens they issued; an
+ * administrator lists everybody's, and only then does each row say whose it
+ * is.
+ */
+export interface ListedMachineTokenView extends MachineTokenView {
+  /** The issuer's username. Absent when the list is the caller's own. */
+  readonly issuedBy?: string;
 }
 
 /**

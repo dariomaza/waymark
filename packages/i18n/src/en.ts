@@ -676,6 +676,11 @@ export const EN = {
   /** The answer that makes an abandoned credential visible. */
   "tokens.neverUsed": "Never used",
   "tokens.lapsesOn": "Lapses {when}",
+  /**
+   * Whose token this is, on each row, shown only to an administrator, who
+   * sees everybody's (ADR 26). A person sees only their own and is not told.
+   */
+  "tokens.issuedBy": "Issued by {username}",
 
   /**
    * # The other half of a credential

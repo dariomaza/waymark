@@ -75,6 +75,23 @@ describe("machine tokens, from the phone", () => {
     });
 
     /**
+     * An administrator's list is everybody's, and only then does a row say
+     * whose it is (ADR 26). A person's own list carries no issuer.
+     */
+    it("says whose each token is when the list is everybody's, and nobody's otherwise", async () => {
+      theApiHolds([
+        aMachineTokenView({ name: "mcp-server" }),
+        aMachineTokenView({ id: "mt2", name: "beas-assistant", issuedBy: "bea" }),
+      ]);
+
+      await renderApp({ session: aSession() });
+      await openYourAccount();
+
+      expect(await screen.findByText("Issued by bea")).toBeOnTheScreen();
+      expect(screen.queryAllByText(/^Issued by/)).toHaveLength(1);
+    });
+
+    /**
      * The column somebody came for. A credential nobody can see being used is
      * one nobody will ever dare revoke.
      */

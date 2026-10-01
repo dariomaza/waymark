@@ -123,6 +123,32 @@ describe("machine tokens, from the account screen", () => {
     });
 
     /**
+     * An administrator lists everybody's tokens, and the API says whose each
+     * one is (ADR 26). A person's own list carries no issuer, and says none.
+     */
+    it("says whose each token is when the list is everybody's", async () => {
+      answerWith([
+        aMachineTokenView({ name: "mcp-server", issuedBy: "dario" }),
+        aMachineTokenView({ id: "mt2", name: "beas-assistant", issuedBy: "bea" }),
+      ]);
+
+      const account = await openTheAccountScreen();
+      const row = (await within(account).findByText("beas-assistant")).closest("li") as HTMLElement;
+
+      expect(within(row).getByText("Issued by bea")).toBeVisible();
+      expect(within(row).queryByText(/dario/i)).toBeNull();
+    });
+
+    it("says nobody's name on a person's own list", async () => {
+      answerWith([aMachineTokenView({ name: "mcp-server" })]);
+
+      const account = await openTheAccountScreen();
+      await within(account).findByText("mcp-server");
+
+      expect(within(account).queryByText(/issued by/i)).toBeNull();
+    });
+
+    /**
      * "read" and "read-write" are what the API stores and what the CLI prints.
      * Neither is a sentence, and the difference between them is the entire
      * point of the scope, so it is spelled out.

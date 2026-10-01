@@ -454,6 +454,8 @@ export const ES: Dictionary = {
   "tokens.lastUsedOn": "Último uso: {when}",
   "tokens.neverUsed": "Sin usar",
   "tokens.lapsesOn": "Caduca el {when}",
+  /** De quién es el token; solo lo ve un administrador (ADR 26). */
+  "tokens.issuedBy": "Emitido por {username}",
 
   "tokens.addressNote":
     "Esta es la dirección de Waymark a la que llama un programa. No es un secreto, así que cógela cuando la necesites.",

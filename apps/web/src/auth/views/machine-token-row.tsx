@@ -1,4 +1,4 @@
-import { MachineTokenScope, type MachineTokenView } from "@waymark/api-client";
+import { MachineTokenScope, type ListedMachineTokenView } from "@waymark/api-client";
 import { shortDate } from "@waymark/i18n";
 import type { JSX } from "react";
 
@@ -12,7 +12,7 @@ import "./machine-token-row.css";
 export type PendingAct = "rotate" | "revoke" | null;
 
 export interface MachineTokenRowProps {
-  readonly token: MachineTokenView;
+  readonly token: ListedMachineTokenView;
   readonly pending: PendingAct;
   readonly busy: boolean;
   readonly onAsk: (act: Exclude<PendingAct, null>) => void;
@@ -79,6 +79,12 @@ export const MachineTokenRow = ({
           {token.expiresAt === null ? null : (
             <span className="settings-item__fact">
               {t("tokens.lapsesOn", { when: when(token.expiresAt) })}
+            </span>
+          )}
+          {/* Only an administrator's list says whose a token is (ADR 26). */}
+          {token.issuedBy === undefined ? null : (
+            <span className="settings-item__fact">
+              {t("tokens.issuedBy", { username: token.issuedBy })}
             </span>
           )}
         </span>
