@@ -47,6 +47,12 @@ export interface AppProps {
    * of hardware and a platform dialog rather than this app's own code.
    */
   readonly passkeys?: PasskeyPlatform;
+  /**
+   * The query cache, built by `createQueryClient` by default. Tests build
+   * their own with that same function so they keep the real retry policy and
+   * drop only its wall-clock wait — see `createQueryClient`.
+   */
+  readonly queries?: QueryClient;
 }
 
 /**
@@ -62,8 +68,13 @@ export interface AppProps {
  * the tests mount a `MemoryRouter` at the URL under test, and everything in
  * between is the same app.
  */
-export const App = ({ client, scanner, passkeys }: AppProps = {}): JSX.Element => {
-  const [queries] = useState(createQueryClient);
+export const App = ({
+  client,
+  scanner,
+  passkeys,
+  queries: given,
+}: AppProps = {}): JSX.Element => {
+  const [queries] = useState(() => given ?? createQueryClient());
   const [api] = useState(() => client ?? createDefaultClient());
   const [camera] = useState(() => scanner ?? defaultScanner());
   const [authenticators] = useState(() => passkeys ?? defaultPasskeyPlatform());
@@ -112,6 +123,20 @@ export const App = ({ client, scanner, passkeys }: AppProps = {}): JSX.Element =
   );
 };
 
+/** How long a phone waits before asking again for a request that never left it. */
+export const OFFLINE_RETRY_DELAY_MS = 500;
+
+export interface QueryClientOptions {
+  /**
+   * How long to wait before the one retry, in milliseconds. A phone waits
+   * `OFFLINE_RETRY_DELAY_MS`. The tests pass 0: the wait is real time, and a
+   * test that sits through it spends half of a `findBy…`'s one second doing
+   * nothing, so any stall of the test process during the wait lets the retry
+   * and the assertion's deadline fall due together — and the deadline wins.
+   */
+  readonly offlineRetryDelay?: number;
+}
+
 /**
  * # Retrying, and why there is so little of it
  *
@@ -129,14 +154,16 @@ export const App = ({ client, scanner, passkeys }: AppProps = {}): JSX.Element =
  * reached. So every request is attempted, and a request that cannot leave
  * the phone comes back as the offline failure the screens already handle.
  */
-const createQueryClient = (): QueryClient =>
+export const createQueryClient = ({
+  offlineRetryDelay = OFFLINE_RETRY_DELAY_MS,
+}: QueryClientOptions = {}): QueryClient =>
   new QueryClient({
     defaultOptions: {
       queries: {
         networkMode: "always",
         retry: (failureCount, error) =>
           failureKindOf(error) === FailureKind.OFFLINE && failureCount < 1,
-        retryDelay: 500,
+        retryDelay: offlineRetryDelay,
         refetchOnWindowFocus: false,
         staleTime: 30_000,
       },

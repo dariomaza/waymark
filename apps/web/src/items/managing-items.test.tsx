@@ -381,9 +381,7 @@ describe("looking after items", () => {
 
     renderApp({ route: "/things" });
 
-    expect(
-      await screen.findByRole("button", { name: /try again/i }, { timeout: 3000 }),
-    ).toBeVisible();
+    expect(await screen.findByRole("button", { name: /try again/i })).toBeVisible();
   });
 });
 

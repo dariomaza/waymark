@@ -139,7 +139,9 @@ export const renderApp = async ({
           ],
         };
 
-  const queries = createQueryClient();
+  // The app's own cache and retry policy, minus the half second of real time
+  // before the retry, which would otherwise race every assertion's deadline.
+  const queries = createQueryClient({ offlineRetryDelay: 0 });
   caches.push(queries);
 
   return await render(
