@@ -7,11 +7,28 @@ export {
   photoId,
   publicId,
   unitId,
+  userId,
   type ItemId,
   type PhotoId,
   type PublicId,
   type UnitId,
+  type UserId,
 } from "./shared/identity.js";
+
+// Who may see what (ADR 26)
+export {
+  mayEditSpace,
+  mayViewSpace,
+  resolveAccess,
+  Role,
+  ShareLevel,
+  visibleRootsOf,
+  type Access,
+  type AccessCaller,
+  type ResolveAccessInput,
+  type ShareOfSpace,
+  type SpaceInTree,
+} from "./access/access.js";
 
 // Storage units
 export {

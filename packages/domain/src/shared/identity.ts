@@ -15,6 +15,9 @@ export type ItemId = Branded<"ItemId">;
 /** Identifies a photo. */
 export type PhotoId = Branded<"PhotoId">;
 
+/** Identifies a person with an account (ADR 26). */
+export type UserId = Branded<"UserId">;
+
 /** Public, shareable identifier printed on a storage unit QR code. */
 export type PublicId = Branded<"PublicId">;
 
@@ -23,5 +26,7 @@ export const unitId = (value: string): UnitId => value as UnitId;
 export const itemId = (value: string): ItemId => value as ItemId;
 
 export const photoId = (value: string): PhotoId => value as PhotoId;
+
+export const userId = (value: string): UserId => value as UserId;
 
 export const publicId = (value: string): PublicId => value as PublicId;

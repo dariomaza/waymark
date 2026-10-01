@@ -58,6 +58,20 @@ describe("@waymark/domain public surface", () => {
     );
   });
 
+  it("exposes what decides what a person may see", () => {
+    expect(Object.keys(domain)).toEqual(
+      expect.arrayContaining([
+        "resolveAccess",
+        "mayViewSpace",
+        "mayEditSpace",
+        "visibleRootsOf",
+        "Role",
+        "ShareLevel",
+        "userId",
+      ]),
+    );
+  });
+
   it("does not leak the in-memory test doubles", () => {
     expect(Object.keys(domain)).not.toContain("InMemoryItemRepository");
     expect(Object.keys(domain)).not.toContain("InMemoryPhotoRepository");

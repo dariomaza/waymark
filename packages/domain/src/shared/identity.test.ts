@@ -5,10 +5,12 @@ import {
   photoId,
   publicId,
   unitId,
+  userId,
   type ItemId,
   type PhotoId,
   type PublicId,
   type UnitId,
+  type UserId,
 } from "./identity.js";
 
 describe("domain identities", () => {
@@ -17,6 +19,7 @@ describe("domain identities", () => {
     expect(itemId("item-1")).toBe("item-1");
     expect(photoId("photo-1")).toBe("photo-1");
     expect(publicId("QRCODE1")).toBe("QRCODE1");
+    expect(userId("user-1")).toBe("user-1");
   });
 
   it("refuses a unit id where an item id is expected", () => {
@@ -31,6 +34,13 @@ describe("domain identities", () => {
 
     // @ts-expect-error a PhotoId is not a PublicId
     takesPublicId(photoId("photo-1"));
+  });
+
+  it("refuses a unit id where a user id is expected", () => {
+    const takesUserId = (id: UserId): UserId => id;
+
+    // @ts-expect-error a UnitId is not a UserId
+    takesUserId(unitId("unit-1"));
   });
 
   it("refuses a bare string where a branded id is expected", () => {
