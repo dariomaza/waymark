@@ -9,6 +9,8 @@ export interface PasswordFieldProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> {
   readonly id: string;
   readonly label: string;
+  /** A line under the field: what a new password has to be. */
+  readonly hint?: string | undefined;
 }
 
 /**

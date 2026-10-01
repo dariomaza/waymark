@@ -56,6 +56,7 @@ describe("the icon set both clients draw", () => {
       "moon",
       "info",
       "link",
+      "person",
     ]);
   });
 
