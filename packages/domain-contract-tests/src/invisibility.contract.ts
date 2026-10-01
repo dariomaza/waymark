@@ -1,10 +1,13 @@
 import {
+  createPhoto,
+  FindPhoto,
   GetItem,
   GetStorageUnit,
   GetStorageUnitPath,
   ItemNotFound,
   ListItems,
   ListStorageUnits,
+  ReachablePhotos,
   SearchInventory,
   resolveAccess,
   Role,
@@ -77,6 +80,13 @@ const ITEMS = {
   }),
 } as const;
 
+const PHOTOS = [
+  "photo-of-the-drill",
+  "photo-of-the-passport",
+  "photo-of-the-safe",
+  "photo-of-the-scarf",
+];
+
 const ANAS_SPACES = ["ana-attic", "ana-garage", "ana-house", "ana-jewels", "ana-safe", "ana-shelf"];
 const BEAS_SPACES = ["bea-flat", "bea-wardrobe"];
 /** What is shared with Bea, and everything under it. */
@@ -145,6 +155,15 @@ export const invisibilityContract = (
         await context.storageUnits.save(unit);
       }
       await context.items.saveAll(Object.values(ITEMS));
+      for (const id of PHOTOS) {
+        await context.photos.save(
+          createPhoto({
+            id: aPhotoId(id),
+            originalPath: `ab/${id}.jpg`,
+            thumbnailPath: `ab/${id}.thumb.jpg`,
+          }),
+        );
+      }
       await context.shares.set({
         storageUnitId: SPACES.garage.id,
         userId: BEA,
@@ -389,6 +408,72 @@ export const invisibilityContract = (
         expect(
           idsOf(await find(await asAdmin(), "ana", { withinUnitId: SPACES.safe.id })),
         ).toEqual({ items: ["ana-passport", "ana-ring"], storageUnits: ["ana-jewels"] });
+      });
+    });
+
+    describe("photos and their bytes", () => {
+      const find = async (access: Access, id: string) =>
+        new FindPhoto({
+          photos: context.photos,
+          items: context.items,
+          storageUnits: context.storageUnits,
+        }).execute(access, aPhotoId(id));
+
+      const found = async (access: Access): Promise<string[]> => {
+        const seen: string[] = [];
+        for (const id of PHOTOS) {
+          if ((await find(access, id)) !== null) {
+            seen.push(id);
+          }
+        }
+
+        return seen;
+      };
+
+      it("shows Bea the photos of what is shared with her and of her own, and no other", async () => {
+        expect(await found(await asBea())).toEqual(["photo-of-the-drill", "photo-of-the-scarf"]);
+      });
+
+      it("shows Ana the photos of her things and none of Bea's", async () => {
+        expect(await found(await asAna())).toEqual([
+          "photo-of-the-drill",
+          "photo-of-the-passport",
+          "photo-of-the-safe",
+        ]);
+      });
+
+      it("shows the administrator every photo", async () => {
+        expect(await found(await asAdmin())).toEqual(PHOTOS);
+      });
+    });
+
+    describe("the background-removal queue", () => {
+      const reach = async (access: Access) =>
+        new ReachablePhotos({
+          items: context.items,
+          storageUnits: context.storageUnits,
+        }).execute(access);
+
+      const photoIdsOf = (reached: Awaited<ReturnType<typeof reach>>) =>
+        reached.kind === "everywhere" ? "everywhere" : [...reached.photoIds].sort();
+
+      it("covers for Bea only the photos she may see", async () => {
+        expect(photoIdsOf(await reach(await asBea()))).toEqual([
+          "photo-of-the-drill",
+          "photo-of-the-scarf",
+        ]);
+      });
+
+      it("covers for Ana only hers", async () => {
+        expect(photoIdsOf(await reach(await asAna()))).toEqual([
+          "photo-of-the-drill",
+          "photo-of-the-passport",
+          "photo-of-the-safe",
+        ]);
+      });
+
+      it("covers everything for the administrator", async () => {
+        expect(photoIdsOf(await reach(await asAdmin()))).toBe("everywhere");
       });
     });
 

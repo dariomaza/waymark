@@ -1,7 +1,9 @@
-import { ShareLevel, StorageUnitKind } from "@waymark/domain";
+import { PhotoProcessingStatus, ShareLevel, StorageUnitKind } from "@waymark/domain";
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { aPlainImage } from "../photos/testing/image-fixtures.js";
+import { multipartBody } from "./testing/multipart.js";
 import {
   TEST_PASSWORD,
   TEST_USERNAME,
@@ -399,6 +401,195 @@ describe("what each person may see over HTTP (ADR 26)", () => {
         items: ["Bea scarf"],
         storageUnits: ["Bea flat", "Bea wardrobe"],
       });
+    });
+  });
+
+  describe("photos, their bytes and the background-removal queue", () => {
+    /** Photo ids by what they are a photo of. */
+    const photos = new Map<string, string>();
+
+    const upload = async (person: Person, url: string, of: string): Promise<void> => {
+      const body = multipartBody({
+        field: "file",
+        filename: "photo.jpg",
+        contentType: "image/jpeg",
+        bytes: await aPlainImage("jpeg"),
+      });
+      const response = await as(person, {
+        method: "POST",
+        url,
+        payload: body.payload,
+        headers: { "content-type": body.contentType },
+      });
+      expect(response.statusCode).toBe(201);
+      photos.set(of, (response.json() as { photo: { id: string } }).photo.id);
+    };
+
+    const photoOf = (of: string): string => photos.get(of) ?? "missing";
+
+    beforeEach(async () => {
+      photos.clear();
+      await upload("ana", `/items/${idOf("Ana drill")}/photos`, "Ana drill");
+      await upload("ana", `/items/${idOf("Ana passport")}/photos`, "Ana passport");
+      await upload("ana", `/storage-units/${idOf("Ana safe")}/photo`, "Ana safe");
+      await upload("bea", `/items/${idOf("Bea scarf")}/photos`, "Bea scarf");
+    });
+
+    describe.each([[""], ["/thumbnail"]])("GET /photos/:id%s", (variant) => {
+      it.each([["Ana passport"], ["Ana safe"]])(
+        "answers Bea about the photo of %s exactly as about a photo that does not exist",
+        async (of) => {
+          const response = await as("bea", {
+            method: "GET",
+            url: `/photos/${photoOf(of)}${variant}`,
+          });
+
+          expect(errorOf(response)).toEqual(
+            await missing(`/photos/never-issued${variant}`),
+          );
+          expect(response.statusCode).toBe(404);
+        },
+      );
+
+      it("serves Bea the photo of a shared item and of her own", async () => {
+        for (const of of ["Ana drill", "Bea scarf"]) {
+          const response = await as("bea", {
+            method: "GET",
+            url: `/photos/${photoOf(of)}${variant}`,
+          });
+
+          expect(response.statusCode).toBe(200);
+        }
+      });
+
+      it("does not serve Ana the photo of Bea's scarf", async () => {
+        const response = await as("ana", {
+          method: "GET",
+          url: `/photos/${photoOf("Bea scarf")}${variant}`,
+        });
+
+        expect(errorOf(response)).toEqual(await missing(`/photos/never-issued${variant}`));
+      });
+
+      it("serves the administrator every photo", async () => {
+        for (const of of ["Ana passport", "Ana safe", "Bea scarf"]) {
+          const response = await as("admin", {
+            method: "GET",
+            url: `/photos/${photoOf(of)}${variant}`,
+          });
+
+          expect(response.statusCode).toBe(200);
+        }
+      });
+    });
+
+    describe("GET /photos/processing", () => {
+      interface Queue {
+        readonly counts: Record<string, number>;
+        readonly abandoned: readonly { readonly photoId: string }[];
+      }
+
+      /** Every photo gave up, so each one is listed with its reason. */
+      const abandonEverything = async (): Promise<void> => {
+        const client = api.database.client;
+        await client.photo.updateMany({
+          data: { processingStatus: PhotoProcessingStatus.FAILED },
+        });
+        for (const id of photos.values()) {
+          await client.photoProcessingAttempt.create({
+            data: {
+              photoId: id,
+              attempts: 3,
+              nextAttemptAt: new Date(),
+              lastError: "the sidecar refused it",
+              updatedAt: new Date(),
+            },
+          });
+        }
+      };
+
+      const queueSeenBy = async (person: Person): Promise<Queue> => {
+        const response = await as(person, { method: "GET", url: "/photos/processing" });
+        expect(response.statusCode).toBe(200);
+
+        return response.json() as Queue;
+      };
+
+      const total = (queue: Queue): number =>
+        Object.values(queue.counts).reduce((sum, count) => sum + count, 0);
+
+      it("counts and lists for Bea only the photos she may see", async () => {
+        await abandonEverything();
+
+        const queue = await queueSeenBy("bea");
+
+        expect(total(queue)).toBe(2);
+        expect(queue.abandoned.map((photo) => photo.photoId).sort()).toEqual(
+          [photoOf("Ana drill"), photoOf("Bea scarf")].sort(),
+        );
+      });
+
+      it("counts and lists for Ana only hers", async () => {
+        await abandonEverything();
+
+        const queue = await queueSeenBy("ana");
+
+        expect(total(queue)).toBe(3);
+        expect(queue.abandoned.map((photo) => photo.photoId)).not.toContain(
+          photoOf("Bea scarf"),
+        );
+      });
+
+      it("counts and lists everything for the administrator", async () => {
+        await abandonEverything();
+
+        const queue = await queueSeenBy("admin");
+
+        expect(total(queue)).toBe(4);
+        expect(queue.abandoned).toHaveLength(4);
+      });
+    });
+  });
+
+  describe.each([["png"], ["svg"]])("GET /storage-units/:id/qr.%s", (format) => {
+    it.each([["Ana house"], ["Ana safe"], ["Ana jewel box"]])(
+      "answers Bea about the label of %s exactly as about a space that does not exist",
+      async (name) => {
+        const response = await as("bea", {
+          method: "GET",
+          url: `/storage-units/${idOf(name)}/qr.${format}`,
+        });
+
+        expect(errorOf(response)).toEqual(
+          await missing(`/storage-units/never-issued/qr.${format}`),
+        );
+        expect(response.statusCode).toBe(404);
+      },
+    );
+
+    it("draws Bea the label of a shared space and of her own", async () => {
+      for (const name of ["Ana shelf", "Bea wardrobe"]) {
+        const response = await as("bea", {
+          method: "GET",
+          url: `/storage-units/${idOf(name)}/qr.${format}`,
+        });
+
+        expect(response.statusCode).toBe(200);
+      }
+    });
+
+    it("does not draw Ana the label of Bea's flat, and draws the administrator any", async () => {
+      const ana = await as("ana", {
+        method: "GET",
+        url: `/storage-units/${idOf("Bea flat")}/qr.${format}`,
+      });
+      const admin = await as("admin", {
+        method: "GET",
+        url: `/storage-units/${idOf("Bea flat")}/qr.${format}`,
+      });
+
+      expect(ana.statusCode).toBe(404);
+      expect(admin.statusCode).toBe(200);
     });
   });
 });

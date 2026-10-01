@@ -11,6 +11,7 @@ import {
   type Photo,
   type PhotoId,
 } from "@waymark/domain";
+import type { PhotoReach } from "@waymark/domain";
 import { FakeClock } from "@waymark/domain/testing";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -42,6 +43,9 @@ import {
 const NOW = new Date("2026-04-01T10:00:00.000Z");
 const MAX_ATTEMPTS = 3;
 const SIDECAR_TIMEOUT_MS = 300;
+
+/** Every photo: the reach of somebody who may see everything (ADR 26). */
+const EVERYWHERE: PhotoReach = { kind: "everywhere" };
 
 /**
  * A worker over the real Prisma repositories, a real temporary photo
@@ -266,7 +270,7 @@ describe("PhotoProcessingWorker", () => {
       expect((await reload(photo.id)).processingStatus).toBe(
         PhotoProcessingStatus.FAILED,
       );
-      const [abandoned] = await queue.abandoned(10);
+      const [abandoned] = await queue.abandoned(10, EVERYWHERE);
       expect(abandoned?.attempts).toBe(MAX_ATTEMPTS);
       expect(abandoned?.lastError).toMatch(/could not be reached/u);
     });
@@ -303,7 +307,7 @@ describe("PhotoProcessingWorker", () => {
         PhotoProcessingStatus.FAILED,
       );
       expect(sidecar.requests.filter((request) => request.url === "/remove")).toHaveLength(1);
-      expect((await queue.abandoned(10))[0]?.attempts).toBe(1);
+      expect((await queue.abandoned(10, EVERYWHERE))[0]?.attempts).toBe(1);
     });
   });
 
@@ -318,7 +322,7 @@ describe("PhotoProcessingWorker", () => {
       expect((await reload(photo.id)).processingStatus).toBe(
         PhotoProcessingStatus.PENDING,
       );
-      expect((await queue.abandoned(10))).toHaveLength(0);
+      expect((await queue.abandoned(10, EVERYWHERE))).toHaveLength(0);
     });
   });
 
@@ -348,7 +352,7 @@ describe("PhotoProcessingWorker", () => {
       const summary = await workerFor({ concurrency: 2 }).runOnce();
 
       expect(summary.processed).toBe(5);
-      expect(await queue.counts()).toMatchObject({ DONE: 5, PENDING: 0 });
+      expect(await queue.counts(EVERYWHERE)).toMatchObject({ DONE: 5, PENDING: 0 });
     });
 
     it("processes one photo at a time when told to", async () => {

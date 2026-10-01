@@ -7,6 +7,7 @@ import {
   DetachItemPhoto,
   DomainError,
   EmptyStorageUnit,
+  FindPhoto,
   GetItem,
   GetStorageUnit,
   GetStorageUnitPath,
@@ -14,7 +15,9 @@ import {
   ListStorageUnits,
   MoveItems,
   MoveStorageUnit,
+  ReachablePhotos,
   ReorderItemPhotos,
+  RequeuePhotos,
   SearchInventory,
   SetStorageUnitPhoto,
   UpdateItem,
@@ -310,6 +313,20 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       photos: deps.photos,
       clock: deps.clock,
     }),
+    findPhoto: new FindPhoto({
+      photos: deps.photos,
+      items: deps.items,
+      storageUnits: deps.storageUnits,
+    }),
+    reachablePhotos: new ReachablePhotos({
+      items: deps.items,
+      storageUnits: deps.storageUnits,
+    }),
+    requeuePhotos: new RequeuePhotos({
+      photos: deps.photos,
+      items: deps.items,
+      storageUnits: deps.storageUnits,
+    }),
     searchInventory: new SearchInventory({
       search: deps.search,
       storageUnits: deps.storageUnits,
@@ -564,9 +581,6 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       ...useCases,
     });
     void scope.register(photoRoutes, {
-      items: deps.items,
-      storageUnits: deps.storageUnits,
-      photos: deps.photos,
       files: photoFiles,
       release: photoRelease,
       ids: deps.ids,
@@ -581,7 +595,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       itemViews,
     });
     void scope.register(qrRoutes, {
-      storageUnits: deps.storageUnits,
+      getStorageUnitPath: useCases.getStorageUnitPath,
       publicBaseUrl: deps.publicBaseUrl,
     });
   });

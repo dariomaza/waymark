@@ -2,8 +2,9 @@ import {
   photoId as toPhotoId,
   PhotoProcessingStatus,
   type PhotoId,
+  type PhotoReach,
 } from "@waymark/domain";
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 /**
  * # The queue is the photo table
@@ -103,9 +104,13 @@ export interface PhotoProcessingQueue {
   abandon(request: AbandonRequest): Promise<void>;
   /** Drops the bookkeeping, so the photo starts again from attempt one. */
   forget(photoId: PhotoId): Promise<void>;
-  counts(): Promise<ProcessingCounts>;
-  abandoned(limit: number): Promise<readonly AbandonedPhoto[]>;
-  failedPhotoIds(limit: number): Promise<readonly PhotoId[]>;
+  /**
+   * The three questions a person asks of the queue, each only about the
+   * photos within `reach` (ADR 26), applied in the query before any limit.
+   */
+  counts(reach: PhotoReach): Promise<ProcessingCounts>;
+  abandoned(limit: number, reach: PhotoReach): Promise<readonly AbandonedPhoto[]>;
+  failedPhotoIds(limit: number, reach: PhotoReach): Promise<readonly PhotoId[]>;
 }
 
 /** Prisma's code for "that unique constraint says no". */
@@ -169,9 +174,10 @@ export class PrismaPhotoProcessingQueue implements PhotoProcessingQueue {
     await this.prisma.photoProcessingAttempt.deleteMany({ where: { photoId } });
   }
 
-  async counts(): Promise<ProcessingCounts> {
+  async counts(reach: PhotoReach): Promise<ProcessingCounts> {
     const grouped = await this.prisma.photo.groupBy({
       by: ["processingStatus"],
+      where: photoWhere(reach),
       _count: { _all: true },
     });
 
@@ -201,12 +207,25 @@ export class PrismaPhotoProcessingQueue implements PhotoProcessingQueue {
    * failed photo with no attempt row would be one abandoned before this table
    * existed, and it is deliberately not invented here.
    */
-  async abandoned(limit: number): Promise<readonly AbandonedPhoto[]> {
+  async abandoned(
+    limit: number,
+    reach: PhotoReach,
+  ): Promise<readonly AbandonedPhoto[]> {
+    if (reach.kind === "within" && reach.photoIds.length === 0) {
+      // `IN ()` is a syntax error in SQLite, and the answer is known anyway.
+      return [];
+    }
+    const withinReach =
+      reach.kind === "everywhere"
+        ? Prisma.empty
+        : Prisma.sql`AND p."id" IN (${Prisma.join(reach.photoIds)})`;
+
     const rows = await this.prisma.$queryRaw<AbandonedRow[]>`
       SELECT a."photoId", a."attempts", a."lastError", a."updatedAt"
         FROM "PhotoProcessingAttempt" a
         JOIN "Photo" p ON p."id" = a."photoId"
        WHERE p."processingStatus" = ${PhotoProcessingStatus.FAILED}
+         ${withinReach}
        ORDER BY a."updatedAt" DESC
        LIMIT ${limit}
     `;
@@ -219,9 +238,12 @@ export class PrismaPhotoProcessingQueue implements PhotoProcessingQueue {
     }));
   }
 
-  async failedPhotoIds(limit: number): Promise<readonly PhotoId[]> {
+  async failedPhotoIds(
+    limit: number,
+    reach: PhotoReach,
+  ): Promise<readonly PhotoId[]> {
     const rows = await this.prisma.photo.findMany({
-      where: { processingStatus: PhotoProcessingStatus.FAILED },
+      where: { processingStatus: PhotoProcessingStatus.FAILED, ...photoWhere(reach) },
       select: { id: true },
       take: limit,
     });
@@ -324,3 +346,7 @@ export class PrismaPhotoProcessingQueue implements PhotoProcessingQueue {
     return row?.attempts ?? null;
   }
 }
+
+/** The photos within a reach, as a Prisma filter on `Photo.id`. */
+const photoWhere = (reach: PhotoReach): Prisma.PhotoWhereInput =>
+  reach.kind === "everywhere" ? {} : { id: { in: [...reach.photoIds] } };

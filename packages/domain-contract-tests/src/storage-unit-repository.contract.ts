@@ -236,6 +236,22 @@ export const storageUnitRepositoryContract = (
       });
     });
 
+    /** The space a photo is the picture of, if any (ADR 26). */
+    describe("findByPhoto", () => {
+      it("finds the spaces whose picture the photo is, and only those", async () => {
+        await storageUnits.saveAll([
+          aStorageUnit("garage", { photoId: aPhotoId("p-1") }),
+          aStorageUnit("shed", { photoId: aPhotoId("p-2") }),
+          aStorageUnit("attic"),
+        ]);
+
+        expect(sortedIds(await storageUnits.findByPhoto(aPhotoId("p-1")))).toEqual([
+          "garage",
+        ]);
+        await expect(storageUnits.findByPhoto(aPhotoId("p-9"))).resolves.toEqual([]);
+      });
+    });
+
     describe("findChildren", () => {
       it("returns the direct children only", async () => {
         const room = aStorageUnit("room", { kind: StorageUnitKind.ROOM });

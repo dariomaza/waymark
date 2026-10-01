@@ -1,4 +1,4 @@
-import type { UnitId } from "../shared/identity.js";
+import type { PhotoId, UnitId } from "../shared/identity.js";
 import type { StorageUnit } from "./storage-unit.js";
 import type { StorageUnitRepository } from "./storage-unit-repository.js";
 
@@ -26,6 +26,10 @@ export class InMemoryStorageUnitRepository implements StorageUnitRepository {
 
   async findAll(): Promise<StorageUnit[]> {
     return [...this.#units.values()];
+  }
+
+  async findByPhoto(id: PhotoId): Promise<StorageUnit[]> {
+    return [...this.#units.values()].filter((unit) => unit.photoId === id);
   }
 
   async findChildren(id: UnitId): Promise<StorageUnit[]> {

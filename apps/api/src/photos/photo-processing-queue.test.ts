@@ -8,6 +8,7 @@ import {
   type Photo,
   type PhotoId,
 } from "@waymark/domain";
+import type { PhotoReach } from "@waymark/domain";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { PrismaPhotoRepository } from "../persistence/prisma-photo-repository.js";
@@ -20,6 +21,9 @@ import { PrismaPhotoProcessingQueue } from "./photo-processing-queue.js";
 const NOW = new Date("2026-04-01T10:00:00.000Z");
 const LEASE_MS = 60_000;
 const later = (ms: number): Date => new Date(NOW.getTime() + ms);
+
+/** Every photo: the reach of somebody who may see everything (ADR 26). */
+const EVERYWHERE: PhotoReach = { kind: "everywhere" };
 
 describe("PrismaPhotoProcessingQueue", () => {
   let database: TestDatabase;
@@ -200,7 +204,7 @@ describe("PrismaPhotoProcessingQueue", () => {
         now: later(1_000),
       });
 
-      expect(await queue.abandoned(10)).toEqual([
+      expect(await queue.abandoned(10, EVERYWHERE)).toEqual([
         {
           photoId: photoId("photo-1"),
           attempts: 1,
@@ -214,7 +218,7 @@ describe("PrismaPhotoProcessingQueue", () => {
       await photos.save(markPhotoFailed(await aPhoto("photo-1")));
       await photos.save(markPhotoProcessed(await aPhoto("photo-2"), "ab/x.jpg"));
 
-      expect(await queue.failedPhotoIds(10)).toEqual([photoId("photo-1")]);
+      expect(await queue.failedPhotoIds(10, EVERYWHERE)).toEqual([photoId("photo-1")]);
     });
   });
 
@@ -271,13 +275,13 @@ describe("PrismaPhotoProcessingQueue", () => {
 
       await claim();
 
-      expect(await queue.abandoned(10)).toHaveLength(1);
+      expect(await queue.abandoned(10, EVERYWHERE)).toHaveLength(1);
     });
   });
 
   describe("counting what is where", () => {
     it("answers zero for everything when there are no photos", async () => {
-      expect(await queue.counts()).toEqual({
+      expect(await queue.counts(EVERYWHERE)).toEqual({
         PENDING: 0,
         DONE: 0,
         FAILED: 0,
@@ -292,12 +296,66 @@ describe("PrismaPhotoProcessingQueue", () => {
       await photos.save(markPhotoFailed(await aPhoto("photo-4")));
       await photos.save(markPhotoSkipped(await aPhoto("photo-5")));
 
-      expect(await queue.counts()).toEqual({
+      expect(await queue.counts(EVERYWHERE)).toEqual({
         [PhotoProcessingStatus.PENDING]: 2,
         [PhotoProcessingStatus.DONE]: 1,
         [PhotoProcessingStatus.FAILED]: 1,
         [PhotoProcessingStatus.SKIPPED]: 1,
       });
+    });
+  });
+
+  /**
+   * The queue page is read by people who may not see every photo (ADR 26).
+   * The reach is applied in the query, before the list is cut to its limit.
+   */
+  describe("staying within the photos a person may see", () => {
+    const only = (...ids: string[]): PhotoReach => ({
+      kind: "within",
+      photoIds: ids.map(photoId),
+    });
+
+    const abandon = async (id: string, at: Date): Promise<void> => {
+      const photo = await aPhoto(id);
+      await claim();
+      await photos.save(markPhotoFailed(photo));
+      await queue.abandon({ photoId: photo.id, reason: "gave up", now: at });
+    };
+
+    it("counts only those photos", async () => {
+      await aPhoto("mine");
+      await photos.save(markPhotoFailed(await aPhoto("theirs")));
+
+      expect(await queue.counts(only("mine"))).toEqual({
+        PENDING: 1,
+        DONE: 0,
+        FAILED: 0,
+        SKIPPED: 0,
+      });
+    });
+
+    it("lists only those that were abandoned, before the limit cuts the list", async () => {
+      await abandon("mine", later(1_000));
+      await abandon("theirs", later(2_000));
+
+      const listed = await queue.abandoned(1, only("mine"));
+
+      expect(listed.map((photo) => photo.photoId)).toEqual([photoId("mine")]);
+    });
+
+    it("hands back only those that failed, before the limit cuts the list", async () => {
+      await photos.save(markPhotoFailed(await aPhoto("a-theirs")));
+      await photos.save(markPhotoFailed(await aPhoto("b-mine")));
+
+      expect(await queue.failedPhotoIds(1, only("b-mine"))).toEqual([photoId("b-mine")]);
+    });
+
+    it("covers nothing for somebody who may see no photo", async () => {
+      await abandon("theirs", later(1_000));
+
+      expect(await queue.abandoned(10, only())).toEqual([]);
+      expect(await queue.failedPhotoIds(10, only())).toEqual([]);
+      expect((await queue.counts(only())).FAILED).toBe(0);
     });
   });
 });

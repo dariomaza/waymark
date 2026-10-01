@@ -25,6 +25,9 @@ describe("@waymark/domain public surface", () => {
         "ReorderItemPhotos",
         "SetStorageUnitPhoto",
         "SearchInventory",
+        "FindPhoto",
+        "ReachablePhotos",
+        "RequeuePhotos",
       ]),
     );
   });

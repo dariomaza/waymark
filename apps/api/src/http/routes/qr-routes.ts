@@ -1,7 +1,8 @@
 import {
   StorageUnitNotFound,
   unitId,
-  type StorageUnitRepository,
+  type Access,
+  type GetStorageUnitPath,
 } from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
 
@@ -15,7 +16,8 @@ import { DERIVED_CACHE_CONTROL, etagOf, sendUnchangedOrPrepare } from "../cachin
 import { idParamsSchema } from "../validation.js";
 
 export interface QrRouteOptions {
-  readonly storageUnits: StorageUnitRepository;
+  /** The unit, for a person who may see it (ADR 26). */
+  readonly getStorageUnitPath: GetStorageUnitPath;
   readonly publicBaseUrl: string;
 }
 
@@ -32,7 +34,9 @@ export interface QrRouteOptions {
  * open to the world would let anybody enumerate storage units by id and, more
  * to the point, would be a second, quieter way to ask "does this box exist".
  * The label on the box is public because it is in your garage; the endpoint
- * that draws it is on the internet.
+ * that draws it is on the internet. For the same reason a label is drawn only
+ * for somebody who may see its box (ADR 26), and anybody else gets the 404 a
+ * box that does not exist gets.
  *
  * SVG is the one to print. It is resolution independent, so the same bytes
  * produce a crisp symbol at any label size, and it is about a tenth of the PNG.
@@ -40,10 +44,11 @@ export interface QrRouteOptions {
  * refuses vectors.
  */
 export const qrRoutes: FastifyPluginAsync<QrRouteOptions> = async (app, options) => {
-  const urlFor = async (rawId: string): Promise<string> => {
+  const urlFor = async (access: Access, rawId: string): Promise<string> => {
     const id = unitId(rawId);
-    const unit = await options.storageUnits.findById(id);
-    if (unit === null) {
+    // The last step of its breadcrumb is the unit; out of reach, there is none.
+    const unit = (await options.getStorageUnitPath.execute(access, id)).at(-1);
+    if (unit === undefined) {
       // The id came from the path, so this is a 404 rather than a 422 (ADR 8).
       throw new StorageUnitNotFound(id);
     }
@@ -62,7 +67,7 @@ export const qrRoutes: FastifyPluginAsync<QrRouteOptions> = async (app, options)
 
   app.get("/storage-units/:id/qr.png", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
-    const url = await urlFor(id);
+    const url = await urlFor(request.access, id);
     const png = await renderStorageUnitQrPng(url);
 
     const sent = sendUnchangedOrPrepare(request, reply, {
@@ -77,7 +82,7 @@ export const qrRoutes: FastifyPluginAsync<QrRouteOptions> = async (app, options)
 
   app.get("/storage-units/:id/qr.svg", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
-    const url = await urlFor(id);
+    const url = await urlFor(request.access, id);
     const svg = await renderStorageUnitQrSvg(url);
 
     const sent = sendUnchangedOrPrepare(request, reply, {

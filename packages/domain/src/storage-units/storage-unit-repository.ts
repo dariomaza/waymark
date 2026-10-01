@@ -1,4 +1,4 @@
-import type { UnitId } from "../shared/identity.js";
+import type { PhotoId, UnitId } from "../shared/identity.js";
 import type { StorageUnit } from "./storage-unit.js";
 
 export interface StorageUnitRepository {
@@ -14,6 +14,9 @@ export interface StorageUnitRepository {
    * rather than a shortcut that will hurt later.
    */
   findAll(): Promise<StorageUnit[]>;
+
+  /** Every unit whose picture this photo is (ADR 26, see `ItemRepository`). */
+  findByPhoto(id: PhotoId): Promise<StorageUnit[]>;
 
   /** Direct children only. */
   findChildren(id: UnitId): Promise<StorageUnit[]>;

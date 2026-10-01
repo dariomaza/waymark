@@ -196,6 +196,20 @@ export {
   type SetStorageUnitPhotoResult,
 } from "./photos/set-storage-unit-photo.js";
 export {
+  FindPhoto,
+  type FindPhotoDependencies,
+} from "./photos/find-photo.js";
+export {
+  ReachablePhotos,
+  reachesPhoto,
+  type PhotoReach,
+  type ReachablePhotosDependencies,
+} from "./photos/reachable-photos.js";
+export {
+  RequeuePhotos,
+  type RequeuePhotosDependencies,
+} from "./photos/requeue-photos.js";
+export {
   createPhoto,
   displayPathOf,
   markPhotoFailed,

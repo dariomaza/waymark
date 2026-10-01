@@ -1,23 +1,24 @@
 import {
   createPhoto,
   displayPathOf,
-  markPhotoPending,
   PhotoProcessingStatus,
-  ItemNotFound,
   StorageUnitNotFound,
   itemId as toItemId,
   photoId as toPhotoId,
   unitId,
+  type Access,
   type AttachItemPhoto,
   type DetachItemPhoto,
+  type FindPhoto,
+  type GetItem,
+  type GetStorageUnitPath,
   type IdGenerator,
-  type ItemRepository,
   type Photo,
   type PhotoId,
-  type PhotoRepository,
+  type ReachablePhotos,
   type ReorderItemPhotos,
+  type RequeuePhotos,
   type SetStorageUnitPhoto,
-  type StorageUnitRepository,
 } from "@waymark/domain";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
@@ -47,9 +48,6 @@ import {
 import { photoView } from "../views.js";
 
 export interface PhotoRouteOptions {
-  readonly items: ItemRepository;
-  readonly storageUnits: StorageUnitRepository;
-  readonly photos: PhotoRepository;
   readonly files: PhotoFileStore;
   readonly release: PhotoRelease;
   readonly ids: IdGenerator;
@@ -61,6 +59,12 @@ export interface PhotoRouteOptions {
   readonly detachItemPhoto: DetachItemPhoto;
   readonly reorderItemPhotos: ReorderItemPhotos;
   readonly setStorageUnitPhoto: SetStorageUnitPhoto;
+  /** Every read below goes through these, with the caller's access (ADR 26). */
+  readonly findPhoto: FindPhoto;
+  readonly reachablePhotos: ReachablePhotos;
+  readonly requeuePhotos: RequeuePhotos;
+  readonly getItem: GetItem;
+  readonly getStorageUnitPath: GetStorageUnitPath;
 }
 
 /**
@@ -98,6 +102,10 @@ export interface PhotoRouteOptions {
  * Behind the authenticated scope like everything else. These are photographs of
  * the inside of somebody's house on a public hostname; "the id is hard to
  * guess" is not an access control.
+ *
+ * Nor is being signed in (ADR 26). A photo is served only to somebody who may
+ * see an item or a space showing it, and to anybody else it is the same 404 a
+ * photo that does not exist gets.
  *
  * The bytes are STREAMED. A stored photo is a couple of megabytes and a list
  * view opens twenty at once; buffering would make the process hold all of them
@@ -206,8 +214,8 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
     return outcome.releasedPhotoIds;
   };
 
-  const findPhoto = async (id: string): Promise<Photo> => {
-    const photo = await options.photos.findById(toPhotoId(id));
+  const findPhoto = async (access: Access, id: string): Promise<Photo> => {
+    const photo = await options.findPhoto.execute(access, toPhotoId(id));
     if (photo === null) {
       throw new PhotoNotFound(id);
     }
@@ -273,11 +281,9 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
     const { id } = idParamsSchema.parse(request.params);
 
     // Checked first, so an upload to a ghost item does not cost a decode and
-    // two file writes before anybody notices.
-    const item = await options.items.findById(toItemId(id));
-    if (item === null) {
-      throw new ItemNotFound(toItemId(id));
-    }
+    // two file writes before anybody notices. An item out of reach is a ghost
+    // too (ADR 26).
+    const { item } = await options.getItem.execute(request.access, toItemId(id));
 
     const photo = await storeUpload(request);
 
@@ -331,8 +337,11 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
   app.post("/storage-units/:id/photo", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    const unit = await options.storageUnits.findById(unitId(id));
-    if (unit === null) {
+    // Refuses a unit out of reach exactly as a missing one (ADR 26).
+    const unit = (
+      await options.getStorageUnitPath.execute(request.access, unitId(id))
+    ).at(-1);
+    if (unit === undefined) {
       throw new StorageUnitNotFound(unitId(id));
     }
 
@@ -389,11 +398,13 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
    * so, because that precedence is the only thing keeping `processing` from
    * being read as a photo id.
    */
-  app.get("/photos/processing", async (_request, reply) => {
+  app.get("/photos/processing", async (request, reply) => {
+    // Only the photos this person may see are counted or listed (ADR 26).
+    const reach = await options.reachablePhotos.execute(request.access);
     const [processor, counts, abandoned] = await Promise.all([
       options.processing.status(),
-      options.processing.queue.counts(),
-      options.processing.queue.abandoned(ABANDONED_SHOWN),
+      options.processing.queue.counts(reach),
+      options.processing.queue.abandoned(ABANDONED_SHOWN, reach),
     ]);
 
     return reply.code(200).send({
@@ -424,10 +435,14 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
    */
   app.post("/photos/:id/reprocess", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
-    const photo = await findPhoto(id);
 
-    const requeued = markPhotoPending(photo);
-    await options.photos.save(requeued);
+    // A photo out of reach is left alone and answered as a missing one.
+    const [requeued] = await options.requeuePhotos.execute(request.access, [
+      toPhotoId(id),
+    ]);
+    if (requeued === undefined) {
+      throw new PhotoNotFound(id);
+    }
     // The attempts go too. A photo that had already spent them would be
     // abandoned again on the very next run, which would make this look broken.
     await options.processing.queue.forget(requeued.id);
@@ -437,12 +452,13 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
   });
 
   /** The same thing for everything that failed, because that is the real ask. */
-  app.post("/photos/processing/retry", async (_request, reply) => {
-    const failed = await options.processing.queue.failedPhotoIds(MAX_BULK_RETRY);
-    const photos = await options.photos.findManyByIds(failed);
+  app.post("/photos/processing/retry", async (request, reply) => {
+    // Everything that failed among the photos this person may see (ADR 26).
+    const reach = await options.reachablePhotos.execute(request.access);
+    const failed = await options.processing.queue.failedPhotoIds(MAX_BULK_RETRY, reach);
+    const photos = await options.requeuePhotos.execute(request.access, failed);
 
     for (const photo of photos) {
-      await options.photos.save(markPhotoPending(photo));
       await options.processing.queue.forget(photo.id);
     }
 
@@ -455,7 +471,7 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
 
   app.get("/photos/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
-    const photo = await findPhoto(id);
+    const photo = await findPhoto(request.access, id);
 
     // ADR 4: the processed variant when there is one, the original otherwise.
     return serve(
@@ -470,7 +486,7 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
 
   app.get("/photos/:id/thumbnail", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
-    const photo = await findPhoto(id);
+    const photo = await findPhoto(request.access, id);
 
     return serve(request, reply, photo, photo.thumbnailPath, "thumbnail");
   });

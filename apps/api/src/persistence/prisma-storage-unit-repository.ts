@@ -1,4 +1,5 @@
 import type {
+  PhotoId,
   StorageUnit,
   StorageUnitRepository,
   UnitId,
@@ -33,6 +34,12 @@ export class PrismaStorageUnitRepository implements StorageUnitRepository {
 
   async findAll(): Promise<StorageUnit[]> {
     const rows = await this.prisma.storageUnit.findMany();
+
+    return rows.map(toDomainStorageUnit);
+  }
+
+  async findByPhoto(id: PhotoId): Promise<StorageUnit[]> {
+    const rows = await this.prisma.storageUnit.findMany({ where: { photoId: id } });
 
     return rows.map(toDomainStorageUnit);
   }
