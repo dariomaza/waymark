@@ -17,6 +17,7 @@ describe("@waymark/domain public surface", () => {
         "CreateItem",
         "MoveItems",
         "ListItems",
+        "GetItem",
         "UpdateItem",
         "DeleteItem",
         "AttachItemPhoto",

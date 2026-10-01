@@ -429,7 +429,7 @@ export const domainUseCaseContract = (
         await createItem.execute({ storageUnitId: box.id, name: "Cordless drill" });
         await createItem.execute({ storageUnitId: kitchen.id, name: "Whisk" });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
 
         expect(
           rows.map(
@@ -454,7 +454,7 @@ export const domainUseCaseContract = (
           targetUnitId: kitchen.id,
         });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
         expect(formatStorageUnitPath(rows[0]?.path ?? [])).toBe("Kitchen");
       });
 
@@ -464,7 +464,7 @@ export const domainUseCaseContract = (
 
         await updateStorageUnit.execute({ id: garage.id, name: "Storage room" });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
         expect(formatStorageUnitPath(rows[0]?.path ?? [])).toBe("Storage room");
       });
 
@@ -477,7 +477,7 @@ export const domainUseCaseContract = (
           photos: [aPhotoId("photo-1")],
         });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
 
         expect(rows[0]?.item.tags).toEqual(["cables"]);
         expect(rows[0]?.item.photos).toEqual(["photo-1"]);

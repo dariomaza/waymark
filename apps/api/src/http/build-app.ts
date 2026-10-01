@@ -7,6 +7,7 @@ import {
   DetachItemPhoto,
   DomainError,
   EmptyStorageUnit,
+  GetItem,
   GetStorageUnit,
   GetStorageUnitPath,
   ListItems,
@@ -286,6 +287,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       items: deps.items,
       storageUnits: deps.storageUnits,
     }),
+    getItem: new GetItem({ items: deps.items, storageUnits: deps.storageUnits }),
     moveItems: new MoveItems({
       items: deps.items,
       storageUnits: deps.storageUnits,
@@ -557,7 +559,6 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       ...useCases,
     });
     void scope.register(itemRoutes, {
-      items: deps.items,
       itemViews,
       photoRelease,
       ...useCases,

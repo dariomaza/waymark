@@ -1,6 +1,9 @@
 import {
+  GetItem,
   GetStorageUnit,
   GetStorageUnitPath,
+  ItemNotFound,
+  ListItems,
   ListStorageUnits,
   resolveAccess,
   Role,
@@ -90,6 +93,10 @@ const NAMES_HIDDEN_FROM_BEA = [
 
 /** Every name of Bea's, which Ana must never read. */
 const BEAS_NAMES = ["Bea flat", "Bea wardrobe", "Bea scarf"];
+
+const ANAS_ITEMS = ["ana-drill", "ana-lamp", "ana-passport", "ana-ring", "ana-tent"];
+/** What Bea may see of Ana's things: what the garage and the attic hold. */
+const ANAS_ITEMS_SHARED_WITH_BEA = ["ana-drill", "ana-lamp"];
 
 /** The names an answer carries, wherever in it they are. */
 const namesIn = (answer: unknown, among: readonly string[]): string[] => {
@@ -231,6 +238,78 @@ export const invisibilityContract = (
 
         expect(seen.path.map((unit) => unit.name)).toEqual(["Bea flat", "Bea wardrobe"]);
         expect(sortedIdsOf(seen.items)).toEqual(["bea-scarf"]);
+      });
+    });
+
+    describe("every item", () => {
+      const everything = async (access: Access) =>
+        new ListItems({ items: context.items, storageUnits: context.storageUnits }).execute(
+          access,
+        );
+
+      it("lists for Bea her own and what the shared spaces hold, located from the share down", async () => {
+        const rows = await everything(await asBea());
+
+        expect(sortedIdsOf(rows.map((row) => row.item))).toEqual(
+          [...ANAS_ITEMS_SHARED_WITH_BEA, "bea-scarf"].sort(),
+        );
+        const drill = rows.find((row) => row.item.id === ITEMS.drill.id);
+        expect(drill?.path.map((unit) => unit.name)).toEqual(["Ana garage", "Ana shelf"]);
+        expect(namesIn(rows, NAMES_HIDDEN_FROM_BEA)).toEqual([]);
+      });
+
+      it("lists for Ana all of hers and none of Bea's", async () => {
+        const rows = await everything(await asAna());
+
+        expect(sortedIdsOf(rows.map((row) => row.item))).toEqual(ANAS_ITEMS);
+        expect(namesIn(rows, BEAS_NAMES)).toEqual([]);
+      });
+
+      it("lists everything for the administrator", async () => {
+        const rows = await everything(await asAdmin());
+
+        expect(sortedIdsOf(rows.map((row) => row.item))).toEqual(
+          [...ANAS_ITEMS, "bea-scarf"].sort(),
+        );
+      });
+    });
+
+    describe("a single item", () => {
+      const open = async (access: Access, id: string) =>
+        new GetItem({ items: context.items, storageUnits: context.storageUnits }).execute(
+          access,
+          ITEMS[id as keyof typeof ITEMS].id,
+        );
+
+      it.each([["tent"], ["passport"], ["ring"]])(
+        "does not exist for Bea when Ana keeps it out of reach: %s",
+        async (id) => {
+          await expect(open(await asBea(), id)).rejects.toBeInstanceOf(ItemNotFound);
+        },
+      );
+
+      it("opens a shared item for Bea, located from the share down", async () => {
+        const seen = await open(await asBea(), "drill");
+
+        expect(seen.path.map((unit) => unit.name)).toEqual(["Ana garage", "Ana shelf"]);
+        expect(namesIn(seen, NAMES_HIDDEN_FROM_BEA)).toEqual([]);
+      });
+
+      it("does not exist for Ana when it is Bea's", async () => {
+        await expect(open(await asAna(), "scarf")).rejects.toBeInstanceOf(ItemNotFound);
+      });
+
+      it("opens anything for Ana in her house and for the administrator anywhere", async () => {
+        const ring = await open(await asAna(), "ring");
+        expect(ring.path.map((unit) => unit.name)).toEqual([
+          "Ana house",
+          "Ana safe",
+          "Ana jewel box",
+        ]);
+
+        await expect(open(await asAdmin(), "scarf")).resolves.toMatchObject({
+          item: { id: ITEMS.scarf.id },
+        });
       });
     });
 

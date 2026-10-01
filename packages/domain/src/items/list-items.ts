@@ -1,3 +1,4 @@
+import { cutPathToReach, mayViewSpace, type Access } from "../access/access.js";
 import type { UnitId } from "../shared/identity.js";
 import type { StorageUnit } from "../storage-units/storage-unit.js";
 import type { StorageUnitRepository } from "../storage-units/storage-unit-repository.js";
@@ -11,7 +12,10 @@ export interface ListItemsDependencies {
 
 export interface ItemAtLocation {
   readonly item: Item;
-  /** Root first, ending at the unit that holds it. Empty only for a lost item. */
+  /**
+   * The person's visible root first, ending at the unit that holds it
+   * (ADR 26). Empty only for a lost item.
+   */
   readonly path: readonly StorageUnit[];
 }
 
@@ -38,6 +42,12 @@ export interface ItemAtLocation {
  * inventory can come back in a different sequence, and the list appears to
  * shuffle itself under the thumb.
  *
+ * ## Only what the person may see (ADR 26)
+ *
+ * An item is seen exactly when the space holding it is, and its breadcrumb
+ * starts at the top of what the person may see, so a space shared from inside
+ * somebody else's house never names the house.
+ *
  * ## There is no limit, and no page
  *
  * See the route: it is the same argument ADR 1, ADR 11 and ADR 12 already
@@ -46,7 +56,7 @@ export interface ItemAtLocation {
 export class ListItems {
   constructor(private readonly deps: ListItemsDependencies) {}
 
-  async execute(): Promise<ItemAtLocation[]> {
+  async execute(access: Access): Promise<ItemAtLocation[]> {
     const [items, units] = await Promise.all([
       this.deps.items.findAll(),
       this.deps.storageUnits.findAll(),
@@ -55,14 +65,15 @@ export class ListItems {
     const byId = new Map<string, StorageUnit>(units.map((unit) => [unit.id, unit]));
     const paths = new Map<string, readonly StorageUnit[]>();
 
-    return [...items]
+    return items
+      .filter((item) => mayViewSpace(access, item.storageUnitId))
       .sort(
         (left, right) =>
           left.name.localeCompare(right.name, "en") || left.id.localeCompare(right.id),
       )
       .map((item) => ({
         item,
-        path: pathTo(item.storageUnitId, byId, paths),
+        path: cutPathToReach(access, pathTo(item.storageUnitId, byId, paths)),
       }));
   }
 }

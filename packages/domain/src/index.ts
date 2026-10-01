@@ -130,6 +130,7 @@ export {
   type ItemAtLocation,
   type ListItemsDependencies,
 } from "./items/list-items.js";
+export { GetItem, type GetItemDependencies } from "./items/get-item.js";
 export {
   UpdateItem,
   type UpdateItemCommand,

@@ -253,4 +253,86 @@ describe("what each person may see over HTTP (ADR 26)", () => {
       }
     });
   });
+
+  describe("GET /items", () => {
+    interface Row {
+      readonly item: ItemView;
+      readonly path: readonly UnitView[];
+    }
+
+    const everythingOf = async (person: Person) => {
+      const response = await as(person, { method: "GET", url: "/items" });
+      expect(response.statusCode).toBe(200);
+
+      return response;
+    };
+
+    const rowsOf = (response: LightMyRequestResponse): Row[] =>
+      (response.json() as { items: Row[] }).items;
+
+    it("lists for Bea her own and what the shared spaces hold, located from the share down", async () => {
+      const response = await everythingOf("bea");
+      const rows = rowsOf(response);
+
+      expect(rows.map((row) => row.item.name)).toEqual([
+        "Ana drill",
+        "Ana lamp",
+        "Bea scarf",
+      ]);
+      expect(rows[0]?.path.map((unit) => unit.name)).toEqual(["Ana garage", "Ana shelf"]);
+      expect(namesIn(response, HIDDEN_FROM_BEA)).toEqual([]);
+    });
+
+    it("lists for Ana all of hers and none of Bea's", async () => {
+      const response = await everythingOf("ana");
+
+      expect(rowsOf(response)).toHaveLength(5);
+      expect(namesIn(response, BEAS_NAMES)).toEqual([]);
+    });
+
+    it("lists everything for the administrator", async () => {
+      expect(rowsOf(await everythingOf("admin"))).toHaveLength(6);
+    });
+  });
+
+  describe("GET /items/:id", () => {
+    it.each([["Ana tent"], ["Ana passport"], ["Ana ring"]])(
+      "answers Bea about %s exactly as it answers about an id that was never issued",
+      async (name) => {
+        const response = await as("bea", { method: "GET", url: `/items/${idOf(name)}` });
+
+        expect(errorOf(response)).toEqual(await missing("/items/never-issued"));
+        expect(errorOf(response).status).toBe(404);
+        expect(namesIn(response, HIDDEN_FROM_BEA)).toEqual([]);
+      },
+    );
+
+    it("opens a shared item for Bea, located from the share down", async () => {
+      const response = await as("bea", {
+        method: "GET",
+        url: `/items/${idOf("Ana drill")}`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = response.json() as { path: UnitView[]; storageUnit: UnitView };
+      expect(body.path.map((unit) => unit.name)).toEqual(["Ana garage", "Ana shelf"]);
+      expect(body.storageUnit.name).toBe("Ana shelf");
+      expect(namesIn(response, HIDDEN_FROM_BEA)).toEqual([]);
+    });
+
+    it("does not open Bea's scarf for Ana", async () => {
+      const response = await as("ana", { method: "GET", url: `/items/${idOf("Bea scarf")}` });
+
+      expect(errorOf(response)).toEqual(await missing("/items/never-issued"));
+    });
+
+    it("opens Bea's scarf for the administrator", async () => {
+      const response = await as("admin", {
+        method: "GET",
+        url: `/items/${idOf("Bea scarf")}`,
+      });
+
+      expect(response.statusCode).toBe(200);
+    });
+  });
 });
