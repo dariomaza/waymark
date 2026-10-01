@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.0](https://github.com/dariomaza/waymark/compare/v0.2.0...v0.3.0) (2026-10-01)
+
+
+### Features
+
+* **mobile:** the account screen is the same grouped settings as the browser's ([a36153c](https://github.com/dariomaza/waymark/commit/a36153c7d0413eb3bce34ae1c06b6cdbb758613f))
+* **ui:** a button with a picture and no word is a 48 square in both clients ([a96e54b](https://github.com/dariomaza/waymark/commit/a96e54b9f4fc42be34ce295148c4cbb51deb0707))
+* **ui:** both icon sets can say more about this, and where a program points ([2202073](https://github.com/dariomaza/waymark/commit/2202073dd6b74c8a06df4b7e3f20e148adb81a8f))
+* **ui:** language and appearance are one 48px segmented control, as rows, in both clients ([db5269f](https://github.com/dariomaza/waymark/commit/db5269fd3ddd9dbe7d8a565f94c1fa850dfdb3c4))
+* **web:** the account screen is grouped settings, with its actions as icons beside what they act on ([23821b4](https://github.com/dariomaza/waymark/commit/23821b489da0ff6df71d839d8c91d792e9c30afa))
+
+
+### Bug Fixes
+
+* **mobile:** tests keep the offline retry and drop its half second of real time ([130bd00](https://github.com/dariomaza/waymark/commit/130bd00eb4dcc9e58376e2acf5a93c59bdb90f14))
+* the MCP address stays on one line in both clients ([decfe67](https://github.com/dariomaza/waymark/commit/decfe6730fa48c323271a5536b9847ef092598a5))
+* **web:** tests keep the offline retry and drop its half second of real time ([f6c36cb](https://github.com/dariomaza/waymark/commit/f6c36cbbb0fe00372476647721575aeb6ef19d25))
+
 ## [0.2.0](https://github.com/dariomaza/waymark/compare/v0.1.0...v0.2.0) (2026-09-29)
 
 
