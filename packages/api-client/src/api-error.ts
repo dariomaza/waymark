@@ -101,6 +101,20 @@ export const ApiErrorCode = {
    * `machineTokenName` and `requiredScope` so a consumer can say which.
    */
   READ_ONLY_MACHINE_TOKEN: "READ_ONLY_MACHINE_TOKEN",
+  /**
+   * The space was shared with this person to view, and the write needs edit
+   * (403, ADR 26). `details.storageUnitId` names the space that stops it.
+   *
+   * Not a session problem, although it is a 403: the person is signed in and
+   * may see the space, and nothing about signing in again would help.
+   */
+  VIEW_ONLY: "VIEW_ONLY",
+  /**
+   * Only the owner of the tree, or an administrator, may make a root or move a
+   * space from the top of what the person sees (403, ADR 26).
+   * `details.storageUnitId` names that space.
+   */
+  OWNER_ONLY: "OWNER_ONLY",
   TOO_MANY_LOGIN_ATTEMPTS: "TOO_MANY_LOGIN_ATTEMPTS",
   /** A machine token with that name already exists (409, ADR 18). */
   MACHINE_TOKEN_NAME_ALREADY_TAKEN: "MACHINE_TOKEN_NAME_ALREADY_TAKEN",

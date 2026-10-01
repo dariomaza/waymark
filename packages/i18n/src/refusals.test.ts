@@ -185,6 +185,29 @@ describe("a failure no screen expected", () => {
   });
 
   /**
+   * A 403 used to mean only one thing to a person — the session — and a view
+   * share is not that (ADR 26). Telling somebody to sign in again because the
+   * shelf was shared with them to look at would send them to the wrong layer.
+   */
+  it("says a space shared to view may only be looked at, not that the session ended", () => {
+    const said = describeFailure(
+      new ApiError(403, "VIEW_ONLY", "view only", { storageUnitId: "a-shelf" }),
+    );
+
+    expect(said.key).toBe("failure.viewOnly");
+    expect(en(said)).not.toMatch(/sign in/iu);
+  });
+
+  it("says only the owner may make or move a root, not that the session ended", () => {
+    const said = describeFailure(
+      new ApiError(403, "OWNER_ONLY", "owner only", { storageUnitId: "a-trunk" }),
+    );
+
+    expect(said.key).toBe("failure.ownerOnly");
+    expect(es(said)).not.toMatch(/inicia sesión/iu);
+  });
+
+  /**
    * A 409 and a 422 carry a message written about the exact situation, which
    * beats anything this could invent — and that message comes from the API in
    * ENGLISH. It is passed through rather than translated, because inventing a

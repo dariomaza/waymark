@@ -95,6 +95,26 @@ export const writeImpossibleWithThisToken = (
   `Waymark server — pnpm --filter @waymark/api machine-token create --name ` +
   `${tokenName}-rw --scope read-write — and put it in ${MACHINE_TOKEN_VARIABLE}.`;
 
+/**
+ * The token acts as the person who issued it, and that person was given the
+ * space to view, not to edit (ADR 26). A new token would not help; a share
+ * would, and only an administrator gives one.
+ */
+export const writeRefusedByShare = (doing: string): string =>
+  `Waymark refused to ${doing}: the person this machine token acts for was ` +
+  `shared that space to view, not to edit. Nothing was changed. A different ` +
+  `token would be refused the same way; changing it needs an edit share from ` +
+  `the administrator.`;
+
+/**
+ * Only the owner of a tree, or an administrator, makes a root or moves a space
+ * from the top of what its person sees (ADR 26).
+ */
+export const writeRefusedByOwnership = (doing: string): string =>
+  `Waymark refused to ${doing}: only the owner of that space, or an ` +
+  `administrator, may make it a root or move it from the top. Nothing was ` +
+  `changed. Moving it inside another space that may be edited still works.`;
+
 /** The URL pointed at something that is not there. */
 export const nothingThere = (doing: string, detail: string): string =>
   `Waymark could not ${doing} because it does not hold what the request ` +

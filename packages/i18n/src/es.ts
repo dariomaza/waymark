@@ -97,6 +97,12 @@ export const ES: Dictionary = {
     "La aplicación no ha podido conectar con Waymark. Comprueba la conexión e inténtalo de nuevo.",
   "failure.notFound": "Esto ya no está aquí. Puede que se haya borrado o movido.",
   "failure.sessionEnded": "La sesión ha terminado. Inicia sesión de nuevo.",
+  /** Shared to view, not to edit (ADR 26); the administrator is who shares. */
+  "failure.viewOnly":
+    "Esto se ha compartido contigo para verlo, no para cambiarlo. Pídeselo al administrador si necesitas cambiarlo.",
+  /** Only the owner, or the administrator, makes or moves a root (ADR 26). */
+  "failure.ownerOnly":
+    "Solo la persona a quien pertenece este espacio, o el administrador, puede convertirlo en una unidad raíz o sacarlo de arriba del todo.",
   "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
   "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
   "failure.unexpected":

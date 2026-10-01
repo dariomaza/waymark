@@ -348,6 +348,15 @@ export const describeFailure = (error: unknown): Message => {
     return message("failure.unexpected");
   }
 
+  // Two 403s that are not about the session at all (ADR 26): the person is
+  // signed in and may see the space. "Sign in again" would be the wrong layer.
+  if (error.code === ApiErrorCode.VIEW_ONLY) {
+    return message("failure.viewOnly");
+  }
+  if (error.code === ApiErrorCode.OWNER_ONLY) {
+    return message("failure.ownerOnly");
+  }
+
   switch (failureKindOf(error)) {
     case FailureKind.OFFLINE:
       return message("failure.offline");

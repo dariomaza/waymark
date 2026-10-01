@@ -7,7 +7,9 @@ import {
   refusedByTheWorld,
   unexplainedFailure,
   waymarkUnreachable,
+  writeRefusedByOwnership,
   writeRefusedByScope,
+  writeRefusedByShare,
 } from "./sentences.js";
 
 export interface FailureContext {
@@ -60,6 +62,14 @@ export const sentenceFor = (error: unknown, context: FailureContext): string => 
 
   if (error.code === ApiErrorCode.READ_ONLY_MACHINE_TOKEN) {
     return writeRefusedByScope(machineTokenNameIn(error), context.doing);
+  }
+
+  if (error.code === ApiErrorCode.VIEW_ONLY) {
+    return writeRefusedByShare(context.doing);
+  }
+
+  if (error.code === ApiErrorCode.OWNER_ONLY) {
+    return writeRefusedByOwnership(context.doing);
   }
 
   if (error.status === 404) {

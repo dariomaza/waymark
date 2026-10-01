@@ -119,6 +119,20 @@ export const EN = {
   "failure.offline": "The app could not reach Waymark. Check the connection and try again.",
   "failure.notFound": "That is not here any more. It may have been deleted or moved.",
   "failure.sessionEnded": "Your session has ended. Sign in again.",
+  /**
+   * A write refused because the space was shared with this person to view,
+   * not to edit (ADR 26). The administrator is the only one who shares, so
+   * they are who to ask.
+   */
+  "failure.viewOnly":
+    "This was shared with you to look at, not to change. Ask the administrator if you need to change it.",
+  /**
+   * A write refused because only the owner of a space, or the administrator,
+   * may make it a root or move it from the top (ADR 26). The person may edit
+   * the space; what they may not do is take it out of its owner's tree.
+   */
+  "failure.ownerOnly":
+    "Only the owner of this space, or the administrator, can make it a root or move it from the top.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
   "failure.server": "Waymark had a problem answering. Try again in a moment.",
   /**
