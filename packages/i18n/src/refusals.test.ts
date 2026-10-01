@@ -2,6 +2,7 @@ import { ApiError, OFFLINE_STATUS } from "@waymark/api-client";
 import { describe, expect, it } from "vitest";
 
 import {
+  accountFailureMessage,
   cyclicMoveMessage,
   describeFailure,
   fieldComplaints,
@@ -614,5 +615,81 @@ describe("what a photo that could not be read becomes", () => {
 
   it("speaks to the owner as tú, never as usted", () => {
     expect(es(photoReadFailureMessage({ reason: "gone" }))).not.toMatch(/\busted\b/iu);
+  });
+});
+
+/**
+ * # What the People group's refusals become (ADR 26)
+ *
+ * Each is a different next step: pick another username, type a longer
+ * password, make somebody else an administrator first, ask another
+ * administrator. Compared by key, because two sentences that interpolate a
+ * value always render differently.
+ */
+describe("what refusing to manage an account becomes", () => {
+  const refusal = (status: number, code: string, details: Record<string, unknown> = {}) =>
+    new ApiError(status, code, "the API's own words", details);
+
+  it("gives each refusal a sentence of its own", () => {
+    const keys = [
+      accountFailureMessage(refusal(409, "USERNAME_ALREADY_TAKEN", { username: "partner" })),
+      accountFailureMessage(refusal(422, "PASSWORD_TOO_SHORT", { minimumLength: 12 })),
+      accountFailureMessage(refusal(422, "INVALID_USERNAME")),
+      accountFailureMessage(refusal(409, "LAST_ADMINISTRATOR")),
+      accountFailureMessage(refusal(409, "OWN_ACCOUNT")),
+      accountFailureMessage(refusal(404, "ACCOUNT_NOT_FOUND")),
+      accountFailureMessage(refusal(403, "ADMINISTRATOR_ONLY")),
+      accountFailureMessage(refusal(403, "MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS")),
+    ].map((said) => said?.key);
+
+    expect(keys).toEqual([
+      "people.usernameTaken",
+      "people.passwordTooShort",
+      "people.badUsername",
+      "people.lastAdministrator",
+      "people.ownAccount",
+      "people.alreadyGone",
+      "failure.administratorOnly",
+      "people.notForMachines",
+    ]);
+  });
+
+  it("names the username somebody already has, in both languages", () => {
+    const said = accountFailureMessage(
+      refusal(409, "USERNAME_ALREADY_TAKEN", { username: "partner" }),
+    );
+
+    expect(en(said)).toContain("partner");
+    expect(es(said)).toContain("partner");
+  });
+
+  it("says how long a password has to be, with the API's own number", () => {
+    const said = accountFailureMessage(refusal(422, "PASSWORD_TOO_SHORT", { minimumLength: 14 }));
+
+    expect(en(said)).toContain("14");
+    expect(es(said)).toContain("14");
+  });
+
+  it("tells the last administrator to make another one first", () => {
+    const said = accountFailureMessage(refusal(409, "LAST_ADMINISTRATOR"));
+
+    expect(en(said)).toMatch(/somebody else an administrator/iu);
+  });
+
+  it("stays out of the way of every other failure", () => {
+    expect(accountFailureMessage(refusal(409, "STORAGE_UNIT_NOT_EMPTY"))).toBeNull();
+    expect(accountFailureMessage(new Error("boom"))).toBeNull();
+    expect(accountFailureMessage(null)).toBeNull();
+  });
+
+  /**
+   * A 403 that is not about the session (ADR 26): the person is signed in and
+   * is not an administrator. "Sign in again" would be the wrong layer.
+   */
+  it("says an administrator-only refusal is about the role, not that the session ended", () => {
+    const said = describeFailure(refusal(403, "ADMINISTRATOR_ONLY"));
+
+    expect(said.key).toBe("failure.administratorOnly");
+    expect(en(said)).not.toMatch(/session has ended/iu);
   });
 });

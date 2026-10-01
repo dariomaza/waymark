@@ -55,6 +55,7 @@ export { shortDate } from "./short-date.js";
  * whichever client they are holding.
  */
 export {
+  accountFailureMessage,
   cyclicMoveMessage,
   describeFailure,
   fieldComplaints,

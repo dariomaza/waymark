@@ -61,6 +61,10 @@ export {
 export { isMachineCaller, MachineTokenScope, mayWriteWith } from "./contract.js";
 export type {
   AbandonedPhotoView,
+  AccountListResponse,
+  AccountResponse,
+  AccountView,
+  CreateAccountInput,
   CallerResponse,
   CreateItemInput,
   CreateMachineTokenInput,

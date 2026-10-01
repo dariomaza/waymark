@@ -1,7 +1,10 @@
-import type { ItemId, PhotoId, UnitId } from "@waymark/domain";
+import type { ItemId, PhotoId, Role, UnitId } from "@waymark/domain";
 
 import { ApiError, OFFLINE_STATUS } from "./api-error.js";
 import type {
+  AccountListResponse,
+  AccountResponse,
+  CreateAccountInput,
   CallerResponse,
   Credentials,
   CreateItemInput,
@@ -182,6 +185,23 @@ export interface WaymarkClient<TFile> {
   ): Promise<IssuedMachineTokenResponse>;
   /** One name, one credential. There is no call that revokes everything. */
   revokeMachineToken(name: string): Promise<void>;
+
+  /**
+   * # The People group: an administrator manages the other accounts (ADR 26)
+   *
+   * Every call needs an administrator's session; anybody else is refused 403
+   * (`ADMINISTRATOR_ONLY`), and a machine token always is. Each change
+   * answers the account as it now stands. There is no call that deletes an
+   * account, because there is no such route: accounts are disabled.
+   */
+  accounts(): Promise<AccountListResponse>;
+  createAccount(input: CreateAccountInput): Promise<AccountResponse>;
+  changeAccountRole(id: string, role: Role): Promise<AccountResponse>;
+  /** Signs that person out everywhere. Their passkeys stay (ADR 19). */
+  resetAccountPassword(id: string, password: string): Promise<AccountResponse>;
+  /** Signs them out everywhere and revokes every machine token they issued. */
+  disableAccount(id: string): Promise<AccountResponse>;
+  enableAccount(id: string): Promise<AccountResponse>;
 
   /**
    * # A passkey: an additional door, never a replacement (ADR 19)
@@ -415,6 +435,36 @@ export const createWaymarkClient = <TFile>(
       await send(`/auth/machine-tokens/${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
+    },
+
+    async accounts() {
+      return readJson<AccountListResponse>("/auth/accounts");
+    },
+
+    async createAccount(input) {
+      return post<AccountResponse>("/auth/accounts", {
+        username: input.username,
+        password: input.password,
+        role: input.role,
+      });
+    },
+
+    async changeAccountRole(id, role) {
+      return post<AccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/role`, { role });
+    },
+
+    async resetAccountPassword(id, password) {
+      return post<AccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/password`, {
+        password,
+      });
+    },
+
+    async disableAccount(id) {
+      return post<AccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/disable`);
+    },
+
+    async enableAccount(id) {
+      return post<AccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/enable`);
     },
 
     async beginPasskeyRegistration() {

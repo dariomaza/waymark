@@ -3,12 +3,14 @@ import {
   photoId,
   publicId,
   PhotoProcessingStatus,
+  Role,
   SearchMatchField,
   StorageUnitKind,
   unitId,
 } from "@waymark/domain";
 
 import type {
+  AccountView,
   ItemSearchResultView,
   ItemView,
   PhotoView,
@@ -147,11 +149,30 @@ export interface SessionOverrides {
   readonly token?: string;
   readonly expiresAt?: string;
   readonly username?: string;
+  readonly role?: Role;
 }
 
-/** A session that is live for years, unless a test says otherwise. */
+/**
+ * A session that is live for years, unless a test says otherwise. Its person
+ * is a user unless a test makes them the administrator: the People group is
+ * drawn only on purpose.
+ */
 export const aSession = (overrides: SessionOverrides = {}): SessionView => ({
   token: overrides.token ?? "a-live-token",
   expiresAt: overrides.expiresAt ?? "2099-01-01T00:00:00.000Z",
-  user: { id: "u1", username: overrides.username ?? "dario" },
+  user: {
+    id: "u1",
+    username: overrides.username ?? "dario",
+    role: overrides.role ?? Role.USER,
+  },
+});
+
+/** An account as the People group lists it: an active user, unless told. */
+export const anAccount = (overrides: Partial<AccountView> = {}): AccountView => ({
+  id: "u1",
+  username: "partner",
+  role: Role.USER,
+  disabledAt: null,
+  createdAt: "2026-10-01T10:00:00.000Z",
+  ...overrides,
 });

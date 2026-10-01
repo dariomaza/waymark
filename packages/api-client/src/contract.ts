@@ -3,6 +3,7 @@ import type {
   PhotoId,
   PhotoProcessingStatus,
   PublicId,
+  Role,
   SearchMatchField,
   StorageUnitKind,
   UnitId,
@@ -105,6 +106,43 @@ export interface PhotoView {
 export interface UserView {
   readonly id: string;
   readonly username: string;
+  /**
+   * What a client reads to decide whether to draw the People group (ADR 26).
+   * It decides nothing: every route the group uses checks the role itself.
+   * Read it from `GET /auth/me`, which says what is true now, rather than
+   * from a session kept since sign-in.
+   */
+  readonly role: Role;
+}
+
+/**
+ * # An account, as the administrator's People group lists it (ADR 26)
+ *
+ * Never a hash. `disabledAt` is `null` while the account is active; a
+ * disabled one is still listed, because accounts are never deleted.
+ */
+export interface AccountView extends UserView {
+  readonly disabledAt: string | null;
+  readonly createdAt: string;
+}
+
+export interface AccountListResponse {
+  readonly accounts: readonly AccountView[];
+}
+
+export interface AccountResponse {
+  readonly account: AccountView;
+}
+
+/**
+ * What an administrator types to make an account. The password is typed
+ * here and handed over in person; there is no mail (ADR 26). The API holds
+ * the minimum length and answers `PASSWORD_TOO_SHORT` with it.
+ */
+export interface CreateAccountInput {
+  readonly username: string;
+  readonly password: string;
+  readonly role: Role;
 }
 
 export interface SessionView {

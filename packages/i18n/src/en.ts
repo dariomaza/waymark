@@ -140,6 +140,13 @@ export const EN = {
    */
   "failure.outsideTokenSpaces":
     "This machine token is limited to the spaces chosen for it, so it cannot make a root or move anything to or from the top.",
+  /**
+   * Something only an administrator may do, refused to a person who is not
+   * one (ADR 26). It is a 403 and it is not about the session: signing in
+   * again would change nothing, so the sentence says so.
+   */
+  "failure.administratorOnly":
+    "Only an administrator can do this. You are still signed in; signing in again would not change it.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
   "failure.server": "Waymark had a problem answering. Try again in a moment.",
   /**
@@ -815,6 +822,83 @@ export const EN = {
     "Use lower case letters, digits, and any of . _ - — it has to be typeable in a shell.",
   "tokens.alreadyGone":
     "There is no machine token by that name. It may already have been revoked.",
+
+  // ---------------------------------------------------------------------
+  // People: the administrator manages the other accounts (ADR 26)
+  // ---------------------------------------------------------------------
+
+  /**
+   * The title of the account screen's group of accounts, drawn only for an
+   * administrator. "People" rather than "Accounts" or "Users": it is the
+   * household, and a role is one of the facts on each row.
+   */
+  "account.people": "People",
+  /** The two sentences folded behind the group's ⓘ. */
+  "people.explains":
+    "Everybody with an account in this house. Only an administrator sees this group, and only an administrator can change it.",
+  "people.handOver":
+    "Nothing is emailed: you type the password for a new person, or a reset one, and hand it over yourself.",
+  "people.loading": "Loading the people in this house",
+  /** The [+] in the group's title line: the one primary action (ADR 21). */
+  "people.addAction": "Add a person",
+  "people.usernameLabel": "Username",
+  "people.passwordLabel": "Password",
+  /** Under the password of a new person, or of a reset. */
+  "people.passwordHint": "At least 12 characters. You hand it over yourself.",
+  "people.roleLabel": "Role",
+  /** The two roles, as a chip on a row and as the choice in the form. */
+  "people.roleAdministrator": "Administrator",
+  "people.roleUser": "User",
+  "people.createAction": "Add them",
+  "people.creating": "Adding…",
+  /**
+   * On the administrator's own row, beside their name. A sentence rather
+   * than "You", which is already the word under the avatar in the bar.
+   */
+  "people.you": "That is you",
+  /** On the row of a disabled account. It is kept; it opens nothing. */
+  "people.disabled": "Disabled",
+  "people.makeAdministrator": "Make an administrator",
+  "people.makeUser": "Make a user",
+  "people.resetAction": "Reset password",
+  "people.disableAction": "Disable",
+  "people.enableAction": "Enable",
+
+  "people.resetTitle": "Reset the password of {username}?",
+  /**
+   * Said before the button, because it is the consequence somebody would
+   * otherwise discover from a phone that suddenly asks for a password.
+   */
+  "people.resetWarning":
+    "{username} is signed out everywhere and needs this new password to sign in again. Their passkeys and machine tokens keep working.",
+  "people.newPasswordLabel": "New password",
+  "people.resetConfirm": "Reset it",
+  "people.resetting": "Resetting…",
+
+  "people.disableTitle": "Disable {username}?",
+  /**
+   * The consequence, and what is kept, so nobody reads "disable" as
+   * "delete": the account and everything it holds stay.
+   */
+  "people.disableWarning":
+    "{username} is signed out everywhere and their machine tokens stop working. Their account and everything in it are kept, and you can enable it again.",
+  "people.disableConfirm": "Disable them",
+  "people.disabling": "Disabling…",
+
+  /** The refusals the People group has its own answer for. */
+  "people.usernameTaken": "Somebody is already called {username}.",
+  "people.passwordTooShort": "The password needs at least {minimum} characters.",
+  "people.badUsername": "Give them a username.",
+  "people.lastAdministrator":
+    "This is the last active administrator. Make somebody else an administrator first.",
+  "people.ownAccount": "Another administrator has to change your own account.",
+  "people.alreadyGone": "That account is not here any more. Close this screen and open it again.",
+  /**
+   * Only a program holding a machine token meets this, and neither app holds
+   * one; it exists so the refusal is never described as a session problem.
+   */
+  "people.notForMachines":
+    "A machine token cannot manage accounts. An administrator does that, signed in.",
 
   // ---------------------------------------------------------------------
   // Passkeys: an additional door, never a replacement (ADR 19)

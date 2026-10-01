@@ -106,6 +106,8 @@ export const ES: Dictionary = {
   /** Un token de máquina limitado a los espacios elegidos (ADR 26). */
   "failure.outsideTokenSpaces":
     "Este token de máquina está limitado a los espacios que se eligieron para él, así que no puede crear una unidad raíz, ni llevar nada arriba del todo ni sacarlo de ahí.",
+  "failure.administratorOnly":
+    "Solo un administrador puede hacer esto. Sigues con la sesión iniciada; volver a entrar no lo cambiaría.",
   "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
   "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
   "failure.unexpected":
@@ -535,6 +537,55 @@ export const ES: Dictionary = {
     "Usa minúsculas, dígitos y . _ - — tiene que poder escribirse en una shell.",
   "tokens.alreadyGone":
     "No hay ningún token de máquina con ese nombre. Puede que ya se haya revocado.",
+
+  // ---------------------------------------------------------------------
+  // Personas: el administrador gestiona las demás cuentas (ADR 26)
+  // ---------------------------------------------------------------------
+  "account.people": "Personas",
+  "people.explains":
+    "Todas las personas con cuenta en esta casa. Solo un administrador ve este grupo y solo un administrador puede cambiarlo.",
+  "people.handOver":
+    "No se envía nada por correo: tú escribes la contraseña de una persona nueva, o la de un restablecimiento, y se la das en persona.",
+  "people.loading": "Cargando las personas de esta casa",
+  "people.addAction": "Añadir una persona",
+  "people.usernameLabel": "Usuario",
+  "people.passwordLabel": "Contraseña",
+  "people.passwordHint": "Al menos 12 caracteres. Se la das tú en persona.",
+  "people.roleLabel": "Rol",
+  "people.roleAdministrator": "Administrador",
+  "people.roleUser": "Usuario",
+  "people.createAction": "Añádela",
+  "people.creating": "Añadiendo…",
+  "people.you": "Eres tú",
+  "people.disabled": "Desactivada",
+  "people.makeAdministrator": "Hacer administrador",
+  "people.makeUser": "Hacer usuario",
+  "people.resetAction": "Restablecer la contraseña",
+  "people.disableAction": "Desactivar",
+  "people.enableAction": "Activar",
+
+  "people.resetTitle": "¿Restablecer la contraseña de {username}?",
+  "people.resetWarning":
+    "Se cierra la sesión de {username} en todas partes y necesitará esta contraseña nueva para volver a entrar. Sus passkeys y sus tokens de máquina siguen funcionando.",
+  "people.newPasswordLabel": "Contraseña nueva",
+  "people.resetConfirm": "Restablécela",
+  "people.resetting": "Restableciendo…",
+
+  "people.disableTitle": "¿Desactivar a {username}?",
+  "people.disableWarning":
+    "Se cierra la sesión de {username} en todas partes y sus tokens de máquina dejan de funcionar. Su cuenta y todo lo que contiene se conservan, y puedes volver a activarla.",
+  "people.disableConfirm": "Desactívala",
+  "people.disabling": "Desactivando…",
+
+  "people.usernameTaken": "Ya hay alguien que se llama {username}.",
+  "people.passwordTooShort": "La contraseña necesita al menos {minimum} caracteres.",
+  "people.badUsername": "Ponle un nombre de usuario.",
+  "people.lastAdministrator":
+    "Es el último administrador activo. Haz administrador a otra persona primero.",
+  "people.ownAccount": "Tu propia cuenta la tiene que cambiar otro administrador.",
+  "people.alreadyGone": "Esa cuenta ya no está. Cierra esta pantalla y vuelve a abrirla.",
+  "people.notForMachines":
+    "Un token de máquina no puede gestionar cuentas. Lo hace un administrador con su sesión iniciada.",
 
   // ---------------------------------------------------------------------
   // Passkeys: una puerta más, nunca un reemplazo (ADR 19)

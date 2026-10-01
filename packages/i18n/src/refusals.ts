@@ -154,6 +154,46 @@ export const machineTokenFailureMessage = (error: unknown): Message | null => {
 };
 
 /**
+ * # What the People group's refusals mean (ADR 26)
+ *
+ * Each one is a different next step — another username, a longer password,
+ * another administrator first, another administrator to do it — which is why
+ * none of them is left to the API's English. `null` for anything else, the
+ * same bargain every function in this file makes.
+ */
+export const accountFailureMessage = (error: unknown): Message | null => {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  switch (error.code) {
+    case ApiErrorCode.USERNAME_ALREADY_TAKEN:
+      return message("people.usernameTaken", {
+        username: detailText(error, "username") ?? "",
+      });
+    case ApiErrorCode.PASSWORD_TOO_SHORT:
+      // The API's number, not a copy of it: the minimum is decided there.
+      return message("people.passwordTooShort", {
+        minimum: detailNumber(error, "minimumLength") ?? 12,
+      });
+    case ApiErrorCode.INVALID_USERNAME:
+      return message("people.badUsername");
+    case ApiErrorCode.LAST_ADMINISTRATOR:
+      return message("people.lastAdministrator");
+    case ApiErrorCode.OWN_ACCOUNT:
+      return message("people.ownAccount");
+    case ApiErrorCode.ACCOUNT_NOT_FOUND:
+      return message("people.alreadyGone");
+    case ApiErrorCode.ADMINISTRATOR_ONLY:
+      return message("failure.administratorOnly");
+    case ApiErrorCode.MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS:
+      return message("people.notForMachines");
+    default:
+      return null;
+  }
+};
+
+/**
  * # What a refused passkey means, as a sentence somebody can act on
  *
  * Each of these is a different NEXT STEP, which is the entire reason they are
@@ -358,6 +398,10 @@ export const describeFailure = (error: unknown): Message => {
   }
   if (error.code === ApiErrorCode.OUTSIDE_TOKEN_SPACES) {
     return message("failure.outsideTokenSpaces");
+  }
+  // Signed in and not an administrator (ADR 26): the role, not the session.
+  if (error.code === ApiErrorCode.ADMINISTRATOR_ONLY) {
+    return message("failure.administratorOnly");
   }
 
   switch (failureKindOf(error)) {

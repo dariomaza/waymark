@@ -183,6 +183,37 @@ export const ApiErrorCode = {
    * the contract.
    */
   MACHINE_TOKEN_HAS_NO_PASSKEYS: "MACHINE_TOKEN_HAS_NO_PASSKEYS",
+  /**
+   * # The refusals of managing accounts (ADR 26)
+   *
+   * Only the People group meets these, and only an administrator sees that.
+   */
+  /**
+   * The person is signed in and is not an administrator (403). Not a session
+   * problem, although it is a 403: signing in again would not help.
+   */
+  ADMINISTRATOR_ONLY: "ADMINISTRATOR_ONLY",
+  /**
+   * A machine token asked to manage accounts (403). Never seen by the two
+   * apps that hold a person's session; here because the code is part of the
+   * contract.
+   */
+  MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS: "MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS",
+  /** The account the path names is not there (404). `details.accountId`. */
+  ACCOUNT_NOT_FOUND: "ACCOUNT_NOT_FOUND",
+  /** Somebody already has that username (409). `details.username`. */
+  USERNAME_ALREADY_TAKEN: "USERNAME_ALREADY_TAKEN",
+  /**
+   * Demoting or disabling this account would leave no active administrator
+   * (409). Make somebody else an administrator first.
+   */
+  LAST_ADMINISTRATOR: "LAST_ADMINISTRATOR",
+  /** An administrator acting on their own account (409). Another must. */
+  OWN_ACCOUNT: "OWN_ACCOUNT",
+  /** Shorter than the minimum (422). `details.minimumLength`. */
+  PASSWORD_TOO_SHORT: "PASSWORD_TOO_SHORT",
+  /** A username that is nothing once trimmed (422). */
+  INVALID_USERNAME: "INVALID_USERNAME",
   VALIDATION_FAILED: "VALIDATION_FAILED",
 } as const;
 
