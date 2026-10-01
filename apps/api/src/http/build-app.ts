@@ -21,7 +21,9 @@ import {
   type ItemRepository,
   type PhotoRepository,
   type PublicIdGenerator,
+  type Access,
   type SearchRepository,
+  type ShareRepository,
   type StorageUnitRepository,
 } from "@waymark/domain";
 import cors from "@fastify/cors";
@@ -34,6 +36,7 @@ import Fastify, {
 } from "fastify";
 import { ZodError } from "zod";
 
+import { AccessOfCaller } from "../auth/access-of-caller.js";
 import { AuthenticateMachineToken } from "../auth/authenticate-machine-token.js";
 import { AuthenticateSession } from "../auth/authenticate-session.js";
 import {
@@ -118,6 +121,12 @@ declare module "fastify" {
      * is what lets a handler read it without a check of its own.
      */
     caller: Caller;
+    /**
+     * What the person behind the caller may see (ADR 26), resolved in the same
+     * hook right after the caller is identified. Every inventory read takes
+     * it as a required argument, so a route cannot forget to pass it.
+     */
+    access: Access;
   }
 }
 
@@ -142,6 +151,8 @@ export interface AppDependencies {
   readonly photos: PhotoRepository;
   /** Finds the candidates a query could answer; see `SearchRepository`. */
   readonly search: SearchRepository;
+  /** Who else may see a space, and at what level (ADR 26). */
+  readonly shares: ShareRepository;
   readonly users: UserRepository;
   readonly sessions: SessionRepository;
   /** Long-lived credentials that are not people; see ADR 17. */
@@ -394,6 +405,13 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   // The explicit type argument matters: with a union, Fastify's inference
   // picks one arm and then rejects the other as a getter/setter pair.
   app.decorateRequest<Caller>("caller", null as unknown as Caller);
+  // The same arrangement for what that caller may see.
+  app.decorateRequest<Access>("access", null as unknown as Access);
+  const accessOfCaller = new AccessOfCaller({
+    users: deps.users,
+    storageUnits: deps.storageUnits,
+    shares: deps.shares,
+  });
 
   app.addHook("onRequest", async (request) => {
     request.clientIp = resolveClientIp(
@@ -459,6 +477,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   void app.register(async (scope) => {
     scope.addHook("onRequest", async (request) => {
       request.caller = await identify(request.headers.authorization);
+      request.access = await accessOfCaller.execute(request.caller);
 
       /**
        * The scope check, here and not in a route.

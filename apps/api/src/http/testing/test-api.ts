@@ -22,6 +22,7 @@ import { PrismaPasskeyRepository } from "../../persistence/prisma-passkey-reposi
 import { PrismaPasskeyChallengeRepository } from "../../persistence/prisma-passkey-challenge-repository.js";
 import { PrismaPhotoRepository } from "../../persistence/prisma-photo-repository.js";
 import { PrismaSearchRepository } from "../../persistence/prisma-search-repository.js";
+import { PrismaShareRepository } from "../../persistence/prisma-share-repository.js";
 import { PrismaSessionRepository } from "../../persistence/prisma-session-repository.js";
 import { PrismaStorageUnitRepository } from "../../persistence/prisma-storage-unit-repository.js";
 import { PrismaUserRepository } from "../../persistence/prisma-user-repository.js";
@@ -177,6 +178,7 @@ export const createTestApi = async (
   const items = new PrismaItemRepository(database.client);
   const photos = new PrismaPhotoRepository(database.client);
   const search = new PrismaSearchRepository(database.client);
+  const shares = new PrismaShareRepository(database.client);
   const files = new PhotoFileStore(photoRoot);
   const queue = new PrismaPhotoProcessingQueue(database.client);
 
@@ -232,6 +234,7 @@ export const createTestApi = async (
         items,
         photos,
         search,
+        shares,
         users,
         sessions,
         machineTokens,
