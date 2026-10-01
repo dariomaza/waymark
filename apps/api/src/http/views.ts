@@ -10,6 +10,7 @@ import {
 
 import type { MachineToken } from "../auth/machine-token.js";
 import type { Passkey } from "../auth/passkey.js";
+import type { User } from "../auth/user.js";
 import type { StorageUnitTreeNode } from "./storage-unit-tree.js";
 
 /**
@@ -259,11 +260,40 @@ export const storageUnitSearchResultView = (
   matchedFields: [...result.matchedFields],
 });
 
-/** Only ever the fields a client needs; never the password hash. */
+/**
+ * Only ever the fields a client needs; never the password hash.
+ *
+ * The role is here so a client can decide whether to draw what only an
+ * administrator may use (ADR 26). It decides nothing on the server: every
+ * route checks the role it reads for itself.
+ */
 export interface UserView {
   readonly id: string;
   readonly username: string;
+  readonly role: string;
 }
+
+export const userView = (user: User): UserView => ({
+  id: user.id,
+  username: user.username,
+  role: user.role,
+});
+
+/**
+ * An account as the administrator's list shows it (ADR 26): who, which role,
+ * and whether it is disabled. Never a hash.
+ */
+export interface AccountView extends UserView {
+  /** `null` while the account is active. */
+  readonly disabledAt: string | null;
+  readonly createdAt: string;
+}
+
+export const accountView = (user: User): AccountView => ({
+  ...userView(user),
+  disabledAt: user.disabledAt?.toISOString() ?? null,
+  createdAt: user.createdAt.toISOString(),
+});
 
 /**
  * A machine token as a client may see it.

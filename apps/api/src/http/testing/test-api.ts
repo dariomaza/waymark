@@ -140,7 +140,15 @@ export interface TestApi {
   runProcessing(): Promise<RunSummary>;
   /** Re-points the processor, for the cases about a sidecar going away. */
   pointProcessorAt(baseUrl: string): void;
-  createUser(username: string, password: string): Promise<void>;
+  /**
+   * As the shell makes one. The first account is the administrator; a later
+   * one is a user unless `administrator` says otherwise (ADR 26).
+   */
+  createUser(
+    username: string,
+    password: string,
+    options?: { readonly administrator?: boolean },
+  ): Promise<void>;
   /**
    * Shares a space with somebody, straight through the repository: there is
    * no route that shares yet (ADR 26, roadmap slice 7).
@@ -315,10 +323,15 @@ export const createTestApi = async (
       rebuildProcessing();
     },
 
-    async createUser(username: string, password: string): Promise<void> {
+    async createUser(
+      username: string,
+      password: string,
+      options: { readonly administrator?: boolean } = {},
+    ): Promise<void> {
       await new CreateUser({ users, hasher, ids, clock: api.clock }).execute({
         username,
         password,
+        ...(options.administrator === true ? { administrator: true } : {}),
       });
     },
 

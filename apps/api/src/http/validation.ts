@@ -1,4 +1,4 @@
-import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@waymark/domain";
+import { MAX_ITEM_PHOTOS, Role, StorageUnitKind } from "@waymark/domain";
 import { z } from "zod";
 
 import { MACHINE_TOKEN_SCOPES } from "../auth/machine-token.js";
@@ -91,6 +91,26 @@ export const loginBodySchema = z.strictObject({
   // whoever creates the account, not a hint for whoever is guessing it.
   password: z.string().min(1).max(MAX_PASSWORD_LENGTH),
 });
+
+/**
+ * # An administrator managing accounts (ADR 26)
+ *
+ * The password has no minimum HERE: `CreateUser` holds the one minimum every
+ * door shares, and answers a short one with `PASSWORD_TOO_SHORT` (422) and
+ * the number, which a client can put beside the field.
+ */
+const role = z.enum([Role.ADMINISTRATOR, Role.USER]);
+const newPassword = z.string().max(MAX_PASSWORD_LENGTH);
+
+export const createAccountBodySchema = z.strictObject({
+  username: z.string().max(MAX_USERNAME_LENGTH),
+  password: newPassword,
+  role,
+});
+
+export const changeRoleBodySchema = z.strictObject({ role });
+
+export const resetPasswordBodySchema = z.strictObject({ password: newPassword });
 
 export const createStorageUnitBodySchema = z.strictObject({
   parentId: id.nullish(),

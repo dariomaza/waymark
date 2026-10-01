@@ -8,7 +8,7 @@ import type { PasswordHasher } from "./password-hasher.js";
 import { openSession, SessionOpener, type Session } from "./session.js";
 import type { SessionRepository } from "./session-repository.js";
 import { issueSessionToken } from "./session-token.js";
-import { normalizeUsername, type User } from "./user.js";
+import { isActive, normalizeUsername, type User } from "./user.js";
 import type { UserRepository } from "./user-repository.js";
 
 export interface LoginDependencies {
@@ -57,7 +57,10 @@ export class Login {
     const encoded = user?.passwordHash ?? (await this.#decoy());
     const matches = await this.deps.hasher.verify(command.password, encoded);
 
-    if (user === null || !matches) {
+    // A disabled account (ADR 26) is answered exactly as a wrong password is,
+    // after the same hashing and counted by the same limiter: the screen must
+    // not tell anybody that this username exists, or that it was disabled.
+    if (user === null || !matches || !isActive(user)) {
       this.deps.rateLimiter.recordFailure(command.clientIp);
       throw new InvalidCredentials();
     }

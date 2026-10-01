@@ -28,6 +28,7 @@ const aPerson = (id: string, role: Role = Role.USER): User => ({
   role,
   createdAt: A_MOMENT,
   updatedAt: A_MOMENT,
+  disabledAt: null,
 });
 
 const EVERYTHING: Access = { kind: "everything" };

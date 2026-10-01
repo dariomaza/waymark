@@ -122,6 +122,12 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
     return count > 0;
   }
 
+  async deleteAllIssuedBy(userId: string): Promise<number> {
+    const { count } = await this.prisma.machineToken.deleteMany({ where: { userId } });
+
+    return count;
+  }
+
   async list(): Promise<readonly MachineToken[]> {
     const rows = await this.prisma.machineToken.findMany({
       orderBy: { name: "asc" },

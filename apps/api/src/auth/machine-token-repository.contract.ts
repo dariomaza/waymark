@@ -504,6 +504,27 @@ export const machineTokenRepositoryContract = (
       });
     });
 
+    describe("revoking every token one person issued (ADR 26)", () => {
+      it("removes each of theirs, answers how many, and leaves everybody else's", async () => {
+        await machineTokens.create(
+          aMachineToken({ id: "a", name: "theirs-1", tokenHash: "h-a", userId: "partner" }),
+        );
+        await machineTokens.create(
+          aMachineToken({ id: "b", name: "theirs-2", tokenHash: "h-b", userId: "partner" }),
+        );
+        await machineTokens.create(
+          aMachineToken({ id: "c", name: "mine", tokenHash: "h-c", userId: "dario" }),
+        );
+
+        expect(await machineTokens.deleteAllIssuedBy("partner")).toBe(2);
+        expect((await machineTokens.list()).map((token) => token.name)).toEqual(["mine"]);
+      });
+
+      it("answers none when they issued nothing", async () => {
+        expect(await machineTokens.deleteAllIssuedBy("partner")).toBe(0);
+      });
+    });
+
     describe("listing them for a human", () => {
       it("answers an empty list before anything is issued", async () => {
         expect(await machineTokens.list()).toEqual([]);

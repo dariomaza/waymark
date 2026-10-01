@@ -92,6 +92,12 @@ export interface MachineTokenRepository {
    */
   deleteByName(name: string, issuedBy: IssuedBy): Promise<boolean>;
 
+  /**
+   * Revokes every token one person issued, in one statement, and answers how
+   * many went. What disabling an account does to its credentials (ADR 26).
+   */
+  deleteAllIssuedBy(userId: string): Promise<number>;
+
   /** Every token, by name, for the CLI. Never the secret; there is none stored. */
   list(): Promise<readonly MachineToken[]>;
 }

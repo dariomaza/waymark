@@ -1,6 +1,6 @@
 import { Role, type Clock, type IdGenerator } from "@waymark/domain";
 
-import { UsernameAlreadyTaken } from "./auth-errors.js";
+import { InvalidUsername, PasswordTooShort, UsernameAlreadyTaken } from "./auth-errors.js";
 import type { PasswordHasher } from "./password-hasher.js";
 import { normalizeUsername, type User } from "./user.js";
 import type { UserRepository } from "./user-repository.js";
@@ -23,12 +23,28 @@ export interface CreateUserCommand {
 }
 
 /**
- * Creates an account. Reachable ONLY from the admin CLI.
+ * The shortest password any account here may have, wherever it was typed.
+ * Every account can be signed in to from the public internet.
+ */
+export const MINIMUM_PASSWORD_LENGTH = 12;
+
+/** Refuses a password too short to be one here; see `MINIMUM_PASSWORD_LENGTH`. */
+export const mustBeAUsablePassword = (password: string): void => {
+  if (password.length < MINIMUM_PASSWORD_LENGTH) {
+    throw new PasswordTooShort(MINIMUM_PASSWORD_LENGTH);
+  }
+};
+
+/**
+ * Creates an account, from the admin CLI or for an administrator on the
+ * account screen (ADR 26) — one use case, so the two doors cannot drift into
+ * two sets of rules.
  *
  * There is no registration route and there never will be: this instance is
  * exposed to the internet through a Cloudflare Tunnel on a real domain, and a
  * public sign-up form on a household inventory is an invitation, not a feature.
- * Accounts are created by whoever has a shell on the server.
+ * The first account is created by whoever has a shell on the server, and every
+ * later one by them or by an administrator they made.
  *
  * The first account on a deployment is the administrator (ADR 26), and every
  * later one is a user unless the command says otherwise.
@@ -38,6 +54,10 @@ export class CreateUser {
 
   async execute(command: CreateUserCommand): Promise<User> {
     const username = normalizeUsername(command.username);
+    if (username.length === 0) {
+      throw new InvalidUsername();
+    }
+    mustBeAUsablePassword(command.password);
 
     const existing = await this.deps.users.findByUsername(username);
     if (existing !== null) {
@@ -54,6 +74,7 @@ export class CreateUser {
         first || command.administrator === true ? Role.ADMINISTRATOR : Role.USER,
       createdAt: now,
       updatedAt: now,
+      disabledAt: null,
     };
 
     await this.deps.users.create(user);

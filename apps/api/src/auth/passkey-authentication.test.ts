@@ -42,6 +42,7 @@ const DARIO: User = {
   role: Role.ADMINISTRATOR,
   createdAt: NOW,
   updatedAt: NOW,
+  disabledAt: null,
 };
 
 /** Just enough of the port to answer "who is this". */
@@ -54,6 +55,19 @@ const usersHolding = (...people: readonly User[]): UserRepository => ({
   },
   anyoneExists: async () => people.length > 0,
   findOldestAdministrator: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  list: async () => people,
+  changeRole: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  disable: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  enable: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  changePassword: async () => {
     throw new Error("not part of this ceremony");
   },
 });
@@ -78,6 +92,10 @@ class RecordingSessionRepository implements SessionRepository {
     if (at >= 0) {
       this.saved.splice(at, 1);
     }
+  }
+
+  async deleteAllOf(): Promise<number> {
+    throw new Error("not part of this ceremony");
   }
 
   async deleteExpired(): Promise<number> {

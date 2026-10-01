@@ -21,6 +21,7 @@ const aPerson: Caller = {
     role: Role.ADMINISTRATOR,
     createdAt: NOW,
     updatedAt: NOW,
+    disabledAt: null,
   },
   session: {
     id: "session-1",

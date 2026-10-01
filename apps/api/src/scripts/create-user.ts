@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { SystemClock } from "../adapters/system-clock.js";
 import { UuidIdGenerator } from "../adapters/uuid-id-generator.js";
 import { UsernameAlreadyTaken } from "../auth/auth-errors.js";
-import { CreateUser } from "../auth/create-user.js";
+import { CreateUser, MINIMUM_PASSWORD_LENGTH } from "../auth/create-user.js";
 import { ScryptPasswordHasher } from "../auth/password-hasher.js";
 import { normalizeUsername } from "../auth/user.js";
 import { loadConfig } from "../config.js";
@@ -14,7 +14,9 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
 /**
  * `pnpm --filter @waymark/api create-user`
  *
- * The only way an account comes into existence. There is no registration
+ * How the FIRST account comes into existence, and still a way to make any
+ * other. Later accounts can also be made by an administrator from the account
+ * screen (ADR 26); both go through `CreateUser`. There is no registration
  * endpoint: the API is on the public internet through a Cloudflare Tunnel, and
  * a sign-up form on a household inventory is a door, not a feature.
  *
@@ -37,8 +39,6 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
  *    weakest of the three: environment variables are readable by other
  *    processes of the same user and leak into crash dumps.
  */
-
-const MINIMUM_PASSWORD_LENGTH = 12;
 
 const usage = `
 Usage: pnpm --filter @waymark/api create-user [--username <name>] [--admin]

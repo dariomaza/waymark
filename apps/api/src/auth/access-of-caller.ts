@@ -9,6 +9,8 @@ import {
 
 import { InvalidMachineToken } from "./auth-errors.js";
 import type { Caller } from "./caller.js";
+import type { MachineToken } from "./machine-token.js";
+import { isActive, type User } from "./user.js";
 import type { UserRepository } from "./user-repository.js";
 
 export interface AccessOfCallerDependencies {
@@ -29,21 +31,16 @@ export interface AccessOfCallerDependencies {
  *
  * The issuer is read again on every request rather than copied onto the
  * token, so changing a person's role changes what their tokens see at once.
- * A token whose issuer has no account is refused as an invalid credential:
- * any access invented for it would be a guess, and the only safe guess is
- * none at all.
+ * A token whose issuer has no account, or a disabled one, is refused as an
+ * invalid credential: any access invented for it would be a guess, and the
+ * only safe guess is none at all.
  */
 export class AccessOfCaller {
   constructor(private readonly deps: AccessOfCallerDependencies) {}
 
   async execute(caller: Caller): Promise<Access> {
     const person =
-      caller.kind === "user"
-        ? caller.user
-        : await this.deps.users.findById(caller.machineToken.userId);
-    if (person === null) {
-      throw new InvalidMachineToken();
-    }
+      caller.kind === "user" ? caller.user : await this.#issuerOf(caller.machineToken);
 
     const [storageUnits, shares] = await Promise.all([
       this.deps.storageUnits.findAll(),
@@ -62,5 +59,20 @@ export class AccessOfCaller {
     return caller.kind === "user"
       ? issuers
       : narrowAccess(issuers, caller.machineToken.chosenSpaces, storageUnits);
+  }
+
+  /**
+   * The person a token acts as. Disabling an account revokes the tokens it
+   * issued (ADR 26); a token that survived that — an interrupted disable — is
+   * still refused, because its issuer is read here on every request. A
+   * session's own person was already checked when the session was resolved.
+   */
+  async #issuerOf(token: MachineToken): Promise<User> {
+    const issuer = await this.deps.users.findById(token.userId);
+    if (issuer === null || !isActive(issuer)) {
+      throw new InvalidMachineToken();
+    }
+
+    return issuer;
   }
 }

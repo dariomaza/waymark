@@ -36,6 +36,7 @@ const aUser = (id: string, role: Role): User => ({
   role,
   createdAt: NOW,
   updatedAt: NOW,
+  disabledAt: null,
 });
 
 const ADMIN = aUser("admin", Role.ADMINISTRATOR);

@@ -14,7 +14,7 @@ import {
   finishPasskeyRegistrationBodySchema,
   passkeyIdParamsSchema,
 } from "../validation.js";
-import { passkeyView, type UserView } from "../views.js";
+import { passkeyView, userView } from "../views.js";
 
 export interface PasskeyLoginRouteOptions {
   readonly beginPasskeyAuthentication: BeginPasskeyAuthentication;
@@ -64,15 +64,10 @@ export const passkeyLoginRoutes: FastifyPluginAsync<PasskeyLoginRouteOptions> =
         clientIp: request.clientIp,
       });
 
-      const user: UserView = {
-        id: result.user.id,
-        username: result.user.username,
-      };
-
       return reply.code(200).send({
         token: result.token,
         expiresAt: result.session.expiresAt.toISOString(),
-        user,
+        user: userView(result.user),
       });
     });
   };

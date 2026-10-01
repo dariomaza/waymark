@@ -2,8 +2,8 @@ import { Role } from "@waymark/domain";
 import { FakeClock, SequentialIdGenerator } from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { UsernameAlreadyTaken } from "./auth-errors.js";
-import { CreateUser } from "./create-user.js";
+import { InvalidUsername, PasswordTooShort, UsernameAlreadyTaken } from "./auth-errors.js";
+import { CreateUser, MINIMUM_PASSWORD_LENGTH } from "./create-user.js";
 import { ScryptPasswordHasher } from "./password-hasher.js";
 import { InMemoryUserRepository } from "./user-repository.fake.js";
 
@@ -81,5 +81,47 @@ describe("creating an account from the shell", () => {
     await expect(
       createUser.execute({ username: "DARIO", password: "another-password" }),
     ).rejects.toBeInstanceOf(UsernameAlreadyTaken);
+  });
+
+  /**
+   * The shell and the account screen make accounts through this one use case,
+   * so the rules a password must meet are written here once rather than in
+   * each door (ADR 26). The account can be signed in to from the internet.
+   */
+  describe("the password it will take", () => {
+    it("is at least twelve characters", () => {
+      expect(MINIMUM_PASSWORD_LENGTH).toBe(12);
+    });
+
+    it("refuses one character short of that, and makes no account", async () => {
+      await expect(
+        createUser.execute({ username: "dario", password: "x".repeat(11) }),
+      ).rejects.toBeInstanceOf(PasswordTooShort);
+      expect(await users.anyoneExists()).toBe(false);
+    });
+
+    it("takes exactly twelve", async () => {
+      const created = await createUser.execute({
+        username: "dario",
+        password: "x".repeat(12),
+      });
+
+      expect(created.username).toBe("dario");
+    });
+  });
+
+  it("refuses a username that is nothing once trimmed", async () => {
+    await expect(
+      createUser.execute({ username: "   ", password: "a-real-password" }),
+    ).rejects.toBeInstanceOf(InvalidUsername);
+  });
+
+  it("makes every account active", async () => {
+    const created = await createUser.execute({
+      username: "dario",
+      password: "a-real-password",
+    });
+
+    expect(created.disabledAt).toBeNull();
   });
 });

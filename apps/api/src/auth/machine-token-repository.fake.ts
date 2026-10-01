@@ -106,6 +106,15 @@ export class InMemoryMachineTokenRepository implements MachineTokenRepository {
     return this.#tokens.delete(token.id);
   }
 
+  async deleteAllIssuedBy(userId: string): Promise<number> {
+    const theirs = [...this.#tokens.values()].filter((token) => token.userId === userId);
+    for (const token of theirs) {
+      this.#tokens.delete(token.id);
+    }
+
+    return theirs.length;
+  }
+
   async list(): Promise<readonly MachineToken[]> {
     return [...this.#tokens.values()].sort((left, right) =>
       left.name.localeCompare(right.name),

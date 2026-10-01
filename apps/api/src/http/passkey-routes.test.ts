@@ -326,7 +326,7 @@ describe("passkeys over HTTP", () => {
       expect(response.json()).toEqual({
         token: expect.any(String),
         expiresAt: expect.any(String),
-        user: { id: expect.any(String), username: TEST_USERNAME },
+        user: { id: expect.any(String), username: TEST_USERNAME, role: "administrator" },
       });
     });
 

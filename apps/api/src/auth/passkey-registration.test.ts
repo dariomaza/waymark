@@ -35,6 +35,7 @@ const DARIO: User = {
   role: Role.ADMINISTRATOR,
   createdAt: NOW,
   updatedAt: NOW,
+  disabledAt: null,
 };
 
 const SOMEBODY_ELSE: User = { ...DARIO, id: "user-elena", username: "elena" };

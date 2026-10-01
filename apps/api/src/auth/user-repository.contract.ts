@@ -3,7 +3,10 @@ import type { RepositoryHarness } from "@waymark/domain-contract-tests";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { User } from "./user.js";
-import type { UserRepository } from "./user-repository.js";
+import {
+  LAST_ADMINISTRATOR,
+  type UserRepository,
+} from "./user-repository.js";
 
 /**
  * # The shared contract for `UserRepository`
@@ -28,8 +31,11 @@ const anAccount = (
   role: Role.USER,
   createdAt: new Date("2026-04-01T10:00:00.000Z"),
   updatedAt: new Date("2026-04-01T10:00:00.000Z"),
+  disabledAt: null,
   ...overrides,
 });
+
+const LATER = new Date("2026-05-01T12:00:00.000Z");
 
 export const userRepositoryContract = (
   harness: RepositoryHarness<UserRepositoryContext>,
@@ -48,6 +54,14 @@ export const userRepositoryContract = (
 
       expect(await users.findById("dario")).toEqual(dario);
       expect(await users.findByUsername("dario")).toEqual(dario);
+    });
+
+    it("gives back that an account is disabled, and since when", async () => {
+      const partner = anAccount("partner", { disabledAt: LATER });
+
+      await users.create(partner);
+
+      expect(await users.findById("partner")).toEqual(partner);
     });
 
     it("refuses a second account with a username already taken", async () => {
@@ -97,6 +111,129 @@ export const userRepositoryContract = (
         );
 
         expect((await users.findOldestAdministrator())?.id).toBe("first-admin");
+      });
+    });
+
+    describe("listing every account, for the administrator", () => {
+      it("answers every account by username, the disabled ones included", async () => {
+        await users.create(anAccount("partner", { disabledAt: LATER }));
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+        await users.create(anAccount("child"));
+
+        expect((await users.list()).map((user) => user.username)).toEqual([
+          "child",
+          "dario",
+          "partner",
+        ]);
+      });
+    });
+
+    /**
+     * There is always at least one active administrator (ADR 26), and the
+     * repository is where that is decided: as a condition of the one statement
+     * that writes, so two administrators demoting each other at the same
+     * instant cannot both succeed.
+     */
+    describe("changing a role", () => {
+      it("makes a user an administrator, and stamps the change", async () => {
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+        await users.create(anAccount("partner"));
+
+        const changed = await users.changeRole("partner", Role.ADMINISTRATOR, LATER);
+
+        expect(changed).toMatchObject({ role: Role.ADMINISTRATOR, updatedAt: LATER });
+        expect((await users.findById("partner"))?.role).toBe(Role.ADMINISTRATOR);
+      });
+
+      it("demotes an administrator while another active one remains", async () => {
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+        await users.create(anAccount("partner", { role: Role.ADMINISTRATOR }));
+
+        await users.changeRole("partner", Role.USER, LATER);
+
+        expect((await users.findById("partner"))?.role).toBe(Role.USER);
+      });
+
+      it("refuses to demote the last active administrator, and changes nothing", async () => {
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+        await users.create(anAccount("partner"));
+
+        expect(await users.changeRole("dario", Role.USER, LATER)).toBe(
+          LAST_ADMINISTRATOR,
+        );
+        expect((await users.findById("dario"))?.role).toBe(Role.ADMINISTRATOR);
+      });
+
+      it("does not count a disabled administrator as the one that remains", async () => {
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+        await users.create(
+          anAccount("partner", { role: Role.ADMINISTRATOR, disabledAt: LATER }),
+        );
+
+        expect(await users.changeRole("dario", Role.USER, LATER)).toBe(
+          LAST_ADMINISTRATOR,
+        );
+      });
+
+      it("answers null for an account that is not there", async () => {
+        expect(await users.changeRole("nobody", Role.USER, LATER)).toBeNull();
+      });
+    });
+
+    describe("disabling and enabling", () => {
+      it("stamps when an account was disabled", async () => {
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+        await users.create(anAccount("partner"));
+
+        const disabled = await users.disable("partner", LATER);
+
+        expect(disabled).toMatchObject({ disabledAt: LATER });
+        expect((await users.findById("partner"))?.disabledAt).toEqual(LATER);
+      });
+
+      it("refuses to disable the last active administrator, and changes nothing", async () => {
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+
+        expect(await users.disable("dario", LATER)).toBe(LAST_ADMINISTRATOR);
+        expect((await users.findById("dario"))?.disabledAt).toBeNull();
+      });
+
+      it("disables an administrator while another active one remains", async () => {
+        await users.create(anAccount("dario", { role: Role.ADMINISTRATOR }));
+        await users.create(anAccount("partner", { role: Role.ADMINISTRATOR }));
+
+        expect(await users.disable("partner", LATER)).toMatchObject({
+          disabledAt: LATER,
+        });
+      });
+
+      it("enables a disabled account again", async () => {
+        await users.create(anAccount("partner", { disabledAt: LATER }));
+
+        const enabled = await users.enable("partner", LATER);
+
+        expect(enabled?.disabledAt).toBeNull();
+        expect((await users.findById("partner"))?.disabledAt).toBeNull();
+      });
+
+      it("answers null for an account that is not there", async () => {
+        expect(await users.disable("nobody", LATER)).toBeNull();
+        expect(await users.enable("nobody", LATER)).toBeNull();
+      });
+    });
+
+    describe("changing a password", () => {
+      it("keeps the new hash and stamps the change", async () => {
+        await users.create(anAccount("partner"));
+
+        const changed = await users.changePassword("partner", "scrypt$new", LATER);
+
+        expect(changed).toMatchObject({ passwordHash: "scrypt$new", updatedAt: LATER });
+        expect((await users.findById("partner"))?.passwordHash).toBe("scrypt$new");
+      });
+
+      it("answers null for an account that is not there", async () => {
+        expect(await users.changePassword("nobody", "scrypt$new", LATER)).toBeNull();
       });
     });
   });

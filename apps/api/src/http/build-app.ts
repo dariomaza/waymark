@@ -46,6 +46,8 @@ import { AccessOfCaller } from "../auth/access-of-caller.js";
 import { AuthenticateMachineToken } from "../auth/authenticate-machine-token.js";
 import { AuthenticateSession } from "../auth/authenticate-session.js";
 import {
+  AccountNotFound,
+  AdministratorOnly,
   AuthError,
   ClonedPasskey,
   InvalidCredentials,
@@ -54,16 +56,23 @@ import {
   InvalidPasskey,
   InvalidPasskeyLabel,
   InvalidSession,
+  InvalidUsername,
+  LastAdministrator,
   MachineTokenNameAlreadyTaken,
+  OwnAccount,
   PasskeyAlreadyRegistered,
   PasskeyCeremonyExpired,
   PasskeyDidNotVerifyTheUser,
   PasskeyNeedsAPassword,
   PasskeyNotFound,
+  PasswordTooShort,
   ReadOnlyMachineToken,
   TooManyLoginAttempts,
   TooManyPasskeyAttempts,
+  UsernameAlreadyTaken,
 } from "../auth/auth-errors.js";
+import { CreateUser } from "../auth/create-user.js";
+import { ManageAccounts } from "../auth/manage-accounts.js";
 import { callerMayWrite, type Caller } from "../auth/caller.js";
 import type { MachineTokenRepository } from "../auth/machine-token-repository.js";
 import type { RateLimiter } from "../auth/login-rate-limiter.js";
@@ -99,6 +108,7 @@ import { mapDomainError } from "./error-mapping.js";
 import { ItemViews } from "./item-views.js";
 import { StorageUnitViews } from "./storage-unit-views.js";
 import { errorBody, HttpError } from "./http-error.js";
+import { accountRoutes } from "./routes/account-routes.js";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
 import { machineTokenRoutes } from "./routes/machine-token-routes.js";
@@ -372,6 +382,23 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   const revokeMachineToken = new RevokeMachineToken({
     machineTokens: deps.machineTokens,
   });
+  /**
+   * The People group (ADR 26), driving the same `CreateUser` the shell does so
+   * an account made on the screen is made by the same rules.
+   */
+  const manageAccounts = new ManageAccounts({
+    users: deps.users,
+    sessions: deps.sessions,
+    machineTokens: deps.machineTokens,
+    createUser: new CreateUser({
+      users: deps.users,
+      hasher: deps.hasher,
+      ids: deps.ids,
+      clock: deps.clock,
+    }),
+    hasher: deps.hasher,
+    clock: deps.clock,
+  });
   const authenticateMachine = new AuthenticateMachineToken({
     machineTokens: deps.machineTokens,
     clock: deps.clock,
@@ -572,6 +599,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       rotateMachineToken,
       revokeMachineToken,
     });
+    void scope.register(accountRoutes, { manageAccounts });
     void scope.register(passkeyRoutes, {
       passkeys: deps.passkeys,
       beginPasskeyRegistration,
@@ -919,6 +947,58 @@ const sendAuthError = async (
           requiredScope: "read-write",
         }),
       );
+  }
+
+  /**
+   * # What managing accounts can be refused with (ADR 26)
+   *
+   * 403 for a person who is not an administrator: authenticated, and refused.
+   * 404 for an id that names no account — the path addresses it. 409 for the
+   * two that need the WORLD to change first: a username somebody already has,
+   * and the last active administrator or your own account, which another
+   * administrator has to act on. 422 for a password or a username the request
+   * itself got wrong.
+   */
+  if (error instanceof AdministratorOnly) {
+    return reply.code(403).send(errorBody("ADMINISTRATOR_ONLY", error.message));
+  }
+
+  if (error instanceof AccountNotFound) {
+    return reply
+      .code(404)
+      .send(errorBody("ACCOUNT_NOT_FOUND", error.message, { accountId: error.accountId }));
+  }
+
+  if (error instanceof UsernameAlreadyTaken) {
+    return reply
+      .code(409)
+      .send(
+        errorBody("USERNAME_ALREADY_TAKEN", error.message, { username: error.username }),
+      );
+  }
+
+  if (error instanceof LastAdministrator) {
+    return reply
+      .code(409)
+      .send(errorBody("LAST_ADMINISTRATOR", error.message, { accountId: error.accountId }));
+  }
+
+  if (error instanceof OwnAccount) {
+    return reply
+      .code(409)
+      .send(errorBody("OWN_ACCOUNT", error.message, { accountId: error.accountId }));
+  }
+
+  if (error instanceof PasswordTooShort) {
+    return reply.code(422).send(
+      errorBody("PASSWORD_TOO_SHORT", error.message, {
+        minimumLength: error.minimumLength,
+      }),
+    );
+  }
+
+  if (error instanceof InvalidUsername) {
+    return reply.code(422).send(errorBody("INVALID_USERNAME", error.message));
   }
 
   /**

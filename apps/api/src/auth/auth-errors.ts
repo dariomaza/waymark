@@ -38,10 +38,32 @@ export class InvalidSession extends AuthError {
   }
 }
 
-/** Raised by the admin CLI, never by an HTTP route: there is no sign-up. */
+/**
+ * Raised by the admin CLI and by an administrator creating an account from
+ * the account screen (ADR 26). There is still no sign-up.
+ */
 export class UsernameAlreadyTaken extends AuthError {
   constructor(readonly username: string) {
     super(`The username "${username}" is already taken`);
+  }
+}
+
+/**
+ * A password shorter than the minimum, refused before anything is hashed.
+ *
+ * Raised for an account made from the shell and from the account screen, and
+ * for a reset: every account here can be signed in to from the internet.
+ */
+export class PasswordTooShort extends AuthError {
+  constructor(readonly minimumLength: number) {
+    super(`The password must be at least ${minimumLength} characters`);
+  }
+}
+
+/** A username that is nothing once trimmed. */
+export class InvalidUsername extends AuthError {
+  constructor() {
+    super("A username is required");
   }
 }
 
@@ -242,5 +264,48 @@ export class TooManyPasskeyAttempts extends AuthError {
     super(
       `Too many passkey attempts. Try again in ${retryAfterSeconds} second(s), or use your password.`,
     );
+  }
+}
+
+/**
+ * # The refusals of managing other people's accounts (ADR 26)
+ */
+
+/**
+ * The person is signed in and is not an administrator. 403 rather than 404:
+ * the route exists, and pretending it did not would be a lie a client could
+ * act on.
+ */
+export class AdministratorOnly extends AuthError {
+  constructor(readonly username: string) {
+    super("Only an administrator manages accounts");
+  }
+}
+
+/** The account the path names is not there. Accounts are never deleted. */
+export class AccountNotFound extends AuthError {
+  constructor(readonly accountId: string) {
+    super("There is no such account");
+  }
+}
+
+/**
+ * Demoting or disabling this account would leave no active administrator, so
+ * nothing was changed. 409: the world must change first — make somebody else
+ * an administrator — and then the same request succeeds (ADR 8).
+ */
+export class LastAdministrator extends AuthError {
+  constructor(readonly accountId: string) {
+    super("This is the last active administrator, so it cannot be demoted or disabled");
+  }
+}
+
+/**
+ * An administrator acting on their own account: their role, their state or
+ * their password. Another administrator has to do it; see `ManageAccounts`.
+ */
+export class OwnAccount extends AuthError {
+  constructor(readonly accountId: string) {
+    super("Another administrator has to change your own role, password or state");
   }
 }

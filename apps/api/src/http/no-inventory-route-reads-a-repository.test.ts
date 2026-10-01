@@ -49,8 +49,12 @@ export const INVENTORY_ROUTE_FILES = [
   "storage-unit-routes.ts",
 ] as const;
 
-/** A caller's own sign-in, sessions, passkeys and machine tokens. */
+/**
+ * A caller's own sign-in, sessions, passkeys and machine tokens, and the
+ * administrator's management of other accounts (ADR 26).
+ */
 export const ACCOUNT_ROUTE_FILES = [
+  "account-routes.ts",
   "auth-routes.ts",
   "machine-token-routes.ts",
   "passkey-routes.ts",

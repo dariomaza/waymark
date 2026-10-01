@@ -14,7 +14,17 @@ export interface User {
   readonly role: Role;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  /**
+   * When an administrator disabled the account, or `null` while it is active
+   * (ADR 26). A disabled account keeps its row, its inventory and its
+   * passkeys, and opens nothing: every way in checks this, not only the
+   * deletions that came with it.
+   */
+  readonly disabledAt: Date | null;
 }
+
+/** Whether this account may get in at all. */
+export const isActive = (user: User): boolean => user.disabledAt === null;
 
 /**
  * Usernames are compared lower case and stored lower case.

@@ -250,6 +250,11 @@ model User {
 
   createdAt DateTime
   updatedAt DateTime
+  /// When an administrator disabled the account, or null while it is active
+  /// (ADR 26). Accounts are disabled, never deleted: the row keeps owning its
+  /// inventory. Every way in reads this column, so a session or a token left
+  /// behind by an interrupted disable still opens nothing.
+  disabledAt DateTime?
 
   sessions Session[]
   machineTokens MachineToken[]
