@@ -89,6 +89,8 @@ export class InMemoryMachineTokenRepository implements MachineTokenRepository {
       expiresAt: rotation.expiresAt,
       // Never carried over: it would describe a secret that no longer exists.
       lastUsedAt: null,
+      // Kept, as the scope is: a rotation is a new secret for the same key.
+      chosenSpaces: stored.chosenSpaces,
     };
     this.#tokens.set(stored.id, rotated);
 

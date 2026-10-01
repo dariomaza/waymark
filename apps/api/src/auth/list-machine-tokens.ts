@@ -1,3 +1,10 @@
+import {
+  mayViewSpace,
+  type Access,
+  type StorageUnitRepository,
+  type UnitId,
+} from "@waymark/domain";
+
 import type { MachineToken } from "./machine-token.js";
 import {
   mayManageMachineToken,
@@ -10,6 +17,13 @@ import type { UserRepository } from "./user-repository.js";
 export interface ListMachineTokensDependencies {
   readonly machineTokens: MachineTokenRepository;
   readonly users: UserRepository;
+  readonly storageUnits: StorageUnitRepository;
+}
+
+/** A chosen space, as a list row names it. */
+export interface NamedSpace {
+  readonly id: UnitId;
+  readonly name: string;
 }
 
 export interface ListedMachineToken {
@@ -20,6 +34,13 @@ export interface ListedMachineToken {
    * the answer would always be them.
    */
   readonly issuedBy: string | null;
+  /**
+   * The spaces it was narrowed to, by name; `null` when none were chosen
+   * (ADR 26). Only those the person listing may see are named, so a list
+   * never carries the name of a space somebody has lost: for the issuer
+   * that is also exactly what the token still reaches.
+   */
+  readonly spaces: readonly NamedSpace[] | null;
 }
 
 /**
@@ -33,13 +54,19 @@ export interface ListedMachineToken {
 export class ListMachineTokens {
   constructor(private readonly deps: ListMachineTokensDependencies) {}
 
-  async execute(by: MachineTokenManager): Promise<ListedMachineToken[]> {
+  /** `sees` is the access of whoever is listing, which decides which names show. */
+  async execute(by: MachineTokenManager, sees: Access): Promise<ListedMachineToken[]> {
     const visible = (await this.deps.machineTokens.list()).filter((token) =>
       mayManageMachineToken(by, token),
     );
+    const spacesOf = await this.namer(sees);
 
     if (tokensManagedBy(by) !== ANY_ISSUER) {
-      return visible.map((machineToken) => ({ machineToken, issuedBy: null }));
+      return visible.map((machineToken) => ({
+        machineToken,
+        issuedBy: null,
+        spaces: spacesOf(machineToken),
+      }));
     }
 
     const usernames = new Map<string, string | null>();
@@ -50,6 +77,26 @@ export class ListMachineTokens {
     return visible.map((machineToken) => ({
       machineToken,
       issuedBy: usernames.get(machineToken.userId) ?? null,
+      spaces: spacesOf(machineToken),
     }));
+  }
+
+  private async namer(
+    sees: Access,
+  ): Promise<(token: MachineToken) => readonly NamedSpace[] | null> {
+    const names = new Map(
+      (await this.deps.storageUnits.findAll()).map((unit) => [unit.id, unit.name]),
+    );
+
+    return (token) => {
+      if (!token.chosenSpaces.narrowed) {
+        return null;
+      }
+
+      return token.chosenSpaces.spaceIds
+        .filter((id) => names.has(id) && mayViewSpace(sees, id))
+        .map((id) => ({ id, name: names.get(id) as string }))
+        .sort((left, right) => left.name.localeCompare(right.name));
+    };
   }
 }

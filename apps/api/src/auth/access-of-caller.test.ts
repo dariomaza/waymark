@@ -8,8 +8,10 @@ import {
   unitId,
   userId,
   type Access,
+  type ChosenSpaces,
   type UnitId,
   type UserId,
+  WHOLE_REACH,
 } from "@waymark/domain";
 import {
   InMemoryShareRepository,
@@ -53,7 +55,10 @@ const signedIn = (user: User): Caller => ({
   },
 });
 
-const aMachineIssuedBy = (issuer: string): Caller => ({
+const aMachineIssuedBy = (
+  issuer: string,
+  chosenSpaces: ChosenSpaces = WHOLE_REACH,
+): Caller => ({
   kind: "machine",
   machineToken: {
     id: `token-${issuer}`,
@@ -64,6 +69,7 @@ const aMachineIssuedBy = (issuer: string): Caller => ({
     createdAt: NOW,
     expiresAt: null,
     lastUsedAt: null,
+    chosenSpaces,
   },
 });
 
@@ -141,5 +147,36 @@ describe("the access a request acts with (ADR 26)", () => {
     await expect(
       accessOf.execute(aMachineIssuedBy("nobody")),
     ).rejects.toBeInstanceOf(InvalidMachineToken);
+  });
+
+  describe("a machine token narrowed to chosen spaces", () => {
+    const narrowedTo = (...ids: string[]): ChosenSpaces => ({
+      narrowed: true,
+      spaceIds: ids.map(unitId),
+    });
+
+    it("reaches only the chosen spaces its issuer reaches", async () => {
+      const access = await accessOf.execute(aMachineIssuedBy(BEA.id, narrowedTo("ana-garage")));
+
+      expect(visible(access, EVERY_SPACE)).toEqual(["ana-garage"]);
+    });
+
+    it("reaches nothing of a chosen space its issuer cannot reach", async () => {
+      const access = await accessOf.execute(aMachineIssuedBy(BEA.id, narrowedTo("ana-house")));
+
+      expect(visible(access, EVERY_SPACE)).toEqual(["ana-garage"]);
+    });
+
+    it("narrows an administrator's token too, rather than seeing everything", async () => {
+      const access = await accessOf.execute(aMachineIssuedBy(ADMIN.id, narrowedTo("bea-flat")));
+
+      expect(visible(access, EVERY_SPACE)).toEqual(["bea-flat"]);
+    });
+
+    it("reaches nothing once the chosen spaces are gone", async () => {
+      const access = await accessOf.execute(aMachineIssuedBy(ANA.id, narrowedTo()));
+
+      expect(visible(access, EVERY_SPACE)).toEqual([]);
+    });
   });
 });

@@ -361,6 +361,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
    */
   const createMachineToken = new CreateMachineToken({
     machineTokens: deps.machineTokens,
+    storageUnits: deps.storageUnits,
     ids: deps.ids,
     clock: deps.clock,
   });
@@ -565,6 +566,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       listMachineTokens: new ListMachineTokens({
         machineTokens: deps.machineTokens,
         users: deps.users,
+        storageUnits: deps.storageUnits,
       }),
       createMachineToken,
       rotateMachineToken,

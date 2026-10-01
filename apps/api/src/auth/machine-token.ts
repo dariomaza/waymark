@@ -1,3 +1,5 @@
+import type { ChosenSpaces } from "@waymark/domain";
+
 /**
  * A named, long-lived credential that is not a person.
  *
@@ -49,6 +51,13 @@ export interface MachineToken {
    * It is deliberately COARSE. See `LAST_USED_GRANULARITY_MS`.
    */
   readonly lastUsedAt: Date | null;
+  /**
+   * The spaces it was narrowed to, or that it was not (ADR 26). It reaches its
+   * issuer's access within those spaces and never more; see `narrowAccess`.
+   * Kept as chosen; whether each is still there and still the issuer's to
+   * reach is decided on every request.
+   */
+  readonly chosenSpaces: ChosenSpaces;
 }
 
 /**

@@ -43,6 +43,22 @@ machineTokenRepositoryContract({
           },
         });
       },
+      givenTheSpace: async (id: string) => {
+        await database.client.storageUnit.create({
+          data: {
+            id,
+            name: id,
+            kind: "ROOM",
+            publicId: `public-${id}`,
+            ownerId: "dario",
+            createdAt: new Date("2026-04-01T09:00:00.000Z"),
+            updatedAt: new Date("2026-04-01T09:00:00.000Z"),
+          },
+        });
+      },
+      deleteTheSpace: async (id: string) => {
+        await database.client.storageUnit.delete({ where: { id } });
+      },
     };
   },
   tearDown: async () => {},

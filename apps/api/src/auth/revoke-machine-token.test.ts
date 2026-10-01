@@ -1,4 +1,8 @@
-import { FakeClock, SequentialIdGenerator } from "@waymark/domain/testing";
+import {
+  FakeClock,
+  InMemoryStorageUnitRepository,
+  SequentialIdGenerator,
+} from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { CreateMachineToken } from "./create-machine-token.js";
@@ -20,6 +24,7 @@ describe("revoking a machine token", () => {
     machineTokens = new InMemoryMachineTokenRepository();
     createMachineToken = new CreateMachineToken({
       machineTokens,
+      storageUnits: new InMemoryStorageUnitRepository(),
       ids: new SequentialIdGenerator("machine-token"),
       clock: new FakeClock(NOW),
     });

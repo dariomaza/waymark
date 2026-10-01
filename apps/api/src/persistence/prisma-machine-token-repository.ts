@@ -1,4 +1,9 @@
-import type { MachineToken as MachineTokenRow, PrismaClient } from "@prisma/client";
+import type {
+  MachineToken as MachineTokenRow,
+  MachineTokenSpace as MachineTokenSpaceRow,
+  PrismaClient,
+} from "@prisma/client";
+import { unitId, WHOLE_REACH } from "@waymark/domain";
 
 import {
   isMachineTokenScope,
@@ -31,13 +36,17 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
   async findByTokenHash(tokenHash: string): Promise<MachineToken | null> {
     const row = await this.prisma.machineToken.findUnique({
       where: { tokenHash },
+      include: WITH_SPACES,
     });
 
     return row === null ? null : toDomainMachineToken(row);
   }
 
   async findByName(name: string): Promise<MachineToken | null> {
-    const row = await this.prisma.machineToken.findUnique({ where: { name } });
+    const row = await this.prisma.machineToken.findUnique({
+      where: { name },
+      include: WITH_SPACES,
+    });
 
     return row === null ? null : toDomainMachineToken(row);
   }
@@ -46,7 +55,18 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
     // `create`, never `upsert`: silently replacing the secret behind a name
     // somebody is already using would revoke a live credential as a side effect
     // of a typo. The unique index decides, not a read-then-write race.
-    await this.prisma.machineToken.create({ data: token });
+    // One statement with its spaces, so a narrowed token never exists, even
+    // for an instant, without the spaces that narrow it.
+    const { chosenSpaces, ...fields } = token;
+    await this.prisma.machineToken.create({
+      data: {
+        ...fields,
+        narrowed: chosenSpaces.narrowed,
+        spaces: chosenSpaces.narrowed
+          ? { create: chosenSpaces.spaceIds.map((storageUnitId) => ({ storageUnitId })) }
+          : {},
+      },
+    });
   }
 
   async recordLastUsed(id: string, at: Date): Promise<void> {
@@ -105,6 +125,7 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
   async list(): Promise<readonly MachineToken[]> {
     const rows = await this.prisma.machineToken.findMany({
       orderBy: { name: "asc" },
+      include: WITH_SPACES,
     });
 
     return rows.map(toDomainMachineToken);
@@ -120,7 +141,23 @@ const whoseIs = (issuedBy: IssuedBy): { userId?: string } =>
  * rather than trusted — and checked hard, because this column is the difference
  * between a credential that may write and one that may not.
  */
-const toDomainMachineToken = (row: MachineTokenRow): MachineToken => {
+const WITH_SPACES = { spaces: { orderBy: { storageUnitId: "asc" } } } as const;
+
+/**
+ * Narrowed when the column says so, and also when any row says so: a row
+ * without the flag cannot be written through this adapter, and should one
+ * appear, the reading that cannot widen a token is the one to take.
+ */
+const toChosenSpaces = (
+  row: MachineTokenRow & { readonly spaces: readonly MachineTokenSpaceRow[] },
+): MachineToken["chosenSpaces"] =>
+  row.narrowed || row.spaces.length > 0
+    ? { narrowed: true, spaceIds: row.spaces.map((space) => unitId(space.storageUnitId)) }
+    : WHOLE_REACH;
+
+const toDomainMachineToken = (
+  row: MachineTokenRow & { readonly spaces: readonly MachineTokenSpaceRow[] },
+): MachineToken => {
   if (!isMachineTokenScope(row.scope)) {
     throw new UnknownMachineTokenScope(row.id, row.scope);
   }
@@ -134,5 +171,6 @@ const toDomainMachineToken = (row: MachineTokenRow): MachineToken => {
     createdAt: row.createdAt,
     expiresAt: row.expiresAt,
     lastUsedAt: row.lastUsedAt,
+    chosenSpaces: toChosenSpaces(row),
   };
 };

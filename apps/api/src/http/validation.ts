@@ -235,6 +235,12 @@ export const createMachineTokenBodySchema = z.strictObject({
   name: machineTokenName,
   scope: machineTokenScope,
   expiresInDays: z.number().optional(),
+  /**
+   * The spaces to narrow it to (ADR 26). Absent means none chosen: the
+   * issuer's whole reach. An empty list is refused rather than read either
+   * way, so "none chosen" has exactly one spelling.
+   */
+  spaceIds: z.array(id).min(1).max(MAX_BATCH_SIZE).optional(),
 });
 
 /**
@@ -245,7 +251,8 @@ export const createMachineTokenBodySchema = z.strictObject({
  * silently dropped a scope would let somebody believe they had turned a read
  * key into a writing one, and a rotation that honoured it would be an
  * escalation path wearing the word "maintenance". Refusing the key is the only
- * answer that is true either way.
+ * answer that is true either way. The same goes for `spaceIds` (ADR 26): a
+ * rotation keeps the spaces a token was narrowed to.
  */
 export const rotateMachineTokenBodySchema = z.strictObject({
   expiresInDays: z.number().optional(),

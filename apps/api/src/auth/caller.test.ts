@@ -1,4 +1,4 @@
-import { Role } from "@waymark/domain";
+import { Role, WHOLE_REACH } from "@waymark/domain";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -43,6 +43,7 @@ const aMachine = (scope: MachineTokenScope): Caller => ({
     createdAt: NOW,
     expiresAt: null,
     lastUsedAt: null,
+    chosenSpaces: WHOLE_REACH,
   },
 });
 

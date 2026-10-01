@@ -78,14 +78,18 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
     app.get("/auth/machine-tokens", async (request, reply) => {
       const person = refuseMachineCaller(request);
 
-      const listed = await options.listMachineTokens.execute(managerOf(person));
+      const listed = await options.listMachineTokens.execute(
+        managerOf(person),
+        request.access,
+      );
 
       // `machineTokenView` is what guarantees the hash never leaves the
       // server, rather than somebody remembering to leave it out here. Whose a
       // token is goes only to somebody who sees other people's (ADR 26).
       return reply.code(200).send({
-        machineTokens: listed.map(({ machineToken, issuedBy }) => ({
+        machineTokens: listed.map(({ machineToken, issuedBy, spaces }) => ({
           ...machineTokenView(machineToken),
+          spaces,
           ...(issuedBy === null ? {} : { issuedBy }),
         })),
       });
@@ -108,6 +112,11 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
         ...(body.expiresInDays === undefined
           ? {}
           : { expiresInDays: body.expiresInDays }),
+        // Each chosen space is checked against what the person issuing it may
+        // see: the access of this session (ADR 26).
+        ...(body.spaceIds === undefined
+          ? {}
+          : { narrowTo: { spaceIds: body.spaceIds, issuerAccess: request.access } }),
       });
 
       return reply

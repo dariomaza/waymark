@@ -1,3 +1,4 @@
+import { WHOLE_REACH } from "@waymark/domain";
 import { FakeClock } from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -30,6 +31,7 @@ describe("authenticating a machine token", () => {
       tokenHash,
       scope: MachineTokenScope.Read,
       userId: "dario",
+      chosenSpaces: WHOLE_REACH,
       createdAt: NOW,
       expiresAt: null,
       lastUsedAt: null,

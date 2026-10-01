@@ -72,6 +72,8 @@ model StorageUnit {
 
   items  Item[]
   shares Share[]
+  /// Machine tokens narrowed to this space (ADR 26).
+  machineTokens MachineTokenSpace[]
 
   @@index([parentId])
   @@index([ownerId])
@@ -418,6 +420,30 @@ model MachineToken {
   /// inventory walk into forty writes on a single SQLite file.
   lastUsedAt DateTime?
 
+  /// Whether this token was narrowed to chosen spaces (ADR 26). Its own fact,
+  /// never inferred from `spaces`: the rows below go when a space is deleted,
+  /// and a narrowed token whose spaces are all gone must reach nothing rather
+  /// than widen to its issuer's whole reach. `false` is "no spaces chosen".
+  narrowed Boolean @default(false)
+  spaces   MachineTokenSpace[]
+
   @@index([expiresAt])
   @@index([userId])
+}
+
+/// A space a machine token was narrowed to (ADR 26). The token reaches what
+/// its issuer reaches within this space and everything under it.
+///
+/// `Cascade` on both sides, like `Share`: this is a grant rather than
+/// inventory. A deleted space takes its row with it, and the token's
+/// `narrowed` stays true, so it never widens.
+model MachineTokenSpace {
+  machineTokenId String
+  storageUnitId  String
+
+  machineToken MachineToken @relation(fields: [machineTokenId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storageUnit  StorageUnit  @relation(fields: [storageUnitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([machineTokenId, storageUnitId])
+  @@index([storageUnitId])
 }

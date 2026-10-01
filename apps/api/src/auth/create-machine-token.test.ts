@@ -1,5 +1,22 @@
-import { FakeClock, SequentialIdGenerator } from "@waymark/domain/testing";
+import {
+  FakeClock,
+  InMemoryStorageUnitRepository,
+  SequentialIdGenerator,
+} from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
+
+import {
+  createStorageUnit,
+  publicId,
+  resolveAccess,
+  Role,
+  ShareLevel,
+  StorageUnitKind,
+  StorageUnitNotFound,
+  unitId,
+  userId,
+  WHOLE_REACH,
+} from "@waymark/domain";
 
 import {
   InvalidMachineTokenName,
@@ -14,6 +31,40 @@ import { hashMachineTokenSecret, looksLikeMachineToken } from "./machine-token-s
 const NOW = new Date("2026-04-01T10:00:00.000Z");
 const DAY = 24 * 60 * 60 * 1000;
 
+/**
+ * Ana's house holds a garage and an attic; Bea may view the garage. Bea's own
+ * flat holds a wardrobe. The safe in Ana's house is shared with nobody.
+ */
+const HOUSEHOLD = [
+  space("house", null, "ana"),
+  space("garage", "house"),
+  space("shelf", "garage"),
+  space("attic", "house"),
+  space("safe", "house"),
+  space("flat", null, "bea"),
+  space("wardrobe", "flat"),
+];
+
+function space(id: string, parentId: string | null, ownerId: string | null = null) {
+  return createStorageUnit({
+    id: unitId(id),
+    parentId: parentId === null ? null : unitId(parentId),
+    ownerId: ownerId === null ? null : userId(ownerId),
+    name: id,
+    kind: StorageUnitKind.ROOM,
+    description: null,
+    photoId: null,
+    publicId: publicId(`public-${id}`),
+    now: NOW,
+  });
+}
+
+const beasAccess = resolveAccess({
+  caller: { userId: userId("bea"), role: Role.USER },
+  storageUnits: HOUSEHOLD,
+  shares: [{ storageUnitId: unitId("garage"), userId: userId("bea"), access: ShareLevel.VIEW }],
+});
+
 describe("creating a machine token", () => {
   let machineTokens: InMemoryMachineTokenRepository;
   let clock: FakeClock;
@@ -24,6 +75,7 @@ describe("creating a machine token", () => {
     clock = new FakeClock(NOW);
     createMachineToken = new CreateMachineToken({
       machineTokens,
+      storageUnits: new InMemoryStorageUnitRepository(HOUSEHOLD),
       ids: new SequentialIdGenerator("machine-token"),
       clock,
     });
@@ -204,6 +256,59 @@ describe("creating a machine token", () => {
         await expect(
           createMachineToken.execute({ name, scope: MachineTokenScope.Read, userId: "dario" }),
         ).resolves.toBeDefined();
+      },
+    );
+  });
+
+  /**
+   * The issuer may narrow a token to spaces they can see (ADR 26). Anything
+   * else in the list is refused as a missing space is, so the request cannot
+   * be used to learn which ids are real.
+   */
+  describe("narrowed to chosen spaces", () => {
+    const issue = (spaceIds: readonly string[]) =>
+      createMachineToken.execute({
+        name: "beas-assistant",
+        scope: MachineTokenScope.Read,
+        userId: "bea",
+        narrowTo: { spaceIds, issuerAccess: beasAccess },
+      });
+
+    it("reaches the issuer's whole reach when none were chosen", async () => {
+      const { machineToken } = await createMachineToken.execute({
+        name: "beas-assistant",
+        scope: MachineTokenScope.Read,
+        userId: "bea",
+      });
+
+      expect(machineToken.chosenSpaces).toEqual(WHOLE_REACH);
+    });
+
+    it("keeps the spaces chosen, which the issuer can see", async () => {
+      await issue(["garage", "wardrobe"]);
+
+      expect((await machineTokens.findByName("beas-assistant"))?.chosenSpaces).toEqual({
+        narrowed: true,
+        spaceIds: ["garage", "wardrobe"],
+      });
+    });
+
+    it("keeps each once, and not one inside another, in the order chosen", async () => {
+      const { machineToken } = await issue(["shelf", "wardrobe", "garage", "wardrobe"]);
+
+      expect(machineToken.chosenSpaces).toEqual({
+        narrowed: true,
+        spaceIds: ["wardrobe", "garage"],
+      });
+    });
+
+    it.each([["safe"], ["house"], ["no-such-space"]])(
+      "refuses %s, which the issuer cannot see, as a missing space, and issues nothing",
+      async (unseen) => {
+        await expect(issue(["garage", unseen])).rejects.toEqual(
+          new StorageUnitNotFound(unitId(unseen)),
+        );
+        expect(await machineTokens.findByName("beas-assistant")).toBeNull();
       },
     );
   });

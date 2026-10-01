@@ -13,7 +13,26 @@ describe("parsing a machine-token command", () => {
         scope: "read",
         expiresInDays: null,
         username: null,
+        spaceIds: null,
       });
+    });
+
+    it("takes the spaces to narrow it to, one --space each (ADR 26)", () => {
+      expect(
+        parse("create", "--name", "mcp", "--scope", "read", "--space", "garage", "--space", "attic"),
+      ).toMatchObject({ kind: "create", spaceIds: ["garage", "attic"] });
+    });
+
+    it("chooses no spaces when --space is absent: the issuer's whole reach", () => {
+      expect(parse("create", "--name", "mcp", "--scope", "read")).toMatchObject({
+        spaceIds: null,
+      });
+    });
+
+    it("refuses an empty --space rather than treating it as absent", () => {
+      expect(
+        parse("create", "--name", "mcp", "--scope", "read", "--space", " "),
+      ).toMatchObject({ kind: "error" });
     });
 
     it("takes the person it is issued for (ADR 26)", () => {
@@ -112,6 +131,13 @@ describe("parsing a machine-token command", () => {
       });
     });
   });
+
+  it.each([["revoke", "--name", "mcp"], ["list"]])(
+    "refuses a --space on %s rather than ignoring it",
+    (...argv) => {
+      expect(parse(...argv, "--space", "garage")).toMatchObject({ kind: "error" });
+    },
+  );
 
   describe("list", () => {
     it("takes nothing", () => {

@@ -696,6 +696,7 @@ do everything that person can.
 pnpm --filter @waymark/api machine-token create --name mcp-server --scope read
 pnpm --filter @waymark/api machine-token create --name filer --scope read-write --expires-in-days 90
 pnpm --filter @waymark/api machine-token create --name partner-mcp --scope read --username partner
+pnpm --filter @waymark/api machine-token create --name garage-mcp --scope read --space <garage-id> --space <attic-id>
 pnpm --filter @waymark/api machine-token list
 pnpm --filter @waymark/api machine-token revoke --name mcp-server
 ```
@@ -706,6 +707,14 @@ pnpm --filter @waymark/api machine-token revoke --name mcp-server
   `--username` names, or the oldest administrator when nobody is named — and
   with no administrator at all, `create` refuses and says to run
   `create-user` first.
+- **A token may be narrowed to chosen spaces, never widened** (ADR 26). Each
+  `--space` takes a space's id; the token then reaches what its person can
+  reach within those spaces and everything under them, and its scope still
+  applies on top. Without any `--space` it reaches everything its person can.
+  A space that person cannot see is refused. A narrowed token never acts at
+  the top of the tree (no new roots, nothing moved to or from the top), and
+  one whose chosen spaces have all been deleted reaches nothing. Rotating it
+  keeps its spaces.
 
 The same four operations live behind the avatar in the web client, under
 **Machine tokens**. The secret is shown exactly once, with the sentence saying

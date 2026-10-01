@@ -354,6 +354,7 @@ export const createTestApi = async (
 
       const { token } = await new CreateMachineToken({
         machineTokens,
+        storageUnits,
         ids,
         clock: api.clock,
       }).execute({

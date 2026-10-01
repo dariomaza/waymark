@@ -23,6 +23,8 @@ export type MachineTokenCommand =
       readonly expiresInDays: number | null;
       /** Whom it is issued for; `null` means the oldest administrator (ADR 26). */
       readonly username: string | null;
+      /** The spaces to narrow it to; `null` means none chosen (ADR 26). */
+      readonly spaceIds: readonly string[] | null;
     }
   | { readonly kind: "revoke"; readonly name: string }
   | { readonly kind: "list" }
@@ -33,10 +35,12 @@ export const USAGE = `
 Usage: pnpm --filter @waymark/api machine-token <command>
 
   create --name <name> --scope <read|read-write> [--expires-in-days <n>]
-         [--username <person>]
+         [--username <person>] [--space <id>]...
       Issues a token and prints it ONCE. It is stored hashed and cannot be
       shown again. It belongs to, and acts as, the person --username names;
-      without it, the oldest administrator.
+      without it, the oldest administrator. Each --space narrows it to that
+      space and everything under it, among what that person can see; without
+      any, it reaches everything they can.
 
   revoke --name <name>
       Deletes that one token. No human account and no other token is touched,
@@ -73,6 +77,7 @@ export const parseMachineTokenCommand = (
         scope: { type: "string" },
         "expires-in-days": { type: "string" },
         username: { type: "string" },
+        space: { type: "string", multiple: true },
       },
       // Strict, so an unknown flag is refused rather than ignored. A
       // `--read-only` somebody invented must not silently produce a
@@ -105,6 +110,7 @@ interface RawValues {
   readonly scope?: string | undefined;
   readonly "expires-in-days"?: string | undefined;
   readonly username?: string | undefined;
+  readonly space?: readonly string[] | undefined;
 }
 
 const parseCreate = (values: RawValues): MachineTokenCommand => {
@@ -137,9 +143,16 @@ const parseCreate = (values: RawValues): MachineTokenCommand => {
     return fail("--username needs the name of the person the token is for.");
   }
 
+  const spaceIds = values.space === undefined ? null : values.space.map((id) => id.trim());
+  if (spaceIds?.includes("") === true) {
+    // Somebody typed the flag. Reading it as "no spaces chosen" would hand out
+    // the issuer's whole reach to a token meant to be narrower.
+    return fail("--space needs the id of a space the token may reach.");
+  }
+
   const rawDays = values["expires-in-days"];
   if (rawDays === undefined) {
-    return { kind: "create", name, scope, expiresInDays: null, username };
+    return { kind: "create", name, scope, expiresInDays: null, username, spaceIds };
   }
 
   const days = Number(rawDays);
@@ -147,7 +160,7 @@ const parseCreate = (values: RawValues): MachineTokenCommand => {
     return fail(`"${rawDays}" is not a whole number of days of at least 1.`);
   }
 
-  return { kind: "create", name, scope, expiresInDays: days, username };
+  return { kind: "create", name, scope, expiresInDays: days, username, spaceIds };
 };
 
 const parseRevoke = (values: RawValues): MachineTokenCommand => {
@@ -162,7 +175,8 @@ const parseRevoke = (values: RawValues): MachineTokenCommand => {
   if (
     values.scope !== undefined ||
     values["expires-in-days"] !== undefined ||
-    values.username !== undefined
+    values.username !== undefined ||
+    values.space !== undefined
   ) {
     // Ignoring them would let somebody believe they had revoked only the read
     // half of something, which is not a thing that exists.
@@ -177,7 +191,8 @@ const parseList = (values: RawValues): MachineTokenCommand => {
     values.name !== undefined ||
     values.scope !== undefined ||
     values["expires-in-days"] !== undefined ||
-    values.username !== undefined
+    values.username !== undefined ||
+    values.space !== undefined
   ) {
     return fail("list takes no arguments.");
   }

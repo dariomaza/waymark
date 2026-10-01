@@ -1,4 +1,5 @@
 import {
+  narrowAccess,
   resolveAccess,
   userId,
   type Access,
@@ -22,8 +23,9 @@ export interface AccessOfCallerDependencies {
  *
  * The person is the one behind the caller: the account signed in, or the
  * account that issued the machine token presented. A machine token therefore
- * sees exactly what its issuer sees. Its scope (ADR 17) narrows what it may
- * DO, which is a separate check and is not this one's business.
+ * sees what its issuer sees, narrowed to the spaces chosen for it when any
+ * were. Its scope (ADR 17) narrows what it may DO, which is a separate check
+ * and is not this one's business.
  *
  * The issuer is read again on every request rather than copied onto the
  * token, so changing a person's role changes what their tokens see at once.
@@ -48,10 +50,17 @@ export class AccessOfCaller {
       this.deps.shares.findAll(),
     ]);
 
-    return resolveAccess({
+    const issuers = resolveAccess({
       caller: { userId: userId(person.id), role: person.role },
       storageUnits,
       shares,
     });
+
+    // A token narrowed to chosen spaces reaches its issuer's access within
+    // them, and never more (ADR 26). Computed here, on every request, so a
+    // share the issuer loses is lost by the token at once.
+    return caller.kind === "user"
+      ? issuers
+      : narrowAccess(issuers, caller.machineToken.chosenSpaces, storageUnits);
   }
 }

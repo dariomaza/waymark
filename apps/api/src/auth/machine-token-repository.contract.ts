@@ -1,10 +1,8 @@
+import { unitId, WHOLE_REACH, type ChosenSpaces } from "@waymark/domain";
 import type { RepositoryHarness } from "@waymark/domain-contract-tests";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import {
-  MachineTokenScope,
-  type MachineToken,
-} from "./machine-token.js";
+import { MachineTokenScope, type MachineToken } from "./machine-token.js";
 import {
   ANY_ISSUER,
   type MachineTokenRepository,
@@ -48,7 +46,13 @@ const aMachineToken = (
   createdAt: A_MOMENT,
   expiresAt: null,
   lastUsedAt: null,
+  chosenSpaces: WHOLE_REACH,
   ...overrides,
+});
+
+const narrowedTo = (...ids: string[]): ChosenSpaces => ({
+  narrowed: true,
+  spaceIds: ids.map(unitId),
 });
 
 export const machineTokenRepositoryContract = (
@@ -64,6 +68,68 @@ export const machineTokenRepositoryContract = (
       // foreign key: both people these cases mention have accounts.
       await context.givenTheUser("dario");
       await context.givenTheUser("partner");
+      context_ = context;
+    });
+
+    let context_: MachineTokenRepositoryContext;
+
+    /**
+     * The spaces a token was narrowed to (ADR 26), kept beside it. What the
+     * token may then reach is decided on every request from these and from
+     * what its issuer may reach; the repository only keeps the choice.
+     */
+    describe("the spaces a token was narrowed to", () => {
+      beforeEach(async () => {
+        await context_.givenTheSpace("garage");
+        await context_.givenTheSpace("attic");
+      });
+
+      it("keeps that nothing was chosen", async () => {
+        await machineTokens.create(aMachineToken());
+
+        expect((await machineTokens.findByName("mcp-server"))?.chosenSpaces).toEqual(WHOLE_REACH);
+      });
+
+      it("keeps the spaces chosen, whichever way the token is found", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-a", chosenSpaces: narrowedTo("garage", "attic") }),
+        );
+
+        const sorted = (found: MachineToken | null | undefined) =>
+          found?.chosenSpaces.narrowed === true ? [...found.chosenSpaces.spaceIds].sort() : null;
+        expect(sorted(await machineTokens.findByName("mcp-server"))).toEqual(["attic", "garage"]);
+        expect(sorted(await machineTokens.findByTokenHash("hash-a"))).toEqual(["attic", "garage"]);
+        expect(sorted((await machineTokens.list())[0])).toEqual(["attic", "garage"]);
+      });
+
+      it("keeps them across a rotation, as it keeps the scope", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-a", chosenSpaces: narrowedTo("garage") }),
+        );
+
+        const rotated = await machineTokens.rotate(
+          { name: "mcp-server", tokenHash: "hash-b", createdAt: A_LATER_MOMENT, expiresAt: null },
+          ANY_ISSUER,
+        );
+
+        expect(rotated?.chosenSpaces).toEqual(narrowedTo("garage"));
+        expect((await machineTokens.findByTokenHash("hash-b"))?.chosenSpaces).toEqual(
+          narrowedTo("garage"),
+        );
+      });
+
+      /**
+       * The edge everything here is shaped around: when the chosen spaces go,
+       * the token is still narrowed. It must never come back as "nothing
+       * chosen", which would widen it to its issuer's whole reach.
+       */
+      it("stays narrowed when every chosen space has been deleted", async () => {
+        await machineTokens.create(aMachineToken({ chosenSpaces: narrowedTo("garage") }));
+
+        await context_.deleteTheSpace("garage");
+
+        expect((await machineTokens.findByName("mcp-server"))?.chosenSpaces.narrowed).toBe(true);
+      });
     });
 
     describe("finding one by the hash a caller presented", () => {
@@ -336,6 +402,7 @@ export const machineTokenRepositoryContract = (
           createdAt: A_LATER_MOMENT,
           expiresAt: null,
           lastUsedAt: null,
+          chosenSpaces: WHOLE_REACH,
         });
       });
 
@@ -468,4 +535,8 @@ export interface MachineTokenRepositoryContext {
   readonly machineTokens: MachineTokenRepository;
   /** Makes sure an account with this id exists; a token's owner is a foreign key. */
   givenTheUser(id: string): Promise<void>;
+  /** Makes sure a root space with this id exists; a chosen space is a foreign key. */
+  givenTheSpace(id: string): Promise<void>;
+  /** Deletes a space the way the inventory does, to see what it takes with it. */
+  deleteTheSpace(id: string): Promise<void>;
 }

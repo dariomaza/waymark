@@ -1,4 +1,15 @@
-import type { Clock, IdGenerator } from "@waymark/domain";
+import {
+  mayViewSpace,
+  outermostChoices,
+  StorageUnitNotFound,
+  unitId,
+  WHOLE_REACH,
+  type Access,
+  type ChosenSpaces,
+  type Clock,
+  type IdGenerator,
+  type StorageUnitRepository,
+} from "@waymark/domain";
 
 import {
   InvalidMachineTokenName,
@@ -14,6 +25,8 @@ import { issueMachineTokenSecret } from "./machine-token-secret.js";
 
 export interface CreateMachineTokenDependencies {
   readonly machineTokens: MachineTokenRepository;
+  /** The tree, to check chosen spaces against and to keep the outermost. */
+  readonly storageUnits: StorageUnitRepository;
   readonly ids: IdGenerator;
   readonly clock: Clock;
 }
@@ -25,6 +38,14 @@ export interface CreateMachineTokenCommand {
   readonly userId: string;
   /** Absent means it never lapses, which is the normal case. */
   readonly expiresInDays?: number;
+  /**
+   * Absent means no spaces chosen: the issuer's whole reach (ADR 26). Each
+   * space must be one the issuer can see, judged by `issuerAccess`.
+   */
+  readonly narrowTo?: {
+    readonly spaceIds: readonly string[];
+    readonly issuerAccess: Access;
+  };
 }
 
 export interface CreatedMachineToken {
@@ -55,13 +76,8 @@ const MAX_NAME_LENGTH = 100;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Issues a machine token. Reachable ONLY from the admin CLI.
- *
- * There is no route for this and there never will be, for the reason
- * `CreateUser` gives about accounts: this API is on the public internet through
- * a tunnel, and an endpoint that mints long-lived credentials is a door. A
- * machine token is created by whoever has a shell on the server, exactly as an
- * account is.
+ * Issues a machine token, from the CLI or from a person's session (ADR 18),
+ * optionally narrowed to chosen spaces (ADR 26).
  */
 export class CreateMachineToken {
   constructor(private readonly deps: CreateMachineTokenDependencies) {}
@@ -73,6 +89,8 @@ export class CreateMachineToken {
     if (!USABLE_NAME.test(name) || name.length > MAX_NAME_LENGTH) {
       throw new InvalidMachineTokenName(command.name);
     }
+
+    const chosenSpaces = await this.chosenSpacesOf(command.narrowTo);
 
     // Checked here so the CLI can say something useful, and enforced again by
     // the unique index underneath — which is the one that actually decides,
@@ -95,10 +113,40 @@ export class CreateMachineToken {
           ? null
           : new Date(now.getTime() + command.expiresInDays * DAY_MS),
       lastUsedAt: null,
+      chosenSpaces,
     };
 
     await this.deps.machineTokens.create(machineToken);
 
     return { token, machineToken };
+  }
+
+  /**
+   * The spaces a token is narrowed to, as they are kept (ADR 26).
+   *
+   * A space the issuer cannot see, or that does not exist, is refused with
+   * the error a missing space gets, naming the first such in the order given,
+   * so the request cannot tell anybody which ids are real. Duplicates are
+   * kept once, and a space inside another chosen space is dropped: it adds
+   * nothing to the subtree already chosen. An empty list is kept as narrowed
+   * to nothing rather than read as "nothing chosen", which would widen it.
+   */
+  private async chosenSpacesOf(
+    narrowTo: CreateMachineTokenCommand["narrowTo"],
+  ): Promise<ChosenSpaces> {
+    if (narrowTo === undefined) {
+      return WHOLE_REACH;
+    }
+
+    const tree = await this.deps.storageUnits.findAll();
+    const known = new Set(tree.map((unit) => unit.id));
+    const requested = narrowTo.spaceIds.map((id) => unitId(id));
+    for (const id of requested) {
+      if (!known.has(id) || !mayViewSpace(narrowTo.issuerAccess, id)) {
+        throw new StorageUnitNotFound(id);
+      }
+    }
+
+    return { narrowed: true, spaceIds: outermostChoices(requested, tree) };
   }
 }
