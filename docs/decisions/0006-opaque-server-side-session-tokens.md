@@ -46,3 +46,10 @@ shorter passwords.
 - Onboarding someone requires shell access. Intended.
 - Raising KDF parameters is safe; there is a test for verifying hashes made
   under older ones.
+
+## Amended (2026-10-01)
+
+Accounts are no longer created by hand only. ADR 26 keeps the CLI for the
+first account, which becomes the administrator; that administrator creates,
+disables and resets the others from the account screen. There is still no
+sign-up. Sessions, hashing and expiry are unchanged.

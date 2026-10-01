@@ -24,7 +24,7 @@ Area-specific rules load on their own from `.claude/rules/` when you touch
 | `apps/mcp` | stdio MCP server over `api-client`, authenticated with a machine token. |
 | `services/image-processor` | Optional rembg sidecar (ADR 4). |
 
-Decisions are in `docs/decisions/` (24 ADRs, indexed in its README). What is
+Decisions are in `docs/decisions/` (26 ADRs, indexed in its README). What is
 pending, unproven or deliberately postponed is in `docs/roadmap.md` — read it
 before proposing something, it may already have been argued.
 

@@ -49,35 +49,28 @@ install in five lines, and a link to the site.
 - It must not become a second copy that drifts: one source per fact, the site
   built from the same Markdown, and a CI check that its links resolve.
 
-### An administrator, created accounts, and what each person may see
+## Decided, being built
 
-The owner (2026-10-01): the first account on a fresh deployment should be the
-administrator, who creates the other accounts from the app and chooses what
-each one can see, and whether it is a full user or not.
+### Each person's inventory, an administrator, and shares (ADR 26)
 
-This reopens ADR 5 (one shared inventory; users are credentials only) and
-ADR 6 (accounts created by hand). ADR 5 already separates the two halves,
-because they cost very different amounts:
+Decided 2026-10-01; the ADR is the design. Order of work, each slice shipped
+and mutation-tested before the next, both clients together where visible:
 
-- **Roles** (administrator / user / read-only): cheap. ADR 5 says adding roles
-  "means touching the use cases, not the schema". The first-account-is-admin
-  rule, creating and disabling accounts from the account screen, and a
-  read-only role fit here.
-- **What each person may see** (visibility scoped per account, e.g. one
-  person sees only the garage): expensive. It is ADR 5's option 3: every query
-  scoped by user, and a permanent class of bug where one unscoped query leaks
-  what was meant to be hidden. If wanted, scope by top-level space (a grant on
-  a root unit that covers everything under it), never per item.
-
-**Owner's answer (2026-10-01): hide things, cascading down the tree, knowing it
-costs more.** So the work is both halves: roles, and visibility granted on a
-space and inherited by everything under it. It needs a new ADR superseding
-ADR 5 and ADR 6 before any code, and the leak class of bug has to be closed by
-construction, not by care: one place where a person's visible subtrees are
-resolved, every read use case taking it as a required argument, and a
-contract test per port proving an ungranted space, item, photo, search hit,
-label lookup and MCP answer are all invisible — including through search, the
-`/u/<publicId>` label route, and moves between spaces.
+1. **`Access` in the domain**, `resolveAccess`, and the invisibility fixture
+   in the contract suite — red for every read path before any is scoped.
+2. **Ownership and shares in the schema**, with the migration (oldest account
+   becomes administrator and owner; others get edit on every root).
+3. **Every read path scoped**: the three routes that read repositories become
+   use cases, the guard test, search filtered before `LIMIT`, photo bytes,
+   breadcrumbs cut at the share boundary, QR images, MCP.
+4. **Every write path checked**: view-only is 403, unseen is 404, moves need
+   edit on both ends, only the owner or an administrator makes a root.
+5. **Machine tokens belong to their issuer.**
+6. **Roles and accounts**: `create-user` makes the first administrator; the
+   *People* group on the account screen (create, role, reset, disable; never
+   the last administrator).
+7. **Sharing**: *Share* in a space's menu, view or edit; the administrator's
+   home groups other people's spaces by owner.
 
 ## Known gaps between the clients
 

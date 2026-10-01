@@ -1,6 +1,6 @@
 # 5. One shared inventory; users are credentials only
 
-- Status: accepted
+- Status: superseded by ADR 26
 - Date: 2026-09-20
 
 ## Context
@@ -39,3 +39,11 @@ it does not need to hide boxes from each other.
   created by hand (ADR 6) and the delete path refuses non-empty units (ADR 3).
 - Adding roles later means touching the use cases, not the schema. Adding
   private inventories later would be a migration and a rewrite of every query.
+
+## Superseded (2026-10-01)
+
+The owner changed the requirement: each person sees only their own things, an
+administrator sees everything and may share a space with someone else. That is
+option 3 above, with shares added, and ADR 26 pays the cost this ADR names —
+by construction, not by care. The reasoning here is left as it was, because it
+is why ADR 26 spends most of its length on closing the leak.

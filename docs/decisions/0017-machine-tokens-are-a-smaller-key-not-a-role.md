@@ -153,3 +153,11 @@ in use.
   exactly as it did, so neither client changed.
 - The domain package needed no change at all — the same sentence ADR 5's
   consequences open with.
+
+## Amended (2026-10-01)
+
+"There is still no owner column and no scoped query" stopped being true with
+ADR 26. A machine token now belongs to the person who issued it and acts as
+that person, narrowed by its scope. The scope itself, its two values, and the
+rule that a third value would be a role are unchanged — and there are now real
+roles beside it, which ADR 26 keeps apart from the token's scope.
