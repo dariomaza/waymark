@@ -5,11 +5,13 @@ import {
   itemRepositoryContract,
   photoRepositoryContract,
   searchRepositoryContract,
+  shareRepositoryContract,
   storageUnitRepositoryContract,
   type DomainUseCaseContext,
   type ItemRepositoryContext,
   type PhotoRepositoryContext,
   type SearchRepositoryContext,
+  type ShareRepositoryContext,
   type StorageUnitRepositoryContext,
 } from "@waymark/domain-contract-tests";
 import { afterAll, beforeAll } from "vitest";
@@ -17,6 +19,7 @@ import { afterAll, beforeAll } from "vitest";
 import { PrismaItemRepository } from "./prisma-item-repository.js";
 import { PrismaPhotoRepository } from "./prisma-photo-repository.js";
 import { PrismaSearchRepository } from "./prisma-search-repository.js";
+import { PrismaShareRepository } from "./prisma-share-repository.js";
 import { PrismaStorageUnitRepository } from "./prisma-storage-unit-repository.js";
 import { createTestDatabase, type TestDatabase } from "./testing/test-database.js";
 
@@ -104,6 +107,18 @@ searchRepositoryContract({
     return {
       search: new PrismaSearchRepository(database.client),
       items: new PrismaItemRepository(database.client),
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+    };
+  },
+  tearDown: async () => {},
+});
+
+shareRepositoryContract({
+  name: "PrismaShareRepository",
+  setUp: async (): Promise<ShareRepositoryContext> => {
+    await emptyHouseOfContractPeople();
+    return {
+      shares: new PrismaShareRepository(database.client),
       storageUnits: new PrismaStorageUnitRepository(database.client),
     };
   },

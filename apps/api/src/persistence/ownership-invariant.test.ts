@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { UnknownShareLevel } from "./persistence-errors.js";
+import { PrismaShareRepository } from "./prisma-share-repository.js";
 import { createTestDatabase, type TestDatabase } from "./testing/test-database.js";
 
 /**
@@ -129,6 +131,14 @@ describe("ownership and shares in the database", () => {
       await share("garage", "partner", "view");
 
       await expect(share("garage", "partner", "edit")).rejects.toThrow();
+    });
+
+    it("is refused on the way out when its level is neither view nor edit", async () => {
+      await share("garage", "partner", "own");
+
+      await expect(
+        new PrismaShareRepository(database.client).findAll(),
+      ).rejects.toBeInstanceOf(UnknownShareLevel);
     });
 
     it("goes with the space it was on", async () => {

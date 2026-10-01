@@ -3,6 +3,7 @@ import {
   InMemoryItemRepository,
   InMemoryPhotoRepository,
   InMemorySearchRepository,
+  InMemoryShareRepository,
   InMemoryStorageUnitRepository,
 } from "@waymark/domain/testing";
 
@@ -12,11 +13,13 @@ import type {
   ItemRepositoryContext,
   PhotoRepositoryContext,
   SearchRepositoryContext,
+  ShareRepositoryContext,
   StorageUnitRepositoryContext,
 } from "./harness.js";
 import { itemRepositoryContract } from "./item-repository.contract.js";
 import { photoRepositoryContract } from "./photo-repository.contract.js";
 import { searchRepositoryContract } from "./search-repository.contract.js";
+import { shareRepositoryContract } from "./share-repository.contract.js";
 import { storageUnitRepositoryContract } from "./storage-unit-repository.contract.js";
 
 /**
@@ -77,6 +80,15 @@ searchRepositoryContract({
       storageUnits,
     };
   },
+  tearDown: async () => {},
+});
+
+shareRepositoryContract({
+  name: "InMemoryShareRepository",
+  setUp: async (): Promise<ShareRepositoryContext> => ({
+    shares: new InMemoryShareRepository(),
+    storageUnits: newStorageUnits(),
+  }),
   tearDown: async () => {},
 });
 

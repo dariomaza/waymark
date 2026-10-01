@@ -17,6 +17,7 @@ import {
   UnknownPhotoProcessingStatus,
   UnknownRole,
   UnknownSessionOpener,
+  UnknownShareLevel,
   UnknownStorageUnitKind,
 } from "../persistence/persistence-errors.js";
 
@@ -49,6 +50,7 @@ export interface MappedDomainError {
  * | `UnknownSessionOpener`         | 500    | Same, for a session that was opened by nothing recognisable.        |
  * | `UnknownPasskeyCeremony`       | 500    | Same, for a challenge row naming a ceremony that does not exist.    |
  * | `UnknownRole`                  | 500    | Same, for an account whose role is not a role.                      |
+ * | `UnknownShareLevel`            | 500    | Same, for a share whose level is neither view nor edit.             |
  *
  * ## The rule behind 404, 409 and 422
  *
@@ -207,6 +209,13 @@ const MAPPINGS = new Map<unknown, Mapper>([
     (): MappedDomainError => ({
       status: 500,
       code: "UNKNOWN_ROLE",
+    }),
+  ],
+  [
+    UnknownShareLevel,
+    (): MappedDomainError => ({
+      status: 500,
+      code: "UNKNOWN_SHARE_LEVEL",
     }),
   ],
   [

@@ -22,3 +22,4 @@ export {
   InMemorySearchRepository,
   type InMemorySearchRepositoryDependencies,
 } from "./search/search-repository.fake.js";
+export { InMemoryShareRepository } from "./shares/share-repository.fake.js";

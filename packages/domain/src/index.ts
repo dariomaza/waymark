@@ -30,6 +30,9 @@ export {
   type SpaceInTree,
 } from "./access/access.js";
 
+// Shares (ADR 26)
+export type { Share, ShareRepository } from "./shares/share-repository.js";
+
 // Storage units
 export {
   createStorageUnit,

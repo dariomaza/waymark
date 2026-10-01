@@ -2,6 +2,7 @@ import type {
   ItemRepository,
   PhotoRepository,
   SearchRepository,
+  ShareRepository,
   StorageUnitRepository,
   UnitId,
 } from "@waymark/domain";
@@ -49,6 +50,16 @@ export interface PhotoRepositoryContext {
 export interface SearchRepositoryContext {
   readonly search: SearchRepository;
   readonly items: ItemRepository;
+  readonly storageUnits: StorageUnitRepository;
+}
+
+/**
+ * A share is on a space (ADR 26), so the suite seeds the spaces it shares
+ * through the real storage unit repository, which keeps a relational
+ * adapter's foreign keys satisfiable.
+ */
+export interface ShareRepositoryContext {
+  readonly shares: ShareRepository;
   readonly storageUnits: StorageUnitRepository;
 }
 

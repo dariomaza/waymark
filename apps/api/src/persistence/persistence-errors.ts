@@ -142,3 +142,21 @@ export class UnknownRole extends DomainError {
     super(`Stored account ${userId} has an impossible role: "${value}"`);
   }
 }
+
+/**
+ * Raised when a share's `access` column holds something outside `ShareLevel`.
+ *
+ * The same reasoning as `UnknownRole`: guessing "view" or "edit" for a value
+ * nobody recognises would be a guess about an authorization decision.
+ */
+export class UnknownShareLevel extends DomainError {
+  constructor(
+    readonly storageUnitId: string,
+    readonly userId: string,
+    readonly value: string,
+  ) {
+    super(
+      `Stored share of ${storageUnitId} with ${userId} has an impossible level: "${value}"`,
+    );
+  }
+}
