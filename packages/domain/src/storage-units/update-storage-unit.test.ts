@@ -5,7 +5,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { unitId, type UnitId } from "../shared/identity.js";
+import { unitId, type UnitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "./create-storage-unit.js";
 import { StorageUnitNotFound } from "./storage-unit-errors.js";
 import { StorageUnitKind } from "./storage-unit.js";
@@ -23,6 +23,7 @@ describe("UpdateStorageUnit", () => {
 
   const create = async (name: string, parentId: UnitId | null = null) =>
     createStorageUnit.execute({
+      callerId: userId("dario"),
       parentId,
       name,
       kind: StorageUnitKind.BOX,

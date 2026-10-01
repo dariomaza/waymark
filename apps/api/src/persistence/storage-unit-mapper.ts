@@ -3,6 +3,7 @@ import {
   photoId,
   publicId,
   unitId,
+  userId,
   type StorageUnit,
 } from "@waymark/domain";
 import type { StorageUnit as StorageUnitRow } from "@prisma/client";
@@ -23,6 +24,7 @@ export const toStorageUnitKind = (value: string): StorageUnitKind => {
 export const toDomainStorageUnit = (row: StorageUnitRow): StorageUnit => ({
   id: unitId(row.id),
   parentId: row.parentId === null ? null : unitId(row.parentId),
+  ownerId: row.ownerId === null ? null : userId(row.ownerId),
   name: row.name,
   kind: toStorageUnitKind(row.kind),
   description: row.description,
@@ -39,6 +41,7 @@ export const toDomainStorageUnit = (row: StorageUnitRow): StorageUnit => ({
 export const toStorageUnitRow = (unit: StorageUnit): StorageUnitRow => ({
   id: unit.id,
   parentId: unit.parentId,
+  ownerId: unit.ownerId,
   name: unit.name,
   kind: unit.kind,
   description: unit.description,

@@ -8,6 +8,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   A_LATER_MOMENT,
+  ANOTHER_OWNER,
+  AN_OWNER,
   aChainOfStorageUnits,
   aPhotoId,
   aStorageUnit,
@@ -70,6 +72,17 @@ export const storageUnitRepositoryContract = (
         await expect(storageUnits.findById(box.id)).resolves.toEqual(box);
       });
 
+      it("keeps whose a root is, and records nobody on a space inside it (ADR 26)", async () => {
+        const room = aStorageUnit("room", { ownerId: ANOTHER_OWNER });
+        const box = aStorageUnit("box", { parentId: room.id });
+        await storageUnits.saveAll([room, box]);
+
+        expect((await storageUnits.findById(room.id))?.ownerId).toBe(
+          ANOTHER_OWNER,
+        );
+        expect((await storageUnits.findById(box.id))?.ownerId).toBeNull();
+      });
+
       it("round-trips every storage unit kind", async () => {
         const kinds = Object.values(StorageUnitKind);
         const units = kinds.map((kind, index) =>
@@ -105,17 +118,32 @@ export const storageUnitRepositoryContract = (
         await expect(storageUnits.findById(unit.id)).resolves.toEqual(renamed);
       });
 
+      it("forgets the owner of a root put inside another space (ADR 26)", async () => {
+        const house = aStorageUnit("house", { ownerId: AN_OWNER });
+        const garage = aStorageUnit("garage", { ownerId: ANOTHER_OWNER });
+        await storageUnits.saveAll([house, garage]);
+
+        await storageUnits.save(
+          reparentStorageUnit(garage, { parentId: house.id }, A_LATER_MOMENT),
+        );
+
+        const moved = await storageUnits.findById(garage.id);
+        expect(moved?.parentId).toBe(house.id);
+        expect(moved?.ownerId).toBeNull();
+      });
+
       it("moves a unit under a new parent", async () => {
         const [room, wardrobe] = aChainOfStorageUnits("room", "wardrobe");
         const garage = aStorageUnit("garage", { kind: StorageUnitKind.ROOM });
         await storageUnits.saveAll([room!, wardrobe!, garage]);
 
         await storageUnits.save(
-          reparentStorageUnit(wardrobe!, garage.id, A_LATER_MOMENT),
+          reparentStorageUnit(wardrobe!, { parentId: garage.id }, A_LATER_MOMENT),
         );
 
         const moved = await storageUnits.findById(wardrobe!.id);
         expect(moved?.parentId).toBe(garage.id);
+        expect(moved?.ownerId).toBeNull();
         await expect(storageUnits.findChildren(room!.id)).resolves.toEqual([]);
       });
 
@@ -124,11 +152,16 @@ export const storageUnitRepositoryContract = (
         await storageUnits.saveAll([room!, wardrobe!]);
 
         await storageUnits.save(
-          reparentStorageUnit(wardrobe!, null, A_LATER_MOMENT),
+          reparentStorageUnit(
+            wardrobe!,
+            { parentId: null, ownerId: ANOTHER_OWNER },
+            A_LATER_MOMENT,
+          ),
         );
 
         const detached = await storageUnits.findById(wardrobe!.id);
         expect(detached?.parentId).toBeNull();
+        expect(detached?.ownerId).toBe(ANOTHER_OWNER);
         await expect(storageUnits.findAncestors(wardrobe!.id)).resolves.toEqual(
           [],
         );

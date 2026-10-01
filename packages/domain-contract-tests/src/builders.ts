@@ -6,11 +6,13 @@ import {
   publicId,
   StorageUnitKind,
   unitId,
+  userId,
   type Item,
   type PhotoId,
   type PublicId,
   type StorageUnit,
   type UnitId,
+  type UserId,
 } from "@waymark/domain";
 
 /** A fixed instant with a non-zero millisecond part, so truncation shows up. */
@@ -19,8 +21,22 @@ export const A_MOMENT = new Date("2026-03-14T09:26:53.589Z");
 /** A later instant, for asserting that updates actually move `updatedAt`. */
 export const A_LATER_MOMENT = new Date("2026-05-01T18:04:11.017Z");
 
+/** Whose a root is, unless a case says otherwise (ADR 26). */
+export const AN_OWNER: UserId = userId("contract-owner");
+
+/** A second person, for the cases about whose something is. */
+export const ANOTHER_OWNER: UserId = userId("contract-other-owner");
+
+/**
+ * Everybody the contracts mention. A harness backed by a database must give
+ * each of them an account in `setUp`, because a root's owner is a foreign key.
+ */
+export const CONTRACT_PEOPLE: readonly UserId[] = [AN_OWNER, ANOTHER_OWNER];
+
 export interface StorageUnitOverrides {
   readonly parentId?: UnitId | null;
+  /** Ignored below the top: a space inside another belongs to its root's owner. */
+  readonly ownerId?: UserId;
   readonly name?: string;
   readonly kind?: StorageUnitKind;
   readonly description?: string | null;
@@ -36,6 +52,7 @@ export const aStorageUnit = (
   createStorageUnit({
     id: unitId(id),
     parentId: overrides.parentId ?? null,
+    ownerId: overrides.ownerId ?? AN_OWNER,
     name: overrides.name ?? `Unit ${id}`,
     kind: overrides.kind ?? StorageUnitKind.BOX,
     description: overrides.description ?? null,

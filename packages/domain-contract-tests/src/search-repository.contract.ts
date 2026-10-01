@@ -1,4 +1,5 @@
 import {
+  reparentStorageUnit,
   toSearchTerms,
   type ItemRepository,
   type SearchRepository,
@@ -390,11 +391,9 @@ export const searchRepositoryContract = (
       });
 
       it("still finds a unit after it has been moved under another one", async () => {
-        await storageUnits.save({
-          ...crate,
-          parentId: box.id,
-          updatedAt: A_LATER_MOMENT,
-        });
+        await storageUnits.save(
+          reparentStorageUnit(crate, { parentId: box.id }, A_LATER_MOMENT),
+        );
 
         await expect(unitNamesFor("wooden")).resolves.toEqual(["Wooden crate"]);
       });

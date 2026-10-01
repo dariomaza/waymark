@@ -39,6 +39,7 @@ export {
   StorageUnitKind,
   type CreateStorageUnitInput,
   type StorageUnit,
+  type StorageUnitPlacement,
   type StorageUnitRevision,
 } from "./storage-units/storage-unit.js";
 export type { StorageUnitRepository } from "./storage-units/storage-unit-repository.js";

@@ -5,7 +5,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { itemId } from "../shared/identity.js";
+import { itemId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { StorageUnitKind } from "../storage-units/storage-unit.js";
 import { InMemoryStorageUnitRepository } from "../storage-units/storage-unit-repository.fake.js";
@@ -30,7 +30,7 @@ describe("UpdateItem", () => {
       ids: new SequentialIdGenerator("unit"),
       publicIds: new SequentialPublicIdGenerator(),
       clock,
-    }).execute({ name: "Box 3", kind: StorageUnitKind.BOX });
+    }).execute({ callerId: userId("dario"), name: "Box 3", kind: StorageUnitKind.BOX });
 
     return createItem.execute({
       storageUnitId: box.id,

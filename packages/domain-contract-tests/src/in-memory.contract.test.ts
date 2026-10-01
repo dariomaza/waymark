@@ -35,8 +35,9 @@ const forceParentLink = (repository: InMemoryStorageUnitRepository) =>
     if (unit === null) {
       throw new Error(`Cannot corrupt ${id}: it was never stored`);
     }
-    // Straight into the Map, past every use case and every invariant.
-    await repository.save({ ...unit, parentId });
+    // Straight into the Map, past every use case and every invariant. The
+    // owner goes too, as it would in the database: only a root records one.
+    await repository.save({ ...unit, parentId, ownerId: null });
   };
 
 storageUnitRepositoryContract({

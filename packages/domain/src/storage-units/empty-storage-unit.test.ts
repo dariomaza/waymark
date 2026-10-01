@@ -7,7 +7,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { unitId, type UnitId } from "../shared/identity.js";
+import { unitId, userId, type UnitId, type UserId } from "../shared/identity.js";
 import { CreateStorageUnit } from "./create-storage-unit.js";
 import { DeleteStorageUnit } from "./delete-storage-unit.js";
 import { EmptyStorageUnit } from "./empty-storage-unit.js";
@@ -30,8 +30,13 @@ describe("EmptyStorageUnit", () => {
   let deleteStorageUnit: DeleteStorageUnit;
   let getStorageUnitPath: GetStorageUnitPath;
 
-  const createUnit = async (name: string, parentId: UnitId | null = null) =>
+  const createUnit = async (
+    name: string,
+    parentId: UnitId | null = null,
+    callerId: UserId = userId("dario"),
+  ) =>
     createStorageUnit.execute({
+      callerId,
       parentId,
       name,
       kind: StorageUnitKind.OTHER,
@@ -59,6 +64,27 @@ describe("EmptyStorageUnit", () => {
   });
 
   describe("emptying into the parent", () => {
+    it("makes the children of an emptied root roots of the same owner (ADR 26)", async () => {
+      const garage = await createUnit("Garage", null, userId("partner"));
+      const shelf = await createUnit("Shelf", garage.id, userId("dario"));
+
+      await emptyStorageUnit.execute(garage.id);
+
+      const moved = await storageUnits.findById(shelf.id);
+      expect(moved?.parentId).toBeNull();
+      expect(moved?.ownerId).toBe("partner");
+    });
+
+    it("leaves the children of an emptied inner space without an owner", async () => {
+      const room = await createUnit("Storage room");
+      const wardrobe = await createUnit("Wardrobe", room.id);
+      const box = await createUnit("Box 3", wardrobe.id);
+
+      await emptyStorageUnit.execute(wardrobe.id);
+
+      expect((await storageUnits.findById(box.id))?.ownerId).toBeNull();
+    });
+
     it("moves the items up to the parent", async () => {
       const room = await createUnit("Storage room");
       const wardrobe = await createUnit("Metal wardrobe", room.id);

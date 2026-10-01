@@ -62,7 +62,9 @@ export interface DomainUseCaseContext {
  * How one implementation plugs itself into a contract suite.
  *
  * `setUp` must hand back EMPTY storage every time; a contract that leaks state
- * between cases proves nothing. `tearDown` releases whatever `setUp` claimed.
+ * between cases proves nothing. The one thing it must already hold is an
+ * account for every person in `CONTRACT_PEOPLE`, because a root's owner is a
+ * person (ADR 26). `tearDown` releases whatever `setUp` claimed.
  */
 export interface RepositoryHarness<TContext> {
   /** Shown in the test names, so a failure says which implementation broke. */

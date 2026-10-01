@@ -13,6 +13,7 @@ import {
 } from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
 
+import { personBehind } from "../../auth/caller.js";
 import type { ItemViews } from "../item-views.js";
 import { buildStorageUnitForest } from "../storage-unit-tree.js";
 import type { StorageUnitViews } from "../storage-unit-views.js";
@@ -95,6 +96,8 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const body = createStorageUnitBodySchema.parse(request.body);
 
     const unit = await options.createStorageUnit.execute({
+      // A root made here is the caller's; for a machine token, its issuer's.
+      callerId: personBehind(request.caller),
       parentId: body.parentId == null ? null : unitId(body.parentId),
       name: body.name,
       kind: body.kind,

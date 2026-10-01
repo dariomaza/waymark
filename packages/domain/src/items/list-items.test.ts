@@ -5,7 +5,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { itemId, unitId, type UnitId } from "../shared/identity.js";
+import { itemId, unitId, type UnitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { formatStorageUnitPath } from "../storage-units/get-storage-unit-path.js";
 import type { StorageUnit } from "../storage-units/storage-unit.js";
@@ -37,7 +37,12 @@ describe("ListItems", () => {
   let listItems: ListItems;
 
   const aUnit = async (name: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({ name, kind: StorageUnitKind.BOX, parentId });
+    createStorageUnit.execute({
+      callerId: userId("dario"),
+      name,
+      kind: StorageUnitKind.BOX,
+      parentId,
+    });
 
   const anItem = async (name: string, storageUnitId: UnitId) =>
     createItem.execute({ storageUnitId, name });

@@ -83,10 +83,18 @@ describe("the search index", () => {
   });
 
   describe("a write that never touches an adapter", () => {
+    // A root is somebody's (ADR 26), and the database insists.
+    beforeEach(async () => {
+      await database.client.$executeRaw`
+        INSERT INTO "User" ("id", "username", "passwordHash", "createdAt", "updatedAt")
+        VALUES ('dario', 'dario', 'x', 0, 0)
+      `;
+    });
+
     const writeUnitDirectly = async (id: string, name: string): Promise<void> => {
       await database.client.$executeRaw`
-        INSERT INTO "StorageUnit" ("id", "parentId", "name", "kind", "description", "photoId", "publicId", "createdAt", "updatedAt")
-        VALUES (${id}, NULL, ${name}, 'BOX', NULL, NULL, ${`PUB-${id}`}, 0, 0)
+        INSERT INTO "StorageUnit" ("id", "parentId", "ownerId", "name", "kind", "description", "photoId", "publicId", "createdAt", "updatedAt")
+        VALUES (${id}, NULL, 'dario', ${name}, 'BOX', NULL, NULL, ${`PUB-${id}`}, 0, 0)
       `;
     };
 

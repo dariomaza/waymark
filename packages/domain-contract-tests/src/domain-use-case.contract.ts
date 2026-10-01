@@ -22,6 +22,7 @@ import {
   type ItemRepository,
   type StorageUnit,
   type StorageUnitRepository,
+  type UserId,
 } from "@waymark/domain";
 import {
   FakeClock,
@@ -30,7 +31,13 @@ import {
 } from "@waymark/domain/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { A_MOMENT, aPhotoId, sortedIds } from "./builders.js";
+import {
+  A_MOMENT,
+  AN_OWNER,
+  ANOTHER_OWNER,
+  aPhotoId,
+  sortedIds,
+} from "./builders.js";
 import type {
   DomainUseCaseContext,
   RepositoryHarness,
@@ -68,8 +75,10 @@ export const domainUseCaseContract = (
     const aUnit = async (
       name: string,
       parentId?: StorageUnit["parentId"],
+      callerId: UserId = AN_OWNER,
     ): Promise<StorageUnit> =>
       createStorageUnit.execute({
+        callerId,
         name,
         kind: StorageUnitKind.BOX,
         parentId: parentId ?? null,
@@ -108,6 +117,55 @@ export const domainUseCaseContract = (
       await harness.tearDown();
     });
 
+    describe("ADR 26 — ownership is written on roots and follows the tree", () => {
+      it("stores the person who made a root as its owner", async () => {
+        const room = await aUnit("Storage room", null, ANOTHER_OWNER);
+
+        expect((await storageUnits.findById(room.id))?.ownerId).toBe(
+          ANOTHER_OWNER,
+        );
+      });
+
+      it("stores no owner on a space made inside another", async () => {
+        const room = await aUnit("Storage room");
+        const box = await aUnit("Box 3", room.id, ANOTHER_OWNER);
+
+        expect((await storageUnits.findById(box.id))?.ownerId).toBeNull();
+      });
+
+      it("clears the owner of a root moved inside another space", async () => {
+        const house = await aUnit("House");
+        const garage = await aUnit("Garage", null, ANOTHER_OWNER);
+
+        await moveStorageUnit.execute({ id: garage.id, targetParentId: house.id });
+
+        expect((await storageUnits.findById(garage.id))?.ownerId).toBeNull();
+      });
+
+      it("keeps the tree's owner on a space taken to the top", async () => {
+        const room = await aUnit("Storage room", null, ANOTHER_OWNER);
+        const wardrobe = await aUnit("Wardrobe", room.id);
+        const box = await aUnit("Box 3", wardrobe.id);
+
+        await moveStorageUnit.execute({ id: box.id, targetParentId: null });
+
+        expect((await storageUnits.findById(box.id))?.ownerId).toBe(
+          ANOTHER_OWNER,
+        );
+      });
+
+      it("keeps the tree's owner on the children of an emptied root", async () => {
+        const garage = await aUnit("Garage", null, ANOTHER_OWNER);
+        const shelf = await aUnit("Shelf", garage.id);
+
+        await emptyStorageUnit.execute(garage.id);
+
+        expect((await storageUnits.findById(shelf.id))?.ownerId).toBe(
+          ANOTHER_OWNER,
+        );
+      });
+    });
+
     describe("ADR 1 — storage units form a recursive tree", () => {
       it("stores a root unit and finds it again", async () => {
         const room = await aUnit("Storage room");
@@ -119,6 +177,7 @@ export const domainUseCaseContract = (
       it("refuses to create a unit under a parent that does not exist", async () => {
         await expect(
           createStorageUnit.execute({
+            callerId: AN_OWNER,
             name: "Orphan",
             kind: StorageUnitKind.BOX,
             parentId: unitId("ghost"),

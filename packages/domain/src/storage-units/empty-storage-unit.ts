@@ -8,7 +8,12 @@ import {
   MissingEmptyTarget,
   StorageUnitNotFound,
 } from "./storage-unit-errors.js";
-import { reparentStorageUnit, type StorageUnit } from "./storage-unit.js";
+import { ownerOfTreeHolding } from "./storage-unit-owner.js";
+import {
+  reparentStorageUnit,
+  type StorageUnit,
+  type StorageUnitPlacement,
+} from "./storage-unit.js";
 import type { StorageUnitRepository } from "./storage-unit-repository.js";
 
 export interface EmptyStorageUnitDependencies {
@@ -59,9 +64,19 @@ export class EmptyStorageUnit {
       throw new MissingEmptyTarget(id, heldItems.length);
     }
 
+    // Children emptied out of a root become roots of their own, and stay the
+    // property of whoever owned the tree they were in (ADR 26).
+    const placement: StorageUnitPlacement =
+      destination === null
+        ? {
+            parentId: null,
+            ownerId: await ownerOfTreeHolding(this.deps.storageUnits, unit),
+          }
+        : { parentId: destination };
+
     const now = this.deps.clock.now();
     const movedChildUnits = childUnits.map((child) =>
-      reparentStorageUnit(child, destination, now),
+      reparentStorageUnit(child, placement, now),
     );
     const movedItems =
       destination === null

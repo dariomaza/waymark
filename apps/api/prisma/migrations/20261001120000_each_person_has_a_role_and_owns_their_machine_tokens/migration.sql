@@ -5,18 +5,23 @@
 -- oldest account becomes the administrator, and every machine token that
 -- already exists becomes theirs.
 
--- A machine token that exists while no account does has nobody to belong to.
--- Leaving it ownerless would ship a credential that acts as nobody, and
--- inventing an account is not something a migration may do. So the migration
--- refuses, FIRST, before it has changed anything, and says how to get past it.
--- SQLite only raises an error from inside a trigger, hence the throwaway one.
+-- A machine token or a space that exists while no account does has nobody to
+-- belong to. Leaving it ownerless would ship a credential that acts as nobody
+-- and a root that breaks the invariant the next migration enforces, and
+-- inventing an account is not something a migration may do. So the first
+-- migration of ADR 26 refuses, FIRST, before it has changed anything, and says
+-- how to get past it. The spaces are checked here rather than beside their
+-- owner column so that a refusal leaves the whole database as it was, not
+-- half way between two releases. SQLite only raises an error from inside a
+-- trigger, hence the throwaway one.
 CREATE TEMP TABLE "_AccountsMigrationGuard" ("checked" INTEGER);
 
-CREATE TEMP TRIGGER "_AccountsMigrationGuard_tokens"
+CREATE TEMP TRIGGER "_AccountsMigrationGuard_nobody"
 BEFORE INSERT ON "_AccountsMigrationGuard"
-WHEN NOT EXISTS (SELECT 1 FROM main."User") AND EXISTS (SELECT 1 FROM main."MachineToken")
+WHEN NOT EXISTS (SELECT 1 FROM main."User")
+  AND (EXISTS (SELECT 1 FROM main."MachineToken") OR EXISTS (SELECT 1 FROM main."StorageUnit"))
 BEGIN
-  SELECT RAISE(ABORT, 'Machine tokens exist but no account does, so nobody can own them (ADR 26). Run `prisma migrate resolve --rolled-back 20261001120000_each_person_has_a_role_and_owns_their_machine_tokens`, create the first account with create-user on the previous release, and deploy again.');
+  SELECT RAISE(ABORT, 'Machine tokens or spaces exist but no account does, so nobody can own them (ADR 26). Run `prisma migrate resolve --rolled-back 20261001120000_each_person_has_a_role_and_owns_their_machine_tokens`, create the first account with create-user on the previous release, and deploy again.');
 END;
 
 INSERT INTO "_AccountsMigrationGuard" ("checked") VALUES (1);

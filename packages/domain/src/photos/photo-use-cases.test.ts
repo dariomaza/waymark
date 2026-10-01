@@ -9,7 +9,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { itemId, photoId, unitId, type PhotoId } from "../shared/identity.js";
+import { itemId, photoId, unitId, type PhotoId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { StorageUnitNotFound } from "../storage-units/storage-unit-errors.js";
 import { InMemoryStorageUnitRepository } from "../storage-units/storage-unit-repository.fake.js";
@@ -66,7 +66,11 @@ describe("photo use cases", () => {
   });
 
   const aBox = async (): Promise<StorageUnit> =>
-    createStorageUnit.execute({ name: "Box 3", kind: StorageUnitKind.BOX });
+    createStorageUnit.execute({
+      callerId: userId("dario"),
+      name: "Box 3",
+      kind: StorageUnitKind.BOX,
+    });
 
   const anItem = async (): Promise<Item> => {
     const box = await aBox();

@@ -8,7 +8,9 @@
 // `ItemSearch` and `StorageUnitSearch` virtual tables and the nine triggers
 // that keep them in step (ADR 11) — lives only in
 // `migrations/20260921090000_add_full_text_search_index`, because Prisma has
-// no way to declare an FTS5 table or a trigger.
+// no way to declare an FTS5 table or a trigger. Neither do the two triggers
+// that keep `StorageUnit.ownerId` on roots only (ADR 26), which live in
+// `migrations/20261001130000_root_spaces_have_owners_and_can_be_shared`.
 //
 // The consequence is a trap: `prisma migrate dev` diffs the database against
 // THIS file, does not find them, and offers to DROP them. Accepting that
@@ -41,6 +43,13 @@ model StorageUnit {
   parent   StorageUnit?  @relation("StorageUnitTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   children StorageUnit[] @relation("StorageUnitTree")
 
+  /// Whose inventory this is (ADR 26). Set on a root and on nothing else:
+  /// every space and item below a root belongs to the root's owner through the
+  /// tree. The database keeps it so with two triggers (see the header).
+  /// `Restrict`: an account that owns an inventory is disabled, never deleted.
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
   name        String
   /// Presentational hint only (ADR 1). SQLite has no enum type and Prisma does
   /// not emulate one here, so the column is a string and the mapper rejects
@@ -61,10 +70,31 @@ model StorageUnit {
   createdAt DateTime
   updatedAt DateTime
 
-  items Item[]
+  items  Item[]
+  shares Share[]
 
   @@index([parentId])
+  @@index([ownerId])
   @@index([name])
+}
+
+/// A space shared with one person, at one level (ADR 26): `view` or `edit`,
+/// covering everything under the space. On any space, never on an item.
+///
+/// One row per (space, person), so the pair has one answer. `Cascade` on both
+/// sides, like `Session`: a share is a grant rather than inventory, and a grant
+/// on a space or for a person that is gone means nothing.
+model Share {
+  storageUnitId String
+  userId        String
+  /// `view` | `edit`. A string for the same reason `StorageUnit.kind` is.
+  access        String
+
+  storageUnit StorageUnit @relation(fields: [storageUnitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([storageUnitId, userId])
+  @@index([userId])
 }
 
 /// A thing stored inside exactly one storage unit.
@@ -221,6 +251,9 @@ model User {
 
   sessions Session[]
   machineTokens MachineToken[]
+  /// The roots this person owns; everything below them is theirs too.
+  ownedStorageUnits StorageUnit[]
+  shares Share[]
   passkeys Passkey[]
   /// Ceremonies this person has in flight. Rows live for two minutes.
   passkeyChallenges PasskeyChallenge[]

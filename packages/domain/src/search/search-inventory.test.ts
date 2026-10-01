@@ -8,7 +8,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { unitId, type ItemId, type UnitId } from "../shared/identity.js";
+import { unitId, type ItemId, type UnitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { formatStorageUnitPath } from "../storage-units/get-storage-unit-path.js";
 import { StorageUnitNotFound } from "../storage-units/storage-unit-errors.js";
@@ -29,7 +29,12 @@ describe("SearchInventory", () => {
   const clock = new FakeClock(new Date("2026-04-01T10:00:00.000Z"));
 
   const unit = async (name: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({ parentId, name, kind: StorageUnitKind.BOX });
+    createStorageUnit.execute({
+      callerId: userId("dario"),
+      parentId,
+      name,
+      kind: StorageUnitKind.BOX,
+    });
 
   const item = async (
     name: string,

@@ -59,6 +59,21 @@ const aMachineToken = async (db: PrismaClient, name: string): Promise<void> => {
   );
 };
 
+const aSpace = async (
+  db: PrismaClient,
+  id: string,
+  parentId: string | null = null,
+): Promise<void> => {
+  await db.$executeRawUnsafe(
+    `INSERT INTO "StorageUnit" ("id", "parentId", "name", "kind", "publicId", "createdAt", "updatedAt")
+     VALUES (?, ?, ?, 'BOX', ?, 0, 0)`,
+    id,
+    parentId,
+    id,
+    `PUB-${id}`,
+  );
+};
+
 /**
  * Answers the connection to read the result through. A fresh one: a
  * connection opened before the migration may still be holding statements
@@ -133,5 +148,65 @@ describe("deploying accounts with roles onto an existing database", () => {
       `SELECT "name" FROM pragma_table_info('MachineToken')`,
     );
     expect(columns.map((column) => column.name)).not.toContain("userId");
+  });
+});
+
+describe("deploying owners and shares onto an existing inventory", () => {
+  const aHouseholdWithAnInventory = async (): Promise<PrismaClient> => {
+    const db = await aDatabaseFromBefore();
+    await anAccount(db, "partner", "2026-02-01T00:00:00.000Z");
+    await anAccount(db, "dario", "2026-01-01T00:00:00.000Z");
+    await anAccount(db, "lodger", "2026-03-01T00:00:00.000Z");
+    await aSpace(db, "garage");
+    await aSpace(db, "shelf", "garage");
+    await aSpace(db, "attic");
+    return db;
+  };
+
+  it("makes the oldest account the owner of every root, and of nothing inside one", async () => {
+    await aHouseholdWithAnInventory();
+
+    const migrated = await migrateForward();
+
+    const spaces = await migrated.$queryRawUnsafe<
+      { id: string; ownerId: string | null }[]
+    >(`SELECT "id", "ownerId" FROM "StorageUnit" ORDER BY "id"`);
+    expect(spaces).toEqual([
+      { id: "attic", ownerId: "dario" },
+      { id: "garage", ownerId: "dario" },
+      { id: "shelf", ownerId: null },
+    ]);
+  });
+
+  it("gives every other account an edit share on every root, so nobody loses sight of anything", async () => {
+    await aHouseholdWithAnInventory();
+
+    const migrated = await migrateForward();
+
+    const shares = await migrated.$queryRawUnsafe<
+      { storageUnitId: string; userId: string; access: string }[]
+    >(
+      `SELECT "storageUnitId", "userId", "access" FROM "Share" ORDER BY "storageUnitId", "userId"`,
+    );
+    expect(shares).toEqual([
+      { storageUnitId: "attic", userId: "lodger", access: "edit" },
+      { storageUnitId: "attic", userId: "partner", access: "edit" },
+      { storageUnitId: "garage", userId: "lodger", access: "edit" },
+      { storageUnitId: "garage", userId: "partner", access: "edit" },
+    ]);
+  });
+
+  it("refuses to migrate spaces that nobody could own, and says what to do", async () => {
+    const db = await aDatabaseFromBefore();
+    await aSpace(db, "garage");
+
+    await expect(migrateForward()).rejects.toThrow(/create-user/u);
+
+    const reopened = new PrismaClient({ datasourceUrl: `file:${past!.file}` });
+    client = reopened;
+    const columns = await reopened.$queryRawUnsafe<{ name: string }[]>(
+      `SELECT "name" FROM pragma_table_info('StorageUnit')`,
+    );
+    expect(columns.map((column) => column.name)).not.toContain("ownerId");
   });
 });

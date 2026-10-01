@@ -10,6 +10,9 @@
 export {
   A_LATER_MOMENT,
   A_MOMENT,
+  AN_OWNER,
+  ANOTHER_OWNER,
+  CONTRACT_PEOPLE,
   aChainOfStorageUnits,
   aPhotoId,
   aStorageUnit,

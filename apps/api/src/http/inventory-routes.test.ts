@@ -183,8 +183,8 @@ describe("inventory over HTTP", () => {
           payload: { name: "Box", kind: StorageUnitKind.BOX, ownerId: "me" },
         });
 
-        // One shared inventory: there is no owner column, and a request that
-        // thinks there is should be told so rather than quietly ignored.
+        // The request never says whose a root is: it is its creator's
+        // (ADR 26). A body that tries should be told so, not quietly ignored.
         expect(response.statusCode).toBe(400);
       });
 
@@ -1299,6 +1299,8 @@ describe("inventory over HTTP", () => {
     });
   });
 
+  // Still true until reads and writes are scoped by ADR 26 (roadmap slices 3
+  // and 4), which turn these two cases into their opposites.
   describe("one shared inventory", () => {
     it("shows a second account exactly what the first one created", async () => {
       const box = await createUnit("Box 3");

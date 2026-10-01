@@ -5,7 +5,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { unitId, type UnitId } from "../shared/identity.js";
+import { unitId, userId, type UnitId, type UserId } from "../shared/identity.js";
 import { CreateStorageUnit } from "./create-storage-unit.js";
 import {
   formatStorageUnitPath,
@@ -26,8 +26,13 @@ describe("MoveStorageUnit", () => {
   let getStorageUnitPath: GetStorageUnitPath;
   let moveStorageUnit: MoveStorageUnit;
 
-  const create = async (name: string, parentId: UnitId | null = null) =>
+  const create = async (
+    name: string,
+    parentId: UnitId | null = null,
+    callerId: UserId = userId("dario"),
+  ) =>
     createStorageUnit.execute({
+      callerId,
       parentId,
       name,
       kind: StorageUnitKind.OTHER,
@@ -44,6 +49,46 @@ describe("MoveStorageUnit", () => {
     });
     getStorageUnitPath = new GetStorageUnitPath({ storageUnits });
     moveStorageUnit = new MoveStorageUnit({ storageUnits, clock });
+  });
+
+  describe("whose it is afterwards (ADR 26)", () => {
+    it("stops recording an owner on a root put inside another space", async () => {
+      const house = await create("House");
+      const garage = await create("Garage", null, userId("partner"));
+
+      const moved = await moveStorageUnit.execute({
+        id: garage.id,
+        targetParentId: house.id,
+      });
+
+      expect(moved.ownerId).toBeNull();
+      expect((await storageUnits.findById(garage.id))?.ownerId).toBeNull();
+    });
+
+    it("keeps the owner of the tree it came from when a space is taken to the top", async () => {
+      const room = await create("Storage room", null, userId("dario"));
+      const wardrobe = await create("Wardrobe", room.id, userId("partner"));
+      const box = await create("Box 3", wardrobe.id, userId("partner"));
+
+      const moved = await moveStorageUnit.execute({
+        id: box.id,
+        targetParentId: null,
+      });
+
+      expect(moved.ownerId).toBe("dario");
+      expect((await storageUnits.findById(box.id))?.ownerId).toBe("dario");
+    });
+
+    it("keeps a root's owner when it is moved to the top it is already at", async () => {
+      const garage = await create("Garage", null, userId("partner"));
+
+      const moved = await moveStorageUnit.execute({
+        id: garage.id,
+        targetParentId: null,
+      });
+
+      expect(moved.ownerId).toBe("partner");
+    });
   });
 
   describe("the cycle rule", () => {

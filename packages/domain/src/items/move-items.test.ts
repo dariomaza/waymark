@@ -5,7 +5,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { itemId, unitId, type UnitId } from "../shared/identity.js";
+import { itemId, unitId, type UnitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { StorageUnitNotFound } from "../storage-units/storage-unit-errors.js";
 import { StorageUnitKind } from "../storage-units/storage-unit.js";
@@ -24,7 +24,7 @@ describe("MoveItems", () => {
   let moveItems: MoveItems;
 
   const createUnit = async (name: string) =>
-    createStorageUnit.execute({ name, kind: StorageUnitKind.BOX });
+    createStorageUnit.execute({ callerId: userId("dario"), name, kind: StorageUnitKind.BOX });
 
   const createItemIn = async (storageUnitId: UnitId, name: string) =>
     createItem.execute({ storageUnitId, name });

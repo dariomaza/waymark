@@ -5,7 +5,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { photoId, unitId } from "../shared/identity.js";
+import { photoId, unitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { StorageUnitNotFound } from "../storage-units/storage-unit-errors.js";
 import { StorageUnitKind } from "../storage-units/storage-unit.js";
@@ -22,7 +22,7 @@ describe("CreateItem", () => {
   let createItem: CreateItem;
 
   const createUnit = async (name: string) =>
-    createStorageUnit.execute({ name, kind: StorageUnitKind.BOX });
+    createStorageUnit.execute({ callerId: userId("dario"), name, kind: StorageUnitKind.BOX });
 
   beforeEach(() => {
     items = new InMemoryItemRepository();

@@ -5,7 +5,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { itemId, photoId } from "../shared/identity.js";
+import { itemId, photoId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { StorageUnitKind } from "../storage-units/storage-unit.js";
 import { InMemoryStorageUnitRepository } from "../storage-units/storage-unit-repository.fake.js";
@@ -41,7 +41,11 @@ describe("DeleteItem", () => {
   });
 
   const createBox = async () =>
-    createStorageUnit.execute({ name: "Box 3", kind: StorageUnitKind.BOX });
+    createStorageUnit.execute({
+      callerId: userId("dario"),
+      name: "Box 3",
+      kind: StorageUnitKind.BOX,
+    });
 
   it("deletes the item unconditionally", async () => {
     const box = await createBox();
