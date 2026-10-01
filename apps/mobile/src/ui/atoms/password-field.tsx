@@ -10,6 +10,8 @@ import { TextField } from "./text-field.js";
 export interface PasswordFieldProps {
   /** What a screen reader says, and what a test asks for. */
   readonly label: string;
+  /** A line under the field: what a new password has to be. */
+  readonly hint?: string | undefined;
   readonly value: string;
   readonly onChangeText: (value: string) => void;
   readonly onSubmitEditing?: (() => void) | undefined;
@@ -67,6 +69,7 @@ export interface PasswordFieldProps {
  */
 export const PasswordField = ({
   label,
+  hint,
   value,
   onChangeText,
   onSubmitEditing,
@@ -78,6 +81,7 @@ export const PasswordField = ({
   return (
     <TextField
       label={label}
+      hint={hint}
       value={value}
       onChangeText={onChangeText}
       secureTextEntry={!shown}

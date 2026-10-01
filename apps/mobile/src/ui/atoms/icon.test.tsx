@@ -63,6 +63,7 @@ describe("the icon set both clients draw", () => {
       "info",
       "link",
       "fingerprint",
+      "person",
     ]);
   });
 

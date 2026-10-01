@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "../app/language-switcher.js";
 import { ThemeSwitcher } from "../app/theme-switcher.js";
 import { BiometricUnlockSetting } from "../auth/biometric-unlock-setting.js";
 import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
+import { PeoplePanel } from "../auth/people-panel.js";
 import { useSessionState, useSignOut } from "../auth/use-session.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { AccountPanel } from "./views/account-panel.js";
@@ -51,6 +52,11 @@ export const AccountScreen = (): JSX.Element => {
          * only thing that knows the account surface exists.
          */
         machineTokens={<MachineTokensPanel />}
+        /*
+         * The other accounts (ADR 26). The group decides for itself whether
+         * it is drawn, from what `/auth/me` says about the person signed in.
+         */
+        people={<PeoplePanel />}
         busy={signOut.isPending}
         onSignOut={() => {
           signOut.mutate();
