@@ -514,8 +514,9 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
        * cannot have changed anything, and a caller that may not write learns
        * nothing about the shape of the route it was refused.
        *
-       * A person is never refused here: ADR 5 is unchanged, and every
-       * authenticated human may perform every inventory operation.
+       * A person is never refused here. What they may see is their access,
+       * resolved above and passed to every use case (ADR 26); which spaces
+       * they may change is decided against the same access, not by this hook.
        */
       if (isWriteRequest(request.method) && !callerMayWrite(request.caller)) {
         throw new ReadOnlyMachineToken(
