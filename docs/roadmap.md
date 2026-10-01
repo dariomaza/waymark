@@ -54,15 +54,15 @@ install in five lines, and a link to the site.
 ### Each person's inventory, an administrator, and shares (ADR 26)
 
 Decided 2026-10-01; the ADR is the design. `Access`, ownership and shares in
-the schema, every read scoped and every write checked are built (slices 1-4).
+the schema, every read scoped and every write checked are built (slices 1-4),
+and so are machine tokens that belong to their issuer (5) and tokens narrowed
+to chosen spaces (5b): people manage the tokens they issued and an
+administrator all of them; a narrowed token reaches its issuer's `Access`
+intersected with the chosen subtrees, never acts at the top of the tree
+(`OUTSIDE_TOKEN_SPACES`), and reaches nothing once its spaces are all gone.
 What is left, in order, each slice shipped and mutation-tested before the
 next, both clients together where visible:
 
-5. **Machine tokens belong to their issuer.**
-   **5b. A token narrowed to chosen spaces**: the issuer may pick spaces when
-   creating it; its reach is the issuer's `Access` intersected with those
-   subtrees, never more. A table of chosen spaces per token, a space picker on
-   the token sheet in both clients, an amendment to ADR 17.
 6. **Roles and accounts**: `create-user` makes the first administrator; the
    *People* group on the account screen (create, role, reset, disable; never
    the last administrator).
