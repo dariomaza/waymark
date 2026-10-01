@@ -20,6 +20,7 @@ import {
   RequeuePhotos,
   Role,
   SetStorageUnitPhoto,
+  ShareLevel,
   SpaceIsViewOnly,
   StorageUnitKind,
   StorageUnitNotEmpty,
@@ -199,6 +200,13 @@ export const whatEachPersonMayChangeContract = (
     afterEach(async () => {
       await harness.tearDown();
     });
+
+    /**
+     * An edit share inside the garage Bea may only view: she may change the
+     * tray and what it holds, and still not the shelf it stands on.
+     */
+    const shareTheTrayWithBeaToEdit = (): Promise<void> =>
+      context.shares.set({ storageUnitId: PLACES.view.id, userId: BEA, access: ShareLevel.EDIT });
 
     const whereIs = async (id: UnitId): Promise<UnitId | null> =>
       (await context.storageUnits.findById(id))?.parentId ?? null;
@@ -487,6 +495,29 @@ export const whatEachPersonMayChangeContract = (
         ).rejects.toEqual(new SpaceIsViewOnly(PLACES.view.id));
       });
 
+      it("answers Bea moving Ana's drawer into her own box as if the drawer did not exist", async () => {
+        await expect(
+          use().moveStorageUnit.execute(await accessOf("bea"), {
+            callerId: BEA,
+            id: PLACES.unshared.id,
+            targetParentId: PLACES.beas.id,
+          }),
+        ).rejects.toEqual(new StorageUnitNotFound(PLACES.unshared.id));
+      });
+
+      it("refuses Bea taking a tray she may edit out of the shelf she may only view", async () => {
+        await shareTheTrayWithBeaToEdit();
+
+        await expect(
+          use().moveStorageUnit.execute(await accessOf("bea"), {
+            callerId: BEA,
+            id: PLACES.view.id,
+            targetParentId: SPACES.flat.id,
+          }),
+        ).rejects.toEqual(new SpaceIsViewOnly(SPACES.shelf.id));
+        expect(await whereIs(PLACES.view.id)).toBe(SPACES.shelf.id);
+      });
+
       it("refuses Bea taking the attic itself away, without naming the house above it", async () => {
         await expect(
           use().moveStorageUnit.execute(await accessOf("bea"), {
@@ -555,6 +586,33 @@ export const whatEachPersonMayChangeContract = (
           }),
         ).rejects.toBeInstanceOf(MissingEmptyTarget);
         expect(await itemIsIn(ITEMS.lamp.id)).toBe(SPACES.attic.id);
+      });
+
+      it("refuses Bea emptying the trunk into the garage she may only view", async () => {
+        await context.items.save(anItem("kept-in-the-trunk", PLACES.edit.id));
+
+        await expect(
+          use().emptyStorageUnit.execute(await accessOf("bea"), {
+            callerId: BEA,
+            id: PLACES.edit.id,
+            targetUnitId: SPACES.garage.id,
+          }),
+        ).rejects.toEqual(new SpaceIsViewOnly(SPACES.garage.id));
+      });
+
+      it("refuses Bea emptying a tray she may edit into the shelf she may only view", async () => {
+        await shareTheTrayWithBeaToEdit();
+        await context.items.save(anItem("kept-in-the-tray", PLACES.view.id));
+
+        await expect(
+          use().emptyStorageUnit.execute(await accessOf("bea"), {
+            callerId: BEA,
+            id: PLACES.view.id,
+          }),
+        ).rejects.toEqual(new SpaceIsViewOnly(SPACES.shelf.id));
+        expect(await itemIsIn(anItem("kept-in-the-tray", PLACES.view.id).id)).toBe(
+          PLACES.view.id,
+        );
       });
 
       it("lets Bea empty the attic into her own wardrobe", async () => {
