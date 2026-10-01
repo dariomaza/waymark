@@ -77,6 +77,7 @@ import { FinishPasskeyRegistration } from "../auth/finish-passkey-registration.j
 import type { PasskeyRepository } from "../auth/passkey-repository.js";
 import type { PasskeyChallengeRepository } from "../auth/passkey-challenge-repository.js";
 import { relyingPartyFor } from "../auth/relying-party.js";
+import { ListMachineTokens } from "../auth/list-machine-tokens.js";
 import { RevokeMachineToken } from "../auth/revoke-machine-token.js";
 import { RotateMachineToken } from "../auth/rotate-machine-token.js";
 import type { PasswordHasher } from "../auth/password-hasher.js";
@@ -561,7 +562,10 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
 
     void scope.register(authenticatedAuthRoutes, { login, logout });
     void scope.register(machineTokenRoutes, {
-      machineTokens: deps.machineTokens,
+      listMachineTokens: new ListMachineTokens({
+        machineTokens: deps.machineTokens,
+        users: deps.users,
+      }),
       createMachineToken,
       rotateMachineToken,
       revokeMachineToken,

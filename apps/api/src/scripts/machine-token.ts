@@ -6,6 +6,7 @@ import {
 } from "../auth/auth-errors.js";
 import { CreateMachineToken } from "../auth/create-machine-token.js";
 import type { MachineToken } from "../auth/machine-token.js";
+import { THE_SHELL } from "../auth/machine-token-manager.js";
 import { RevokeMachineToken } from "../auth/revoke-machine-token.js";
 import { loadConfig } from "../config.js";
 import { createPrismaClient } from "../persistence/prisma-client.js";
@@ -126,8 +127,10 @@ const run = async (command: MachineTokenCommand): Promise<void> => {
       }
 
       case "revoke": {
+        // The shell holds the server, so it may revoke anybody's (ADR 26).
         const revoked = await new RevokeMachineToken({ machineTokens }).execute(
           command.name,
+          THE_SHELL,
         );
 
         if (!revoked) {

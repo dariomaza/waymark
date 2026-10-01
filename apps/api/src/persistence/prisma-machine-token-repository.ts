@@ -4,9 +4,11 @@ import {
   isMachineTokenScope,
   type MachineToken,
 } from "../auth/machine-token.js";
-import type {
-  MachineTokenRepository,
-  MachineTokenRotation,
+import {
+  ANY_ISSUER,
+  type IssuedBy,
+  type MachineTokenRepository,
+  type MachineTokenRotation,
 } from "../auth/machine-token-repository.js";
 import { UnknownMachineTokenScope } from "./persistence-errors.js";
 
@@ -70,12 +72,15 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
    * rotation must NOT change, and leaving them out of the statement is a
    * stronger guarantee than copying them across correctly.
    */
-  async rotate(rotation: MachineTokenRotation): Promise<MachineToken | null> {
+  async rotate(
+    rotation: MachineTokenRotation,
+    issuedBy: IssuedBy,
+  ): Promise<MachineToken | null> {
     // `updateMany` rather than `update`, so a name that is not there is an
     // ordinary empty result instead of a thrown `P2025` to catch and discard —
     // the same choice `recordLastUsed` makes, for the same reason.
     const { count } = await this.prisma.machineToken.updateMany({
-      where: { name: rotation.name },
+      where: { name: rotation.name, ...whoseIs(issuedBy) },
       data: {
         tokenHash: rotation.tokenHash,
         createdAt: rotation.createdAt,
@@ -89,9 +94,9 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
     return count === 0 ? null : await this.findByName(rotation.name);
   }
 
-  async deleteByName(name: string): Promise<boolean> {
+  async deleteByName(name: string, issuedBy: IssuedBy): Promise<boolean> {
     const { count } = await this.prisma.machineToken.deleteMany({
-      where: { name },
+      where: { name, ...whoseIs(issuedBy) },
     });
 
     return count > 0;
@@ -105,6 +110,10 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
     return rows.map(toDomainMachineToken);
   }
 }
+
+/** The condition `issuedBy` adds to the statement that writes. */
+const whoseIs = (issuedBy: IssuedBy): { userId?: string } =>
+  issuedBy === ANY_ISSUER ? {} : { userId: issuedBy };
 
 /**
  * `scope` is a plain string because SQLite has no enum type, so it is checked

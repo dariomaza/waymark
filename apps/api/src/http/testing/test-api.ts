@@ -15,6 +15,7 @@ import { FixedWindowRateLimiter } from "../../auth/login-rate-limiter.js";
 import type { MachineTokenScope } from "../../auth/machine-token.js";
 import { ScryptPasswordHasher } from "../../auth/password-hasher.js";
 import { relyingPartyFor, type RelyingParty } from "../../auth/relying-party.js";
+import { THE_SHELL } from "../../auth/machine-token-manager.js";
 import { RevokeMachineToken } from "../../auth/revoke-machine-token.js";
 import { PrismaItemRepository } from "../../persistence/prisma-item-repository.js";
 import { PrismaMachineTokenRepository } from "../../persistence/prisma-machine-token-repository.js";
@@ -366,7 +367,7 @@ export const createTestApi = async (
     },
 
     async revokeMachineToken(name: string): Promise<boolean> {
-      return new RevokeMachineToken({ machineTokens }).execute(name);
+      return new RevokeMachineToken({ machineTokens }).execute(name, THE_SHELL);
     },
 
     async machineTokenHashOf(name: string): Promise<string> {

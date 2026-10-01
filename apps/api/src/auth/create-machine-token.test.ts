@@ -7,6 +7,7 @@ import {
 } from "./auth-errors.js";
 import { CreateMachineToken } from "./create-machine-token.js";
 import { MachineTokenScope } from "./machine-token.js";
+import { ANY_ISSUER } from "./machine-token-repository.js";
 import { InMemoryMachineTokenRepository } from "./machine-token-repository.fake.js";
 import { hashMachineTokenSecret, looksLikeMachineToken } from "./machine-token-secret.js";
 
@@ -69,7 +70,7 @@ describe("creating a machine token", () => {
         scope: MachineTokenScope.Read,
         userId: "dario",
       });
-      await machineTokens.deleteByName("mcp-server");
+      await machineTokens.deleteByName("mcp-server", ANY_ISSUER);
       const second = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,

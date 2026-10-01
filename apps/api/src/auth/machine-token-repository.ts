@@ -1,6 +1,19 @@
 import type { MachineToken } from "./machine-token.js";
 
 /**
+ * Whose token a rotation or a revocation may touch (ADR 26): the id of the
+ * person who issued it, or `ANY_ISSUER` for an administrator and for the shell.
+ *
+ * It is a condition of the one statement that writes, not a read before it, so
+ * nothing can change hands between the check and the write. A token of
+ * somebody else's is answered exactly as a name that is not there.
+ */
+export type IssuedBy = string | typeof ANY_ISSUER;
+
+/** No limit on whose token it is. */
+export const ANY_ISSUER = null;
+
+/**
  * Where machine tokens are kept.
  *
  * A port beside `SessionRepository` and `UserRepository`, in `@waymark/api`
@@ -62,15 +75,22 @@ export interface MachineTokenRepository {
    * answers `false`: rotating a credential is a person acting on a decision,
    * and success in answer to a typo lets them walk away believing a secret
    * they still hold has been replaced.
+   *
+   * `issuedBy` limits it to one person's tokens; see `IssuedBy`.
    */
-  rotate(rotation: MachineTokenRotation): Promise<MachineToken | null>;
+  rotate(
+    rotation: MachineTokenRotation,
+    issuedBy: IssuedBy,
+  ): Promise<MachineToken | null>;
 
   /**
    * Revocation. `true` when a token went, `false` when the name named nothing —
    * so the CLI can tell "revoked" from "there was nothing to revoke" rather
    * than reporting success at a typo.
+   *
+   * `issuedBy` limits it to one person's tokens; see `IssuedBy`.
    */
-  deleteByName(name: string): Promise<boolean>;
+  deleteByName(name: string, issuedBy: IssuedBy): Promise<boolean>;
 
   /** Every token, by name, for the CLI. Never the secret; there is none stored. */
   list(): Promise<readonly MachineToken[]>;

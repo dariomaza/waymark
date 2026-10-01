@@ -1,8 +1,13 @@
 import type { MachineToken } from "./machine-token.js";
-import type {
-  MachineTokenRepository,
-  MachineTokenRotation,
+import {
+  ANY_ISSUER,
+  type IssuedBy,
+  type MachineTokenRepository,
+  type MachineTokenRotation,
 } from "./machine-token-repository.js";
+
+const isIssuedBy = (token: MachineToken, issuedBy: IssuedBy): boolean =>
+  issuedBy === ANY_ISSUER || token.userId === issuedBy;
 
 /**
  * A real, working repository backed by a Map, for use in tests.
@@ -65,9 +70,12 @@ export class InMemoryMachineTokenRepository implements MachineTokenRepository {
    * `id`, `name` and `scope` are taken from the stored row rather than from
    * the rotation, so a caller cannot widen a scope through this door.
    */
-  async rotate(rotation: MachineTokenRotation): Promise<MachineToken | null> {
+  async rotate(
+    rotation: MachineTokenRotation,
+    issuedBy: IssuedBy,
+  ): Promise<MachineToken | null> {
     const stored = await this.findByName(rotation.name);
-    if (stored === null) {
+    if (stored === null || !isIssuedBy(stored, issuedBy)) {
       return null;
     }
 
@@ -87,9 +95,9 @@ export class InMemoryMachineTokenRepository implements MachineTokenRepository {
     return rotated;
   }
 
-  async deleteByName(name: string): Promise<boolean> {
+  async deleteByName(name: string, issuedBy: IssuedBy): Promise<boolean> {
     const token = await this.findByName(name);
-    if (token === null) {
+    if (token === null || !isIssuedBy(token, issuedBy)) {
       return false;
     }
 

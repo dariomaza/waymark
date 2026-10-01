@@ -1,8 +1,9 @@
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 
 import type { CreateMachineToken } from "../../auth/create-machine-token.js";
+import type { ListMachineTokens } from "../../auth/list-machine-tokens.js";
 import type { MachineTokenScope } from "../../auth/machine-token.js";
-import type { MachineTokenRepository } from "../../auth/machine-token-repository.js";
+import type { MachineTokenManager } from "../../auth/machine-token-manager.js";
 import type { RevokeMachineToken } from "../../auth/revoke-machine-token.js";
 import type { RotateMachineToken } from "../../auth/rotate-machine-token.js";
 import type { User } from "../../auth/user.js";
@@ -15,7 +16,7 @@ import {
 import { machineTokenView } from "../views.js";
 
 export interface MachineTokenRouteOptions {
-  readonly machineTokens: MachineTokenRepository;
+  readonly listMachineTokens: ListMachineTokens;
   readonly createMachineToken: CreateMachineToken;
   readonly rotateMachineToken: RotateMachineToken;
   readonly revokeMachineToken: RevokeMachineToken;
@@ -75,15 +76,19 @@ export interface MachineTokenRouteOptions {
 export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
   async (app, options) => {
     app.get("/auth/machine-tokens", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
-      const machineTokens = await options.machineTokens.list();
+      const listed = await options.listMachineTokens.execute(managerOf(person));
 
       // `machineTokenView` is what guarantees the hash never leaves the
-      // server, rather than somebody remembering to leave it out here.
-      return reply
-        .code(200)
-        .send({ machineTokens: machineTokens.map(machineTokenView) });
+      // server, rather than somebody remembering to leave it out here. Whose a
+      // token is goes only to somebody who sees other people's (ADR 26).
+      return reply.code(200).send({
+        machineTokens: listed.map(({ machineToken, issuedBy }) => ({
+          ...machineTokenView(machineToken),
+          ...(issuedBy === null ? {} : { issuedBy }),
+        })),
+      });
     });
 
     /**
@@ -122,15 +127,17 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * secret.
      */
     app.post("/auth/machine-tokens/:name/rotate", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
       const { name } = machineTokenNameParamsSchema.parse(request.params);
       // Strict: a body naming a scope or an owner is refused with 400 rather
       // than ignored, because a rotation changes neither (ADR 18, ADR 26).
       const body = rotateMachineTokenBodySchema.parse(request.body ?? {});
 
+      // Somebody else's token is answered as a name nobody holds (ADR 26).
       const rotated = await options.rotateMachineToken.execute({
         name,
+        by: managerOf(person),
         ...(body.expiresInDays === undefined
           ? {}
           : { expiresInDays: body.expiresInDays }),
@@ -157,17 +164,24 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * is still live.
      */
     app.delete("/auth/machine-tokens/:name", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
       const { name } = machineTokenNameParamsSchema.parse(request.params);
 
-      if (!(await options.revokeMachineToken.execute(name))) {
+      // Somebody else's token is answered as a name nobody holds (ADR 26).
+      if (!(await options.revokeMachineToken.execute(name, managerOf(person)))) {
         throw noSuchMachineToken(name);
       }
 
       return reply.code(204).send();
     });
   };
+
+const managerOf = (person: User): MachineTokenManager => ({
+  kind: "person",
+  userId: person.id,
+  role: person.role,
+});
 
 const noSuchMachineToken = (name: string): HttpError =>
   new HttpError(

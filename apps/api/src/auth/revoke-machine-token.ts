@@ -1,4 +1,8 @@
 import { normalizeMachineTokenName } from "./machine-token.js";
+import {
+  tokensManagedBy,
+  type MachineTokenManager,
+} from "./machine-token-manager.js";
 import type { MachineTokenRepository } from "./machine-token-repository.js";
 
 export interface RevokeMachineTokenDependencies {
@@ -25,8 +29,15 @@ export class RevokeMachineToken {
    * a client retrying; revoking a credential is a person acting on a decision,
    * and "done" in answer to a misspelled name would let them walk away from a
    * token that is still live.
+   *
+   * Also `false` when the token is somebody else's and `by` may not manage it
+   * (ADR 26): the answer is the one a name nobody holds gets, so a refusal
+   * does not tell anybody which names are taken.
    */
-  async execute(name: string): Promise<boolean> {
-    return this.deps.machineTokens.deleteByName(normalizeMachineTokenName(name));
+  async execute(name: string, by: MachineTokenManager): Promise<boolean> {
+    return this.deps.machineTokens.deleteByName(
+      normalizeMachineTokenName(name),
+      tokensManagedBy(by),
+    );
   }
 }
