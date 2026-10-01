@@ -173,6 +173,14 @@ Prisma, as every contract suite does.
   - ADR 18's argument that everyone who could mint a token should see it still
     holds. Under this ADR, the only person who can mint a token in somebody
     else's name is an administrator.
+- **A token may be narrowed to chosen spaces, never widened.** Whoever issues
+  it may pick spaces; the token then reaches what its issuer can reach *within*
+  those spaces and everything under them, and its scope still applies on top.
+  No spaces picked means the issuer's whole reach. Because it is an
+  intersection, a token can never hold what its issuer does not: when the
+  issuer loses a share, the token loses it with no step anyone has to remember.
+  This amends ADR 17, whose argument that anything finer than a scope is a
+  role rested on ADR 5's missing owner column.
 
 ### Migration
 

@@ -66,6 +66,10 @@ and mutation-tested before the next, both clients together where visible:
 4. **Every write path checked**: view-only is 403, unseen is 404, moves need
    edit on both ends, only the owner or an administrator makes a root.
 5. **Machine tokens belong to their issuer.**
+   **5b. A token narrowed to chosen spaces**: the issuer may pick spaces when
+   creating it; its reach is the issuer's `Access` intersected with those
+   subtrees, never more. A table of chosen spaces per token, a space picker on
+   the token sheet in both clients, an amendment to ADR 17.
 6. **Roles and accounts**: `create-user` makes the first administrator; the
    *People* group on the account screen (create, role, reset, disable; never
    the last administrator).

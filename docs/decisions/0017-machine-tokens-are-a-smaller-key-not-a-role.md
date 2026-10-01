@@ -161,3 +161,8 @@ ADR 26. A machine token now belongs to the person who issued it and acts as
 that person, narrowed by its scope. The scope itself, its two values, and the
 rule that a third value would be a role are unchanged — and there are now real
 roles beside it, which ADR 26 keeps apart from the token's scope.
+
+A token may now also be narrowed to chosen spaces (ADR 26). That is finer than
+"may this credential change anything", which this ADR said would be a role. It
+is not one: it never widens what the issuer can reach, and it needs no owner
+column of its own — the reason this ADR gave for refusing it was ADR 5's.
