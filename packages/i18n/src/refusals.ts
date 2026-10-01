@@ -356,6 +356,9 @@ export const describeFailure = (error: unknown): Message => {
   if (error.code === ApiErrorCode.OWNER_ONLY) {
     return message("failure.ownerOnly");
   }
+  if (error.code === ApiErrorCode.OUTSIDE_TOKEN_SPACES) {
+    return message("failure.outsideTokenSpaces");
+  }
 
   switch (failureKindOf(error)) {
     case FailureKind.OFFLINE:

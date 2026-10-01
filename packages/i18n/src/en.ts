@@ -133,6 +133,13 @@ export const EN = {
    */
   "failure.ownerOnly":
     "Only the owner of this space, or the administrator, can make it a root or move it from the top.",
+  /**
+   * A write refused because the machine token making it was narrowed to
+   * chosen spaces, and the top of the tree is outside them (ADR 26). Only a
+   * program holding a token meets this; it names the token, not the session.
+   */
+  "failure.outsideTokenSpaces":
+    "This machine token is limited to the spaces chosen for it, so it cannot make a root or move anything to or from the top.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
   "failure.server": "Waymark had a problem answering. Try again in a moment.",
   /**

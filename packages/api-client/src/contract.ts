@@ -182,6 +182,12 @@ export interface MachineTokenListResponse {
 export interface ListedMachineTokenView extends MachineTokenView {
   /** The issuer's username. Absent when the list is the caller's own. */
   readonly issuedBy?: string;
+  /**
+   * The spaces it was narrowed to, by name, among those the caller can see;
+   * `null` when none were chosen. An empty list is a narrowed token whose
+   * spaces are gone, or out of the caller's sight: it reaches nothing.
+   */
+  readonly spaces: readonly { readonly id: string; readonly name: string }[] | null;
 }
 
 /**
@@ -202,6 +208,11 @@ export interface CreateMachineTokenInput {
   readonly scope: MachineTokenScope;
   /** Absent means it never lapses, which is the normal case. */
   readonly expiresInDays?: number;
+  /**
+   * The spaces to narrow it to (ADR 26). Absent, or empty, means none chosen:
+   * everything the person issuing it can reach. Each must be one they see.
+   */
+  readonly spaceIds?: readonly string[];
 }
 
 /**

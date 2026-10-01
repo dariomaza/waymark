@@ -7,6 +7,7 @@ import {
   refusedByTheWorld,
   unexplainedFailure,
   waymarkUnreachable,
+  writeRefusedByChosenSpaces,
   writeRefusedByOwnership,
   writeRefusedByScope,
   writeRefusedByShare,
@@ -70,6 +71,10 @@ export const sentenceFor = (error: unknown, context: FailureContext): string => 
 
   if (error.code === ApiErrorCode.OWNER_ONLY) {
     return writeRefusedByOwnership(context.doing);
+  }
+
+  if (error.code === ApiErrorCode.OUTSIDE_TOKEN_SPACES) {
+    return writeRefusedByChosenSpaces(context.doing);
   }
 
   if (error.status === 404) {

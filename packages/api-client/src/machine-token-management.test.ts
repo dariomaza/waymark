@@ -151,6 +151,48 @@ describe("managing machine tokens from a client", () => {
       });
     });
 
+    it("sends the spaces chosen to narrow it to (ADR 26)", async () => {
+      let body: unknown;
+      apiServer.use(
+        http.post(`${API_URL}/auth/machine-tokens`, async ({ request }) => {
+          body = await request.json();
+          return HttpResponse.json(
+            { token: "wmk_secret", machineToken: aMachineTokenView() },
+            { status: 201 },
+          );
+        }),
+      );
+
+      await client().createMachineToken({
+        name: "garage",
+        scope: MachineTokenScope.Read,
+        spaceIds: ["garage", "attic"],
+      });
+
+      expect(body).toEqual({ name: "garage", scope: "read", spaceIds: ["garage", "attic"] });
+    });
+
+    /**
+     * "No spaces chosen" is an absent field: the API refuses an empty list,
+     * because it would read as neither the whole reach nor nothing.
+     */
+    it("leaves the spaces off when none were chosen, even as an empty list", async () => {
+      let body: unknown;
+      apiServer.use(
+        http.post(`${API_URL}/auth/machine-tokens`, async ({ request }) => {
+          body = await request.json();
+          return HttpResponse.json(
+            { token: "wmk_secret", machineToken: aMachineTokenView() },
+            { status: 201 },
+          );
+        }),
+      );
+
+      await client().createMachineToken({ name: "all", scope: MachineTokenScope.Read, spaceIds: [] });
+
+      expect(body).toEqual({ name: "all", scope: "read" });
+    });
+
     /**
      * The one call whose answer holds a secret. It is handed straight back to
      * the caller and nothing in this package keeps a reference to it.

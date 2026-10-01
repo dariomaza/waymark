@@ -115,6 +115,13 @@ export const ApiErrorCode = {
    * `details.storageUnitId` names that space.
    */
   OWNER_ONLY: "OWNER_ONLY",
+  /**
+   * A machine token narrowed to chosen spaces tried to act at the top of the
+   * tree, which is outside them: to make a root, or to move a space to or
+   * from the top (403, ADR 26). `details.storageUnitId` names that space, or
+   * is `null` for a root that would have been made.
+   */
+  OUTSIDE_TOKEN_SPACES: "OUTSIDE_TOKEN_SPACES",
   TOO_MANY_LOGIN_ATTEMPTS: "TOO_MANY_LOGIN_ATTEMPTS",
   /** A machine token with that name already exists (409, ADR 18). */
   MACHINE_TOKEN_NAME_ALREADY_TAKEN: "MACHINE_TOKEN_NAME_ALREADY_TAKEN",

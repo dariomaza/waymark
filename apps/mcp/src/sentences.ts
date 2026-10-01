@@ -115,6 +115,16 @@ export const writeRefusedByOwnership = (doing: string): string =>
   `administrator, may make it a root or move it from the top. Nothing was ` +
   `changed. Moving it inside another space that may be edited still works.`;
 
+/**
+ * A narrowed token acting at the top of the tree (ADR 26). Its issuer may be
+ * free to; this token is narrower on purpose, so reissuing it is the fix.
+ */
+export const writeRefusedByChosenSpaces = (doing: string): string =>
+  `Waymark refused to ${doing}: this machine token is narrowed to chosen ` +
+  `spaces, and making a root or moving a space to or from the top of the ` +
+  `tree is outside them. Nothing was changed. Work inside the chosen spaces, ` +
+  `or ask the person who issued the token for one that is not narrowed.`;
+
 /** The URL pointed at something that is not there. */
 export const nothingThere = (doing: string, detail: string): string =>
   `Waymark could not ${doing} because it does not hold what the request ` +

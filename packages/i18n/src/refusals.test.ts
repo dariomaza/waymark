@@ -198,6 +198,20 @@ describe("a failure no screen expected", () => {
     expect(en(said)).not.toMatch(/sign in/iu);
   });
 
+  /**
+   * Only a machine token meets this one (ADR 26), and neither client holds
+   * one; the sentence exists so that no code falls through to a session
+   * problem should a client ever be handed it.
+   */
+  it("says a narrowed token may not act outside its spaces, not that the session ended", () => {
+    const said = describeFailure(
+      new ApiError(403, "OUTSIDE_TOKEN_SPACES", "outside", { storageUnitId: null }),
+    );
+
+    expect(said.key).toBe("failure.outsideTokenSpaces");
+    expect(es(said)).not.toMatch(/inicia sesión/iu);
+  });
+
   it("says only the owner may make or move a root, not that the session ended", () => {
     const said = describeFailure(
       new ApiError(403, "OWNER_ONLY", "owner only", { storageUnitId: "a-trunk" }),

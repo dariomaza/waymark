@@ -395,6 +395,10 @@ export const createWaymarkClient = <TFile>(
         ...(input.expiresInDays === undefined
           ? {}
           : { expiresInDays: input.expiresInDays }),
+        // Absent, never empty: the API refuses `[]` (ADR 26).
+        ...(input.spaceIds === undefined || input.spaceIds.length === 0
+          ? {}
+          : { spaceIds: input.spaceIds }),
       });
     },
 

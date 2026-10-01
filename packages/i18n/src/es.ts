@@ -103,6 +103,9 @@ export const ES: Dictionary = {
   /** Only the owner, or the administrator, makes or moves a root (ADR 26). */
   "failure.ownerOnly":
     "Solo la persona a quien pertenece este espacio, o el administrador, puede convertirlo en una unidad raíz o sacarlo de arriba del todo.",
+  /** Un token de máquina limitado a los espacios elegidos (ADR 26). */
+  "failure.outsideTokenSpaces":
+    "Este token de máquina está limitado a los espacios que se eligieron para él, así que no puede crear una unidad raíz, ni llevar nada arriba del todo ni sacarlo de ahí.",
   "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
   "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
   "failure.unexpected":

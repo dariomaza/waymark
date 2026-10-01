@@ -71,6 +71,17 @@ describe("turning a refusal into something a reader can act on", () => {
     expect(sentence).toMatch(/nothing was changed/iu);
   });
 
+  it("says the token is narrowed to chosen spaces and the top of the tree is outside them", () => {
+    const sentence = sentenceFor(
+      new ApiError(403, "OUTSIDE_TOKEN_SPACES", "outside", { storageUnitId: null }),
+      { ...WHERE, doing: 'create a space called "Shed"' },
+    );
+
+    expect(sentence).toMatch(/narrowed to chosen spaces/iu);
+    expect(sentence).toMatch(/nothing was changed/iu);
+    expect(sentence).not.toMatch(/owner/iu);
+  });
+
   it("gives the four situations four different sentences", () => {
     const four = [
       sentenceFor(new ApiError(OFFLINE_STATUS, "OFFLINE", "unreachable"), WHERE),
