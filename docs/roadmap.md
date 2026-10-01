@@ -33,6 +33,45 @@ NFC tag can carry exactly the same URL as an NDEF record, so:
 Suggested order: prove reading with a hand-written tag first, then decide
 whether the writer is worth building.
 
+### A documentation site on GitHub Pages
+
+The owner (2026-10-01): the README is 1,400 lines and too much to read as one
+page. Proposal: a static docs site published to GitHub Pages from `docs/`,
+built in CI, with the README cut down to what the project is, a screenshot,
+install in five lines, and a link to the site.
+
+- Content already exists and only needs splitting: product tour, self-hosting
+  and deploy (ADR 23), the API, the MCP server, releasing, and the ADR index.
+- Open choices: the generator (a plain Markdown-to-site tool that reads the
+  existing files as they are is preferred over one that needs them rewritten),
+  and whether the site carries the brand (the pinned-w logo, lime on ink,
+  light and dark from `packages/tokens`).
+- It must not become a second copy that drifts: one source per fact, the site
+  built from the same Markdown, and a CI check that its links resolve.
+
+### An administrator, created accounts, and what each person may see
+
+The owner (2026-10-01): the first account on a fresh deployment should be the
+administrator, who creates the other accounts from the app and chooses what
+each one can see, and whether it is a full user or not.
+
+This reopens ADR 5 (one shared inventory; users are credentials only) and
+ADR 6 (accounts created by hand). ADR 5 already separates the two halves,
+because they cost very different amounts:
+
+- **Roles** (administrator / user / read-only): cheap. ADR 5 says adding roles
+  "means touching the use cases, not the schema". The first-account-is-admin
+  rule, creating and disabling accounts from the account screen, and a
+  read-only role fit here.
+- **What each person may see** (visibility scoped per account, e.g. one
+  person sees only the garage): expensive. It is ADR 5's option 3: every query
+  scoped by user, and a permanent class of bug where one unscoped query leaks
+  what was meant to be hidden. If wanted, scope by top-level space (a grant on
+  a root unit that covers everything under it), never per item.
+
+To decide first: does the household actually need to hide things, or only to
+stop some accounts from changing them? The second is roles alone.
+
 ## Known gaps between the clients
 
 Found by the parity audit and confirmed still open:
