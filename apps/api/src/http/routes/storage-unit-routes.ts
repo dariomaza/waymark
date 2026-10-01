@@ -1,4 +1,5 @@
 import {
+  mayMakeRoot,
   photoId as toPhotoId,
   unitId,
   type CreateStorageUnit,
@@ -12,6 +13,7 @@ import {
 import type { FastifyPluginAsync } from "fastify";
 
 import { personBehind } from "../../auth/caller.js";
+import type { AccountNames } from "../account-names.js";
 import type { ItemViews } from "../item-views.js";
 import { buildStorageUnitForest } from "../storage-unit-tree.js";
 import type { StorageUnitViews } from "../storage-unit-views.js";
@@ -35,6 +37,8 @@ export interface StorageUnitRouteOptions {
   readonly itemViews: ItemViews;
   /** Only the unit an answer is ABOUT carries its photo; rows never do. */
   readonly storageUnitViews: StorageUnitViews;
+  /** The owners' names an administrator's tree carries (ADR 26). */
+  readonly accountNames: AccountNames;
 }
 
 /** A total order, so two reads of an unchanged unit list the same way. */
@@ -86,9 +90,16 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     // among them becomes a root of the forest, which is how a space shared
     // from inside somebody else's tree arrives at the top of the screen.
     const units = await options.listStorageUnits.execute(request.access);
+    // And what this person may do with each, so no client offers a refusal.
+    const viewer = {
+      access: request.access,
+      callerId: personBehind(request.caller),
+      usernames: await options.accountNames.visibleTo(request.access),
+    };
 
     return reply.code(200).send({
-      tree: buildStorageUnitForest(units).map(storageUnitTreeView),
+      tree: buildStorageUnitForest(units).map((node) => storageUnitTreeView(node, viewer)),
+      mayMakeRoot: mayMakeRoot(request.access),
     });
   });
 

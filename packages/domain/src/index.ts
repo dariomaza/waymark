@@ -38,6 +38,14 @@ export {
   type SpaceReach,
 } from "./access/access.js";
 export {
+  isSharedWith,
+  mayActAtTheTop,
+  mayMakeRoot,
+  ownerNamedBy,
+  permissionsOn,
+  type SpacePermissions,
+} from "./access/space-permissions.js";
+export {
   OutsideTokenSpaces,
   OwnerOnly,
   SpaceIsViewOnly,
@@ -66,6 +74,7 @@ export {
   StorageUnitNotFound,
 } from "./storage-units/storage-unit-errors.js";
 export { assertStorageUnitMoveIsAcyclic } from "./storage-units/storage-unit-cycle.js";
+export { ownerOfTreeHolding } from "./storage-units/storage-unit-owner.js";
 export {
   CreateStorageUnit,
   type CreateStorageUnitCommand,

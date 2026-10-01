@@ -1,5 +1,6 @@
 import { mayViewSpace, type Access } from "../access/access.js";
 import { OutsideTokenSpaces } from "../access/access-errors.js";
+import { mayMakeRoot } from "../access/space-permissions.js";
 import { refuseViewOnly } from "../access/write-checks.js";
 import type { Clock } from "../shared/clock.js";
 import type { IdGenerator, PublicIdGenerator } from "../shared/id-generator.js";
@@ -53,7 +54,7 @@ export class CreateStorageUnit {
         throw new StorageUnitNotFound(parentId);
       }
       refuseViewOnly(access, parentId);
-    } else if (access.kind === "scoped" && access.narrowed) {
+    } else if (!mayMakeRoot(access)) {
       // A new root is outside every space a narrowed token was given.
       throw new OutsideTokenSpaces(null);
     }

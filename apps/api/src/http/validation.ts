@@ -1,4 +1,4 @@
-import { MAX_ITEM_PHOTOS, Role, StorageUnitKind } from "@waymark/domain";
+import { MAX_ITEM_PHOTOS, Role, ShareLevel, StorageUnitKind } from "@waymark/domain";
 import { z } from "zod";
 
 import { MACHINE_TOKEN_SCOPES } from "../auth/machine-token.js";
@@ -111,6 +111,14 @@ export const createAccountBodySchema = z.strictObject({
 export const changeRoleBodySchema = z.strictObject({ role });
 
 export const resetPasswordBodySchema = z.strictObject({ password: newPassword });
+
+/** A space and the account it is shared with, both addressed by the path. */
+export const shareParamsSchema = z.strictObject({ id, accountId: id });
+
+/** How far a space is shared: to look, or to change (ADR 26). */
+export const shareBodySchema = z.strictObject({
+  access: z.enum([ShareLevel.VIEW, ShareLevel.EDIT]),
+});
 
 export const createStorageUnitBodySchema = z.strictObject({
   parentId: id.nullish(),

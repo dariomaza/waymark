@@ -1,5 +1,6 @@
 import { OutsideTokenSpaces, OwnerOnly } from "../access/access-errors.js";
 import type { Access } from "../access/access.js";
+import { mayActAtTheTop } from "../access/space-permissions.js";
 import type { UserId } from "../shared/identity.js";
 import type { StorageUnit } from "./storage-unit.js";
 import type { StorageUnitRepository } from "./storage-unit-repository.js";
@@ -49,7 +50,7 @@ export const refuseUnlessOwner = async (
     throw new OutsideTokenSpaces(unit.id);
   }
 
-  if ((await ownerOfTreeHolding(storageUnits, unit)) !== callerId) {
+  if (!mayActAtTheTop(access, callerId, await ownerOfTreeHolding(storageUnits, unit))) {
     throw new OwnerOnly(unit.id);
   }
 };

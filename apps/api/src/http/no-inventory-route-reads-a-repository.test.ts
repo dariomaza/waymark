@@ -46,6 +46,7 @@ export const INVENTORY_ROUTE_FILES = [
   "photo-routes.ts",
   "qr-routes.ts",
   "search-routes.ts",
+  "share-routes.ts",
   "storage-unit-routes.ts",
 ] as const;
 

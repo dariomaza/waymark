@@ -277,8 +277,12 @@ export class TooManyPasskeyAttempts extends AuthError {
  * act on.
  */
 export class AdministratorOnly extends AuthError {
-  constructor(readonly username: string) {
-    super("Only an administrator manages accounts");
+  constructor(
+    readonly username: string,
+    /** What was refused, for the message: managing accounts, or sharing a space. */
+    act = "manages accounts",
+  ) {
+    super(`Only an administrator ${act}`);
   }
 }
 
@@ -307,5 +311,40 @@ export class LastAdministrator extends AuthError {
 export class OwnAccount extends AuthError {
   constructor(readonly accountId: string) {
     super("Another administrator has to change your own role, password or state");
+  }
+}
+
+/**
+ * # The refusals of sharing a space (ADR 26)
+ */
+
+/**
+ * The account is disabled, so sharing anything with it would give a key to a
+ * door that opens nothing. 409: enable it first, and the same request
+ * succeeds (ADR 8). Stopping a share with it is never refused.
+ */
+export class AccountDisabled extends AuthError {
+  constructor(readonly accountId: string) {
+    super("This account is disabled; enable it before sharing anything with it");
+  }
+}
+
+/**
+ * The person already has edit on the space: they own the tree it is in, or
+ * they are an administrator, who reaches everything (ADR 26). A share could
+ * only lower that in appearance, never in fact, so it is refused rather than
+ * stored. 409, because what would make it succeed is the world changing — the
+ * space moving into somebody else's tree, or the person losing the role.
+ */
+export class AlreadyHasEdit extends AuthError {
+  constructor(
+    readonly accountId: string,
+    readonly because: "owner" | "administrator",
+  ) {
+    super(
+      because === "owner"
+        ? "This person owns the tree this space is in, so they already have edit"
+        : "This person is an administrator, so they already have edit",
+    );
   }
 }

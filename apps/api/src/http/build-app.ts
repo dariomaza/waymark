@@ -46,8 +46,10 @@ import { AccessOfCaller } from "../auth/access-of-caller.js";
 import { AuthenticateMachineToken } from "../auth/authenticate-machine-token.js";
 import { AuthenticateSession } from "../auth/authenticate-session.js";
 import {
+  AccountDisabled,
   AccountNotFound,
   AdministratorOnly,
+  AlreadyHasEdit,
   AuthError,
   ClonedPasskey,
   InvalidCredentials,
@@ -73,6 +75,7 @@ import {
 } from "../auth/auth-errors.js";
 import { CreateUser } from "../auth/create-user.js";
 import { ManageAccounts } from "../auth/manage-accounts.js";
+import { ManageShares } from "../sharing/manage-shares.js";
 import { callerMayWrite, type Caller } from "../auth/caller.js";
 import type { MachineTokenRepository } from "../auth/machine-token-repository.js";
 import type { RateLimiter } from "../auth/login-rate-limiter.js";
@@ -105,6 +108,7 @@ import {
 import { resolveClientIp, type TrustedProxyPolicy } from "./client-ip.js";
 import { createWebClient, type WebClient, type WebClientConfig } from "./web-client.js";
 import { mapDomainError } from "./error-mapping.js";
+import { AccountNames } from "./account-names.js";
 import { ItemViews } from "./item-views.js";
 import { StorageUnitViews } from "./storage-unit-views.js";
 import { errorBody, HttpError } from "./http-error.js";
@@ -116,6 +120,7 @@ import { passkeyLoginRoutes, passkeyRoutes } from "./routes/passkey-routes.js";
 import { photoRoutes } from "./routes/photo-routes.js";
 import { qrRoutes } from "./routes/qr-routes.js";
 import { searchRoutes } from "./routes/search-routes.js";
+import { shareRoutes } from "./routes/share-routes.js";
 import { storageUnitRoutes } from "./routes/storage-unit-routes.js";
 import { toValidationIssues } from "./validation.js";
 
@@ -600,6 +605,13 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       revokeMachineToken,
     });
     void scope.register(accountRoutes, { manageAccounts });
+    void scope.register(shareRoutes, {
+      manageShares: new ManageShares({
+        users: deps.users,
+        storageUnits: deps.storageUnits,
+        shares: deps.shares,
+      }),
+    });
     void scope.register(passkeyRoutes, {
       passkeys: deps.passkeys,
       beginPasskeyRegistration,
@@ -608,6 +620,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     void scope.register(storageUnitRoutes, {
       itemViews,
       storageUnitViews,
+      accountNames: new AccountNames(deps.users),
       ...useCases,
     });
     void scope.register(itemRoutes, {
@@ -967,6 +980,26 @@ const sendAuthError = async (
     return reply
       .code(404)
       .send(errorBody("ACCOUNT_NOT_FOUND", error.message, { accountId: error.accountId }));
+  }
+
+  /*
+   * Sharing (ADR 26): a disabled account opens nothing, so enable it first;
+   * and the tree's owner or an administrator already has edit. Both are 409:
+   * the request is right, and the world has to change for it to succeed.
+   */
+  if (error instanceof AccountDisabled) {
+    return reply
+      .code(409)
+      .send(errorBody("ACCOUNT_DISABLED", error.message, { accountId: error.accountId }));
+  }
+
+  if (error instanceof AlreadyHasEdit) {
+    return reply.code(409).send(
+      errorBody("ALREADY_HAS_EDIT", error.message, {
+        accountId: error.accountId,
+        because: error.because,
+      }),
+    );
   }
 
   if (error instanceof UsernameAlreadyTaken) {

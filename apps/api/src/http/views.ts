@@ -1,11 +1,17 @@
 import {
   formatStorageUnitPath,
+  ownerNamedBy,
+  permissionsOn,
+  isSharedWith,
+  type Access,
   type Item,
   type ItemSearchResult,
   type Photo,
   type PhotoId,
   type StorageUnit,
   type StorageUnitSearchResult,
+  type SpacePermissions,
+  type UserId,
 } from "@waymark/domain";
 
 import type { MachineToken } from "../auth/machine-token.js";
@@ -103,8 +109,39 @@ export interface PhotoView {
   readonly thumbnailUrl: string;
 }
 
+/**
+ * A node of the home screen's tree, carrying what the CALLER may do with it
+ * (ADR 26), so a client never offers an act the API would refuse.
+ *
+ * - `permissions` — their level on it, whether it may move from where it is,
+ *   and whether it may become a top-level space. Built from the rules the
+ *   writes check (`permissionsOn`), not re-derived here.
+ * - `owner` — whose inventory it is in, for an administrator only, so the
+ *   home screen can group roots by person. `null` for everybody else: a
+ *   person never learns another person's name from the tree.
+ * - `shared` — whether it reached the caller through a share rather than
+ *   being theirs. Always `false` for an administrator, who reaches
+ *   everything by role.
+ */
 export interface StorageUnitTreeView extends StorageUnitView {
+  readonly permissions: SpacePermissions;
+  readonly owner: OwnerView | null;
+  readonly shared: boolean;
   readonly children: readonly StorageUnitTreeView[];
+}
+
+/** The person whose inventory a space is in. */
+export interface OwnerView {
+  readonly id: string;
+  readonly username: string;
+}
+
+/** Who is asking, for the parts of a tree node that depend on it. */
+export interface TreeViewer {
+  readonly access: Access;
+  readonly callerId: UserId;
+  /** Usernames by account id; empty for anybody but an administrator. */
+  readonly usernames: ReadonlyMap<string, string>;
 }
 
 /**
@@ -221,12 +258,28 @@ export const photoView = (photo: Photo): PhotoView => ({
   thumbnailUrl: `/photos/${photo.id}/thumbnail`,
 });
 
+/**
+ * A node and everything under it, as `viewer` may act on them. The owner of
+ * the tree is read once, off the visible root, and handed down: every space
+ * below a root belongs to that root's owner (ADR 26).
+ */
 export const storageUnitTreeView = (
   node: StorageUnitTreeNode,
-): StorageUnitTreeView => ({
-  ...storageUnitView(node.unit),
-  children: node.children.map(storageUnitTreeView),
-});
+  viewer: TreeViewer,
+  treeOwnerId: UserId | null = ownerNamedBy(node.unit),
+): StorageUnitTreeView => {
+  const username = treeOwnerId === null ? undefined : viewer.usernames.get(treeOwnerId);
+
+  return {
+    ...storageUnitView(node.unit),
+    permissions: permissionsOn(viewer.access, viewer.callerId, node.unit, treeOwnerId),
+    // `usernames` is empty for anybody but an administrator: `AccountNames`
+    // decides that, once, so nothing here has to decide it again.
+    owner: treeOwnerId !== null && username !== undefined ? { id: treeOwnerId, username } : null,
+    shared: isSharedWith(viewer.access, viewer.callerId, treeOwnerId),
+    children: node.children.map((child) => storageUnitTreeView(child, viewer, treeOwnerId)),
+  };
+};
 
 /**
  * Takes the already-projected item rather than the entity, so the photos are

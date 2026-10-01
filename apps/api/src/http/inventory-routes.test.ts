@@ -219,7 +219,7 @@ describe("inventory over HTTP", () => {
       const response = await call({ method: "GET", url: "/storage-units" });
 
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ tree: [] });
+      expect(response.json()).toEqual({ tree: [], mayMakeRoot: true });
     });
 
     it("returns the whole tree, nested", async () => {
