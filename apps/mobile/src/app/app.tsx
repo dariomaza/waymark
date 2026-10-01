@@ -562,6 +562,20 @@ const navigationThemeFor = (colors: Palette, scheme: Scheme) =>
   },
 }) as const;
 
+/** How long a phone waits before asking again for a request that never left it. */
+export const OFFLINE_RETRY_DELAY_MS = 500;
+
+export interface QueryClientOptions {
+  /**
+   * How long to wait before the one retry, in milliseconds. A phone waits
+   * `OFFLINE_RETRY_DELAY_MS`. The tests pass 0: the wait is real time, and a
+   * test that sits through it spends half of a `findBy…`'s one second doing
+   * nothing, so any stall of the test process during the wait lets the retry
+   * and the assertion's deadline fall due together — and the deadline wins.
+   */
+  readonly offlineRetryDelay?: number;
+}
+
 /**
  * # Retrying, and why there is so little of it
  *
@@ -579,14 +593,16 @@ const navigationThemeFor = (colors: Palette, scheme: Scheme) =>
  * reached. So every request is attempted, and one that cannot leave the phone
  * comes back as the offline failure the screens already handle (ADR 13).
  */
-export const createQueryClient = (): QueryClient =>
+export const createQueryClient = ({
+  offlineRetryDelay = OFFLINE_RETRY_DELAY_MS,
+}: QueryClientOptions = {}): QueryClient =>
   new QueryClient({
     defaultOptions: {
       queries: {
         networkMode: "always",
         retry: (failureCount, error) =>
           failureKindOf(error) === FailureKind.OFFLINE && failureCount < 1,
-        retryDelay: 500,
+        retryDelay: offlineRetryDelay,
         refetchOnWindowFocus: false,
         staleTime: 30_000,
       },
