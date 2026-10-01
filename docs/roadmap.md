@@ -53,18 +53,11 @@ install in five lines, and a link to the site.
 
 ### Each person's inventory, an administrator, and shares (ADR 26)
 
-Decided 2026-10-01; the ADR is the design. Order of work, each slice shipped
-and mutation-tested before the next, both clients together where visible:
+Decided 2026-10-01; the ADR is the design. `Access`, ownership and shares in
+the schema, every read scoped and every write checked are built (slices 1-4).
+What is left, in order, each slice shipped and mutation-tested before the
+next, both clients together where visible:
 
-1. **`Access` in the domain**, `resolveAccess`, and the invisibility fixture
-   in the contract suite — red for every read path before any is scoped.
-2. **Ownership and shares in the schema**, with the migration (oldest account
-   becomes administrator and owner; others get edit on every root).
-3. **Every read path scoped**: the three routes that read repositories become
-   use cases, the guard test, search filtered before `LIMIT`, photo bytes,
-   breadcrumbs cut at the share boundary, QR images, MCP.
-4. **Every write path checked**: view-only is 403, unseen is 404, moves need
-   edit on both ends, only the owner or an administrator makes a root.
 5. **Machine tokens belong to their issuer.**
    **5b. A token narrowed to chosen spaces**: the issuer may pick spaces when
    creating it; its reach is the issuer's `Access` intersected with those
