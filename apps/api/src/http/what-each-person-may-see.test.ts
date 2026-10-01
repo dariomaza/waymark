@@ -2,6 +2,7 @@ import { PhotoProcessingStatus, ShareLevel, StorageUnitKind } from "@waymark/dom
 import type { InjectOptions, LightMyRequestResponse } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { MachineTokenScope } from "../auth/machine-token.js";
 import { aPlainImage } from "../photos/testing/image-fixtures.js";
 import { multipartBody } from "./testing/multipart.js";
 import {
@@ -196,6 +197,33 @@ describe("what each person may see over HTTP (ADR 26)", () => {
       const tree = ((await treeOf("admin")).json() as { tree: TreeNode[] }).tree;
 
       expect(tree.map((node) => node.name)).toEqual(["Ana house", "Bea flat"]);
+    });
+  });
+
+  describe("a machine token", () => {
+    it("sees exactly what the person who issued it sees, and nothing more", async () => {
+      const token = await api.createMachineToken(
+        "beas-assistant",
+        MachineTokenScope.Read,
+        undefined,
+        "bea",
+      );
+
+      const tree = await api.app.inject({
+        method: "GET",
+        url: "/storage-units",
+        headers: api.machineHeaders(token),
+      });
+      const safe = await api.app.inject({
+        method: "GET",
+        url: `/storage-units/${idOf("Ana safe")}`,
+        headers: api.machineHeaders(token),
+      });
+
+      expect(flatten((tree.json() as { tree: TreeNode[] }).tree).sort()).toEqual(
+        ["Ana attic", "Ana garage", "Ana shelf", "Bea flat", "Bea wardrobe"].sort(),
+      );
+      expect(safe.statusCode).toBe(404);
     });
   });
 
