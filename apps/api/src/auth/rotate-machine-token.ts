@@ -13,11 +13,6 @@ export interface RotateMachineTokenDependencies {
 export interface RotateMachineTokenCommand {
   readonly name: string;
   /**
-   * The person rotating it. The new secret is theirs to hand out, so the token
-   * belongs to them from here on (ADR 26).
-   */
-  readonly userId: string;
-  /**
    * Absent means it never lapses, exactly as it does on a creation — and
    * deliberately NOT "keep whatever the old one had".
    *
@@ -83,6 +78,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  *
  * ## What it will not do
  *
+ * Change the person it belongs to (ADR 26). A token acts as its owner, so an
+ * administrator rotating somebody's token and becoming its owner would turn a
+ * key that sees one inventory into one that sees all of them. There is no
+ * `userId` anywhere in a rotation, for the same reason there is no `scope`.
+ *
  * Change the scope. The command has no `scope` field and `MachineTokenRotation`
  * has none either, so a `read` key cannot become a `read-write` one through a
  * door labelled maintenance. Widening a credential is issuing a new one, under
@@ -109,7 +109,6 @@ export class RotateMachineToken {
     const machineToken = await this.deps.machineTokens.rotate({
       name,
       tokenHash,
-      userId: command.userId,
       createdAt: now,
       expiresAt:
         command.expiresInDays === undefined

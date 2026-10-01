@@ -78,7 +78,6 @@ export class PrismaMachineTokenRepository implements MachineTokenRepository {
       where: { name: rotation.name },
       data: {
         tokenHash: rotation.tokenHash,
-        userId: rotation.userId,
         createdAt: rotation.createdAt,
         expiresAt: rotation.expiresAt,
         // The secret is new, so nothing has used it yet. Saying anything else

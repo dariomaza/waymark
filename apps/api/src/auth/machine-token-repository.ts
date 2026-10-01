@@ -79,7 +79,10 @@ export interface MachineTokenRepository {
 /**
  * Everything a rotation replaces, which is deliberately not everything.
  *
- * `name` addresses the row; `scope` is absent because a rotation issues a new
+ * `name` addresses the row; `userId` is absent because the token keeps the
+ * person it belongs to (ADR 26) — an owner set by whoever rotates it would
+ * let an administrator's rotation widen what the token sees; `scope` is
+ * absent because a rotation issues a new
  * secret for the SAME key, and a rotation that could widen `read` into
  * `read-write` would be a way to escalate a credential while calling it
  * maintenance.
@@ -87,11 +90,6 @@ export interface MachineTokenRepository {
 export interface MachineTokenRotation {
   readonly name: string;
   readonly tokenHash: string;
-  /**
-   * Whoever rotated it. A rotation issues a new secret, and a token belongs to
-   * whoever issued its secret (ADR 26).
-   */
-  readonly userId: string;
   readonly createdAt: Date;
   /** Fresh, and never carried over: see `RotateMachineToken`. */
   readonly expiresAt: Date | null;

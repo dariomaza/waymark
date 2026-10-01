@@ -166,6 +166,9 @@ Prisma, as every contract suite does.
   its issuer sees.
   - ADR 18 argued against `userId` because a column nobody reads goes stale.
     `resolveAccess` now reads it on every request.
+- **Rotating a token keeps its owner,** as it keeps the name, the id and the
+  scope (ADR 18). Otherwise an administrator who rotated someone's token would
+  turn it into one that sees everything.
 - **People see the tokens they issued; an administrator sees all of them.**
   - ADR 18's argument that everyone who could mint a token should see it still
     holds. Under this ADR, the only person who can mint a token in somebody

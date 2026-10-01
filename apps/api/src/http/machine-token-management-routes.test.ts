@@ -294,18 +294,40 @@ describe("managing machine tokens over HTTP", () => {
   });
 
   describe("rotating one", () => {
-    it("hands it to the person who rotated it, who now holds the secret (ADR 26)", async () => {
-      await create({ name: "mcp-server", scope: "read" });
+    it("keeps the person it belongs to when somebody else rotates it (ADR 26)", async () => {
       await api.createUser("partner", "another-password");
       const partner = await api.login("partner", "another-password");
+      await create({ name: "mcp-server", scope: "read" }, api.authHeaders(partner));
 
-      await api.app.inject({
+      // The administrator rotates the partner's token. Handing it to them
+      // would let it see everything they see.
+      const response = await api.app.inject({
         method: "POST",
         url: "/auth/machine-tokens/mcp-server/rotate",
-        headers: api.authHeaders(partner),
+        headers: api.authHeaders(session),
         payload: {},
       });
 
+      expect(response.statusCode).toBe(200);
+      expect(await ownerOf("mcp-server")).toBe("partner");
+    });
+
+    it("refuses a rotation that names an owner, rather than ignoring it", async () => {
+      await api.createUser("partner", "another-password");
+      const partner = await api.login("partner", "another-password");
+      await create({ name: "mcp-server", scope: "read" }, api.authHeaders(partner));
+      const dario = await api.database.client.user.findUnique({
+        where: { username: TEST_USERNAME },
+      });
+
+      const response = await api.app.inject({
+        method: "POST",
+        url: "/auth/machine-tokens/mcp-server/rotate",
+        headers: api.authHeaders(session),
+        payload: { userId: dario?.id },
+      });
+
+      expect(response.statusCode).toBe(400);
       expect(await ownerOf("mcp-server")).toBe("partner");
     });
 

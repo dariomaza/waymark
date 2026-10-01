@@ -118,17 +118,19 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * scope, which this refuses on purpose.
      *
      * 200 rather than 201: nothing was created. The credential that was there
-     * is still there, under the same name, id and scope, holding a new secret.
+     * is still there, under the same name, id, scope and owner, holding a new
+     * secret.
      */
     app.post("/auth/machine-tokens/:name/rotate", async (request, reply) => {
-      const person = refuseMachineCaller(request);
+      refuseMachineCaller(request);
 
       const { name } = machineTokenNameParamsSchema.parse(request.params);
+      // Strict: a body naming a scope or an owner is refused with 400 rather
+      // than ignored, because a rotation changes neither (ADR 18, ADR 26).
       const body = rotateMachineTokenBodySchema.parse(request.body ?? {});
 
       const rotated = await options.rotateMachineToken.execute({
         name,
-        userId: person.id,
         ...(body.expiresInDays === undefined
           ? {}
           : { expiresInDays: body.expiresInDays }),

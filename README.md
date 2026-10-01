@@ -691,8 +691,8 @@ pnpm --filter @waymark/api machine-token revoke --name mcp-server
 ```
 
 - **A token belongs to a person** (ADR 26) and will act as them. From the
-  account sheet it is the person signed in; rotating one hands it to whoever
-  rotated it, since they now hold the secret. From the shell it is whoever
+  account sheet it is the person signed in, and rotating it keeps that
+  person, as it keeps the scope. From the shell it is whoever
   `--username` names, or the oldest administrator when nobody is named — and
   with no administrator at all, `create` refuses and says to run
   `create-user` first.

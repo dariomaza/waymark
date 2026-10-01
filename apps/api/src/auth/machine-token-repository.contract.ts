@@ -201,7 +201,6 @@ export const machineTokenRepositoryContract = (
       const A_ROTATION = {
         name: "mcp-server",
         tokenHash: "hash-next",
-        userId: "partner",
         createdAt: A_LATER_MOMENT,
         expiresAt: null,
       };
@@ -260,9 +259,9 @@ export const machineTokenRepositoryContract = (
         expect(rotated?.scope).toBe(MachineTokenScope.Read);
       });
 
-      it("hands it to the person who rotated it, who issued this secret", async () => {
+      it("keeps the person it belongs to, as it keeps the scope (ADR 26)", async () => {
         await machineTokens.create(
-          aMachineToken({ tokenHash: "hash-old", userId: "dario" }),
+          aMachineToken({ tokenHash: "hash-old", userId: "partner" }),
         );
 
         expect((await machineTokens.rotate(A_ROTATION))?.userId).toBe("partner");
@@ -333,7 +332,7 @@ export const machineTokenRepositoryContract = (
           name: "mcp-server",
           tokenHash: "hash-next",
           scope: MachineTokenScope.Read,
-          userId: "partner",
+          userId: "dario",
           createdAt: A_LATER_MOMENT,
           expiresAt: null,
           lastUsedAt: null,
