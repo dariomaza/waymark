@@ -688,6 +688,30 @@ export const EN = {
    * sees everybody's (ADR 26). A person sees only their own and is not told.
    */
   "tokens.issuedBy": "Issued by {username}",
+  /**
+   * On a row, for a token narrowed to chosen spaces (ADR 26): the spaces it
+   * sees, by name, joined. A token that was not narrowed says nothing here.
+   */
+  "tokens.seesOnly": "Sees only {spaces}",
+  /**
+   * On a row, for a narrowed token whose chosen spaces have all been deleted
+   * or are out of your sight. It sees nothing, and says so, rather than
+   * looking like a token that sees everything.
+   */
+  "tokens.seesNothing": "Its spaces are gone, so it sees nothing",
+  /** The question on the new-token form: how much of the house it may see. */
+  "tokens.reachLabel": "What it may see",
+  /** The default answer: everything the person issuing it can see. */
+  "tokens.reachEverything": "Everything you can see",
+  /** The other answer: only spaces ticked below, and what is inside them. */
+  "tokens.reachChosen": "Only the spaces you choose",
+  /** Above the list of spaces to tick. */
+  "tokens.spacesLabel": "Spaces it may see",
+  /** Under it: what ticking a space gives, and that it never exceeds you. */
+  "tokens.spacesHint":
+    "It sees each space you tick and everything inside it, and never more than you can.",
+  /** Said while "only the spaces you choose" has none ticked yet. */
+  "tokens.chooseASpace": "Tick at least one space.",
 
   /**
    * # The other half of a credential

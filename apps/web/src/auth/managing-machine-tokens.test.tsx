@@ -465,6 +465,122 @@ describe("machine tokens, from the account screen", () => {
     });
   });
 
+  /**
+   * A token may be narrowed to chosen spaces (ADR 26). The form asks how much
+   * it may see, and "everything you can see" is the answer it starts with.
+   */
+  describe("choosing the spaces it may see", () => {
+    const shelf = aStorageUnit({ id: "shelf", name: "Shelf", kind: "SHELF", parentId: "garage" });
+    const attic = aStorageUnit({ id: "attic", name: "Attic", kind: "ROOM" });
+
+    const sentBodies: unknown[] = [];
+
+    beforeEach(() => {
+      sentBodies.length = 0;
+      apiServer.use(
+        http.get(`${API_URL}/storage-units`, () =>
+          HttpResponse.json({ tree: [aTree(garage, [aTree(shelf)]), aTree(attic)] }),
+        ),
+        http.post(`${API_URL}/auth/machine-tokens`, async ({ request }) => {
+          sentBodies.push(await request.json());
+          return HttpResponse.json(
+            { token: "wmk_secret", machineToken: aMachineTokenView() },
+            { status: 201 },
+          );
+        }),
+      );
+    });
+
+    const openTheForm = async (): Promise<HTMLElement> => {
+      const account = await openTheAccountScreen();
+      await within(account).findByText(/no machine tokens yet/i);
+      await userEvent.click(within(account).getByRole("button", { name: /new token/i }));
+      await userEvent.type(
+        within(account).getByRole("textbox", { name: /what is it for/i }),
+        "garage-mcp",
+      );
+
+      return account;
+    };
+
+    const chooseSpaces = async (account: HTMLElement): Promise<void> => {
+      await userEvent.selectOptions(
+        within(account).getByRole("combobox", { name: /what it may see/i }),
+        "chosen",
+      );
+    };
+
+    it("starts at everything you can see, with no spaces to tick, and sends none", async () => {
+      const account = await openTheForm();
+
+      expect(within(account).getByRole("combobox", { name: /what it may see/i })).toHaveValue(
+        "everything",
+      );
+      expect(within(account).queryAllByRole("checkbox")).toEqual([]);
+
+      await userEvent.click(within(account).getByRole("button", { name: /create it/i }));
+      await waitFor(() => {
+        expect(sentBodies).toEqual([{ name: "garage-mcp", scope: "read" }]);
+      });
+    });
+
+    it("offers every space you can see, by where it is, and sends the ones ticked", async () => {
+      const account = await openTheForm();
+      await chooseSpaces(account);
+
+      const spaces = within(account).getByRole("group", { name: /spaces it may see/i });
+      expect(within(spaces).getAllByRole("checkbox").map((box) => box.closest("label")?.textContent)).toEqual([
+        "Garage",
+        "Garage > Shelf",
+        "Attic",
+      ]);
+
+      await userEvent.click(within(spaces).getByRole("checkbox", { name: "Garage" }));
+      await userEvent.click(within(spaces).getByRole("checkbox", { name: "Attic" }));
+      await userEvent.click(within(account).getByRole("button", { name: /create it/i }));
+
+      await waitFor(() => {
+        expect(sentBodies).toEqual([
+          { name: "garage-mcp", scope: "read", spaceIds: ["garage", "attic"] },
+        ]);
+      });
+    });
+
+    it("will not create a narrowed token with no space ticked, and says why", async () => {
+      const account = await openTheForm();
+      await chooseSpaces(account);
+
+      expect(within(account).getByText("Tick at least one space.")).toBeVisible();
+      expect(within(account).getByRole("button", { name: /create it/i })).toBeDisabled();
+      expect(sentBodies).toEqual([]);
+    });
+
+    it("says on its row which spaces a narrowed token sees, and when it sees none", async () => {
+      answerWith([
+        aMachineTokenView({ name: "whole", spaces: null }),
+        aMachineTokenView({
+          id: "mt2",
+          name: "narrow",
+          spaces: [
+            { id: "attic", name: "Attic" },
+            { id: "garage", name: "Garage" },
+          ],
+        }),
+        aMachineTokenView({ id: "mt3", name: "orphaned", spaces: [] }),
+      ]);
+
+      const account = await openTheAccountScreen();
+      const rowOf = async (name: string) =>
+        (await within(account).findByText(name)).closest("li") as HTMLElement;
+
+      expect(within(await rowOf("narrow")).getByText("Sees only Attic, Garage")).toBeVisible();
+      expect(
+        within(await rowOf("orphaned")).getByText("Its spaces are gone, so it sees nothing"),
+      ).toBeVisible();
+      expect(within(await rowOf("whole")).queryByText(/sees/i)).toBeNull();
+    });
+  });
+
   describe("rotating one", () => {
     const rotateAnswering = (token: string): void => {
       apiServer.use(

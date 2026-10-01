@@ -175,6 +175,83 @@ describe("machine tokens, from the phone", () => {
       });
     });
 
+    /**
+     * A token may be narrowed to chosen spaces (ADR 26). The form asks how
+     * much it may see; "everything you can see" is where it starts.
+     */
+    describe("choosing the spaces it may see", () => {
+      const openTheForm = async (): Promise<void> => {
+        await renderApp({ session: aSession() });
+        await openYourAccount();
+        await fireEvent.press(await screen.findByRole("button", { name: "New token" }));
+        await fireEvent.changeText(screen.getByLabelText("What is it for"), "garage-mcp");
+      };
+
+      it("starts at everything you can see, with nothing to tick, and sends no spaces", async () => {
+        const asked = theApiIssues("wmk_secret");
+        await openTheForm();
+
+        expect(
+          screen.getByRole("radio", { name: "Everything you can see" }).props.accessibilityState,
+        ).toMatchObject({ checked: true });
+        expect(screen.queryAllByRole("checkbox")).toEqual([]);
+
+        await fireEvent.press(screen.getByRole("button", { name: "Create it" }));
+        await waitFor(() => {
+          expect(asked).toEqual([{ name: "garage-mcp", scope: "read" }]);
+        });
+      });
+
+      it("offers every space you can see, by where it is, and sends the ones ticked", async () => {
+        const asked = theApiIssues("wmk_secret");
+        await openTheForm();
+        await fireEvent.press(screen.getByRole("radio", { name: "Only the spaces you choose" }));
+
+        expect(
+          screen.getAllByRole("checkbox").map((box) => box.props.accessibilityLabel as string),
+        ).toEqual(["Garage", "Garage > Metal wardrobe", "Garage > Metal wardrobe > Box 3"]);
+
+        await fireEvent.press(screen.getByRole("checkbox", { name: "Garage > Metal wardrobe" }));
+        await fireEvent.press(screen.getByRole("button", { name: "Create it" }));
+
+        await waitFor(() => {
+          expect(asked).toEqual([{ name: "garage-mcp", scope: "read", spaceIds: ["wardrobe"] }]);
+        });
+      });
+
+      it("will not create a narrowed token with no space ticked, and says why", async () => {
+        const asked = theApiIssues("wmk_secret");
+        await openTheForm();
+        await fireEvent.press(screen.getByRole("radio", { name: "Only the spaces you choose" }));
+
+        expect(screen.getByText("Tick at least one space.")).toBeOnTheScreen();
+        await fireEvent.press(screen.getByRole("button", { name: "Create it" }));
+        expect(asked).toEqual([]);
+      });
+    });
+
+    it("says on a row which spaces a narrowed token sees, and when it sees none", async () => {
+      theApiHolds([
+        aMachineTokenView({ name: "whole", spaces: null }),
+        aMachineTokenView({
+          id: "mt2",
+          name: "narrow",
+          spaces: [
+            { id: "attic", name: "Attic" },
+            { id: "garage", name: "Garage" },
+          ],
+        }),
+        aMachineTokenView({ id: "mt3", name: "orphaned", spaces: [] }),
+      ]);
+
+      await renderApp({ session: aSession() });
+      await openYourAccount();
+
+      expect(await screen.findByText("Sees only Attic, Garage")).toBeOnTheScreen();
+      expect(screen.getByText("Its spaces are gone, so it sees nothing")).toBeOnTheScreen();
+      expect(screen.queryAllByText(/^Sees only|sees nothing$/)).toHaveLength(2);
+    });
+
     it("shows the secret, and says it will never show it again while it still is", async () => {
       theApiIssues("wmk_the_only_copy");
 

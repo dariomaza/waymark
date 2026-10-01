@@ -459,6 +459,21 @@ export const ES: Dictionary = {
   "tokens.lapsesOn": "Caduca el {when}",
   /** De quién es el token; solo lo ve un administrador (ADR 26). */
   "tokens.issuedBy": "Emitido por {username}",
+  /** Un token limitado a espacios elegidos: cuáles ve (ADR 26). */
+  "tokens.seesOnly": "Solo ve {spaces}",
+  /** Un token limitado cuyos espacios ya no existen: no ve nada. */
+  "tokens.seesNothing": "Sus espacios ya no están, así que no ve nada",
+  /** La pregunta del formulario: cuánto de la casa puede ver. */
+  "tokens.reachLabel": "Qué puede ver",
+  /** Lo normal: todo lo que ve quien lo crea. */
+  "tokens.reachEverything": "Todo lo que puedes ver",
+  /** Solo los espacios marcados debajo y lo que tienen dentro. */
+  "tokens.reachChosen": "Solo los espacios que elijas",
+  "tokens.spacesLabel": "Espacios que puede ver",
+  "tokens.spacesHint":
+    "Ve cada espacio que marques y todo lo que tiene dentro, y nunca más de lo que ves tú.",
+  /** Mientras no hay ningún espacio marcado. */
+  "tokens.chooseASpace": "Marca al menos un espacio.",
 
   "tokens.addressNote":
     "Esta es la dirección de Waymark a la que llama un programa. No es un secreto, así que cógela cuando la necesites.",

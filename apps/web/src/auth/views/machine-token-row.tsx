@@ -81,6 +81,16 @@ export const MachineTokenRow = ({
               {t("tokens.lapsesOn", { when: when(token.expiresAt) })}
             </span>
           )}
+          {/* What a narrowed token sees; a whole one says nothing (ADR 26). */}
+          {token.spaces === null || token.spaces === undefined ? null : (
+            <span className="settings-item__fact">
+              {token.spaces.length === 0
+                ? t("tokens.seesNothing")
+                : t("tokens.seesOnly", {
+                    spaces: token.spaces.map((chosenSpace) => chosenSpace.name).join(", "),
+                  })}
+            </span>
+          )}
           {/* Only an administrator's list says whose a token is (ADR 26). */}
           {token.issuedBy === undefined ? null : (
             <span className="settings-item__fact">

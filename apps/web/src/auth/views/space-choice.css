@@ -1,0 +1,15 @@
+/* A fieldset that looks like the other fields on the form, not a framed box. */
+.space-choice {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.space-choice__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
