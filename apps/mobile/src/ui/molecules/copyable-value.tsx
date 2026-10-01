@@ -28,6 +28,13 @@ export interface CopyableValueProps {
    * address, which is a fact somebody looks up and not a secret to transcribe.
    */
   readonly plain?: boolean;
+  /**
+   * Kept to one line and cut short at its end, for a value on a row of a card
+   * — the API address — rather than one somebody transcribes. The start is the
+   * part that tells one Waymark from another, so it is the part that stays;
+   * the whole of it is still what is copied and what the label should say.
+   */
+  readonly oneLine?: boolean;
 }
 
 /**
@@ -71,6 +78,7 @@ export const CopyableValue = ({
   failedLabel,
   multiline = false,
   plain = false,
+  oneLine = false,
 }: CopyableValueProps): JSX.Element => {
   const colors = useColors();
   const styles = useStyles();
@@ -83,6 +91,7 @@ export const CopyableValue = ({
         <Text
           accessibilityLabel={valueLabel}
           selectable
+          {...(oneLine ? { numberOfLines: 1, ellipsizeMode: "tail" as const } : {})}
           style={[styles.value, multiline ? styles.multiline : null, plain ? styles.plain : null]}
         >
           {value}

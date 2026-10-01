@@ -16,6 +16,13 @@ export interface CopyableValueProps {
   readonly failedLabel: string;
   /** Lets a panel style its own value without this molecule knowing about it. */
   readonly className?: string | undefined;
+  /**
+   * Kept to one line and cut short at its end, for a value that sits on a row
+   * of a card — the API address — rather than one somebody transcribes. The
+   * whole of it is then the tooltip, and still the text a screen reader and
+   * the clipboard are given.
+   */
+  readonly oneLine?: boolean | undefined;
 }
 
 /**
@@ -69,18 +76,27 @@ export const CopyableValue = ({
   copiedLabel,
   failedLabel,
   className,
+  oneLine = false,
 }: CopyableValueProps): JSX.Element => {
   const [copied, setCopied] = useState<boolean | null>(null);
 
   return (
-    <div className={["copyable", className ?? ""].filter(Boolean).join(" ")}>
+    <div
+      className={["copyable", oneLine ? "copyable--one-line" : "", className ?? ""]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="copyable__row">
         {/*
           A `<code>` in a block that wraps rather than scrolling sideways: a
           credential with its last eight characters off the right-hand edge of
           a phone is one somebody copies wrongly by hand.
         */}
-        <code className="copyable__value" aria-label={valueLabel}>
+        <code
+          className="copyable__value"
+          aria-label={valueLabel}
+          title={oneLine ? value : undefined}
+        >
           {value}
         </code>
         <button

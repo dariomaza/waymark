@@ -41,6 +41,21 @@
 }
 
 /*
+ * One line, cut short at the END, for a value on a row of a card. The start is
+ * the part that tells one Waymark from another, so it is the part that stays:
+ * `https://waymark.idemcl…`. The row is then the height of every other row,
+ * and the whole value is still the tooltip, the accessible name and what the
+ * control copies. It can only be cut because the value's own `min-width: 0`
+ * (above) lets it shrink below its text.
+ */
+.copyable--one-line .copyable__value {
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
  * 48 by 48, and not a pixel less. This app is used one-handed, standing up,
  * holding a box in the other hand — the same floor every button in the app
  * declares, kept here rather than inherited because this is not a `.button`.

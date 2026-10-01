@@ -674,7 +674,12 @@ export const EN = {
    */
   "tokens.addressNote":
     "This is the Waymark a program calls. It is not a secret, so take it as often as you need it.",
-  "tokens.addressLabel": "The address of this Waymark",
+  /**
+   * What a screen reader calls the address, and it carries the address
+   * itself: on screen the value is cut short to one line, and the name is
+   * the one place somebody who cannot see it is told the whole of it.
+   */
+  "tokens.addressLabel": "The address of this Waymark: {address}",
   "tokens.addressCopy": "Copy the address",
   "tokens.addressCopied": "Address copied",
 

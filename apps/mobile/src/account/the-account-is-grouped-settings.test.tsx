@@ -3,6 +3,7 @@ import { aSession } from "@waymark/api-client/testing";
 import { LANGUAGE_KEY } from "../app/language.js";
 import { inMemorySecureStorage } from "../auth/secure-storage.js";
 import { SESSION_KEY } from "../auth/session-store.js";
+import { fakeClipboard } from "../testing/fake-clipboard.js";
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
 import { fireEvent, renderApp, screen, waitFor, within } from "../testing/render-app.js";
 import { theApiKnowsTheHouse } from "../testing/the-house.js";
@@ -232,8 +233,37 @@ describe("the connected programs group", () => {
   it("gives the address one row, without a title of its own", async () => {
     await openAccount();
 
-    expect(await screen.findByLabelText("The address of this Waymark")).toBeOnTheScreen();
+    expect(
+      await screen.findByLabelText(`The address of this Waymark: ${API_URL}`),
+    ).toBeOnTheScreen();
     expect(screen.queryByText("Where to point it")).toBeNull();
+  });
+
+  /**
+   * # One line, cut short at the end rather than wrapped onto a second
+   *
+   * The owner saw the browser's row break the address onto two lines, twice
+   * the height of every other row in the card; this row is the same row. The
+   * end gives way and the start — the part that tells one Waymark from
+   * another — stays. Cut short on screen, never anywhere else: TalkBack reads
+   * the whole of it in the row's name, and the clipboard gets the whole of it.
+   * Jest draws nothing, so what is proven is what the Text is asked to do.
+   */
+  it("keeps the address on one line, cut short at its end, and whole everywhere else", async () => {
+    const clipboard = fakeClipboard();
+    await renderApp({ session: aSession({ username: "dario" }), clipboard });
+    await screen.findByText(theCamera);
+    await fireEvent.press(screen.getByRole("button", { name: "You, signed in as dario" }));
+
+    const address = await screen.findByLabelText(`The address of this Waymark: ${API_URL}`);
+    expect(address).toHaveTextContent(API_URL, { exact: true });
+    expect(address.props.numberOfLines).toBe(1);
+    expect(address.props.ellipsizeMode).toBe("tail");
+
+    await fireEvent.press(screen.getByRole("button", { name: "Copy the address" }));
+    await waitFor(() => {
+      expect(clipboard.copied).toEqual([API_URL]);
+    });
   });
 
   it("gives each token its name, what it may do, and two icons with no words", async () => {

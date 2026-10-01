@@ -105,7 +105,7 @@ describe("machine tokens, from the phone", () => {
       await renderApp({ session: aSession() });
       await openYourAccount();
 
-      expect(await screen.findByLabelText("The address of this Waymark")).toBeOnTheScreen();
+      expect(await screen.findByLabelText(`The address of this Waymark: ${API_URL}`)).toBeOnTheScreen();
       expect(screen.getByText(API_URL)).toBeOnTheScreen();
     });
 

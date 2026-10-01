@@ -40,8 +40,9 @@ export const ApiAddress = ({ endpoint }: ApiAddressProps): JSX.Element => {
       <Icon name="link" size={20} />
       <CopyableValue
         className="api-address__value"
+        oneLine
         value={endpoint}
-        valueLabel={t("tokens.addressLabel")}
+        valueLabel={t("tokens.addressLabel", { address: endpoint })}
         copyLabel={t("tokens.addressCopy")}
         copiedLabel={t("tokens.addressCopied")}
         failedLabel={t("tokens.copyFailed")}
