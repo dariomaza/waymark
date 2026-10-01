@@ -69,8 +69,15 @@ because they cost very different amounts:
   what was meant to be hidden. If wanted, scope by top-level space (a grant on
   a root unit that covers everything under it), never per item.
 
-To decide first: does the household actually need to hide things, or only to
-stop some accounts from changing them? The second is roles alone.
+**Owner's answer (2026-10-01): hide things, cascading down the tree, knowing it
+costs more.** So the work is both halves: roles, and visibility granted on a
+space and inherited by everything under it. It needs a new ADR superseding
+ADR 5 and ADR 6 before any code, and the leak class of bug has to be closed by
+construction, not by care: one place where a person's visible subtrees are
+resolved, every read use case taking it as a required argument, and a
+contract test per port proving an ungranted space, item, photo, search hit,
+label lookup and MCP answer are all invisible — including through search, the
+`/u/<publicId>` label route, and moves between spaces.
 
 ## Known gaps between the clients
 
