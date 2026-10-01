@@ -1,5 +1,4 @@
 import {
-  createPhoto,
   FindPhoto,
   GetItem,
   GetStorageUnit,
@@ -9,115 +8,36 @@ import {
   ListStorageUnits,
   ReachablePhotos,
   SearchInventory,
-  resolveAccess,
   Role,
-  ShareLevel,
   StorageUnitNotFound,
   unitId,
-  userId,
   type Access,
   type UnitId,
   type UserId,
 } from "@waymark/domain";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { AN_OWNER, ANOTHER_OWNER, aPhotoId, aStorageUnit, anItem } from "./builders.js";
+import { aPhotoId, anItem } from "./builders.js";
 import type { InvisibilityContext, RepositoryHarness } from "./harness.js";
-
-/** Ana owns a house; Bea owns a flat. Neither is an administrator. */
-const ANA: UserId = AN_OWNER;
-const BEA: UserId = ANOTHER_OWNER;
-/** Owns nothing. An administrator's reach does not depend on owning. */
-const ADMIN: UserId = userId("contract-administrator");
-
-/**
- * The one fixture every read path is held to (ADR 26).
- *
- * Ana's house holds a garage shared with Bea to view, an attic shared with
- * Bea to edit, and a safe shared with nobody. The house itself is not shared,
- * so for Bea the garage and the attic are roots and the house's name must
- * never appear. Bea's flat is hers alone.
- */
-const SPACES = {
-  house: aStorageUnit("ana-house", { name: "Ana house", ownerId: ANA }),
-  garage: aStorageUnit("ana-garage", {
-    name: "Ana garage",
-    parentId: unitId("ana-house"),
-  }),
-  shelf: aStorageUnit("ana-shelf", { name: "Ana shelf", parentId: unitId("ana-garage") }),
-  attic: aStorageUnit("ana-attic", { name: "Ana attic", parentId: unitId("ana-house") }),
-  safe: aStorageUnit("ana-safe", {
-    name: "Ana safe",
-    parentId: unitId("ana-house"),
-    photoId: aPhotoId("photo-of-the-safe"),
-  }),
-  jewels: aStorageUnit("ana-jewels", {
-    name: "Ana jewel box",
-    parentId: unitId("ana-safe"),
-  }),
-  flat: aStorageUnit("bea-flat", { name: "Bea flat", ownerId: BEA }),
-  wardrobe: aStorageUnit("bea-wardrobe", {
-    name: "Bea wardrobe",
-    parentId: unitId("bea-flat"),
-  }),
-} as const;
-
-const ITEMS = {
-  tent: anItem("ana-tent", SPACES.house.id, { name: "Ana tent" }),
-  drill: anItem("ana-drill", SPACES.shelf.id, {
-    name: "Ana drill",
-    photos: [aPhotoId("photo-of-the-drill")],
-  }),
-  lamp: anItem("ana-lamp", SPACES.attic.id, { name: "Ana lamp" }),
-  passport: anItem("ana-passport", SPACES.safe.id, {
-    name: "Ana passport",
-    photos: [aPhotoId("photo-of-the-passport")],
-  }),
-  ring: anItem("ana-ring", SPACES.jewels.id, { name: "Ana ring" }),
-  scarf: anItem("bea-scarf", SPACES.wardrobe.id, {
-    name: "Bea scarf",
-    photos: [aPhotoId("photo-of-the-scarf")],
-  }),
-} as const;
-
-const PHOTOS = [
-  "photo-of-the-drill",
-  "photo-of-the-passport",
-  "photo-of-the-safe",
-  "photo-of-the-scarf",
-];
-
-const ANAS_SPACES = ["ana-attic", "ana-garage", "ana-house", "ana-jewels", "ana-safe", "ana-shelf"];
-const BEAS_SPACES = ["bea-flat", "bea-wardrobe"];
-/** What is shared with Bea, and everything under it. */
-const SHARED_WITH_BEA = ["ana-attic", "ana-garage", "ana-shelf"];
-
-/** Every name Bea must never read, wherever an answer might carry it. */
-const NAMES_HIDDEN_FROM_BEA = [
-  "Ana house",
-  "Ana safe",
-  "Ana jewel box",
-  "Ana tent",
-  "Ana passport",
-  "Ana ring",
-];
-
-/** Every name of Bea's, which Ana must never read. */
-const BEAS_NAMES = ["Bea flat", "Bea wardrobe", "Bea scarf"];
-
-const ANAS_ITEMS = ["ana-drill", "ana-lamp", "ana-passport", "ana-ring", "ana-tent"];
-/** What Bea may see of Ana's things: what the garage and the attic hold. */
-const ANAS_ITEMS_SHARED_WITH_BEA = ["ana-drill", "ana-lamp"];
-
-/** The names an answer carries, wherever in it they are. */
-const namesIn = (answer: unknown, among: readonly string[]): string[] => {
-  const text = JSON.stringify(answer);
-
-  return among.filter((name) => text.includes(name));
-};
-
-const sortedIdsOf = (entities: readonly { readonly id: string }[]): string[] =>
-  entities.map((entity) => entity.id).sort();
+import {
+  accessIn,
+  ADMIN,
+  ANA,
+  ANAS_ITEMS,
+  ANAS_ITEMS_SHARED_WITH_BEA,
+  ANAS_SPACES,
+  BEA,
+  BEAS_NAMES,
+  BEAS_SPACES,
+  ITEMS,
+  NAMES_HIDDEN_FROM_BEA,
+  namesIn,
+  PHOTOS,
+  SHARED_WITH_BEA,
+  seedHousehold,
+  sortedIdsOf,
+  SPACES,
+} from "./invisibility.fixture.js";
 
 /**
  * # Something you may not see does not exist (ADR 26)
@@ -137,12 +57,8 @@ export const invisibilityContract = (
   describe(`What each person may see (${harness.name})`, () => {
     let context: InvisibilityContext;
 
-    const accessOf = async (who: UserId, role: Role = Role.USER): Promise<Access> =>
-      resolveAccess({
-        caller: { userId: who, role },
-        storageUnits: await context.storageUnits.findAll(),
-        shares: await context.shares.findAll(),
-      });
+    const accessOf = (who: UserId, role: Role = Role.USER): Promise<Access> =>
+      accessIn(context, who, role);
 
     const asAna = (): Promise<Access> => accessOf(ANA);
     const asBea = (): Promise<Access> => accessOf(BEA);
@@ -150,30 +66,7 @@ export const invisibilityContract = (
 
     beforeEach(async () => {
       context = await harness.setUp();
-      // Root first, so a relational adapter's parent keys are satisfiable.
-      for (const unit of Object.values(SPACES)) {
-        await context.storageUnits.save(unit);
-      }
-      await context.items.saveAll(Object.values(ITEMS));
-      for (const id of PHOTOS) {
-        await context.photos.save(
-          createPhoto({
-            id: aPhotoId(id),
-            originalPath: `ab/${id}.jpg`,
-            thumbnailPath: `ab/${id}.thumb.jpg`,
-          }),
-        );
-      }
-      await context.shares.set({
-        storageUnitId: SPACES.garage.id,
-        userId: BEA,
-        access: ShareLevel.VIEW,
-      });
-      await context.shares.set({
-        storageUnitId: SPACES.attic.id,
-        userId: BEA,
-        access: ShareLevel.EDIT,
-      });
+      await seedHousehold(context);
     });
 
     afterEach(async () => {
