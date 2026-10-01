@@ -451,7 +451,7 @@ export const ES: Dictionary = {
 
   "tokens.addressNote":
     "Esta es la dirección de Waymark a la que llama un programa. No es un secreto, así que cógela cuando la necesites.",
-  "tokens.addressLabel": "La dirección de este Waymark",
+  "tokens.addressLabel": "La dirección de este Waymark: {address}",
   "tokens.addressCopy": "Copiar la dirección",
   "tokens.addressCopied": "Dirección copiada",
 

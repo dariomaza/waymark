@@ -1,6 +1,6 @@
 import { aSession } from "@waymark/api-client/testing";
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PasskeyPlatform } from "../auth/passkey-platform.js";
 import { sessionStore } from "../auth/session-store.js";
@@ -355,12 +355,61 @@ describe("the connected programs group", () => {
     await screen.findByText("dario");
 
     const address = within(groupTitled("Connected programs")).getByLabelText(
-      "The address of this Waymark",
+      "The address of this Waymark: http://localhost:3000",
     );
     const row = address.closest(".settings-group__card > *") as HTMLElement;
 
     expect(within(row).getByRole("button", { name: "Copy the address" })).toBeVisible();
     expect(screen.queryByText("Where to point it")).toBeNull();
+  });
+
+  /**
+   * # One line, cut short at the end rather than wrapped onto a second
+   *
+   * The owner, on his phone: the address broke onto two lines, which made the
+   * row twice the height of every other row in the card. A production address
+   * is longer than the room beside a link icon and a 48px control, so the end
+   * gives way — `https://waymark.idemcl…` — and the beginning, which is the
+   * part that tells one Waymark from another, stays.
+   *
+   * Cutting it short on screen must not cut it short anywhere else: the name a
+   * screen reader reads, the tooltip, and the clipboard all get the whole of
+   * it. jsdom has no layout, so what is proven here is what the stylesheet
+   * asks for, not the pixels it produces.
+   */
+  it("keeps the address on one line, cut short at its end, and whole everywhere else", async () => {
+    const copied: string[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          copied.push(value);
+        },
+      },
+    });
+    await openAccount();
+    await screen.findByText("dario");
+
+    const address = within(groupTitled("Connected programs")).getByLabelText(
+      "The address of this Waymark: http://localhost:3000",
+    );
+    expect(address).toHaveTextContent(/^http:\/\/localhost:3000$/u);
+    expect(address).toHaveAttribute("title", "http://localhost:3000");
+
+    paint("ui/molecules/copyable-value.css", "auth/views/api-address.css");
+    const drawnAs = getComputedStyle(address);
+    expect(drawnAs.whiteSpace).toBe("nowrap");
+    expect(drawnAs.overflow).toBe("hidden");
+    expect(drawnAs.textOverflow).toBe("ellipsis");
+    expect(drawnAs.minWidth).toMatch(/^0(px)?$/u);
+    expect(getComputedStyle(address.closest(".copyable") as HTMLElement).minWidth).toMatch(
+      /^0(px)?$/u,
+    );
+
+    await userEvent.click(within(groupTitled("Connected programs")).getByRole("button", { name: "Copy the address" }));
+    await vi.waitFor(() => {
+      expect(copied).toEqual(["http://localhost:3000"]);
+    });
   });
 
   it("gives each token one row: its name, what it may do, and two icons", async () => {
