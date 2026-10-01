@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { CreateItem } from "../items/create-item.js";
 import { ItemNotFound, PhotoNotOnItem, TooManyItemPhotos } from "../items/item-errors.js";
 import { InMemoryItemRepository } from "../items/item-repository.fake.js";
@@ -66,7 +67,7 @@ describe("photo use cases", () => {
   });
 
   const aBox = async (): Promise<StorageUnit> =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       name: "Box 3",
       kind: StorageUnitKind.BOX,
@@ -74,7 +75,7 @@ describe("photo use cases", () => {
 
   const anItem = async (): Promise<Item> => {
     const box = await aBox();
-    return createItem.execute({ storageUnitId: box.id, name: "Cordless drill" });
+    return createItem.execute(SEES_EVERYTHING, { storageUnitId: box.id, name: "Cordless drill" });
   };
 
   describe("AttachItemPhoto", () => {
@@ -82,7 +83,7 @@ describe("photo use cases", () => {
       const item = await anItem();
       const photo = aPhoto("photo-1");
 
-      const result = await attachItemPhoto.execute({ itemId: item.id, photo });
+      const result = await attachItemPhoto.execute(SEES_EVERYTHING, { itemId: item.id, photo });
 
       expect(result.item.photos).toEqual(["photo-1"]);
       expect(await photos.findById(photo.id)).toEqual(photo);
@@ -91,9 +92,9 @@ describe("photo use cases", () => {
 
     it("keeps the first photo as the cover", async () => {
       const item = await anItem();
-      await attachItemPhoto.execute({ itemId: item.id, photo: aPhoto("first") });
+      await attachItemPhoto.execute(SEES_EVERYTHING, { itemId: item.id, photo: aPhoto("first") });
 
-      const result = await attachItemPhoto.execute({
+      const result = await attachItemPhoto.execute(SEES_EVERYTHING, {
         itemId: item.id,
         photo: aPhoto("second"),
       });
@@ -103,7 +104,10 @@ describe("photo use cases", () => {
 
     it("rejects an unknown item before storing anything", async () => {
       await expect(
-        attachItemPhoto.execute({ itemId: itemId("ghost"), photo: aPhoto("photo-1") }),
+        attachItemPhoto.execute(SEES_EVERYTHING, {
+          itemId: itemId("ghost"),
+          photo: aPhoto("photo-1"),
+        }),
       ).rejects.toBeInstanceOf(ItemNotFound);
 
       expect(photos.size).toBe(0);
@@ -117,11 +121,14 @@ describe("photo use cases", () => {
     it("stores nothing when the item is already full", async () => {
       const item = await anItem();
       for (let index = 0; index < MAX_ITEM_PHOTOS; index += 1) {
-        await attachItemPhoto.execute({ itemId: item.id, photo: aPhoto(`p${index}`) });
+        await attachItemPhoto.execute(SEES_EVERYTHING, {
+          itemId: item.id,
+          photo: aPhoto(`p${index}`),
+        });
       }
 
       await expect(
-        attachItemPhoto.execute({ itemId: item.id, photo: aPhoto("one-more") }),
+        attachItemPhoto.execute(SEES_EVERYTHING, { itemId: item.id, photo: aPhoto("one-more") }),
       ).rejects.toBeInstanceOf(TooManyItemPhotos);
 
       expect(photos.size).toBe(MAX_ITEM_PHOTOS);
@@ -132,7 +139,7 @@ describe("photo use cases", () => {
       const item = await anItem();
       clock.advanceBy(60_000);
 
-      const result = await attachItemPhoto.execute({
+      const result = await attachItemPhoto.execute(SEES_EVERYTHING, {
         itemId: item.id,
         photo: aPhoto("photo-1"),
       });
@@ -146,7 +153,10 @@ describe("photo use cases", () => {
       const item = await anItem();
       let current = item;
       for (const id of ids) {
-        current = (await attachItemPhoto.execute({ itemId: item.id, photo: aPhoto(id) }))
+        current = (await attachItemPhoto.execute(SEES_EVERYTHING, {
+          itemId: item.id,
+          photo: aPhoto(id),
+        }))
           .item;
       }
 
@@ -156,7 +166,7 @@ describe("photo use cases", () => {
     it("takes the photo off and hands back what to release", async () => {
       const item = await withPhotos(["a", "b"]);
 
-      const result = await detachItemPhoto.execute({
+      const result = await detachItemPhoto.execute(SEES_EVERYTHING, {
         itemId: item.id,
         photoId: photoId("a"),
       });
@@ -173,7 +183,7 @@ describe("photo use cases", () => {
     it("leaves the photo row for the caller to release", async () => {
       const item = await withPhotos(["a"]);
 
-      await detachItemPhoto.execute({ itemId: item.id, photoId: photoId("a") });
+      await detachItemPhoto.execute(SEES_EVERYTHING, { itemId: item.id, photoId: photoId("a") });
 
       expect(await photos.findById(photoId("a"))).not.toBeNull();
     });
@@ -182,13 +192,19 @@ describe("photo use cases", () => {
       const item = await withPhotos(["a"]);
 
       await expect(
-        detachItemPhoto.execute({ itemId: item.id, photoId: photoId("elsewhere") }),
+        detachItemPhoto.execute(SEES_EVERYTHING, {
+          itemId: item.id,
+          photoId: photoId("elsewhere"),
+        }),
       ).rejects.toBeInstanceOf(PhotoNotOnItem);
     });
 
     it("refuses an unknown item", async () => {
       await expect(
-        detachItemPhoto.execute({ itemId: itemId("ghost"), photoId: photoId("a") }),
+        detachItemPhoto.execute(SEES_EVERYTHING, {
+          itemId: itemId("ghost"),
+          photoId: photoId("a"),
+        }),
       ).rejects.toBeInstanceOf(ItemNotFound);
     });
   });
@@ -197,7 +213,7 @@ describe("photo use cases", () => {
     const withPhotos = async (ids: readonly string[]): Promise<Item> => {
       const item = await anItem();
       for (const id of ids) {
-        await attachItemPhoto.execute({ itemId: item.id, photo: aPhoto(id) });
+        await attachItemPhoto.execute(SEES_EVERYTHING, { itemId: item.id, photo: aPhoto(id) });
       }
 
       return (await items.findById(item.id)) as Item;
@@ -206,7 +222,7 @@ describe("photo use cases", () => {
     it("chooses the cover by putting a photo first", async () => {
       const item = await withPhotos(["a", "b", "c"]);
 
-      const result = await reorderItemPhotos.execute({
+      const result = await reorderItemPhotos.execute(SEES_EVERYTHING, {
         itemId: item.id,
         photoIds: [photoId("c"), photoId("b"), photoId("a")],
       });
@@ -220,13 +236,13 @@ describe("photo use cases", () => {
       const item = await withPhotos(["a", "b"]);
 
       await expect(
-        reorderItemPhotos.execute({ itemId: item.id, photoIds: [photoId("b")] }),
+        reorderItemPhotos.execute(SEES_EVERYTHING, { itemId: item.id, photoIds: [photoId("b")] }),
       ).rejects.toBeInstanceOf(PhotoNotOnItem);
     });
 
     it("refuses an unknown item", async () => {
       await expect(
-        reorderItemPhotos.execute({ itemId: itemId("ghost"), photoIds: [] }),
+        reorderItemPhotos.execute(SEES_EVERYTHING, { itemId: itemId("ghost"), photoIds: [] }),
       ).rejects.toBeInstanceOf(ItemNotFound);
     });
   });
@@ -236,7 +252,7 @@ describe("photo use cases", () => {
       const box = await aBox();
       const photo = aPhoto("photo-1");
 
-      const result = await setStorageUnitPhoto.execute({ unitId: box.id, photo });
+      const result = await setStorageUnitPhoto.execute(SEES_EVERYTHING, { unitId: box.id, photo });
 
       expect(result.unit.photoId).toBe("photo-1");
       expect(result.releasedPhotoIds).toEqual([]);
@@ -250,9 +266,9 @@ describe("photo use cases", () => {
      */
     it("releases the photo it replaces", async () => {
       const box = await aBox();
-      await setStorageUnitPhoto.execute({ unitId: box.id, photo: aPhoto("old") });
+      await setStorageUnitPhoto.execute(SEES_EVERYTHING, { unitId: box.id, photo: aPhoto("old") });
 
-      const result = await setStorageUnitPhoto.execute({
+      const result = await setStorageUnitPhoto.execute(SEES_EVERYTHING, {
         unitId: box.id,
         photo: aPhoto("new"),
       });
@@ -263,9 +279,12 @@ describe("photo use cases", () => {
 
     it("clears the photo and releases it", async () => {
       const box = await aBox();
-      await setStorageUnitPhoto.execute({ unitId: box.id, photo: aPhoto("old") });
+      await setStorageUnitPhoto.execute(SEES_EVERYTHING, { unitId: box.id, photo: aPhoto("old") });
 
-      const result = await setStorageUnitPhoto.execute({ unitId: box.id, photo: null });
+      const result = await setStorageUnitPhoto.execute(SEES_EVERYTHING, {
+        unitId: box.id,
+        photo: null,
+      });
 
       expect(result.unit.photoId).toBeNull();
       expect(result.releasedPhotoIds).toEqual(["old"]);
@@ -274,14 +293,20 @@ describe("photo use cases", () => {
     it("clearing a unit with no photo releases nothing", async () => {
       const box = await aBox();
 
-      const result = await setStorageUnitPhoto.execute({ unitId: box.id, photo: null });
+      const result = await setStorageUnitPhoto.execute(SEES_EVERYTHING, {
+        unitId: box.id,
+        photo: null,
+      });
 
       expect(result.releasedPhotoIds).toEqual([]);
     });
 
     it("refuses an unknown unit before storing anything", async () => {
       await expect(
-        setStorageUnitPhoto.execute({ unitId: unitId("ghost"), photo: aPhoto("p") }),
+        setStorageUnitPhoto.execute(SEES_EVERYTHING, {
+          unitId: unitId("ghost"),
+          photo: aPhoto("p"),
+        }),
       ).rejects.toBeInstanceOf(StorageUnitNotFound);
 
       expect(photos.size).toBe(0);
@@ -291,7 +316,7 @@ describe("photo use cases", () => {
       const box = await aBox();
       clock.advanceBy(60_000);
 
-      const result = await setStorageUnitPhoto.execute({
+      const result = await setStorageUnitPhoto.execute(SEES_EVERYTHING, {
         unitId: box.id,
         photo: aPhoto("photo-1"),
       });

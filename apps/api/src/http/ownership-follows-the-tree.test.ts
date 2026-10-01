@@ -1,3 +1,4 @@
+import { ShareLevel } from "@waymark/domain";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import {
@@ -15,8 +16,10 @@ import {
  * because what is being proven is what gets STORED: who the database will say
  * owns a garage when, in a later slice, it is asked who may see it.
  *
- * Nobody is refused anything here. Refusing is a later slice; this one is
- * only about who ends up owning what.
+ * Nobody is refused anything here: every write below is one its author may
+ * make (ADR 26). What may be refused is proven in
+ * `what-each-person-may-see.test.ts`; this file is only about who ends up
+ * owning what.
  */
 describe("whose a space is, over HTTP", () => {
   let api: TestApi;
@@ -79,8 +82,9 @@ describe("whose a space is, over HTTP", () => {
     expect(await ownerOf(garage)).toBe("partner");
   });
 
-  it("stores no owner on a space made inside another, whoever made it", async () => {
+  it("stores no owner on a space made inside another, even by somebody it was shared with", async () => {
     const garage = await create(dario, "Garage");
+    await api.share(garage, "partner", ShareLevel.EDIT);
     const shelf = await create(partner, "Shelf", garage);
 
     expect(await ownerOf(shelf)).toBeNull();
@@ -95,13 +99,13 @@ describe("whose a space is, over HTTP", () => {
     expect(await ownerOf(garage)).toBeNull();
   });
 
-  it("keeps the tree's owner on a space taken to the top, whoever moves it", async () => {
-    const garage = await create(dario, "Garage");
-    const shelf = await create(dario, "Shelf", garage);
+  it("keeps the tree's owner on a space taken to the top, even by the administrator", async () => {
+    const garage = await create(partner, "Garage");
+    const shelf = await create(partner, "Shelf", garage);
 
-    await move(partner, shelf, null);
+    await move(dario, shelf, null);
 
-    expect(await ownerOf(shelf)).toBe(TEST_USERNAME);
+    expect(await ownerOf(shelf)).toBe("partner");
   });
 
   it("makes a root created through a machine token its issuer's", async () => {

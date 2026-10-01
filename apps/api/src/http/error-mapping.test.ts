@@ -5,7 +5,9 @@ import {
   InvalidQuantity,
   ItemNotFound,
   MissingEmptyTarget,
+  OwnerOnly,
   PhotoNotOnItem,
+  SpaceIsViewOnly,
   StorageUnitNotEmpty,
   StorageUnitNotFound,
   TooManyItemPhotos,
@@ -139,6 +141,31 @@ describe("mapDomainError", () => {
     });
   });
 
+  describe("seen, and not yours to change (403, ADR 26)", () => {
+    it("answers 403 VIEW_ONLY naming the space whose view share stops the write", () => {
+      const mapped = mapDomainError(
+        new SpaceIsViewOnly(unitId("addressed-unit")),
+        ADDRESSED,
+      );
+
+      expect(mapped).toEqual({
+        status: 403,
+        code: "VIEW_ONLY",
+        details: { storageUnitId: "addressed-unit", access: "view", requiredAccess: "edit" },
+      });
+    });
+
+    it("answers 403 OWNER_ONLY naming the space that would have become or left a root", () => {
+      const mapped = mapDomainError(new OwnerOnly(unitId("a-trunk")), NOTHING_ADDRESSED);
+
+      expect(mapped).toEqual({
+        status: 403,
+        code: "OWNER_ONLY",
+        details: { storageUnitId: "a-trunk" },
+      });
+    });
+  });
+
   describe("corrupt stored data (500)", () => {
     it("answers 500 for a stored cycle, because nothing the client sent is wrong", () => {
       const mapped = mapDomainError(
@@ -193,7 +220,9 @@ describe("mapDomainError", () => {
         "InvalidQuantity",
         "ItemNotFound",
         "MissingEmptyTarget",
+        "OwnerOnly",
         "PhotoNotOnItem",
+        "SpaceIsViewOnly",
         "StorageUnitNotEmpty",
         "StorageUnitNotFound",
         "TooManyItemPhotos",

@@ -3,6 +3,7 @@ import {
   CONTRACT_PEOPLE,
   domainUseCaseContract,
   invisibilityContract,
+  whatEachPersonMayChangeContract,
   itemRepositoryContract,
   photoRepositoryContract,
   searchRepositoryContract,
@@ -140,6 +141,21 @@ domainUseCaseContract({
 });
 
 invisibilityContract({
+  name: "Prisma repositories on real SQLite",
+  setUp: async (): Promise<InvisibilityContext> => {
+    await emptyHouseOfContractPeople();
+    return {
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+      items: new PrismaItemRepository(database.client),
+      photos: new PrismaPhotoRepository(database.client),
+      search: new PrismaSearchRepository(database.client),
+      shares: new PrismaShareRepository(database.client),
+    };
+  },
+  tearDown: async () => {},
+});
+
+whatEachPersonMayChangeContract({
   name: "Prisma repositories on real SQLite",
   setUp: async (): Promise<InvisibilityContext> => {
     await emptyHouseOfContractPeople();

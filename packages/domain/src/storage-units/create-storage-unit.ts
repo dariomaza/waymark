@@ -1,3 +1,5 @@
+import { mayViewSpace, type Access } from "../access/access.js";
+import { refuseViewOnly } from "../access/write-checks.js";
 import type { Clock } from "../shared/clock.js";
 import type { IdGenerator, PublicIdGenerator } from "../shared/id-generator.js";
 import {
@@ -30,17 +32,26 @@ export interface CreateStorageUnitCommand {
   readonly photoId?: PhotoId | null;
 }
 
+/**
+ * Makes a space. Anyone may make a root, and it is theirs; making one inside
+ * another space needs edit on that space (ADR 26). A parent out of reach is
+ * refused exactly as a missing one.
+ */
 export class CreateStorageUnit {
   constructor(private readonly deps: CreateStorageUnitDependencies) {}
 
-  async execute(command: CreateStorageUnitCommand): Promise<StorageUnit> {
+  async execute(
+    access: Access,
+    command: CreateStorageUnitCommand,
+  ): Promise<StorageUnit> {
     const parentId = command.parentId ?? null;
 
     if (parentId !== null) {
       const parent = await this.deps.storageUnits.findById(parentId);
-      if (parent === null) {
+      if (parent === null || !mayViewSpace(access, parentId)) {
         throw new StorageUnitNotFound(parentId);
       }
+      refuseViewOnly(access, parentId);
     }
 
     const unit = createStorageUnit({

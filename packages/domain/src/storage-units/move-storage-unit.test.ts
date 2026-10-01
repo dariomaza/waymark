@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING, THE_ADMINISTRATOR } from "../access/access.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import {
   SequentialIdGenerator,
@@ -31,7 +32,7 @@ describe("MoveStorageUnit", () => {
     parentId: UnitId | null = null,
     callerId: UserId = userId("dario"),
   ) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId,
       parentId,
       name,
@@ -56,7 +57,8 @@ describe("MoveStorageUnit", () => {
       const house = await create("House");
       const garage = await create("Garage", null, userId("partner"));
 
-      const moved = await moveStorageUnit.execute({
+      const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: garage.id,
         targetParentId: house.id,
       });
@@ -70,7 +72,8 @@ describe("MoveStorageUnit", () => {
       const wardrobe = await create("Wardrobe", room.id, userId("partner"));
       const box = await create("Box 3", wardrobe.id, userId("partner"));
 
-      const moved = await moveStorageUnit.execute({
+      const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: box.id,
         targetParentId: null,
       });
@@ -82,7 +85,8 @@ describe("MoveStorageUnit", () => {
     it("keeps a root's owner when it is moved to the top it is already at", async () => {
       const garage = await create("Garage", null, userId("partner"));
 
-      const moved = await moveStorageUnit.execute({
+      const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: garage.id,
         targetParentId: null,
       });
@@ -96,7 +100,11 @@ describe("MoveStorageUnit", () => {
       const room = await create("Storage room");
 
       await expect(
-        moveStorageUnit.execute({ id: room.id, targetParentId: room.id }),
+        moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: room.id,
+          targetParentId: room.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
     });
 
@@ -105,7 +113,11 @@ describe("MoveStorageUnit", () => {
       const wardrobe = await create("Metal wardrobe", room.id);
 
       await expect(
-        moveStorageUnit.execute({ id: room.id, targetParentId: wardrobe.id }),
+        moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: room.id,
+          targetParentId: wardrobe.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
     });
 
@@ -120,7 +132,11 @@ describe("MoveStorageUnit", () => {
       expect(box.id).not.toBe(room.id);
 
       await expect(
-        moveStorageUnit.execute({ id: room.id, targetParentId: box.id }),
+        moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: room.id,
+          targetParentId: box.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
     });
 
@@ -132,7 +148,11 @@ describe("MoveStorageUnit", () => {
       const bag = await create("Bag", box.id);
 
       await expect(
-        moveStorageUnit.execute({ id: room.id, targetParentId: bag.id }),
+        moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: room.id,
+          targetParentId: bag.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
     });
 
@@ -142,7 +162,11 @@ describe("MoveStorageUnit", () => {
       const box = await create("Box", wardrobe.id);
 
       await expect(
-        moveStorageUnit.execute({ id: room.id, targetParentId: box.id }),
+        moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: room.id,
+          targetParentId: box.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
 
       await expect(storageUnits.findById(room.id)).resolves.toEqual(room);
@@ -152,7 +176,8 @@ describe("MoveStorageUnit", () => {
       const room = await create("Storage room");
       const wardrobe = await create("Wardrobe", room.id);
 
-      const moved = await moveStorageUnit.execute({
+      const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: wardrobe.id,
         targetParentId: null,
       });
@@ -167,7 +192,8 @@ describe("MoveStorageUnit", () => {
       const garage = await create("Garage");
       const rack = await create("Rack", garage.id);
 
-      const moved = await moveStorageUnit.execute({
+      const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: wardrobe.id,
         targetParentId: rack.id,
       });
@@ -180,7 +206,8 @@ describe("MoveStorageUnit", () => {
       const wardrobe = await create("Wardrobe", room.id);
       const box = await create("Box", wardrobe.id);
 
-      const moved = await moveStorageUnit.execute({
+      const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: box.id,
         targetParentId: room.id,
       });
@@ -194,7 +221,8 @@ describe("MoveStorageUnit", () => {
       const box = await create("Box", wardrobe.id);
       const garage = await create("Garage");
 
-      await moveStorageUnit.execute({
+      await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: wardrobe.id,
         targetParentId: garage.id,
       });
@@ -212,7 +240,8 @@ describe("MoveStorageUnit", () => {
       const box = await create("Box", wardrobe.id);
       const garage = await create("Garage");
 
-      await moveStorageUnit.execute({
+      await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: wardrobe.id,
         targetParentId: garage.id,
       });
@@ -232,7 +261,8 @@ describe("MoveStorageUnit", () => {
       const garage = await create("Garage");
       clock.advanceTo(new Date("2026-05-05T09:00:00.000Z"));
 
-      const moved = await moveStorageUnit.execute({
+      const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
         id: room.id,
         targetParentId: garage.id,
       });
@@ -245,7 +275,8 @@ describe("MoveStorageUnit", () => {
   describe("missing units", () => {
     it("rejects moving a unit that does not exist", async () => {
       await expect(
-        moveStorageUnit.execute({
+        moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
           id: unitId("ghost"),
           targetParentId: null,
         }),
@@ -256,7 +287,8 @@ describe("MoveStorageUnit", () => {
       const room = await create("Storage room");
 
       await expect(
-        moveStorageUnit.execute({
+        moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
           id: room.id,
           targetParentId: unitId("ghost"),
         }),

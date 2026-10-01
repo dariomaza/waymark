@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
 import { CreateItem } from "../items/create-item.js";
 import { InMemoryItemRepository } from "../items/item-repository.fake.js";
@@ -22,7 +23,7 @@ describe("GetStorageUnit", () => {
   let getStorageUnit: GetStorageUnit;
 
   const create = async (name: string, owner: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId(owner),
       parentId,
       name,
@@ -66,7 +67,7 @@ describe("GetStorageUnit", () => {
     const garage = await create("Garage", "ana");
     const shelf = await create("Shelf", "ana", garage.id);
     await create("Box", "ana", shelf.id);
-    await createItem.execute({ storageUnitId: shelf.id, name: "Drill" });
+    await createItem.execute(SEES_EVERYTHING, { storageUnitId: shelf.id, name: "Drill" });
 
     const seen = await getStorageUnit.execute(await accessOf("ana"), shelf.id);
 

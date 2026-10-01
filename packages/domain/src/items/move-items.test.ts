@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import {
   SequentialIdGenerator,
@@ -24,10 +25,14 @@ describe("MoveItems", () => {
   let moveItems: MoveItems;
 
   const createUnit = async (name: string) =>
-    createStorageUnit.execute({ callerId: userId("dario"), name, kind: StorageUnitKind.BOX });
+    createStorageUnit.execute(SEES_EVERYTHING, {
+      callerId: userId("dario"),
+      name,
+      kind: StorageUnitKind.BOX,
+    });
 
   const createItemIn = async (storageUnitId: UnitId, name: string) =>
-    createItem.execute({ storageUnitId, name });
+    createItem.execute(SEES_EVERYTHING, { storageUnitId, name });
 
   beforeEach(() => {
     items = new InMemoryItemRepository();
@@ -54,7 +59,7 @@ describe("MoveItems", () => {
     const drill = await createItemIn(box.id, "Cordless drill");
     const bits = await createItemIn(box.id, "Drill bits");
 
-    const moved = await moveItems.execute({
+    const moved = await moveItems.execute(SEES_EVERYTHING, {
       itemIds: [drill.id, bits.id],
       targetUnitId: crate.id,
     });
@@ -73,7 +78,7 @@ describe("MoveItems", () => {
     const drill = await createItemIn(box.id, "Cordless drill");
     clock.advanceTo(new Date("2026-06-06T07:00:00.000Z"));
 
-    const [moved] = await moveItems.execute({
+    const [moved] = await moveItems.execute(SEES_EVERYTHING, {
       itemIds: [drill.id],
       targetUnitId: crate.id,
     });
@@ -86,7 +91,7 @@ describe("MoveItems", () => {
     const crate = await createUnit("Crate 1");
 
     await expect(
-      moveItems.execute({ itemIds: [], targetUnitId: crate.id }),
+      moveItems.execute(SEES_EVERYTHING, { itemIds: [], targetUnitId: crate.id }),
     ).resolves.toEqual([]);
   });
 
@@ -95,7 +100,7 @@ describe("MoveItems", () => {
     const drill = await createItemIn(box.id, "Cordless drill");
 
     await expect(
-      moveItems.execute({
+      moveItems.execute(SEES_EVERYTHING, {
         itemIds: [drill.id],
         targetUnitId: unitId("ghost"),
       }),
@@ -108,7 +113,7 @@ describe("MoveItems", () => {
     const drill = await createItemIn(box.id, "Cordless drill");
 
     await expect(
-      moveItems.execute({
+      moveItems.execute(SEES_EVERYTHING, {
         itemIds: [drill.id, itemId("ghost")],
         targetUnitId: crate.id,
       }),
@@ -121,7 +126,7 @@ describe("MoveItems", () => {
     const drill = await createItemIn(box.id, "Cordless drill");
 
     await expect(
-      moveItems.execute({
+      moveItems.execute(SEES_EVERYTHING, {
         itemIds: [drill.id, itemId("ghost")],
         targetUnitId: crate.id,
       }),
@@ -135,7 +140,7 @@ describe("MoveItems", () => {
     const crate = await createUnit("Crate 1");
 
     await expect(
-      moveItems.execute({
+      moveItems.execute(SEES_EVERYTHING, {
         itemIds: [itemId("ghost")],
         targetUnitId: crate.id,
       }),
@@ -146,7 +151,7 @@ describe("MoveItems", () => {
     const crate = await createUnit("Crate 1");
     const drill = await createItemIn(crate.id, "Cordless drill");
 
-    const [moved] = await moveItems.execute({
+    const [moved] = await moveItems.execute(SEES_EVERYTHING, {
       itemIds: [drill.id],
       targetUnitId: crate.id,
     });

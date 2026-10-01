@@ -620,4 +620,448 @@ describe("what each person may see over HTTP (ADR 26)", () => {
       expect(admin.statusCode).toBe(200);
     });
   });
+
+  /**
+   * # What each person may change, over HTTP (ADR 26)
+   *
+   * Every write route, aimed at each region of the household as Bea sees it:
+   * a space of Ana's shared with nobody, the shelf she may only view, the
+   * attic she may edit, and her own wardrobe. Unseen is refused exactly as a
+   * never-issued id is, status and code alike; view only is 403 `VIEW_ONLY`
+   * naming the space that stops the write; and both come before any refusal
+   * the inventory itself would make.
+   */
+  describe("what each person may change", () => {
+    type Region = "unshared" | "view" | "edit" | "beas";
+
+    /** The space each region's targets sit in, which is also in that region. */
+    const PARENT: Record<Region, string> = {
+      unshared: "Ana safe",
+      view: "Ana shelf",
+      edit: "Ana attic",
+      beas: "Bea wardrobe",
+    };
+    /** An empty space in each region, made by the administrator. */
+    const PLACE: Record<Region, string> = {
+      unshared: "Ana drawer",
+      view: "Ana tray",
+      edit: "Ana trunk",
+      beas: "Bea box",
+    };
+    /** One item in each region. */
+    const THING: Record<Region, string> = {
+      unshared: "Ana passport",
+      view: "Ana drill",
+      edit: "Ana lamp",
+      beas: "Bea scarf",
+    };
+
+    const CELLS: readonly (readonly [Person, Region, "unseen" | "view-only" | "done"])[] = [
+      ["bea", "unshared", "unseen"],
+      ["bea", "view", "view-only"],
+      ["bea", "edit", "done"],
+      ["bea", "beas", "done"],
+      ["ana", "unshared", "done"],
+      ["ana", "beas", "unseen"],
+      ["admin", "unshared", "done"],
+      ["admin", "view", "done"],
+      ["admin", "edit", "done"],
+      ["admin", "beas", "done"],
+    ];
+
+    /** Photo ids by the item they were added to. */
+    const photos = new Map<string, string>();
+
+    const aPhotoUpload = async () => {
+      const body = multipartBody({
+        field: "file",
+        filename: "photo.jpg",
+        contentType: "image/jpeg",
+        bytes: await aPlainImage("jpeg"),
+      });
+
+      return { payload: body.payload, headers: { "content-type": body.contentType } };
+    };
+
+    beforeEach(async () => {
+      photos.clear();
+      for (const region of Object.keys(PLACE) as Region[]) {
+        await space("admin", PLACE[region], PARENT[region]);
+      }
+    });
+
+    /** The ids a write aims at, in one region. */
+    interface Targets {
+      readonly place: string;
+      readonly parent: string;
+      readonly thing: string;
+      readonly photo: string;
+    }
+
+    const targetsIn = (region: Region): Targets => ({
+      place: idOf(PLACE[region]),
+      parent: idOf(PARENT[region]),
+      thing: idOf(THING[region]),
+      photo: photos.get(THING[region]) ?? "no-photo",
+    });
+
+    const NEVER_ISSUED: Targets = {
+      place: "never-issued",
+      parent: "never-issued",
+      thing: "never-issued",
+      photo: "never-issued",
+    };
+
+    interface WriteRoute {
+      readonly request: (targets: Targets) => Promise<InjectOptions>;
+      /** The space whose view share stops it, when it is not the place. */
+      readonly blockedBy?: (targets: Targets) => string;
+      /** Whether its targets need a photo on every item first. */
+      readonly photos?: boolean;
+    }
+
+    const onTheThing = (targets: Targets): string => targets.parent;
+
+    const ROUTES: Record<string, WriteRoute> = {
+      "POST /storage-units inside": {
+        request: async (t) => ({
+          method: "POST",
+          url: "/storage-units",
+          payload: { name: "New box", kind: StorageUnitKind.BOX, parentId: t.place },
+        }),
+      },
+      "POST /items inside": {
+        request: async (t) => ({
+          method: "POST",
+          url: "/items",
+          payload: { name: "New thing", storageUnitId: t.place },
+        }),
+      },
+      "PATCH /storage-units/:id": {
+        request: async (t) => ({
+          method: "PATCH",
+          url: `/storage-units/${t.place}`,
+          payload: { name: "Renamed" },
+        }),
+      },
+      "PATCH /items/:id": {
+        request: async (t) => ({
+          method: "PATCH",
+          url: `/items/${t.thing}`,
+          payload: { name: "Renamed" },
+        }),
+        blockedBy: onTheThing,
+      },
+      "DELETE /storage-units/:id": {
+        request: async (t) => ({ method: "DELETE", url: `/storage-units/${t.place}` }),
+      },
+      "DELETE /items/:id": {
+        request: async (t) => ({ method: "DELETE", url: `/items/${t.thing}` }),
+        blockedBy: onTheThing,
+      },
+      "POST /storage-units/:id/empty": {
+        request: async (t) => ({
+          method: "POST",
+          url: `/storage-units/${t.place}/empty`,
+          payload: {},
+        }),
+      },
+      "POST /storage-units/:id/move": {
+        request: async (t) => ({
+          method: "POST",
+          url: `/storage-units/${t.place}/move`,
+          payload: { parentId: t.parent },
+        }),
+      },
+      "POST /items/move": {
+        request: async (t) => ({
+          method: "POST",
+          url: "/items/move",
+          payload: { itemIds: [t.thing], targetUnitId: t.place },
+        }),
+      },
+      "POST /items/:id/photos": {
+        request: async (t) => ({
+          method: "POST",
+          url: `/items/${t.thing}/photos`,
+          ...(await aPhotoUpload()),
+        }),
+        blockedBy: onTheThing,
+      },
+      "POST /items/:id/photos/order": {
+        request: async (t) => ({
+          method: "POST",
+          url: `/items/${t.thing}/photos/order`,
+          payload: { photoIds: [t.photo] },
+        }),
+        blockedBy: onTheThing,
+        photos: true,
+      },
+      "DELETE /items/:id/photos/:photoId": {
+        request: async (t) => ({
+          method: "DELETE",
+          url: `/items/${t.thing}/photos/${t.photo}`,
+        }),
+        blockedBy: onTheThing,
+        photos: true,
+      },
+      "POST /storage-units/:id/photo": {
+        request: async (t) => ({
+          method: "POST",
+          url: `/storage-units/${t.place}/photo`,
+          ...(await aPhotoUpload()),
+        }),
+      },
+      "DELETE /storage-units/:id/photo": {
+        request: async (t) => ({ method: "DELETE", url: `/storage-units/${t.place}/photo` }),
+      },
+      "POST /photos/:id/reprocess": {
+        request: async (t) => ({ method: "POST", url: `/photos/${t.photo}/reprocess` }),
+        blockedBy: onTheThing,
+        photos: true,
+      },
+    };
+
+    /** The administrator puts one photo on every item, so each region has one. */
+    const photographEverything = async (): Promise<void> => {
+      for (const name of Object.values(THING)) {
+        const response = await as("admin", {
+          method: "POST",
+          url: `/items/${idOf(name)}/photos`,
+          ...(await aPhotoUpload()),
+        });
+        expect(response.statusCode).toBe(201);
+        photos.set(name, (response.json() as { photo: { id: string } }).photo.id);
+      }
+    };
+
+    const detailsOf = (response: LightMyRequestResponse) =>
+      (response.json() as { error: { details: Record<string, unknown> } }).error.details;
+
+    describe.each(Object.entries(ROUTES))("%s", (_route, route) => {
+      it.each(CELLS)("as %s, in the %s region: %s", async (person, region, outcome) => {
+        if (route.photos === true) {
+          await photographEverything();
+        }
+        const targets = targetsIn(region);
+
+        const response = await as(person, await route.request(targets));
+
+        if (outcome === "unseen") {
+          const never = await as(person, await route.request(NEVER_ISSUED));
+          expect(errorOf(response)).toEqual(errorOf(never));
+          expect([404, 422]).toContain(response.statusCode);
+        } else if (outcome === "view-only") {
+          expect(errorOf(response)).toEqual({ status: 403, code: "VIEW_ONLY" });
+          expect(detailsOf(response)).toMatchObject({
+            storageUnitId: route.blockedBy?.(targets) ?? targets.place,
+          });
+        } else {
+          expect(response.statusCode, response.body).toBeLessThan(300);
+        }
+      });
+    });
+
+    describe("POST /photos/processing/retry", () => {
+      it("tries again for Bea only the photos she may change", async () => {
+        await photographEverything();
+        await api.database.client.photo.updateMany({ data: { processingStatus: "FAILED" } });
+
+        const response = await as("bea", { method: "POST", url: "/photos/processing/retry" });
+
+        expect(response.json()).toEqual({ requeued: 2 });
+        const stillFailed = await api.database.client.photo.findMany({
+          where: { processingStatus: "FAILED" },
+          select: { id: true },
+        });
+        expect(stillFailed.map((photo) => photo.id).sort()).toEqual(
+          [photos.get("Ana passport"), photos.get("Ana drill")].sort(),
+        );
+      });
+    });
+
+    describe("a refusal never reveals what may not be seen", () => {
+      it("answers Bea deleting Ana's full safe as a missing space, not as one that is not empty", async () => {
+        const response = await as("bea", {
+          method: "DELETE",
+          url: `/storage-units/${idOf("Ana safe")}`,
+        });
+
+        expect(errorOf(response)).toEqual(
+          errorOf(await as("bea", { method: "DELETE", url: "/storage-units/never-issued" })),
+        );
+        expect(response.statusCode).toBe(404);
+      });
+
+      it("answers Bea deleting the full garage she may view as view only, not as not empty", async () => {
+        const response = await as("bea", {
+          method: "DELETE",
+          url: `/storage-units/${idOf("Ana garage")}`,
+        });
+
+        expect(errorOf(response)).toEqual({ status: 403, code: "VIEW_ONLY" });
+      });
+
+      it("still tells Ana her own safe is not empty", async () => {
+        const response = await as("ana", {
+          method: "DELETE",
+          url: `/storage-units/${idOf("Ana safe")}`,
+        });
+
+        expect(errorOf(response)).toEqual({ status: 409, code: "STORAGE_UNIT_NOT_EMPTY" });
+      });
+    });
+
+    describe("moving between places", () => {
+      const moveItems = (person: Person, names: readonly string[], into: string) =>
+        as(person, {
+          method: "POST",
+          url: "/items/move",
+          payload: { itemIds: names.map(idOf), targetUnitId: idOf(into) },
+        });
+
+      const moveSpace = (person: Person, name: string, into: string | null) =>
+        as(person, {
+          method: "POST",
+          url: `/storage-units/${idOf(name)}/move`,
+          payload: { parentId: into === null ? null : idOf(into) },
+        });
+
+      const unitOf = async (person: Person, name: string) =>
+        (
+          (await as(person, { method: "GET", url: `/items/${idOf(name)}` })).json() as {
+            storageUnit: { name: string };
+          }
+        ).storageUnit.name;
+
+      it("lets Bea move the trunk out of the attic she may edit into her own flat, which makes it hers", async () => {
+        expect((await moveSpace("bea", "Ana trunk", "Bea flat")).statusCode).toBe(200);
+
+        const forAna = await as("ana", {
+          method: "GET",
+          url: `/storage-units/${idOf("Ana trunk")}`,
+        });
+        expect(forAna.statusCode).toBe(404);
+      });
+
+      it("refuses Bea moving her scarf into the garage she may view, and into Ana's safe as if it did not exist", async () => {
+        const intoGarage = await moveItems("bea", ["Bea scarf"], "Ana garage");
+        const intoSafe = await moveItems("bea", ["Bea scarf"], "Ana safe");
+
+        expect(errorOf(intoGarage)).toEqual({ status: 403, code: "VIEW_ONLY" });
+        expect(errorOf(intoSafe)).toEqual(
+          errorOf(
+            await as("bea", {
+              method: "POST",
+              url: "/items/move",
+              payload: { itemIds: [idOf("Bea scarf")], targetUnitId: "never-issued" },
+            }),
+          ),
+        );
+        expect(await unitOf("bea", "Bea scarf")).toBe("Bea wardrobe");
+      });
+
+      it("refuses Bea making a root of the trunk in the attic she may edit", async () => {
+        const response = await moveSpace("bea", "Ana trunk", null);
+
+        expect(errorOf(response)).toEqual({ status: 403, code: "OWNER_ONLY" });
+        expect(detailsOf(response)).toEqual({ storageUnitId: idOf("Ana trunk") });
+      });
+
+      it("lets Ana and the administrator make a root of it, and it stays Ana's", async () => {
+        expect((await moveSpace("admin", "Ana trunk", null)).statusCode).toBe(200);
+        const forAna = await as("ana", {
+          method: "GET",
+          url: `/storage-units/${idOf("Ana trunk")}`,
+        });
+
+        expect(forAna.statusCode).toBe(200);
+        expect((await moveSpace("ana", "Ana trunk", "Ana attic")).statusCode).toBe(200);
+        expect((await moveSpace("ana", "Ana trunk", null)).statusCode).toBe(200);
+      });
+
+      it("moves nothing of several items when one is out of Bea's sight", async () => {
+        const response = await moveItems(
+          "bea",
+          ["Bea scarf", "Ana lamp", "Ana passport"],
+          "Bea box",
+        );
+
+        expect(errorOf(response)).toEqual({ status: 422, code: "ITEM_NOT_FOUND" });
+        expect(await unitOf("bea", "Bea scarf")).toBe("Bea wardrobe");
+        expect(await unitOf("bea", "Ana lamp")).toBe("Ana attic");
+      });
+
+      it("answers the unseen item before the view-only one, whatever the order", async () => {
+        const response = await moveItems("bea", ["Ana drill", "Ana passport"], "Bea box");
+
+        expect(errorOf(response)).toEqual({ status: 422, code: "ITEM_NOT_FOUND" });
+        expect(detailsOf(response)).toEqual({ itemId: idOf("Ana passport") });
+      });
+
+      it("moves nothing of several items when one may only be viewed", async () => {
+        const response = await moveItems("bea", ["Bea scarf", "Ana drill"], "Bea box");
+
+        expect(errorOf(response)).toEqual({ status: 403, code: "VIEW_ONLY" });
+        expect(await unitOf("bea", "Bea scarf")).toBe("Bea wardrobe");
+      });
+    });
+
+    describe("a machine token", () => {
+      const tokenOfBea = (scope: MachineTokenScope) =>
+        api.createMachineToken(`beas-${scope}`, scope, undefined, "bea");
+
+      const rename = (token: string, name: string) =>
+        api.app.inject({
+          method: "PATCH",
+          url: `/items/${idOf(name)}`,
+          headers: api.machineHeaders(token),
+          payload: { name: "Renamed by a token" },
+        });
+
+      it("is refused VIEW_ONLY on the shelf when read-write and its issuer may only view it", async () => {
+        const response = await rename(await tokenOfBea(MachineTokenScope.ReadWrite), "Ana drill");
+
+        expect(errorOf(response)).toEqual({ status: 403, code: "VIEW_ONLY" });
+      });
+
+      it("may change the attic when read-write and its issuer may edit it", async () => {
+        const response = await rename(await tokenOfBea(MachineTokenScope.ReadWrite), "Ana lamp");
+
+        expect(response.statusCode).toBe(200);
+      });
+
+      it("is refused READ_ONLY_MACHINE_TOKEN on any write when read, even where its issuer may edit", async () => {
+        const response = await rename(await tokenOfBea(MachineTokenScope.Read), "Ana lamp");
+
+        expect(errorOf(response)).toEqual({ status: 403, code: "READ_ONLY_MACHINE_TOKEN" });
+      });
+
+      it.each([[MachineTokenScope.Read], [MachineTokenScope.ReadWrite]])(
+        "finds nothing its issuer cannot see, when %s",
+        async (scope) => {
+          const token = await tokenOfBea(scope);
+
+          const read = await api.app.inject({
+            method: "GET",
+            url: `/items/${idOf("Ana passport")}`,
+            headers: api.machineHeaders(token),
+          });
+          const write = await rename(token, "Ana passport");
+          const writeToNothing = await api.app.inject({
+            method: "PATCH",
+            url: "/items/never-issued",
+            headers: api.machineHeaders(token),
+            payload: { name: "Renamed by a token" },
+          });
+
+          expect(read.statusCode).toBe(404);
+          // A read token's refusal is the same for every id, real or not, so
+          // it says nothing about what exists either.
+          expect(errorOf(write)).toEqual(errorOf(writeToNothing));
+          expect(write.statusCode).toBe(scope === MachineTokenScope.Read ? 403 : 404);
+        },
+      );
+    });
+  });
 });

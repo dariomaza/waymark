@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
 
 import { CreateItem } from "../items/create-item.js";
@@ -35,7 +36,7 @@ describe("SearchInventory", () => {
     parentId: UnitId | null = null,
     owner = "dario",
   ) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId(owner),
       parentId,
       name,
@@ -47,7 +48,7 @@ describe("SearchInventory", () => {
     storageUnitId: UnitId,
     extra: { readonly description?: string; readonly tags?: readonly string[] } = {},
   ) =>
-    createItem.execute({
+    createItem.execute(SEES_EVERYTHING, {
       storageUnitId,
       name,
       description: extra.description ?? null,
@@ -426,7 +427,7 @@ describe("SearchInventory", () => {
       const kitchen = await unit("Kitchen");
       const drill = await item("Cordless drill", garage.id);
 
-      await moveItems.execute({
+      await moveItems.execute(SEES_EVERYTHING, {
         itemIds: [drill.id as ItemId],
         targetUnitId: kitchen.id,
       });

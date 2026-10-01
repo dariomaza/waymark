@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import { photoId, unitId, userId } from "../shared/identity.js";
 import {
@@ -29,7 +30,7 @@ describe("CreateStorageUnit", () => {
 
   describe("whose it is (ADR 26)", () => {
     it("makes the person who creates a root its owner", async () => {
-      const room = await createStorageUnit.execute({
+      const room = await createStorageUnit.execute(SEES_EVERYTHING, {
         callerId: userId("dario"),
         name: "Storage room",
         kind: StorageUnitKind.ROOM,
@@ -39,13 +40,13 @@ describe("CreateStorageUnit", () => {
     });
 
     it("records no owner on a space made inside another, even by somebody else", async () => {
-      const room = await createStorageUnit.execute({
+      const room = await createStorageUnit.execute(SEES_EVERYTHING, {
         callerId: userId("dario"),
         name: "Storage room",
         kind: StorageUnitKind.ROOM,
       });
 
-      const box = await createStorageUnit.execute({
+      const box = await createStorageUnit.execute(SEES_EVERYTHING, {
         callerId: userId("partner"),
         parentId: room.id,
         name: "Box 3",
@@ -58,7 +59,7 @@ describe("CreateStorageUnit", () => {
   });
 
   it("stores a new root unit so it can be found again", async () => {
-    const created = await createStorageUnit.execute({
+    const created = await createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       name: "Storage room",
       kind: StorageUnitKind.ROOM,
@@ -69,12 +70,12 @@ describe("CreateStorageUnit", () => {
   });
 
   it("assigns a generated id and a generated public id", async () => {
-    const first = await createStorageUnit.execute({
+    const first = await createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       name: "Storage room",
       kind: StorageUnitKind.ROOM,
     });
-    const second = await createStorageUnit.execute({
+    const second = await createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       name: "Garage",
       kind: StorageUnitKind.ROOM,
@@ -87,7 +88,7 @@ describe("CreateStorageUnit", () => {
   });
 
   it("timestamps the unit with the clock", async () => {
-    const created = await createStorageUnit.execute({
+    const created = await createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       name: "Storage room",
       kind: StorageUnitKind.ROOM,
@@ -98,13 +99,13 @@ describe("CreateStorageUnit", () => {
   });
 
   it("stores a new unit inside an existing parent", async () => {
-    const room = await createStorageUnit.execute({
+    const room = await createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       name: "Storage room",
       kind: StorageUnitKind.ROOM,
     });
 
-    const wardrobe = await createStorageUnit.execute({
+    const wardrobe = await createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       parentId: room.id,
       name: "Metal wardrobe",
@@ -118,7 +119,7 @@ describe("CreateStorageUnit", () => {
   });
 
   it("keeps the optional description and cover photo", async () => {
-    const created = await createStorageUnit.execute({
+    const created = await createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId("dario"),
       name: "Storage room",
       kind: StorageUnitKind.ROOM,
@@ -132,7 +133,7 @@ describe("CreateStorageUnit", () => {
 
   it("rejects creating a unit inside a parent that does not exist", async () => {
     await expect(
-      createStorageUnit.execute({
+      createStorageUnit.execute(SEES_EVERYTHING, {
         callerId: userId("dario"),
         parentId: unitId("ghost"),
         name: "Box 3",
@@ -143,7 +144,7 @@ describe("CreateStorageUnit", () => {
 
   it("stores nothing when the parent does not exist", async () => {
     await expect(
-      createStorageUnit.execute({
+      createStorageUnit.execute(SEES_EVERYTHING, {
         callerId: userId("dario"),
         parentId: unitId("ghost"),
         name: "Box 3",

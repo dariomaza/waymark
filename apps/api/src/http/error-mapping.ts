@@ -3,7 +3,9 @@ import {
   InvalidQuantity,
   ItemNotFound,
   MissingEmptyTarget,
+  OwnerOnly,
   PhotoNotOnItem,
+  SpaceIsViewOnly,
   StorageUnitNotEmpty,
   StorageUnitNotFound,
   TooManyItemPhotos,
@@ -43,6 +45,8 @@ export interface MappedDomainError {
  * | `InvalidQuantity`              | 422    | Well formed JSON, value the domain refuses.                         |
  * | `TooManyItemPhotos`            | 409    | Refused by the CURRENT contents of the item (see below).            |
  * | `PhotoNotOnItem`               | 422    | The request names a photo this item does not hold.                  |
+ * | `SpaceIsViewOnly`              | 403    | Seen, and shared to view only: authority is missing (ADR 26).        |
+ * | `OwnerOnly`                    | 403    | Only the tree's owner makes or moves a root (ADR 26).                |
  * | `CorruptStorageUnitHierarchy`  | 500    | The stored data is broken. Nothing the caller sent is wrong.        |
  * | `UnknownStorageUnitKind`       | 500    | Same: a column holds something the domain says cannot exist.        |
  * | `UnknownPhotoProcessingStatus` | 500    | Same, for a photo row that contradicts itself.                      |
@@ -74,6 +78,21 @@ export interface MappedDomainError {
  * a root and holds items — so 409 is arguable. It is a 422 because the fix is
  * to send `targetUnitId`, not to wait for the world to change, and the status
  * code is advice to the caller about what to do next.
+ *
+ * ## Why a view share is a 403 and an unseen space is not
+ *
+ * Something a person may not see does not exist (ADR 26): it gets the very
+ * status and code a missing id gets, 404 in the URL and 422 in the body, so
+ * nobody can tell an id that is real from one that was never issued. A space
+ * a person MAY see but not change is different: they already know it exists,
+ * and what they lack is authority, which is 403 (RFC 9110). Neither 409 nor
+ * 422 fits, for the reason `READ_ONLY_MACHINE_TOKEN` gives: the bytes are
+ * right and the world is right, and what has to change is who may do this.
+ *
+ * `OWNER_ONLY` is a code of its own rather than another `VIEW_ONLY`. The
+ * person may edit the space; what they may not do is take it to the top of
+ * the tree or away from it, which only its owner may. `VIEW_ONLY` would send
+ * them to ask for an edit share they already hold.
  *
  * ## Why 500 is spelled out rather than left to fall through
  *
@@ -182,6 +201,26 @@ const MAPPINGS = new Map<unknown, Mapper>([
         details: { itemId: id, photoId },
       };
     },
+  ],
+  [
+    SpaceIsViewOnly,
+    (error): MappedDomainError => ({
+      status: 403,
+      code: "VIEW_ONLY",
+      details: {
+        storageUnitId: (error as SpaceIsViewOnly).storageUnitId,
+        access: "view",
+        requiredAccess: "edit",
+      },
+    }),
+  ],
+  [
+    OwnerOnly,
+    (error): MappedDomainError => ({
+      status: 403,
+      code: "OWNER_ONLY",
+      details: { storageUnitId: (error as OwnerOnly).storageUnitId },
+    }),
   ],
   [
     UnknownPhotoProcessingStatus,

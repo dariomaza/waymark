@@ -1,3 +1,5 @@
+import { mayViewSpace, type Access } from "../access/access.js";
+import { refuseViewOnly } from "../access/write-checks.js";
 import type { Clock } from "../shared/clock.js";
 import type { PhotoId, UnitId } from "../shared/identity.js";
 import { StorageUnitNotFound } from "../storage-units/storage-unit-errors.js";
@@ -31,17 +33,31 @@ export interface SetStorageUnitPhotoResult {
  * This is a named operation and not a `PATCH` for the same reason move and
  * empty are (see the README): a unit has no general update, and a photo change
  * is the only field change there is.
+ *
+ * It needs edit on the unit (ADR 26).
  */
 export class SetStorageUnitPhoto {
   constructor(private readonly deps: SetStorageUnitPhotoDependencies) {}
 
+  /**
+   * The unit, if this person may change its photo; otherwise the refusal
+   * `execute` would make, before any upload is stored.
+   */
+  async authorize(access: Access, unitId: UnitId): Promise<StorageUnit> {
+    const unit = await this.deps.storageUnits.findById(unitId);
+    if (unit === null || !mayViewSpace(access, unit.id)) {
+      throw new StorageUnitNotFound(unitId);
+    }
+    refuseViewOnly(access, unit.id);
+
+    return unit;
+  }
+
   async execute(
+    access: Access,
     command: SetStorageUnitPhotoCommand,
   ): Promise<SetStorageUnitPhotoResult> {
-    const unit = await this.deps.storageUnits.findById(command.unitId);
-    if (unit === null) {
-      throw new StorageUnitNotFound(command.unitId);
-    }
+    const unit = await this.authorize(access, command.unitId);
 
     const previousPhotoId = unit.photoId;
     const updated = setStorageUnitPhoto(

@@ -1299,8 +1299,8 @@ describe("inventory over HTTP", () => {
     });
   });
 
-  // ADR 26 turned ADR 5's shared inventory around. Reads are scoped (roadmap
-  // slice 3); the write below is still open until slice 4 turns it too.
+  // ADR 26 turned ADR 5's shared inventory around: a second account neither
+  // sees nor changes what the first one created.
   describe("each person's own inventory", () => {
     it("shows a second account nothing the first one created", async () => {
       const box = await createUnit("Box 3");
@@ -1319,19 +1319,21 @@ describe("inventory over HTTP", () => {
       expect((tree.json() as { tree: unknown[] }).tree).toEqual([]);
     });
 
-    it("lets a second account delete what the first one created", async () => {
+    it("answers a second account deleting what the first one created as a missing space", async () => {
       const box = await createUnit("Box 3");
 
       await api.createUser("marta", "another-password");
       const martasToken = await api.login("marta", "another-password");
 
-      const response = await api.app.inject({
-        method: "DELETE",
-        url: `/storage-units/${box.id}`,
-        headers: api.authHeaders(martasToken),
-      });
+      const asMarta = async (url: string) =>
+        api.app.inject({ method: "DELETE", url, headers: api.authHeaders(martasToken) });
 
-      expect(response.statusCode).toBe(204);
+      const response = await asMarta(`/storage-units/${box.id}`);
+      expect(response.statusCode).toBe(404);
+      expect(errorCodeOf(response)).toBe(errorCodeOf(await asMarta("/storage-units/nothing")));
+      expect((await call({ method: "GET", url: `/storage-units/${box.id}` })).statusCode).toBe(
+        200,
+      );
     });
   });
 });

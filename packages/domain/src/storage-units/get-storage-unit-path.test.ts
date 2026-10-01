@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
 
 import { FakeClock } from "../shared/clock.fake.js";
@@ -29,7 +30,7 @@ describe("GetStorageUnitPath", () => {
     parentId: UnitId | null = null,
     owner = "dario",
   ) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId(owner),
       parentId,
       name,

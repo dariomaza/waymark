@@ -23,3 +23,4 @@ export {
   type InMemorySearchRepositoryDependencies,
 } from "./search/search-repository.fake.js";
 export { InMemoryShareRepository } from "./shares/share-repository.fake.js";
+export { SEES_EVERYTHING, THE_ADMINISTRATOR } from "./access/access.fake.js";

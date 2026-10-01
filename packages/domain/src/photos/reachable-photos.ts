@@ -1,4 +1,10 @@
-import { mayViewSpace, type Access } from "../access/access.js";
+import {
+  mayEditSpace,
+  mayViewSpace,
+  ShareLevel,
+  type Access,
+} from "../access/access.js";
+import type { UnitId } from "../shared/identity.js";
 import type { ItemRepository } from "../items/item-repository.js";
 import type { PhotoId } from "../shared/identity.js";
 import type { StorageUnitRepository } from "../storage-units/storage-unit-repository.js";
@@ -24,11 +30,18 @@ export interface ReachablePhotosDependencies {
  * A photo belongs to nobody on its own (ADR 4 makes it its own aggregate). It
  * is seen through what shows it, so a photo that shows nothing any more is
  * reachable only by somebody who may see everything.
+ *
+ * At `edit`, the photos the person may change instead: the ones shown by
+ * something in a space they may edit. That is what trying a photo's
+ * background removal again needs (ADR 26).
  */
 export class ReachablePhotos {
   constructor(private readonly deps: ReachablePhotosDependencies) {}
 
-  async execute(access: Access): Promise<PhotoReach> {
+  async execute(
+    access: Access,
+    level: ShareLevel = ShareLevel.VIEW,
+  ): Promise<PhotoReach> {
     if (access.kind === "everything") {
       return { kind: "everywhere" };
     }
@@ -38,16 +51,18 @@ export class ReachablePhotos {
       this.deps.storageUnits.findAll(),
     ]);
 
+    const may = (id: UnitId): boolean =>
+      level === ShareLevel.EDIT ? mayEditSpace(access, id) : mayViewSpace(access, id);
     const photoIds = new Set<PhotoId>();
     for (const item of items) {
-      if (mayViewSpace(access, item.storageUnitId)) {
+      if (may(item.storageUnitId)) {
         for (const id of item.photos) {
           photoIds.add(id);
         }
       }
     }
     for (const unit of units) {
-      if (unit.photoId !== null && mayViewSpace(access, unit.id)) {
+      if (unit.photoId !== null && may(unit.id)) {
         photoIds.add(unit.photoId);
       }
     }

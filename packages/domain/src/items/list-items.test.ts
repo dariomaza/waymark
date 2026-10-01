@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
 
 import { FakeClock } from "../shared/clock.fake.js";
@@ -45,7 +46,7 @@ describe("ListItems", () => {
     parentId: UnitId | null = null,
     owner = "dario",
   ) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId(owner),
       name,
       kind: StorageUnitKind.BOX,
@@ -53,7 +54,7 @@ describe("ListItems", () => {
     });
 
   const anItem = async (name: string, storageUnitId: UnitId) =>
-    createItem.execute({ storageUnitId, name });
+    createItem.execute(SEES_EVERYTHING, { storageUnitId, name });
 
   const locations = async (): Promise<string[]> =>
     (await listItems.execute(EVERYTHING)).map(

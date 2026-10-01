@@ -33,6 +33,7 @@ export {
   type SpaceInTree,
   type SpaceReach,
 } from "./access/access.js";
+export { OwnerOnly, SpaceIsViewOnly } from "./access/access-errors.js";
 
 // Shares (ADR 26)
 export type { Share, ShareRepository } from "./shares/share-repository.js";

@@ -323,6 +323,8 @@ an inventory too large to list is search rather than a page.
 | `InvalidQuantity`               | 422    | Valid JSON, value the domain refuses.                |
 | `TooManyItemPhotos`             | 409    | Refused by the current contents of the item.         |
 | `PhotoNotOnItem`                | 422    | The request names a photo the item does not hold.    |
+| `SpaceIsViewOnly`               | 403    | `VIEW_ONLY`: seen, shared to view, not to edit (ADR 26). |
+| `OwnerOnly`                     | 403    | `OWNER_ONLY`: only the owner makes or moves a root (ADR 26). |
 | `InvalidMachineToken`           | 401    | Unknown, revoked, expired, or not shaped like one.   |
 | `ReadOnlyMachineToken`          | 403    | Authenticated, and not allowed to change anything.   |
 
@@ -339,6 +341,14 @@ the world" and "fix the request" would be advice the caller cannot act on. What
 has to change is the CREDENTIAL, and 403 is what RFC 9110 has for "understood,
 authenticated, refused to authorize". 401 would be wrong too: it means
 "authenticate", and this caller already did (ADR 17).
+
+The two refusals of ADR 26 are 403 for the same reason. A space a person may
+not see answers exactly as a missing id does, 404 in the URL and 422 in the
+body; one they may see but only view answers `VIEW_ONLY`, naming the space that
+stops the write. Every write checks in one order — can every target be seen,
+then may it be changed, then the inventory's own rules — so not even "this box
+is not empty" can confirm that somebody else's box exists. A machine token's
+scope is checked before all of it, and its issuer's access after.
 
 ## Search
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import {
@@ -18,7 +19,7 @@ describe("ListStorageUnits", () => {
   let listStorageUnits: ListStorageUnits;
 
   const create = async (name: string, owner: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId(owner),
       parentId,
       name,

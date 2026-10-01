@@ -1,3 +1,5 @@
+import { OwnerOnly } from "../access/access-errors.js";
+import type { Access } from "../access/access.js";
 import type { UserId } from "../shared/identity.js";
 import type { StorageUnit } from "./storage-unit.js";
 import type { StorageUnitRepository } from "./storage-unit-repository.js";
@@ -26,4 +28,24 @@ export const ownerOfTreeHolding = async (
   }
 
   return root.ownerId;
+};
+
+/**
+ * Refuses to make or move a root for anybody but the owner of the tree, or an
+ * administrator (ADR 26). An editable share lets a person change everything
+ * in a space, but not take it out of its owner's tree.
+ */
+export const refuseUnlessOwner = async (
+  access: Access,
+  callerId: UserId,
+  storageUnits: StorageUnitRepository,
+  unit: StorageUnit,
+): Promise<void> => {
+  if (access.kind === "everything") {
+    return;
+  }
+
+  if ((await ownerOfTreeHolding(storageUnits, unit)) !== callerId) {
+    throw new OwnerOnly(unit.id);
+  }
 };

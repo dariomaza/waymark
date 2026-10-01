@@ -9,6 +9,7 @@ import {
 
 import { domainUseCaseContract } from "./domain-use-case.contract.js";
 import { invisibilityContract } from "./invisibility.contract.js";
+import { whatEachPersonMayChangeContract } from "./what-each-person-may-change.contract.js";
 import type {
   DomainUseCaseContext,
   InvisibilityContext,
@@ -104,6 +105,22 @@ domainUseCaseContract({
 });
 
 invisibilityContract({
+  name: "in-memory repositories",
+  setUp: async (): Promise<InvisibilityContext> => {
+    const storageUnits = newStorageUnits();
+    const items = new InMemoryItemRepository();
+    return {
+      storageUnits,
+      items,
+      photos: new InMemoryPhotoRepository(),
+      search: new InMemorySearchRepository({ items, storageUnits }),
+      shares: new InMemoryShareRepository(),
+    };
+  },
+  tearDown: async () => {},
+});
+
+whatEachPersonMayChangeContract({
   name: "in-memory repositories",
   setUp: async (): Promise<InvisibilityContext> => {
     const storageUnits = newStorageUnits();

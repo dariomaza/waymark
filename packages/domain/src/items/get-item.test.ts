@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import {
@@ -22,7 +23,7 @@ describe("GetItem", () => {
   let getItem: GetItem;
 
   const aUnit = async (name: string, owner: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
       callerId: userId(owner),
       parentId,
       name,
@@ -65,7 +66,10 @@ describe("GetItem", () => {
   it("answers with the item and where it is, root first", async () => {
     const garage = await aUnit("Garage", "ana");
     const box = await aUnit("Box 3", "ana", garage.id);
-    const drill = await createItem.execute({ storageUnitId: box.id, name: "Drill" });
+    const drill = await createItem.execute(SEES_EVERYTHING, {
+      storageUnitId: box.id,
+      name: "Drill",
+    });
 
     const seen = await getItem.execute(await accessOf("ana"), drill.id);
 
@@ -76,7 +80,10 @@ describe("GetItem", () => {
   it("cuts the breadcrumb at the space shared with the person", async () => {
     const garage = await aUnit("Garage", "ana");
     const box = await aUnit("Box 3", "ana", garage.id);
-    const drill = await createItem.execute({ storageUnitId: box.id, name: "Drill" });
+    const drill = await createItem.execute(SEES_EVERYTHING, {
+      storageUnitId: box.id,
+      name: "Drill",
+    });
 
     const seen = await getItem.execute(await accessOf("bea", [box.id]), drill.id);
 
@@ -85,7 +92,10 @@ describe("GetItem", () => {
 
   it("treats an item in a space the person may not see as one that does not exist", async () => {
     const garage = await aUnit("Garage", "ana");
-    const drill = await createItem.execute({ storageUnitId: garage.id, name: "Drill" });
+    const drill = await createItem.execute(SEES_EVERYTHING, {
+      storageUnitId: garage.id,
+      name: "Drill",
+    });
 
     await expect(
       getItem.execute(await accessOf("bea"), drill.id),

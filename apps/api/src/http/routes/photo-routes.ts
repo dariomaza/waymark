@@ -2,7 +2,7 @@ import {
   createPhoto,
   displayPathOf,
   PhotoProcessingStatus,
-  StorageUnitNotFound,
+  ShareLevel,
   itemId as toItemId,
   photoId as toPhotoId,
   unitId,
@@ -10,8 +10,6 @@ import {
   type AttachItemPhoto,
   type DetachItemPhoto,
   type FindPhoto,
-  type GetItem,
-  type GetStorageUnitPath,
   type IdGenerator,
   type Photo,
   type PhotoId,
@@ -63,8 +61,6 @@ export interface PhotoRouteOptions {
   readonly findPhoto: FindPhoto;
   readonly reachablePhotos: ReachablePhotos;
   readonly requeuePhotos: RequeuePhotos;
-  readonly getItem: GetItem;
-  readonly getStorageUnitPath: GetStorageUnitPath;
 }
 
 /**
@@ -282,14 +278,17 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
 
     // Checked first, so an upload to a ghost item does not cost a decode and
     // two file writes before anybody notices. An item out of reach is a ghost
-    // too (ADR 26).
-    const { item } = await options.getItem.execute(request.access, toItemId(id));
+    // too, and one in a space shared to view is refused here as well (ADR 26).
+    const item = await options.attachItemPhoto.authorize(request.access, toItemId(id));
 
     const photo = await storeUpload(request);
 
     let result;
     try {
-      result = await options.attachItemPhoto.execute({ itemId: item.id, photo });
+      result = await options.attachItemPhoto.execute(request.access, {
+        itemId: item.id,
+        photo,
+      });
     } catch (error) {
       await discard(photo);
       throw error;
@@ -308,7 +307,7 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
     const { id } = idParamsSchema.parse(request.params);
     const body = reorderItemPhotosBodySchema.parse(request.body);
 
-    const item = await options.reorderItemPhotos.execute({
+    const item = await options.reorderItemPhotos.execute(request.access, {
       itemId: toItemId(id),
       photoIds: body.photoIds.map(toPhotoId),
     });
@@ -319,7 +318,7 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
   app.delete("/items/:id/photos/:photoId", async (request, reply) => {
     const params = itemPhotoParamsSchema.parse(request.params);
 
-    const result = await options.detachItemPhoto.execute({
+    const result = await options.detachItemPhoto.execute(request.access, {
       itemId: toItemId(params.id),
       photoId: toPhotoId(params.photoId),
     });
@@ -337,19 +336,18 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
   app.post("/storage-units/:id/photo", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    // Refuses a unit out of reach exactly as a missing one (ADR 26).
-    const unit = (
-      await options.getStorageUnitPath.execute(request.access, unitId(id))
-    ).at(-1);
-    if (unit === undefined) {
-      throw new StorageUnitNotFound(unitId(id));
-    }
+    // Refuses a unit out of reach exactly as a missing one, and one shared to
+    // view for authority, before the upload is stored (ADR 26).
+    const unit = await options.setStorageUnitPhoto.authorize(request.access, unitId(id));
 
     const photo = await storeUpload(request);
 
     let result;
     try {
-      result = await options.setStorageUnitPhoto.execute({ unitId: unit.id, photo });
+      result = await options.setStorageUnitPhoto.execute(request.access, {
+        unitId: unit.id,
+        photo,
+      });
     } catch (error) {
       await discard(photo);
       throw error;
@@ -371,7 +369,7 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
   app.delete("/storage-units/:id/photo", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    const result = await options.setStorageUnitPhoto.execute({
+    const result = await options.setStorageUnitPhoto.execute(request.access, {
       unitId: unitId(id),
       photo: null,
     });
@@ -436,11 +434,10 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
   app.post("/photos/:id/reprocess", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    // A photo out of reach is left alone and answered as a missing one.
-    const [requeued] = await options.requeuePhotos.execute(request.access, [
-      toPhotoId(id),
-    ]);
-    if (requeued === undefined) {
+    // A photo out of reach is left alone and answered as a missing one; one
+    // that may only be viewed is refused for authority (ADR 26).
+    const requeued = await options.requeuePhotos.one(request.access, toPhotoId(id));
+    if (requeued === null) {
       throw new PhotoNotFound(id);
     }
     // The attempts go too. A photo that had already spent them would be
@@ -453,8 +450,10 @@ export const photoRoutes: FastifyPluginAsync<PhotoRouteOptions> = async (
 
   /** The same thing for everything that failed, because that is the real ask. */
   app.post("/photos/processing/retry", async (request, reply) => {
-    // Everything that failed among the photos this person may see (ADR 26).
-    const reach = await options.reachablePhotos.execute(request.access);
+    // Everything that failed among the photos this person may change
+    // (ADR 26). One they may only view is not theirs to try again, so it is
+    // left out rather than refused, as one out of reach is.
+    const reach = await options.reachablePhotos.execute(request.access, ShareLevel.EDIT);
     const failed = await options.processing.queue.failedPhotoIds(MAX_BULK_RETRY, reach);
     const photos = await options.requeuePhotos.execute(request.access, failed);
 

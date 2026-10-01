@@ -95,7 +95,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
   app.post("/storage-units", async (request, reply) => {
     const body = createStorageUnitBodySchema.parse(request.body);
 
-    const unit = await options.createStorageUnit.execute({
+    const unit = await options.createStorageUnit.execute(request.access, {
       // A root made here is the caller's; for a machine token, its issuer's.
       callerId: personBehind(request.caller),
       parentId: body.parentId == null ? null : unitId(body.parentId),
@@ -134,7 +134,8 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const { id } = idParamsSchema.parse(request.params);
     const body = moveStorageUnitBodySchema.parse(request.body);
 
-    const unit = await options.moveStorageUnit.execute({
+    const unit = await options.moveStorageUnit.execute(request.access, {
+      callerId: personBehind(request.caller),
       id: unitId(id),
       targetParentId: body.parentId === null ? null : unitId(body.parentId),
     });
@@ -146,7 +147,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const { id } = idParamsSchema.parse(request.params);
     const body = updateStorageUnitBodySchema.parse(request.body);
 
-    const unit = await options.updateStorageUnit.execute({
+    const unit = await options.updateStorageUnit.execute(request.access, {
       id: unitId(id),
       // Spread field by field, so an absent field stays absent rather than
       // becoming an explicit `undefined` the use case would have to unpick.
@@ -162,10 +163,11 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const { id } = idParamsSchema.parse(request.params);
     const body = emptyStorageUnitBodySchema.parse(request.body);
 
-    const result = await options.emptyStorageUnit.execute(
-      unitId(id),
-      body.targetUnitId === undefined ? undefined : unitId(body.targetUnitId),
-    );
+    const result = await options.emptyStorageUnit.execute(request.access, {
+      callerId: personBehind(request.caller),
+      id: unitId(id),
+      ...(body.targetUnitId === undefined ? {} : { targetUnitId: unitId(body.targetUnitId) }),
+    });
 
     return reply.code(200).send({
       movedItems: await options.itemViews.ofMany(result.movedItems),
@@ -176,7 +178,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
   app.delete("/storage-units/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    await options.deleteStorageUnit.execute(unitId(id));
+    await options.deleteStorageUnit.execute(request.access, unitId(id));
 
     return reply.code(204).send();
   });

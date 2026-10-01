@@ -100,7 +100,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.post("/items", async (request, reply) => {
     const body = createItemBodySchema.parse(request.body);
 
-    const item = await options.createItem.execute({
+    const item = await options.createItem.execute(request.access, {
       storageUnitId: unitId(body.storageUnitId),
       name: body.name,
       description: body.description ?? null,
@@ -147,7 +147,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
     const { id } = idParamsSchema.parse(request.params);
     const body = updateItemBodySchema.parse(request.body);
 
-    const item = await options.updateItem.execute({
+    const item = await options.updateItem.execute(request.access, {
       id: toItemId(id),
       ...(body.name === undefined ? {} : { name: body.name }),
       ...(body.description === undefined ? {} : { description: body.description }),
@@ -161,7 +161,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.post("/items/move", async (request, reply) => {
     const body = moveItemsBodySchema.parse(request.body);
 
-    const items = await options.moveItems.execute({
+    const items = await options.moveItems.execute(request.access, {
       itemIds: body.itemIds.map(toItemId),
       targetUnitId: unitId(body.targetUnitId),
     });
@@ -172,7 +172,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.delete("/items/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    const result = await options.deleteItem.execute(toItemId(id));
+    const result = await options.deleteItem.execute(request.access, toItemId(id));
 
     // The item is gone from the database before a single file is touched. A
     // disk that refuses to give up a file cannot un-delete the item.

@@ -1,3 +1,5 @@
+import { mayViewSpace, type Access } from "../access/access.js";
+import { refuseViewOnly } from "../access/write-checks.js";
 import type { Clock } from "../shared/clock.js";
 import type { UnitId } from "../shared/identity.js";
 import { StorageUnitNotFound } from "./storage-unit-errors.js";
@@ -33,11 +35,15 @@ export interface UpdateStorageUnitCommand extends StorageUnitRevision {
 export class UpdateStorageUnit {
   constructor(private readonly deps: UpdateStorageUnitDependencies) {}
 
-  async execute(command: UpdateStorageUnitCommand): Promise<StorageUnit> {
+  async execute(
+    access: Access,
+    command: UpdateStorageUnitCommand,
+  ): Promise<StorageUnit> {
     const unit = await this.deps.storageUnits.findById(command.id);
-    if (unit === null) {
+    if (unit === null || !mayViewSpace(access, unit.id)) {
       throw new StorageUnitNotFound(command.id);
     }
+    refuseViewOnly(access, unit.id);
 
     const revised = reviseStorageUnit(unit, command, this.deps.clock.now());
     await this.deps.storageUnits.save(revised);
