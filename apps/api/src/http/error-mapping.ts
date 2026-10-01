@@ -15,6 +15,7 @@ import {
   UnknownMachineTokenScope,
   UnknownPasskeyCeremony,
   UnknownPhotoProcessingStatus,
+  UnknownRole,
   UnknownSessionOpener,
   UnknownStorageUnitKind,
 } from "../persistence/persistence-errors.js";
@@ -47,6 +48,7 @@ export interface MappedDomainError {
  * | `UnknownMachineTokenScope`     | 500    | Same, for a credential row whose scope is not a scope.              |
  * | `UnknownSessionOpener`         | 500    | Same, for a session that was opened by nothing recognisable.        |
  * | `UnknownPasskeyCeremony`       | 500    | Same, for a challenge row naming a ceremony that does not exist.    |
+ * | `UnknownRole`                  | 500    | Same, for an account whose role is not a role.                      |
  *
  * ## The rule behind 404, 409 and 422
  *
@@ -198,6 +200,13 @@ const MAPPINGS = new Map<unknown, Mapper>([
     (): MappedDomainError => ({
       status: 500,
       code: "UNKNOWN_SESSION_OPENER",
+    }),
+  ],
+  [
+    UnknownRole,
+    (): MappedDomainError => ({
+      status: 500,
+      code: "UNKNOWN_ROLE",
     }),
   ],
   [

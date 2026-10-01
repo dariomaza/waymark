@@ -15,6 +15,8 @@ machineTokenRepositoryContract({
   name: "InMemoryMachineTokenRepository",
   setUp: async (): Promise<MachineTokenRepositoryContext> => ({
     machineTokens: new InMemoryMachineTokenRepository(),
+    // Nothing to satisfy: a Map has no foreign keys.
+    givenTheUser: async () => {},
   }),
   tearDown: async () => {},
 });

@@ -10,11 +10,17 @@ import { RevokeMachineToken } from "../auth/revoke-machine-token.js";
 import { loadConfig } from "../config.js";
 import { createPrismaClient } from "../persistence/prisma-client.js";
 import { PrismaMachineTokenRepository } from "../persistence/prisma-machine-token-repository.js";
+import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
 import {
   USAGE,
   parseMachineTokenCommand,
   type MachineTokenCommand,
 } from "./machine-token-command.js";
+import {
+  IssuerNotFound,
+  NoAdministratorToIssueFor,
+  resolveMachineTokenIssuer,
+} from "./machine-token-issuer.js";
 
 /**
  * `pnpm --filter @waymark/api machine-token <create|revoke|list>`
@@ -92,6 +98,10 @@ const run = async (command: MachineTokenCommand): Promise<void> => {
   try {
     switch (command.kind) {
       case "create": {
+        const issuer = await resolveMachineTokenIssuer(
+          new PrismaUserRepository(prisma),
+          command.username,
+        );
         const { token, machineToken } = await new CreateMachineToken({
           machineTokens,
           ids: new UuidIdGenerator(),
@@ -99,13 +109,15 @@ const run = async (command: MachineTokenCommand): Promise<void> => {
         }).execute({
           name: command.name,
           scope: command.scope,
+          userId: issuer.id,
           ...(command.expiresInDays === null
             ? {}
             : { expiresInDays: command.expiresInDays }),
         });
 
         process.stdout.write(
-          `Created machine token "${machineToken.name}" (${machineToken.scope}).\n\n` +
+          `Created machine token "${machineToken.name}" (${machineToken.scope}) ` +
+            `for ${issuer.username}.\n\n` +
             `  ${token}\n\n` +
             "This is the only time it will ever be shown. Store it now.\n" +
             "Present it as:  Authorization: Machine <token>\n",
@@ -141,7 +153,9 @@ const run = async (command: MachineTokenCommand): Promise<void> => {
   } catch (error) {
     if (
       error instanceof MachineTokenNameAlreadyTaken ||
-      error instanceof InvalidMachineTokenName
+      error instanceof InvalidMachineTokenName ||
+      error instanceof IssuerNotFound ||
+      error instanceof NoAdministratorToIssueFor
     ) {
       return void fail(error.message);
     }

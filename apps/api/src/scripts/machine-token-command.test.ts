@@ -12,7 +12,26 @@ describe("parsing a machine-token command", () => {
         name: "mcp-server",
         scope: "read",
         expiresInDays: null,
+        username: null,
       });
+    });
+
+    it("takes the person it is issued for (ADR 26)", () => {
+      expect(
+        parse("create", "--name", "mcp", "--scope", "read", "--username", "partner"),
+      ).toMatchObject({ kind: "create", username: "partner" });
+    });
+
+    it("leaves the person unnamed when --username is absent, for the script to default", () => {
+      expect(parse("create", "--name", "mcp", "--scope", "read")).toMatchObject({
+        username: null,
+      });
+    });
+
+    it("refuses an empty --username rather than treating it as absent", () => {
+      expect(
+        parse("create", "--name", "mcp", "--scope", "read", "--username", "  "),
+      ).toMatchObject({ kind: "error" });
     });
 
     it("takes read-write", () => {
@@ -75,6 +94,12 @@ describe("parsing a machine-token command", () => {
       });
     });
 
+    it("refuses a --username on a revoke rather than ignoring it", () => {
+      expect(
+        parse("revoke", "--name", "mcp", "--username", "dario"),
+      ).toMatchObject({ kind: "error" });
+    });
+
     it("refuses a revoke with no name, because that could only mean all of them", () => {
       expect(parse("revoke")).toMatchObject({ kind: "error" });
     });
@@ -95,6 +120,7 @@ describe("parsing a machine-token command", () => {
 
     it("refuses arguments it would only ignore", () => {
       expect(parse("list", "--name", "mcp")).toMatchObject({ kind: "error" });
+      expect(parse("list", "--username", "dario")).toMatchObject({ kind: "error" });
     });
   });
 

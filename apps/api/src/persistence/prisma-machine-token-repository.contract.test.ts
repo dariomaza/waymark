@@ -30,7 +30,20 @@ machineTokenRepositoryContract({
   name: "PrismaMachineTokenRepository",
   setUp: async (): Promise<MachineTokenRepositoryContext> => {
     await database.reset();
-    return { machineTokens: new PrismaMachineTokenRepository(database.client) };
+    return {
+      machineTokens: new PrismaMachineTokenRepository(database.client),
+      givenTheUser: async (id: string) => {
+        await database.client.user.create({
+          data: {
+            id,
+            username: id,
+            passwordHash: "not-a-real-hash",
+            createdAt: new Date("2026-04-01T09:00:00.000Z"),
+            updatedAt: new Date("2026-04-01T09:00:00.000Z"),
+          },
+        });
+      },
+    };
   },
   tearDown: async () => {},
 });

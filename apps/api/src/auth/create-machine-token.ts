@@ -21,6 +21,8 @@ export interface CreateMachineTokenDependencies {
 export interface CreateMachineTokenCommand {
   readonly name: string;
   readonly scope: MachineTokenScope;
+  /** The person issuing it, whom it will act as (ADR 26). */
+  readonly userId: string;
   /** Absent means it never lapses, which is the normal case. */
   readonly expiresInDays?: number;
 }
@@ -86,6 +88,7 @@ export class CreateMachineToken {
       name,
       tokenHash,
       scope: command.scope,
+      userId: command.userId,
       createdAt: now,
       expiresAt:
         command.expiresInDays === undefined

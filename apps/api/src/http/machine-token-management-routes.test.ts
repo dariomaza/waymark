@@ -144,7 +144,27 @@ describe("managing machine tokens over HTTP", () => {
     });
   });
 
+  /** Whose a stored token is, by username, straight out of the database. */
+  const ownerOf = async (name: string): Promise<string | undefined> =>
+    (
+      await api.database.client.machineToken.findUnique({
+        where: { name },
+        include: { user: true },
+      })
+    )?.user.username;
+
   describe("creating one", () => {
+    it("belongs to the person whose session issued it (ADR 26)", async () => {
+      await api.createUser("partner", "another-password");
+      const partner = await api.login("partner", "another-password");
+
+      await create({ name: "backup", scope: "read" });
+      await create({ name: "mcp-server", scope: "read" }, api.authHeaders(partner));
+
+      expect(await ownerOf("backup")).toBe(TEST_USERNAME);
+      expect(await ownerOf("mcp-server")).toBe("partner");
+    });
+
     it("answers 201 with the secret, exactly once", async () => {
       const response = await create({ name: "mcp-server", scope: "read" });
 
@@ -274,6 +294,21 @@ describe("managing machine tokens over HTTP", () => {
   });
 
   describe("rotating one", () => {
+    it("hands it to the person who rotated it, who now holds the secret (ADR 26)", async () => {
+      await create({ name: "mcp-server", scope: "read" });
+      await api.createUser("partner", "another-password");
+      const partner = await api.login("partner", "another-password");
+
+      await api.app.inject({
+        method: "POST",
+        url: "/auth/machine-tokens/mcp-server/rotate",
+        headers: api.authHeaders(partner),
+        payload: {},
+      });
+
+      expect(await ownerOf("mcp-server")).toBe("partner");
+    });
+
     it("hands back a new secret for the same name and scope", async () => {
       await create({ name: "mcp-server", scope: "read" });
 

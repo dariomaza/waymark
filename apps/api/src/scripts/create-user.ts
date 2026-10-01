@@ -41,7 +41,10 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
 const MINIMUM_PASSWORD_LENGTH = 12;
 
 const usage = `
-Usage: pnpm --filter @waymark/api create-user [--username <name>]
+Usage: pnpm --filter @waymark/api create-user [--username <name>] [--admin]
+
+The first account on a deployment is the administrator. Every later one is a
+user, unless --admin makes it an administrator too.
 
 The password is NEVER taken as an argument. It is read, in this order, from:
   1. standard input, when it is piped
@@ -112,6 +115,7 @@ const main = async (): Promise<void> => {
       options: {
         username: { type: "string" },
         password: { type: "string" },
+        admin: { type: "boolean" },
         help: { type: "boolean", short: "h" },
       },
       allowPositionals: false,
@@ -149,7 +153,7 @@ const main = async (): Promise<void> => {
   if (password.length < MINIMUM_PASSWORD_LENGTH) {
     return void fail(
       `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters. ` +
-        "This account can read and edit the whole inventory from the public internet.",
+        "This account can be signed in to from the public internet.",
     );
   }
 
@@ -162,9 +166,11 @@ const main = async (): Promise<void> => {
       hasher: new ScryptPasswordHasher(),
       ids: new UuidIdGenerator(),
       clock: new SystemClock(),
-    }).execute({ username, password });
+    }).execute({ username, password, administrator: parsed.values.admin === true });
 
-    process.stdout.write(`Created user "${user.username}" (${user.id}).\n`);
+    process.stdout.write(
+      `Created ${user.role} "${user.username}" (${user.id}).\n`,
+    );
   } catch (error) {
     if (error instanceof UsernameAlreadyTaken) {
       return void fail(error.message);

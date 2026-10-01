@@ -76,6 +76,7 @@ export class InMemoryMachineTokenRepository implements MachineTokenRepository {
       name: stored.name,
       scope: stored.scope,
       tokenHash: rotation.tokenHash,
+      userId: rotation.userId,
       createdAt: rotation.createdAt,
       expiresAt: rotation.expiresAt,
       // Never carried over: it would describe a secret that no longer exists.

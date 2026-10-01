@@ -1,3 +1,4 @@
+import { Role } from "@waymark/domain";
 import { describe, expect, it } from "vitest";
 
 import { callerMayWrite, callerName, type Caller } from "./caller.js";
@@ -12,6 +13,7 @@ const aPerson: Caller = {
     id: "user-1",
     username: "dario",
     passwordHash: "scrypt$...",
+    role: Role.ADMINISTRATOR,
     createdAt: NOW,
     updatedAt: NOW,
   },
@@ -32,6 +34,7 @@ const aMachine = (scope: MachineTokenScope): Caller => ({
     name: "mcp-server",
     tokenHash: "hash",
     scope,
+    userId: "user-1",
     createdAt: NOW,
     expiresAt: null,
     lastUsedAt: null,

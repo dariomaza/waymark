@@ -13,15 +13,13 @@
  * A machine token answers all three. It is revoked on its own, it can be
  * narrower than the person who issued it, and it records when it was last used.
  *
- * ## Why there is no `userId` on it
+ * ## Whose it is
  *
- * Because there is nothing to put there that would mean anything. ADR 5 says
- * users are credentials and the inventory is shared; a machine token is another
- * credential against that same shared inventory, not a delegation of one
- * person's access. Storing "dario issued this" would be provenance, and
- * provenance that nothing reads is a column that goes stale — the `name` is
- * where a human says what the token is for, and it is the field revocation is
- * keyed by.
+ * The person who issued it (ADR 26). It acts as that person, narrowed by its
+ * scope, so an MCP server sees exactly what its issuer sees and nothing more.
+ * ADR 18 once argued against this column because provenance nothing reads goes
+ * stale; under ADR 26 deciding what the token may see reads it on every
+ * request.
  */
 export interface MachineToken {
   readonly id: string;
@@ -33,6 +31,8 @@ export interface MachineToken {
   /** SHA-256 of the token. The token itself is shown once and never stored. */
   readonly tokenHash: string;
   readonly scope: MachineTokenScope;
+  /** The account this token acts as: the person who issued it. */
+  readonly userId: string;
   readonly createdAt: Date;
   /**
    * `null` means it never lapses, which is the normal case and the point of

@@ -28,11 +28,23 @@ describe("creating a machine token", () => {
     });
   });
 
+  it("belongs to the person who issued it (ADR 26)", async () => {
+    const { machineToken } = await createMachineToken.execute({
+      name: "mcp-server",
+      scope: MachineTokenScope.Read,
+      userId: "dario",
+    });
+
+    expect(machineToken.userId).toBe("dario");
+    expect((await machineTokens.findByName("mcp-server"))?.userId).toBe("dario");
+  });
+
   describe("the secret it hands back", () => {
     it("is a machine token, recognisable as one", async () => {
       const { token } = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       expect(looksLikeMachineToken(token)).toBe(true);
@@ -42,6 +54,7 @@ describe("creating a machine token", () => {
       const { token } = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       const stored = await machineTokens.findByName("mcp-server");
@@ -54,11 +67,13 @@ describe("creating a machine token", () => {
       const first = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
       await machineTokens.deleteByName("mcp-server");
       const second = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       expect(second.token).not.toBe(first.token);
@@ -70,6 +85,7 @@ describe("creating a machine token", () => {
       await createMachineToken.execute({
         name: "backup",
         scope: MachineTokenScope.ReadWrite,
+        userId: "dario",
       });
 
       expect((await machineTokens.findByName("backup"))?.scope).toBe(
@@ -81,6 +97,7 @@ describe("creating a machine token", () => {
       const { machineToken } = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       expect(machineToken.createdAt).toEqual(NOW);
@@ -90,6 +107,7 @@ describe("creating a machine token", () => {
       const { machineToken } = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       expect(machineToken.lastUsedAt).toBeNull();
@@ -99,6 +117,7 @@ describe("creating a machine token", () => {
       const { machineToken } = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       expect(machineToken.expiresAt).toBeNull();
@@ -108,6 +127,7 @@ describe("creating a machine token", () => {
       const { machineToken } = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
         expiresInDays: 30,
       });
 
@@ -120,6 +140,7 @@ describe("creating a machine token", () => {
       await createMachineToken.execute({
         name: "  MCP-Server ",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       expect(await machineTokens.findByName("mcp-server")).not.toBeNull();
@@ -129,12 +150,14 @@ describe("creating a machine token", () => {
       await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       await expect(
         createMachineToken.execute({
           name: "MCP-SERVER",
           scope: MachineTokenScope.ReadWrite,
+          userId: "dario",
         }),
       ).rejects.toThrow(MachineTokenNameAlreadyTaken);
     });
@@ -143,12 +166,14 @@ describe("creating a machine token", () => {
       const first = await createMachineToken.execute({
         name: "mcp-server",
         scope: MachineTokenScope.Read,
+        userId: "dario",
       });
 
       await expect(
         createMachineToken.execute({
           name: "mcp-server",
           scope: MachineTokenScope.ReadWrite,
+          userId: "dario",
         }),
       ).rejects.toThrow();
 
@@ -159,7 +184,7 @@ describe("creating a machine token", () => {
 
     it("refuses an empty name, because a token nobody can name cannot be revoked", async () => {
       await expect(
-        createMachineToken.execute({ name: "   ", scope: MachineTokenScope.Read }),
+        createMachineToken.execute({ name: "   ", scope: MachineTokenScope.Read, userId: "dario" }),
       ).rejects.toThrow(InvalidMachineTokenName);
     });
 
@@ -167,7 +192,7 @@ describe("creating a machine token", () => {
       "refuses %o, which is a name somebody has to retype into a shell",
       async (name) => {
         await expect(
-          createMachineToken.execute({ name, scope: MachineTokenScope.Read }),
+          createMachineToken.execute({ name, scope: MachineTokenScope.Read, userId: "dario" }),
         ).rejects.toThrow(InvalidMachineTokenName);
       },
     );
@@ -176,7 +201,7 @@ describe("creating a machine token", () => {
       "accepts %o",
       async (name) => {
         await expect(
-          createMachineToken.execute({ name, scope: MachineTokenScope.Read }),
+          createMachineToken.execute({ name, scope: MachineTokenScope.Read, userId: "dario" }),
         ).resolves.toBeDefined();
       },
     );

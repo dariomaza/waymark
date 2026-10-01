@@ -13,6 +13,11 @@ export interface RotateMachineTokenDependencies {
 export interface RotateMachineTokenCommand {
   readonly name: string;
   /**
+   * The person rotating it. The new secret is theirs to hand out, so the token
+   * belongs to them from here on (ADR 26).
+   */
+  readonly userId: string;
+  /**
    * Absent means it never lapses, exactly as it does on a creation — and
    * deliberately NOT "keep whatever the old one had".
    *
@@ -104,6 +109,7 @@ export class RotateMachineToken {
     const machineToken = await this.deps.machineTokens.rotate({
       name,
       tokenHash,
+      userId: command.userId,
       createdAt: now,
       expiresAt:
         command.expiresInDays === undefined

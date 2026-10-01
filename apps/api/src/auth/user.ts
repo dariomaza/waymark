@@ -1,15 +1,17 @@
+import type { Role } from "@waymark/domain";
+
 /**
- * An account: a way in, and nothing else.
+ * An account: a person, the way they get in, and their role (ADR 26).
  *
- * There is no role, no permission and no owned inventory. Waymark is one shared
- * inventory, so every authenticated user may do every inventory operation, and
- * `User` lives in `@waymark/api` rather than in `@waymark/domain` because
- * "who is allowed in" is not a statement about boxes.
+ * The role is a domain value because what it decides — what a person may see
+ * and change — is a statement about boxes. The account itself stays here, in
+ * `@waymark/api`, because the credentials are not.
  */
 export interface User {
   readonly id: string;
   readonly username: string;
   readonly passwordHash: string;
+  readonly role: Role;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

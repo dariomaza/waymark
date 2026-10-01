@@ -27,6 +27,7 @@ describe("revoking a machine token", () => {
     await createMachineToken.execute({
       name: "mcp-server",
       scope: MachineTokenScope.Read,
+      userId: "dario",
     });
 
     expect(await revokeMachineToken.execute("mcp-server")).toBe(true);
@@ -37,6 +38,7 @@ describe("revoking a machine token", () => {
     await createMachineToken.execute({
       name: "mcp-server",
       scope: MachineTokenScope.Read,
+      userId: "dario",
     });
 
     expect(await revokeMachineToken.execute("  MCP-Server  ")).toBe(true);
@@ -46,6 +48,7 @@ describe("revoking a machine token", () => {
     await createMachineToken.execute({
       name: "mcp-server",
       scope: MachineTokenScope.Read,
+      userId: "dario",
     });
 
     expect(await revokeMachineToken.execute("mcp-serve")).toBe(false);
@@ -56,10 +59,12 @@ describe("revoking a machine token", () => {
     await createMachineToken.execute({
       name: "mcp-server",
       scope: MachineTokenScope.Read,
+      userId: "dario",
     });
     await createMachineToken.execute({
       name: "backup",
       scope: MachineTokenScope.ReadWrite,
+      userId: "dario",
     });
 
     await revokeMachineToken.execute("mcp-server");

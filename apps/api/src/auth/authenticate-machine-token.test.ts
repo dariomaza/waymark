@@ -28,6 +28,7 @@ describe("authenticating a machine token", () => {
       name: "mcp-server",
       tokenHash,
       scope: MachineTokenScope.Read,
+      userId: "dario",
       createdAt: NOW,
       expiresAt: null,
       lastUsedAt: null,

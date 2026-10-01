@@ -87,6 +87,11 @@ export interface MachineTokenRepository {
 export interface MachineTokenRotation {
   readonly name: string;
   readonly tokenHash: string;
+  /**
+   * Whoever rotated it. A rotation issues a new secret, and a token belongs to
+   * whoever issued its secret (ADR 26).
+   */
+  readonly userId: string;
   readonly createdAt: Date;
   /** Fresh, and never carried over: see `RotateMachineToken`. */
   readonly expiresAt: Date | null;

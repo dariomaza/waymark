@@ -41,6 +41,7 @@ const aMachineToken = (
   name: "mcp-server",
   tokenHash: "hash-1",
   scope: MachineTokenScope.Read,
+  userId: "dario",
   createdAt: A_MOMENT,
   expiresAt: null,
   lastUsedAt: null,
@@ -54,7 +55,12 @@ export const machineTokenRepositoryContract = (
     let machineTokens: MachineTokenRepository;
 
     beforeEach(async () => {
-      ({ machineTokens } = await harness.setUp());
+      const context = await harness.setUp();
+      machineTokens = context.machineTokens;
+      // A token belongs to somebody (ADR 26), and in a database that is a
+      // foreign key: both people these cases mention have accounts.
+      await context.givenTheUser("dario");
+      await context.givenTheUser("partner");
     });
 
     describe("finding one by the hash a caller presented", () => {
@@ -195,6 +201,7 @@ export const machineTokenRepositoryContract = (
       const A_ROTATION = {
         name: "mcp-server",
         tokenHash: "hash-next",
+        userId: "partner",
         createdAt: A_LATER_MOMENT,
         expiresAt: null,
       };
@@ -251,6 +258,17 @@ export const machineTokenRepositoryContract = (
         const rotated = await machineTokens.rotate(A_ROTATION);
 
         expect(rotated?.scope).toBe(MachineTokenScope.Read);
+      });
+
+      it("hands it to the person who rotated it, who issued this secret", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-old", userId: "dario" }),
+        );
+
+        expect((await machineTokens.rotate(A_ROTATION))?.userId).toBe("partner");
+        expect((await machineTokens.findByName("mcp-server"))?.userId).toBe(
+          "partner",
+        );
       });
 
       it("keeps the id, because this is the same credential slot", async () => {
@@ -315,6 +333,7 @@ export const machineTokenRepositoryContract = (
           name: "mcp-server",
           tokenHash: "hash-next",
           scope: MachineTokenScope.Read,
+          userId: "partner",
           createdAt: A_LATER_MOMENT,
           expiresAt: null,
           lastUsedAt: null,
@@ -420,4 +439,6 @@ export const machineTokenRepositoryContract = (
 /** Everything a `MachineTokenRepository` contract run needs, which is the port. */
 export interface MachineTokenRepositoryContext {
   readonly machineTokens: MachineTokenRepository;
+  /** Makes sure an account with this id exists; a token's owner is a foreign key. */
+  givenTheUser(id: string): Promise<void>;
 }

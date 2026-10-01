@@ -577,9 +577,11 @@ switched off, which is exactly what "optional" has to mean.
 
 ## Authentication
 
-One shared inventory. Users are credentials, not tenants: there is no owner
-column, no per-user scoping and no roles. Everybody who can log in sees and
-edits the same house.
+Each person has an inventory of their own (ADR 26, superseding ADR 5's single
+shared house). An account is either an **administrator**, who sees everything
+and is the only one who shares, or a **user**. Ownership is recorded on root
+spaces; scoping every read and checking every write by it is being built in
+the slices listed in `docs/roadmap.md`.
 
 There are three kinds of credential: a password, a passkey (ADR 19) and a
 machine token (ADR 17). The first two open the same session for a person; the
@@ -588,6 +590,9 @@ third is not a person at all.
 - **No sign-up, ever.** Accounts are created from a shell on the server with
   `pnpm --filter @waymark/api create-user`. The password is never an argument;
   it is prompted for with echo off, or piped on standard input.
+- **The first account is the administrator.** `create-user` makes an
+  administrator when no account exists yet, and a user after that unless it
+  is given `--admin`.
 - **Opaque session tokens** in an `Authorization: Bearer` header — no JWT, no
   cookies. 256 random bits, stored as a SHA-256 hash, revoked by deleting the
   row. The same mechanism works unchanged for the PWA and for the Expo app.
@@ -680,9 +685,17 @@ do everything that person can.
 ```sh
 pnpm --filter @waymark/api machine-token create --name mcp-server --scope read
 pnpm --filter @waymark/api machine-token create --name filer --scope read-write --expires-in-days 90
+pnpm --filter @waymark/api machine-token create --name partner-mcp --scope read --username partner
 pnpm --filter @waymark/api machine-token list
 pnpm --filter @waymark/api machine-token revoke --name mcp-server
 ```
+
+- **A token belongs to a person** (ADR 26) and will act as them. From the
+  account sheet it is the person signed in; rotating one hands it to whoever
+  rotated it, since they now hold the secret. From the shell it is whoever
+  `--username` names, or the oldest administrator when nobody is named — and
+  with no administrator at all, `create` refuses and says to run
+  `create-user` first.
 
 The same four operations live behind the avatar in the web client, under
 **Machine tokens**. The secret is shown exactly once, with the sentence saying

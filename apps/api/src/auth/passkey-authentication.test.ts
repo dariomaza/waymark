@@ -1,3 +1,4 @@
+import { Role } from "@waymark/domain";
 import { FakeClock, SequentialIdGenerator } from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -38,6 +39,7 @@ const DARIO: User = {
   id: "user-dario",
   username: "dario",
   passwordHash: "scrypt$...",
+  role: Role.ADMINISTRATOR,
   createdAt: NOW,
   updatedAt: NOW,
 };
@@ -48,6 +50,10 @@ const usersHolding = (...people: readonly User[]): UserRepository => ({
   findByUsername: async (username) =>
     people.find((person) => person.username === username) ?? null,
   create: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  anyoneExists: async () => people.length > 0,
+  findOldestAdministrator: async () => {
     throw new Error("not part of this ceremony");
   },
 });

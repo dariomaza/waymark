@@ -21,7 +21,7 @@ describe("rotating a machine token", () => {
     name: string,
     scope: MachineTokenScope = MachineTokenScope.Read,
   ): Promise<string> =>
-    (await createMachineToken.execute({ name, scope })).token;
+    (await createMachineToken.execute({ name, scope, userId: "dario" })).token;
 
   beforeEach(() => {
     machineTokens = new InMemoryMachineTokenRepository();
@@ -34,11 +34,27 @@ describe("rotating a machine token", () => {
     rotateMachineToken = new RotateMachineToken({ machineTokens, clock });
   });
 
+  it("belongs afterwards to the person who rotated it, who issued the new secret", async () => {
+    await createMachineToken.execute({
+      name: "mcp-server",
+      scope: MachineTokenScope.Read,
+      userId: "dario",
+    });
+
+    const rotated = await rotateMachineToken.execute({
+      name: "mcp-server",
+      userId: "partner",
+    });
+
+    expect(rotated?.machineToken.userId).toBe("partner");
+    expect((await machineTokens.findByName("mcp-server"))?.userId).toBe("partner");
+  });
+
   describe("the secret it hands back", () => {
     it("is a machine token, recognisable as one", async () => {
       await issue("mcp-server");
 
-      const rotated = await rotateMachineToken.execute({ name: "mcp-server" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(looksLikeMachineToken(rotated?.token ?? "")).toBe(true);
     });
@@ -46,7 +62,7 @@ describe("rotating a machine token", () => {
     it("is not the one that was there before", async () => {
       const before = await issue("mcp-server");
 
-      const rotated = await rotateMachineToken.execute({ name: "mcp-server" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(rotated?.token).not.toBe(before);
     });
@@ -54,7 +70,7 @@ describe("rotating a machine token", () => {
     it("is never stored, only its hash", async () => {
       await issue("mcp-server");
 
-      const rotated = await rotateMachineToken.execute({ name: "mcp-server" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       const stored = await machineTokens.findByName("mcp-server");
       expect(stored?.tokenHash).toBe(hashMachineTokenSecret(rotated?.token ?? ""));
@@ -71,7 +87,7 @@ describe("rotating a machine token", () => {
     it("stops opening anything, immediately", async () => {
       const before = await issue("mcp-server");
 
-      await rotateMachineToken.execute({ name: "mcp-server" });
+      await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(
         await machineTokens.findByTokenHash(hashMachineTokenSecret(before)),
@@ -81,7 +97,7 @@ describe("rotating a machine token", () => {
     it("leaves exactly one live secret behind the name, never two", async () => {
       await issue("mcp-server");
 
-      await rotateMachineToken.execute({ name: "mcp-server" });
+      await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(await machineTokens.list()).toHaveLength(1);
     });
@@ -91,7 +107,7 @@ describe("rotating a machine token", () => {
     it("keeps the name, because that is what a compose file and a revoke use", async () => {
       await issue("mcp-server");
 
-      const rotated = await rotateMachineToken.execute({ name: "mcp-server" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(rotated?.machineToken.name).toBe("mcp-server");
     });
@@ -106,7 +122,7 @@ describe("rotating a machine token", () => {
     it("cannot widen a read key into a writing one", async () => {
       await issue("mcp-server", MachineTokenScope.Read);
 
-      const rotated = await rotateMachineToken.execute({ name: "mcp-server" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(rotated?.machineToken.scope).toBe(MachineTokenScope.Read);
     });
@@ -114,7 +130,7 @@ describe("rotating a machine token", () => {
     it("keeps a read-write scope too, rather than narrowing one by surprise", async () => {
       await issue("filer", MachineTokenScope.ReadWrite);
 
-      const rotated = await rotateMachineToken.execute({ name: "filer" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "filer" });
 
       expect(rotated?.machineToken.scope).toBe(MachineTokenScope.ReadWrite);
     });
@@ -123,7 +139,7 @@ describe("rotating a machine token", () => {
       await issue("mcp-server");
 
       expect(
-        await rotateMachineToken.execute({ name: "  MCP-Server  " }),
+        await rotateMachineToken.execute({ userId: "dario", name: "  MCP-Server  " }),
       ).not.toBeNull();
     });
   });
@@ -140,7 +156,7 @@ describe("rotating a machine token", () => {
       await issue("mcp-server");
       await machineTokens.recordLastUsed("machine-token-1", NOW);
 
-      const rotated = await rotateMachineToken.execute({ name: "mcp-server" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(rotated?.machineToken.lastUsedAt).toBeNull();
     });
@@ -149,7 +165,7 @@ describe("rotating a machine token", () => {
       await issue("mcp-server");
       clock.advanceTo(LATER);
 
-      const rotated = await rotateMachineToken.execute({ name: "mcp-server" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
       expect(rotated?.machineToken.createdAt).toEqual(LATER);
     });
@@ -166,10 +182,11 @@ describe("rotating a machine token", () => {
       await createMachineToken.execute({
         name: "filer",
         scope: MachineTokenScope.ReadWrite,
+        userId: "dario",
         expiresInDays: 90,
       });
 
-      const rotated = await rotateMachineToken.execute({ name: "filer" });
+      const rotated = await rotateMachineToken.execute({ userId: "dario", name: "filer" });
 
       expect(rotated?.machineToken.expiresAt).toBeNull();
     });
@@ -179,6 +196,7 @@ describe("rotating a machine token", () => {
       clock.advanceTo(LATER);
 
       const rotated = await rotateMachineToken.execute({
+        userId: "dario",
         name: "mcp-server",
         expiresInDays: 30,
       });
@@ -197,11 +215,11 @@ describe("rotating a machine token", () => {
      * still hold has been replaced.
      */
     it("answers with nothing rather than inventing a credential", async () => {
-      expect(await rotateMachineToken.execute({ name: "never-issued" })).toBeNull();
+      expect(await rotateMachineToken.execute({ userId: "dario", name: "never-issued" })).toBeNull();
     });
 
     it("creates nothing on the way past", async () => {
-      await rotateMachineToken.execute({ name: "never-issued" });
+      await rotateMachineToken.execute({ userId: "dario", name: "never-issued" });
 
       expect(await machineTokens.list()).toEqual([]);
     });
@@ -211,7 +229,7 @@ describe("rotating a machine token", () => {
     const backup = await issue("backup", MachineTokenScope.ReadWrite);
     await issue("mcp-server");
 
-    await rotateMachineToken.execute({ name: "mcp-server" });
+    await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
     expect(
       (await machineTokens.findByTokenHash(hashMachineTokenSecret(backup)))?.name,
@@ -221,8 +239,8 @@ describe("rotating a machine token", () => {
   it("can be done twice, killing the secret it issued the first time", async () => {
     await issue("mcp-server");
 
-    const first = await rotateMachineToken.execute({ name: "mcp-server" });
-    const second = await rotateMachineToken.execute({ name: "mcp-server" });
+    const first = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
+    const second = await rotateMachineToken.execute({ userId: "dario", name: "mcp-server" });
 
     expect(
       await machineTokens.findByTokenHash(hashMachineTokenSecret(first?.token ?? "")),

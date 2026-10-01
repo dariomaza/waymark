@@ -139,11 +139,15 @@ export interface TestApi {
   /** Re-points the processor, for the cases about a sidecar going away. */
   pointProcessorAt(baseUrl: string): void;
   createUser(username: string, password: string): Promise<void>;
-  /** Issues one and returns the secret, exactly as the CLI prints it once. */
+  /**
+   * Issues one and returns the secret, exactly as the CLI prints it once. It
+   * belongs to `issuedBy` (ADR 26), whose account must already exist.
+   */
   createMachineToken(
     name: string,
     scope: MachineTokenScope,
     expiresInDays?: number,
+    issuedBy?: string,
   ): Promise<string>;
   revokeMachineToken(name: string): Promise<boolean>;
   /** Straight out of the database, so a test can assert it never leaves it. */
@@ -313,7 +317,15 @@ export const createTestApi = async (
       name: string,
       scope: MachineTokenScope,
       expiresInDays?: number,
+      issuedBy: string = TEST_USERNAME,
     ): Promise<string> {
+      const issuer = await users.findByUsername(issuedBy);
+      if (issuer === null) {
+        throw new Error(
+          `A machine token belongs to somebody: create "${issuedBy}" before issuing one`,
+        );
+      }
+
       const { token } = await new CreateMachineToken({
         machineTokens,
         ids,
@@ -321,6 +333,7 @@ export const createTestApi = async (
       }).execute({
         name,
         scope,
+        userId: issuer.id,
         ...(expiresInDays === undefined ? {} : { expiresInDays }),
       });
 

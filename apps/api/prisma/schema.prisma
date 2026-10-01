@@ -195,13 +195,12 @@ model PhotoProcessingAttempt {
   @@index([nextAttemptAt])
 }
 
-/// An account. Credentials and nothing else.
+/// An account: a person, their credentials, and their role (ADR 26).
 ///
-/// Waymark is ONE SHARED INVENTORY: a user is a way to get in, not a tenant.
-/// There is deliberately no owner column on `StorageUnit`, `Item` or `Photo`,
-/// no per-user scoping of any query, and no role. Everyone who can log in sees
-/// and edits the same house. Adding a tenant id "just in case" would put a
-/// filter on every single query to express a rule the product does not have.
+/// Each person has an inventory of their own. Ownership is written on root
+/// spaces only (`StorageUnit.ownerId`) and everything below a root belongs to
+/// its owner through the tree; `Share` grants a person a space of somebody
+/// else's. See ADR 26, which supersedes the single shared inventory of ADR 5.
 model User {
   id           String @id
   /// Stored lower case. SQLite compares TEXT case sensitively and Postgres
@@ -211,11 +210,17 @@ model User {
   /// `scrypt$N=...,r=...,p=...$<salt>$<digest>`. The parameters travel with the
   /// hash so they can be raised later without locking anybody out.
   passwordHash String
+  /// `administrator` | `user`. A string because SQLite has no enum, checked on
+  /// the way out like `StorageUnit.kind`. `user` by default, so an account that
+  /// forgot to say what it is gets the narrower role: making an administrator
+  /// is always written on purpose.
+  role         String @default("user")
 
   createdAt DateTime
   updatedAt DateTime
 
   sessions Session[]
+  machineTokens MachineToken[]
   passkeys Passkey[]
   /// Ceremonies this person has in flight. Rows live for two minutes.
   passkeyChallenges PasskeyChallenge[]
@@ -341,14 +346,10 @@ model PasskeyChallenge {
 
 /// A machine credential: named, long-lived, revocable on its own (ADR 17).
 ///
-/// It is deliberately NOT a `User` and carries no `userId`. ADR 5 says users
-/// are credentials against one shared inventory, and this is another credential
-/// against that same inventory rather than a delegation of somebody's account —
-/// which is the whole point, because a machine using a person's password cannot
-/// be revoked without changing that person's password.
-///
-/// There is no relation to `User` for that reason, and so deleting an account
-/// does not silently kill the MCP server the household depends on.
+/// It belongs to the person who issued it and acts as that person, narrowed by
+/// its scope (ADR 26). A machine using a person's PASSWORD still could not be
+/// revoked without changing that password, which is why this is a credential
+/// of its own rather than a session.
 model MachineToken {
   id String @id
   /// What the token is FOR, in a human's words. Unique, because it is what
@@ -369,6 +370,12 @@ model MachineToken {
   /// SQLite has no enum, so the value is checked on the way out by the mapper.
   scope String
 
+  /// Who this token acts as. `Cascade`, like `Session`: a credential that kept
+  /// working for an account that is gone would be a security bug, and ADR 3's
+  /// refusal of destructive cascades is about inventory, not credentials.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
   createdAt DateTime
   /// `null` means it never lapses, which is the normal case for a credential
   /// that lives in a compose file.
@@ -379,4 +386,5 @@ model MachineToken {
   lastUsedAt DateTime?
 
   @@index([expiresAt])
+  @@index([userId])
 }

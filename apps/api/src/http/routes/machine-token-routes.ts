@@ -5,6 +5,7 @@ import type { MachineTokenScope } from "../../auth/machine-token.js";
 import type { MachineTokenRepository } from "../../auth/machine-token-repository.js";
 import type { RevokeMachineToken } from "../../auth/revoke-machine-token.js";
 import type { RotateMachineToken } from "../../auth/rotate-machine-token.js";
+import type { User } from "../../auth/user.js";
 import { HttpError } from "../http-error.js";
 import {
   createMachineTokenBodySchema,
@@ -52,13 +53,10 @@ export interface MachineTokenRouteOptions {
  *    tell a token a person made from one a token made. ADR 17's entire promise
  *    — a credential that can be killed without touching a human account — is
  *    silently withdrawn.
- * 2. **There is nobody at the bottom of it.** `machine-token.ts` argues there
- *    is no `userId` on a machine token because provenance nothing reads is a
- *    column that goes stale. That holds while every token is minted by a
- *    person at a shell or at this screen. Let a token mint a token and "who
- *    authorised this credential" becomes recursive with no human at the end,
- *    answered by a field that deliberately does not exist. The alternative is
- *    the owner column ADR 5 refused.
+ * 2. **The person at the bottom of it would be hidden.** A token belongs to
+ *    the person who issued it (ADR 26). Let a token mint a token and "who
+ *    authorised this credential" becomes a chain of machines with a person
+ *    somewhere at the end of it, which nobody reading the list can see.
  * 3. **The codebase already decided this.** `POST /auth/logout` refuses a
  *    machine caller outright, "precisely so that a compromised machine cannot
  *    revoke itself into looking innocent". Minting and revoking credentials is
@@ -94,13 +92,14 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * cannot produce it again, which is the property rather than a limitation.
      */
     app.post("/auth/machine-tokens", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
       const body = createMachineTokenBodySchema.parse(request.body);
 
       const { token, machineToken } = await options.createMachineToken.execute({
         name: body.name,
         scope: body.scope as MachineTokenScope,
+        userId: person.id,
         ...(body.expiresInDays === undefined
           ? {}
           : { expiresInDays: body.expiresInDays }),
@@ -122,13 +121,14 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * is still there, under the same name, id and scope, holding a new secret.
      */
     app.post("/auth/machine-tokens/:name/rotate", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
       const { name } = machineTokenNameParamsSchema.parse(request.params);
       const body = rotateMachineTokenBodySchema.parse(request.body ?? {});
 
       const rotated = await options.rotateMachineToken.execute({
         name,
+        userId: person.id,
         ...(body.expiresInDays === undefined
           ? {}
           : { expiresInDays: body.expiresInDays }),
@@ -181,9 +181,11 @@ const noSuchMachineToken = (name: string): HttpError =>
  * `POST /auth/logout` answers a machine with. 401 would say "authenticate",
  * which this caller already did, successfully.
  */
-const refuseMachineCaller = (request: FastifyRequest): void => {
+const refuseMachineCaller = (request: FastifyRequest): User => {
   if (request.caller.kind !== "machine") {
-    return;
+    // The person behind the session: whoever issues or rotates a token is who
+    // it belongs to (ADR 26).
+    return request.caller.user;
   }
 
   throw new HttpError(
