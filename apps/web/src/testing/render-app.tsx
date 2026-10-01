@@ -2,7 +2,7 @@ import { render, type RenderResult } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
-import { App } from "../app/app.js";
+import { App, createQueryClient } from "../app/app.js";
 import type { PasskeyPlatform } from "../auth/passkey-platform.js";
 import type { QrScanner } from "../scanning/qr-scanner.js";
 
@@ -28,6 +28,10 @@ export interface RenderAppOptions {
  * outside world is MSW answering the API. That is what lets a test say "a
  * person opened a scanned label while logged out and ended up looking at that
  * box" rather than "this component rendered".
+ *
+ * The query cache is the app's own, with one change: the automatic retry of
+ * a request that never left the phone happens at once instead of after half
+ * a second of real time, so no assertion's deadline races it.
  */
 export const renderApp = ({
   route = "/",
@@ -37,6 +41,7 @@ export const renderApp = ({
   render(
     <MemoryRouter initialEntries={[route]}>
       <App
+        queries={createQueryClient({ offlineRetryDelay: 0 })}
         {...(scanner === undefined ? {} : { scanner })}
         {...(passkeys === undefined ? {} : { passkeys })}
       />

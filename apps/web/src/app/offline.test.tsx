@@ -5,6 +5,7 @@ import { sessionStore } from "../auth/session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { aSession } from "@waymark/api-client/testing";
 import { renderApp, screen, userEvent, waitFor } from "../testing/render-app.js";
+import { createQueryClient, OFFLINE_RETRY_DELAY_MS } from "./app.js";
 
 const signedIn = (): void => {
   sessionStore.save(aSession());
@@ -93,5 +94,65 @@ describe("signing out on a shared phone", () => {
       expect(deleted).toContain("waymark-photos");
     });
     vi.unstubAllGlobals();
+  });
+});
+
+/**
+ * # The one automatic retry, and the wait before it
+ *
+ * A request that never left the phone is asked once more before a screen
+ * gives up (see `createQueryClient`). On a phone that second attempt waits
+ * half a second. In a test that wait is wall-clock time, and it used to be
+ * spent inside the one second a `findBy…` allows: any stall of the test
+ * process during it — a loaded CI runner descheduling the worker — let the
+ * retry and the assertion's deadline fall due together, and the deadline won.
+ * That is the flake CI showed on the scanned-label screen, at 26 and 49
+ * seconds. So the tests keep the retry and drop the wait.
+ */
+describe("a request that never left the phone", () => {
+  beforeEach(() => {
+    sessionStore.save(aSession());
+  });
+
+  const theInventoryIsUnreachable = (): number[] => {
+    const attempts: number[] = [];
+    apiServer.use(
+      http.get(`${API_URL}/auth/me`, () =>
+        HttpResponse.json({ user: { id: "u1", username: "dario" } }),
+      ),
+      http.get(`${API_URL}/storage-units`, () => {
+        attempts.push(performance.now());
+
+        return HttpResponse.error();
+      }),
+    );
+
+    return attempts;
+  };
+
+  it("is asked once more, and only once, before the screen says it could not reach Waymark", async () => {
+    const attempts = theInventoryIsUnreachable();
+
+    renderApp({ route: "/" });
+
+    expect(await screen.findByText(/could not reach waymark/i)).toBeVisible();
+    expect(attempts).toHaveLength(2);
+  });
+
+  it("waits half a second before asking again on a phone", () => {
+    expect(createQueryClient().getDefaultOptions().queries?.retryDelay).toBe(
+      OFFLINE_RETRY_DELAY_MS,
+    );
+    expect(OFFLINE_RETRY_DELAY_MS).toBe(500);
+  });
+
+  it("is asked again at once in a test, so no assertion races the wait", async () => {
+    const attempts = theInventoryIsUnreachable();
+
+    renderApp({ route: "/" });
+
+    await screen.findByText(/could not reach waymark/i);
+    const [first = 0, second = 0] = attempts;
+    expect(second - first).toBeLessThan(OFFLINE_RETRY_DELAY_MS);
   });
 });
