@@ -8,9 +8,12 @@ import {
   EllipsisVertical,
   Eye,
   EyeOff,
+  Fingerprint,
   Globe,
   Image,
+  Info,
   Key,
+  Link,
   LogOut,
   Moon,
   Move,
@@ -147,6 +150,15 @@ export const ICON_NAMES = [
   "sunMoon",
   "sun",
   "moon",
+  /**
+   * More about this: the explanation a settings group keeps folded behind
+   * its title, so the screen reads as rows rather than as paragraphs.
+   */
+  "info",
+  /** Where a program is pointed: the address of this Waymark. */
+  "link",
+  /** Unlocking with a finger: the one setting only the phone has. */
+  "fingerprint",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -197,6 +209,9 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "pinnedW">, LucideIcon> = {
   sunMoon: SunMoon,
   sun: Sun,
   moon: Moon,
+  info: Info,
+  link: Link,
+  fingerprint: Fingerprint,
 };
 
 /**

@@ -22,7 +22,8 @@ describe("the icon set both clients draw", () => {
    * not one of these names had to. It is the same list the phone client
    * draws, minus `eyeOff` — the web reveal deliberately never flips its icon
    * (see `password-field.tsx`), so a crossed eye here would be a name with
-   * nothing to draw it for.
+   * nothing to draw it for — and minus `fingerprint`, for the same reason:
+   * unlocking with a finger is the phone's setting, and this client has none.
    */
   it("carries every symbol this product has, under this product's names", () => {
     expect([...ICON_NAMES]).toEqual([
@@ -53,6 +54,8 @@ describe("the icon set both clients draw", () => {
       "sunMoon",
       "sun",
       "moon",
+      "info",
+      "link",
     ]);
   });
 

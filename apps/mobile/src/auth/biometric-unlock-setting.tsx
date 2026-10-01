@@ -2,6 +2,7 @@ import { useState, type JSX } from "react";
 
 import { useTranslate } from "../app/language-context.js";
 import { Toggle } from "../ui/atoms/toggle.js";
+import { SettingsGroup } from "../ui/molecules/settings-group.js";
 import {
   useCanSealSession,
   useSealSession,
@@ -61,17 +62,30 @@ export const BiometricUnlockSetting = (): JSX.Element | null => {
     return null;
   }
 
+  const title = t("account.security");
+
   return (
     <>
-      <Toggle
-        label={t("biometrics.label")}
-        explains={t("biometrics.explains")}
-        checked={sealed}
-        disabled={busy}
-        onPress={() => {
-          setAsking(true);
-        }}
-      />
+      {/*
+        The whole Security group, not only its row: on a phone that cannot do
+        this there is no row, and a group with an empty card would be a title
+        over nothing. Its explanation is behind the group's ⓘ.
+      */}
+      <SettingsGroup
+        title={title}
+        about={[t("biometrics.explains")]}
+        aboutLabel={t("account.moreAbout", { group: title })}
+      >
+        <Toggle
+          icon="fingerprint"
+          label={t("biometrics.label")}
+          checked={sealed}
+          disabled={busy}
+          onPress={() => {
+            setAsking(true);
+          }}
+        />
+      </SettingsGroup>
       {asking ? (
         <BiometricUnlockSheet
           turningOn={!sealed}

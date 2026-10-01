@@ -542,10 +542,23 @@ export const EN = {
   "nav.youNamed": "You, signed in as {username}",
   "account.title": "You",
   /**
-   * Nothing on this screen is the inventory's, so it says what IS its own:
-   * the account, the language, how it looks, and the way out.
+   * The small muted line under the name at the top of the account screen. The
+   * name is drawn above it on its own, so this says only what the name is.
    */
-  "account.lede": "Your account, and how this app speaks and looks.",
+  "account.signedIn": "Signed in",
+  /**
+   * The three small uppercase group titles the account screen is made of, in
+   * the order they are drawn: how the app speaks and looks, what can open this
+   * account, and the programs that were given a key to it.
+   */
+  "account.preferences": "Preferences",
+  "account.security": "Security",
+  "account.programs": "Connected programs",
+  /**
+   * The name of the ⓘ beside a group's title, which unfolds the one or two
+   * sentences explaining it. `{group}` is that group's title.
+   */
+  "account.moreAbout": "More about {group}",
   "login.show": "Show",
   "login.hide": "Hide",
   /**
@@ -645,12 +658,10 @@ export const EN = {
   "tokens.scopeReadWrite": "Read and write",
   "tokens.scopeLabel": "What it may do",
 
-  "tokens.createdOn": "Made {when}",
   "tokens.lastUsedOn": "Last used {when}",
   /** The answer that makes an abandoned credential visible. */
   "tokens.neverUsed": "Never used",
   "tokens.lapsesOn": "Lapses {when}",
-  "tokens.neverLapses": "Never lapses",
 
   /**
    * # The other half of a credential
@@ -661,7 +672,6 @@ export const EN = {
    * appears once. Somebody coming back a month later to rotate a token needs
    * it then, and the secret panel is long gone by then.
    */
-  "tokens.addressTitle": "Where to point it",
   "tokens.addressNote":
     "This is the Waymark a program calls. It is not a secret, so take it as often as you need it.",
   "tokens.addressLabel": "The address of this Waymark",
@@ -783,7 +793,6 @@ export const EN = {
     "Whatever you would call it out loud — Pixel 8, Work laptop. It is how you tell them apart later.",
   "passkeys.addConfirm": "Add it",
 
-  "passkeys.addedOn": "Added {when}",
   "passkeys.lastUsedOn": "Last used {when}",
   /** The answer that makes a device nobody uses visible. */
   "passkeys.neverUsed": "Never used",

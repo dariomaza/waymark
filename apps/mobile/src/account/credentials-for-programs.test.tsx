@@ -42,7 +42,7 @@ const theApiHolds = (machineTokens: readonly unknown[]): void => {
 const openYourAccount = async (): Promise<void> => {
   await screen.findByText(/scan a label/i);
   await fireEvent.press(screen.getByRole("button", { name: "You, signed in as dario" }));
-  await screen.findByText("Signed in as dario");
+  await screen.findByText("Signed in");
 };
 
 describe("machine tokens, from the phone", () => {
@@ -400,7 +400,7 @@ describe("machine tokens, from the phone", () => {
         screen.getByRole("button", { name: "Tú, sesión iniciada como dario" }),
       );
 
-      expect(await screen.findByText("Tokens de máquina")).toBeOnTheScreen();
+      expect(await screen.findByText("Programas conectados")).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Nuevo token" })).toBeOnTheScreen();
     });
   });

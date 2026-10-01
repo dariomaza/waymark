@@ -1,9 +1,7 @@
 import type { JSX } from "react";
-import { StyleSheet, Text, View } from "react-native";
 
 import { CopyableValue } from "../../ui/molecules/copyable-value.js";
-import { radius, space, text } from "../../ui/styles/tokens.js";
-import { themed } from "../../ui/styles/theme.js";
+import { SettingsItem } from "../../ui/molecules/settings-item.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface ApiAddressProps {
@@ -15,61 +13,30 @@ export interface ApiAddressProps {
  * # The other half of a credential, and the half that keeps
  *
  * A machine token answers "what do I present"; this answers "where do I
- * present it". Without it somebody who has just made a credential has to go
- * and work out which hostname the thing they are wiring up should call, and
- * the two ways of finding that out are a README written for a different
- * installation and a guess.
+ * present it". It is the first row of the list rather than a part of the
+ * panel that appears once, because it is not a secret: it can be copied as
+ * often as anybody likes, and it is still true a year later — which is the
+ * moment somebody comes back to rotate a credential.
  *
- * ## It sits on the LIST, not only on the panel that appears once
+ * ## One row: a link, the address, and its copy control
  *
- * The secret is shown once and is then gone for ever. The address is not a
- * secret at all: it can be re-read, cached and copied as often as anybody
- * likes, and it is still true a year later. Putting it only beside the secret
- * would have tied a permanent fact to a panel with a five-second lifetime,
- * and the moment somebody most needs it — coming back to rotate a credential
- * — is precisely a moment with no issued secret on screen.
- *
- * ## Once, not once per row
- *
- * There is one API and every token on the list is presented to it, so the
- * address belongs to the list rather than to a row. Repeating it under each
- * credential would be the same forty characters printed six times on a phone,
- * which reads as six different addresses at a glance.
+ * It had a title and a note of its own. The picture says what the row is, the
+ * value is named for a screen reader, and the note is behind the group's ⓘ.
+ * The browser draws the same row.
  */
 export const ApiAddress = ({ endpoint }: ApiAddressProps): JSX.Element => {
-  const styles = useStyles();
   const t = useTranslate();
 
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.title}>{t("tokens.addressTitle")}</Text>
-      {/*
-        The control travels WITH the address rather than sitting under the
-        note about it. It used to be a full-width button below both, wider
-        than the forty characters it was about.
-      */}
+    <SettingsItem icon="link">
       <CopyableValue
+        plain
         value={endpoint}
         valueLabel={t("tokens.addressLabel")}
         copyLabel={t("tokens.addressCopy")}
         copiedLabel={t("tokens.addressCopied")}
         failedLabel={t("tokens.copyFailedPhone")}
       />
-      <Text style={styles.note}>{t("tokens.addressNote")}</Text>
-    </View>
+    </SettingsItem>
   );
 };
-
-const useStyles = themed((colors) =>
-  StyleSheet.create({
-    wrap: {
-      gap: space.s2,
-      padding: space.s3,
-      borderRadius: radius.m,
-      backgroundColor: colors.surfaceRaised,
-      alignItems: "flex-start",
-    },
-    title: { color: colors.ink, fontSize: text.s, fontWeight: "700" },
-    note: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-  }),
-);

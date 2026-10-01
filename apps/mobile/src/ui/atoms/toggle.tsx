@@ -1,14 +1,17 @@
 import type { JSX } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon, type IconName } from "./icon.js";
 import { radius, space, TAP_TARGET, text } from "../styles/tokens.js";
-import { themed } from "../styles/theme.js";
+import { themed, useColors } from "../styles/theme.js";
 
 export interface ToggleProps {
   /** What the setting IS, read and heard. The whole accessible name. */
   readonly label: string;
   /** The sentence under it, when the setting needs one. */
   readonly explains?: string | undefined;
+  /** A picture before the words, as every row of a settings card has. */
+  readonly icon?: IconName | undefined;
   readonly checked: boolean;
   readonly disabled?: boolean;
   /**
@@ -48,11 +51,13 @@ export interface ToggleProps {
 export const Toggle = ({
   label,
   explains,
+  icon,
   checked,
   disabled = false,
   onPress,
 }: ToggleProps): JSX.Element => {
   const styles = useStyles();
+  const colors = useColors();
 
   return (
     <Pressable
@@ -63,6 +68,7 @@ export const Toggle = ({
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
     >
+      {icon === undefined ? null : <Icon name={icon} size={20} color={colors.inkMuted} />}
       <View style={styles.words}>
         <Text style={styles.label}>{label}</Text>
         {explains === undefined ? null : <Text style={styles.explains}>{explains}</Text>}
@@ -91,8 +97,11 @@ const useStyles = themed((colors) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: space.s4,
+      gap: space.s3,
       paddingVertical: space.s2,
+      // The inset every row of a settings card has, so its words line up.
+      paddingLeft: space.s4,
+      paddingRight: space.s3,
     },
     pressed: { opacity: 0.7 },
     // The words take whatever is left, so a long explanation wraps rather than

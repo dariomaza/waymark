@@ -46,6 +46,36 @@ describe("a button carrying a picture", () => {
     expect(button).toHaveAccessibleName("Close");
     expect(button).toHaveTextContent("");
   });
+
+  /**
+   * A picture with no word beside it is a square, and the square is the
+   * floor a thumb needs. With the word's padding still on it the button was
+   * 50 wide and every screen that drew one had to take the padding off again
+   * by hand — the sheet's close control and the overflow trigger both did.
+   */
+  it("is a 48 by 48 square once the word is gone", () => {
+    const css = readFileSync(join(process.cwd(), "src/ui/atoms/button.css"), "utf8");
+    render(<Button icon="trash" aria-label="Remove" />);
+    const style = document.createElement("style");
+    style.textContent = css;
+    document.head.append(style);
+
+    const drawn = getComputedStyle(screen.getByRole("button"));
+    expect(drawn.width).toBe("48px");
+    expect(drawn.minHeight).toBe("48px");
+    expect(drawn.paddingLeft).toBe("0px");
+    expect(drawn.paddingRight).toBe("0px");
+  });
+
+  it("keeps the word's padding when it has a word", () => {
+    const css = readFileSync(join(process.cwd(), "src/ui/atoms/button.css"), "utf8");
+    render(<Button icon="trash">Remove</Button>);
+    const style = document.createElement("style");
+    style.textContent = css;
+    document.head.append(style);
+
+    expect(getComputedStyle(screen.getByRole("button")).paddingLeft).not.toBe("0px");
+  });
 });
 
 /**

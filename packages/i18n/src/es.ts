@@ -399,7 +399,11 @@ export const ES: Dictionary = {
   "nav.you": "Tú",
   "nav.youNamed": "Tú, sesión iniciada como {username}",
   "account.title": "Tú",
-  "account.lede": "Tu cuenta, su idioma y su aspecto.",
+  "account.signedIn": "Sesión iniciada",
+  "account.preferences": "Preferencias",
+  "account.security": "Seguridad",
+  "account.programs": "Programas conectados",
+  "account.moreAbout": "Más sobre {group}",
   "login.show": "Mostrar",
   "login.hide": "Ocultar",
   "login.withBiometrics": "Iniciar sesión con la huella",
@@ -441,13 +445,10 @@ export const ES: Dictionary = {
   "tokens.scopeReadWrite": "Lectura y escritura",
   "tokens.scopeLabel": "Qué puede hacer",
 
-  "tokens.createdOn": "Creado el {when}",
-  "tokens.lastUsedOn": "Usado por última vez el {when}",
+  "tokens.lastUsedOn": "Último uso: {when}",
   "tokens.neverUsed": "Sin usar",
   "tokens.lapsesOn": "Caduca el {when}",
-  "tokens.neverLapses": "No caduca",
 
-  "tokens.addressTitle": "Dónde apuntarlo",
   "tokens.addressNote":
     "Esta es la dirección de Waymark a la que llama un programa. No es un secreto, así que cógela cuando la necesites.",
   "tokens.addressLabel": "La dirección de este Waymark",
@@ -528,8 +529,7 @@ export const ES: Dictionary = {
     "Como lo llamarías en voz alta: Pixel 8, Portátil del trabajo. Es como los distinguirás después.",
   "passkeys.addConfirm": "Añádelo",
 
-  "passkeys.addedOn": "Añadido el {when}",
-  "passkeys.lastUsedOn": "Usada por última vez el {when}",
+  "passkeys.lastUsedOn": "Último uso: {when}",
   "passkeys.neverUsed": "Sin usar",
 
   "passkeys.removeAction": "Quitar",

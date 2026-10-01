@@ -21,7 +21,8 @@ describe("the icon set both clients draw", () => {
    * not one of these names had to. It is the same list, in the same order,
    * that the web client draws in `apps/web/src/ui/atoms/icon.tsx` — plus
    * `eyeOff`, which exists here because THIS reveal flips its icon and the
-   * browser's deliberately does not.
+   * browser's deliberately does not, and `fingerprint`, which draws the one
+   * setting only the phone has: unlocking with a finger.
    *
    * `tags` was the one name that used to be on the browser's list and not on
    * this one, and ADR 22 wrote that down as a drift it had found and NOT closed:
@@ -59,6 +60,9 @@ describe("the icon set both clients draw", () => {
       "sunMoon",
       "sun",
       "moon",
+      "info",
+      "link",
+      "fingerprint",
     ]);
   });
 

@@ -263,7 +263,7 @@ describe("turning the fingerprint on and off", () => {
       expect(
         await screen.findByRole("switch", { name: THE_SWITCH, checked: false }),
       ).toBeOnTheScreen();
-      expect(screen.getByText("Signed in as dario")).toBeOnTheScreen();
+      expect(screen.getByText("dario")).toBeOnTheScreen();
     });
 
     /**
@@ -344,7 +344,7 @@ describe("turning the fingerprint on and off", () => {
       await screen.findByText(theCamera);
       await openTheAccountScreen();
 
-      expect(await screen.findByText("Signed in as dario")).toBeOnTheScreen();
+      expect(await screen.findByText("dario")).toBeOnTheScreen();
       expect(screen.queryByRole("switch", { name: THE_SWITCH })).toBeNull();
     });
   });

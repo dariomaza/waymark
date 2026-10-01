@@ -61,8 +61,9 @@ const openTheAccountScreen = async (): Promise<void> => {
   await screen.findByRole("heading", { name: /^you$/i });
 };
 
+/** The passkeys are the account screen's security group now. */
 const panel = async (): Promise<HTMLElement> => {
-  const heading = await screen.findByRole("heading", { name: /^passkeys$/i });
+  const heading = await screen.findByRole("heading", { name: /^security$/i });
 
   return heading.closest("section") as HTMLElement;
 };

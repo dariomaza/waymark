@@ -1,10 +1,12 @@
 import { MachineTokenScope, type MachineTokenView } from "@waymark/api-client";
+import { shortDate } from "@waymark/i18n";
 import type { JSX } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
-import { radius, space, text } from "../../ui/styles/tokens.js";
+import { SettingsItem } from "../../ui/molecules/settings-item.js";
+import { space, text } from "../../ui/styles/tokens.js";
 import { themed } from "../../ui/styles/theme.js";
 import { useLanguageChoice, useTranslate } from "../../app/language-context.js";
 
@@ -21,7 +23,9 @@ export interface MachineTokenRowProps {
 }
 
 /**
- * One credential, and the two things that can be done to it.
+ * One credential, and the two things that can be done to it: a row of the
+ * connected programs card, its scope a chip and its two acts two icons at the
+ * end — rotate, and the bin that revokes. The browser draws the same row.
  *
  * Presentational to the bone: it is handed a token and some callbacks, and it
  * knows nothing about requests, caches or which of these is in flight.
@@ -46,136 +50,120 @@ export const MachineTokenRow = ({
   const t = useTranslate();
   const { language } = useLanguageChoice();
 
-  const when = (moment: string): string =>
-    new Date(moment).toLocaleDateString(language, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const when = (moment: string): string => shortDate(moment, language);
+
+  const confirm =
+    pending === null ? null : (
+      /*
+       * `blocked` rather than `wrong`: this is a statement about the WORLD
+       * and what is about to happen to it, not a complaint about a request
+       * (ADR 8, as the tone of the box a sentence goes in).
+       */
+      <Callout
+        tone="blocked"
+        title={
+          pending === "rotate"
+            ? t("tokens.rotateTitle", { name: token.name })
+            : t("tokens.revokeTitle", { name: token.name })
+        }
+        action={
+          <>
+            <Button
+              tone={pending === "revoke" ? "danger" : "primary"}
+              disabled={busy}
+              onPress={() => {
+                onConfirm(pending);
+              }}
+            >
+              {busy
+                ? pending === "rotate"
+                  ? t("tokens.rotating")
+                  : t("tokens.revoking")
+                : pending === "rotate"
+                  ? t("tokens.rotateConfirm")
+                  : t("tokens.revokeConfirm")}
+            </Button>
+            <Button tone="quiet" disabled={busy} label={t("action.cancel")} onPress={onCancel}>
+              {t("action.cancel")}
+            </Button>
+          </>
+        }
+      >
+        {pending === "rotate"
+          ? t("tokens.rotateWarning", { name: token.name })
+          : t("tokens.revokeWarning", { name: token.name })}
+      </Callout>
+    );
 
   return (
-    <View style={styles.row}>
-      <View style={styles.head}>
-        <Text style={styles.name}>{token.name}</Text>
+    <SettingsItem
+      icon="key"
+      below={confirm}
+      actions={
+        pending === null ? (
+          <>
+            <Button
+              tone="quiet"
+              icon="rotate"
+              label={t("tokens.rotateAction")}
+              onPress={() => {
+                onAsk("rotate");
+              }}
+            />
+            <Button
+              tone="quiet"
+              icon="trash"
+              label={t("tokens.revokeAction")}
+              onPress={() => {
+                onAsk("revoke");
+              }}
+            />
+          </>
+        ) : undefined
+      }
+    >
+      <Text style={styles.name}>{token.name}</Text>
+      {/*
+        One line of facts, what it may do first as a chip. Then `lastUsedAt`,
+        because it is the fact somebody came for: a credential nobody can see
+        being used is one nobody will ever revoke. When it lapses is said only
+        when it does.
+      */}
+      <View style={styles.facts}>
         <Text style={styles.scope}>
           {token.scope === MachineTokenScope.ReadWrite
             ? t("tokens.scopeReadWrite")
             : t("tokens.scopeRead")}
         </Text>
+        <Text style={styles.fact}>
+          {token.lastUsedAt === null
+            ? t("tokens.neverUsed")
+            : t("tokens.lastUsedOn", { when: when(token.lastUsedAt) })}
+        </Text>
+        {token.expiresAt === null ? null : (
+          <Text style={styles.fact}>{t("tokens.lapsesOn", { when: when(token.expiresAt) })}</Text>
+        )}
       </View>
-
-      {/*
-        `lastUsedAt` first, because it is the fact somebody came for: a
-        credential nobody can see being used is one nobody will ever revoke.
-      */}
-      <Text style={styles.fact}>
-        {token.lastUsedAt === null
-          ? t("tokens.neverUsed")
-          : t("tokens.lastUsedOn", { when: when(token.lastUsedAt) })}
-      </Text>
-      <Text style={styles.fact}>{t("tokens.createdOn", { when: when(token.createdAt) })}</Text>
-      <Text style={styles.fact}>
-        {token.expiresAt === null
-          ? t("tokens.neverLapses")
-          : t("tokens.lapsesOn", { when: when(token.expiresAt) })}
-      </Text>
-
-      {pending === null ? (
-        <View style={styles.actions}>
-          <Button
-            tone="secondary"
-            icon="rotate"
-            label={t("tokens.rotateAction")}
-            onPress={() => {
-              onAsk("rotate");
-            }}
-          >
-            {t("tokens.rotateAction")}
-          </Button>
-          <Button
-            tone="danger"
-            label={t("tokens.revokeAction")}
-            onPress={() => {
-              onAsk("revoke");
-            }}
-          >
-            {t("tokens.revokeAction")}
-          </Button>
-        </View>
-      ) : (
-        /*
-         * `blocked` rather than `wrong`: this is a statement about the WORLD
-         * and what is about to happen to it, not a complaint about a request
-         * (ADR 8, as the tone of the box a sentence goes in).
-         */
-        <Callout
-          tone="blocked"
-          title={
-            pending === "rotate"
-              ? t("tokens.rotateTitle", { name: token.name })
-              : t("tokens.revokeTitle", { name: token.name })
-          }
-          action={
-            <>
-              <Button
-                tone={pending === "revoke" ? "danger" : "primary"}
-                disabled={busy}
-                onPress={() => {
-                  onConfirm(pending);
-                }}
-              >
-                {busy
-                  ? pending === "rotate"
-                    ? t("tokens.rotating")
-                    : t("tokens.revoking")
-                  : pending === "rotate"
-                    ? t("tokens.rotateConfirm")
-                    : t("tokens.revokeConfirm")}
-              </Button>
-              <Button
-                tone="quiet"
-                disabled={busy}
-                label={t("action.cancel")}
-                onPress={onCancel}
-              >
-                {t("action.cancel")}
-              </Button>
-            </>
-          }
-        >
-          {pending === "rotate"
-            ? t("tokens.rotateWarning", { name: token.name })
-            : t("tokens.revokeWarning", { name: token.name })}
-        </Callout>
-      )}
-    </View>
+    </SettingsItem>
   );
 };
 
 const useStyles = themed((colors) =>
   StyleSheet.create({
-    row: {
-      gap: space.s1,
-      padding: space.s3,
-      borderRadius: radius.m,
+    // A credential's name is a literal somebody types into a shell.
+    name: { color: colors.ink, fontSize: text.s, fontWeight: "700", fontFamily: "monospace" },
+    facts: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.s2 },
+    // What it may do, as a small chip rather than a sentence.
+    scope: {
+      color: colors.inkMuted,
+      fontSize: text.xs,
+      fontWeight: "600",
+      paddingHorizontal: space.s2,
       borderWidth: 1,
       borderColor: colors.line,
-      backgroundColor: colors.surfaceRaised,
+      borderRadius: 999,
+      overflow: "hidden",
     },
-    head: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: space.s2,
-    },
-    name: { color: colors.ink, fontSize: text.m, fontWeight: "700", flexShrink: 1 },
-    scope: { color: colors.inkMuted, fontSize: text.s },
     fact: { color: colors.inkMuted, fontSize: text.s, lineHeight: 20 },
-    actions: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: space.s2,
-      marginTop: space.s2,
-    },
   }),
 );

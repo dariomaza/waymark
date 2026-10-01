@@ -1,10 +1,11 @@
 import type { PasskeyView } from "@waymark/api-client";
+import { shortDate } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { Button } from "../../ui/atoms/button.js";
 import { Callout } from "../../ui/atoms/callout.js";
+import { Icon } from "../../ui/atoms/icon.js";
 import { useLanguage, useTranslate } from "../../app/language-context.js";
-import "./passkey-row.css";
 
 export interface PasskeyRowProps {
   readonly passkey: PasskeyView;
@@ -17,20 +18,21 @@ export interface PasskeyRowProps {
 }
 
 /**
- * One device, and the one thing that can be done to it.
+ * One device, and the one thing that can be done to it: a row of the security
+ * group's card, with a bin at the end of it.
  *
  * Presentational to the bone: it is handed a passkey and some callbacks, and
  * knows nothing about requests, caches or which of these is in flight.
  *
- * The confirmation is inline for the reason `MachineTokenRow` gives: this row
- * is already inside a sheet, and a sheet opened from inside a sheet is two
- * overlapping modals each claiming with `aria-modal` that nothing outside it
- * matters.
+ * One line of facts, not two. When it was last used is what somebody came to
+ * read — a device nobody has used in a year is the one worth asking about —
+ * and when it was added answers nothing they are deciding.
  *
- * The sentence it confirms with is the one that matters most in this feature:
- * removing a passkey cannot lock anybody out, because the password is still
- * there. Somebody about to remove their last one deserves to be told that
- * BEFORE they hesitate over the button (ADR 19).
+ * The confirmation is inline, under the row, and the sentence it confirms
+ * with is the one that matters most in this feature: removing a passkey cannot
+ * lock anybody out, because the password is still there. Somebody about to
+ * remove their last one deserves to be told that BEFORE they hesitate over the
+ * button (ADR 19).
  */
 export const PasskeyRow = ({
   passkey,
@@ -43,31 +45,19 @@ export const PasskeyRow = ({
   const t = useTranslate();
   const language = useLanguage();
 
-  const when = (moment: string): string =>
-    new Date(moment).toLocaleDateString(language, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const when = (moment: string): string => shortDate(moment, language);
 
   return (
-    <li className="passkey">
-      <div className="passkey__head">
-        <span className="passkey__name">{passkey.label}</span>
-      </div>
-
-      <p className="passkey__facts">
-        {/*
-          Last used first, because it is what somebody came to read: a device
-          nobody has used in a year is the one worth asking about.
-        */}
-        <span>
+    <li className="settings-item">
+      <Icon name="key" size={20} />
+      <span className="settings-item__text">
+        <span className="settings-item__name">{passkey.label}</span>
+        <span className="settings-item__fact">
           {passkey.lastUsedAt === null
             ? t("passkeys.neverUsed")
             : t("passkeys.lastUsedOn", { when: when(passkey.lastUsedAt) })}
         </span>
-        <span>{t("passkeys.addedOn", { when: when(passkey.createdAt) })}</span>
-      </p>
+      </span>
 
       {asking ? (
         <Callout
@@ -87,11 +77,14 @@ export const PasskeyRow = ({
           <p>{t("passkeys.removeWarning", { name: passkey.label })}</p>
         </Callout>
       ) : (
-        <div className="passkey__actions">
-          <Button tone="quiet" onClick={onAsk}>
-            {t("passkeys.removeAction")}
-          </Button>
-        </div>
+        <span className="settings-item__actions">
+          <Button
+            tone="quiet"
+            icon="trash"
+            aria-label={t("passkeys.removeAction")}
+            onClick={onAsk}
+          />
+        </span>
       )}
     </li>
   );

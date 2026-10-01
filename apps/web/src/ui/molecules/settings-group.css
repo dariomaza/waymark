@@ -1,0 +1,140 @@
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/*
+ * The title, its ⓘ and its [+] on one line. The line is shorter than the
+ * buttons on it, which overhang it, so the title sits close over its card
+ * while every button keeps the 48px a thumb needs. The title keeps the card's
+ * inset so its first letter stands over the rows' first letters.
+ */
+.settings-group__head {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding-left: var(--space-4);
+}
+
+.settings-group__head .button {
+  margin: calc(var(--space-2) * -1) 0;
+}
+
+.settings-group__title {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-group__end {
+  display: flex;
+  margin-left: auto;
+}
+
+.settings-group__about {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0 var(--space-4) var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+}
+
+.settings-group__about p {
+  margin: 0;
+}
+
+.settings-group__about[hidden] {
+  display: none;
+}
+
+/* ONE raised card per group, not a floating card per item. */
+.settings-group__card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface-raised);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+/* A hairline between rows, whether they are the card's own or a list's. */
+.settings-group__card > * + *,
+.settings-group__card li + li {
+  border-top: 1px solid var(--color-line);
+}
+
+/*
+ * Anything in the card that is not a row of its own — a form, a note that
+ * there is nothing yet, the wait — gets the rows' inset rather than none.
+ */
+.settings-group__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.settings-group__empty {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+}
+
+/*
+ * One row of a list inside a card: what it is on the left, its icons on the
+ * right. When a row asks to be confirmed, the question takes the whole width
+ * under it.
+ */
+.settings-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-height: 56px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+}
+
+.settings-item > .icon {
+  flex: 0 0 auto;
+  color: var(--color-ink-muted);
+}
+
+.settings-item__text {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.settings-item__name {
+  color: var(--color-ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.settings-item__fact {
+  color: var(--color-ink-muted);
+  font-size: var(--text-s);
+}
+
+.settings-item__actions {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.settings-item > .callout {
+  flex-basis: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.settings-group__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

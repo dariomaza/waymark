@@ -76,12 +76,13 @@ const everythingIn = (storage: Storage | undefined): string => {
 /**
  * The panel is on a SCREEN now rather than in a sheet behind the top bar's
  * avatar: the account became the fifth destination when this client took the
- * phone's bar. Everything asserted below is unchanged; only the way in is.
+ * phone's bar, and the tokens are its connected programs group. Everything
+ * asserted below is unchanged; only the way in is.
  */
 const openTheAccountScreen = async (): Promise<HTMLElement> => {
   renderApp({ route: "/you" });
 
-  const heading = await screen.findByRole("heading", { name: /machine tokens/i });
+  const heading = await screen.findByRole("heading", { name: /connected programs/i });
 
   return heading.closest("section") as HTMLElement;
 };
@@ -354,7 +355,7 @@ describe("machine tokens, from the account screen", () => {
       });
       await userEvent.click(screen.getByRole("link", { name: /you, signed in as dario/i }));
 
-      const reopened = (await screen.findByRole("heading", { name: /machine tokens/i })).closest(
+      const reopened = (await screen.findByRole("heading", { name: /connected programs/i })).closest(
         "section",
       ) as HTMLElement;
       await within(reopened).findByText("mcp-server");

@@ -4,34 +4,30 @@ import { StyleSheet, Text, View } from "react-native";
 import { useTranslate } from "../../app/language-context.js";
 import { Avatar } from "../../ui/atoms/avatar.js";
 import { Button } from "../../ui/atoms/button.js";
-import { ScreenTitle } from "../../ui/atoms/screen-title.js";
+import { SettingsGroup } from "../../ui/molecules/settings-group.js";
 import { space, text } from "../../ui/styles/tokens.js";
 import { themed } from "../../ui/styles/theme.js";
 
 export interface AccountPanelProps {
   /** `null` only in the instant between the session going and the screen doing. */
   readonly username: string | null;
-  /** The control that is ABOUT the language rather than written in it. */
+  /** The language row of the preferences. */
   readonly language: ReactNode;
-  /** Light, dark or the phone's own (ADR 25). A setting, like the language. */
+  /** The appearance row of the preferences: light, dark or the phone's own (ADR 25). */
   readonly appearance: ReactNode;
   /**
-   * Whether this phone keeps the session behind its fingerprint sensor.
+   * The security group: whether this phone keeps the session behind its
+   * fingerprint sensor.
    *
    * Injected, and often nothing at all: a phone with no sensor, nothing
-   * enrolled or no screen lock gets no switch, and that decision belongs to
+   * enrolled or no screen lock gets no group, and that decision belongs to
    * the thing that can ask the keystore rather than to this file.
    */
   readonly biometrics: ReactNode;
   /**
-   * Credentials for programs. Injected, because it fetches and mutates and
-   * this file draws.
-   *
-   * It goes UNDER the language and ABOVE the way out, which is the order of
-   * how often each is wanted and how final each is. Signing out is last on
-   * purpose: it is the one control here that ends the session, and a
-   * destructive button above a list somebody is scrolling is a button that
-   * gets hit by a thumb reaching past it.
+   * The connected programs group: credentials for programs. Injected, because
+   * it fetches and mutates and this file draws. Last, because the screen is
+   * ordered from "you" outwards.
    */
   readonly machineTokens: ReactNode;
   readonly busy: boolean;
@@ -39,12 +35,20 @@ export interface AccountPanelProps {
 }
 
 /**
- * Presentational. It draws a name, a language control it was handed, and a
- * button — and knows what a session is as little as the login form does.
+ * Presentational. It draws who is signed in, the way out, and the groups it
+ * was handed — the browser's account panel, in the same order.
  *
- * The big avatar beside the name is the same shape as the small one in the
- * bar, which is what makes the tab legible in the other direction: the circle
- * you tapped and the circle you arrived at are the same thing.
+ * ## The way out is beside the name
+ *
+ * It was a full-width word button at the bottom of everything. It acts on the
+ * person whose name it sits beside, so it is a quiet 48 square there, named
+ * in words for a screen reader: it ends a session, it does not delete
+ * anything.
+ *
+ * ## The screen's name is kept, and not drawn
+ *
+ * The bar already says "You" under the avatar that brought somebody here. The
+ * heading stays for a screen reader, drawn at no size at all.
  */
 export const AccountPanel = ({
   username,
@@ -60,66 +64,56 @@ export const AccountPanel = ({
 
   return (
     <View style={styles.panel}>
-      <ScreenTitle>{t("account.title")}</ScreenTitle>
-      <Text style={styles.lede}>{t("account.lede")}</Text>
+      <Text accessibilityRole="header" style={styles.hidden}>
+        {t("account.title")}
+      </Text>
 
-      {username === null ? null : (
-        <View style={styles.who}>
-          {/*
-            * Decorative here, deliberately: the sentence beside it says the
-            * whole name, and announcing "DM" first would be reading the
-            * abbreviation instead of the answer.
-            */}
-          <Avatar name={username} size={44} filled />
-          <Text style={styles.name}>{t("shell.signedInAs", { username })}</Text>
+      <View style={styles.who}>
+        {username === null ? null : (
+          <>
+            {/*
+              * Decorative here, deliberately: the name beside it is the
+              * answer, and announcing "DM" first would be reading the
+              * abbreviation instead.
+              */}
+            <Avatar name={username} size={44} filled />
+            <View style={styles.name}>
+              <Text style={styles.username}>{username}</Text>
+              <Text style={styles.state}>{t("account.signedIn")}</Text>
+            </View>
+          </>
+        )}
+        <View style={styles.out}>
+          <Button
+            tone="quiet"
+            icon="signOut"
+            disabled={busy}
+            label={t("shell.signOut")}
+            onPress={onSignOut}
+          />
         </View>
-      )}
+      </View>
 
-      <View style={styles.setting}>
-        <Text style={styles.settingLabel}>{t("language.label")}</Text>
+      <SettingsGroup title={t("account.preferences")}>
         {language}
-      </View>
-
-      <View style={styles.setting}>
-        <Text style={styles.settingLabel}>{t("appearance.label")}</Text>
         {appearance}
-      </View>
+      </SettingsGroup>
 
-      {/*
-        Under the language and above the credentials, which is the order of how
-        personal each one is: the words this app speaks, then what this
-        particular phone remembers, then the keys handed to programs.
-      */}
       {biometrics}
 
       {machineTokens}
-
-      {/*
-        The door, in front of the word. Signing out is not destructive and it
-        is not reversible either — somebody who meant to close this and hit it
-        has to sign in again — so it keeps its sentence and gains a shape.
-      */}
-      <Button
-        tone="danger"
-        block
-        icon="signOut"
-        disabled={busy}
-        label={t("shell.signOut")}
-        onPress={onSignOut}
-      >
-        {t("shell.signOut")}
-      </Button>
     </View>
   );
 };
 
 const useStyles = themed((colors) =>
   StyleSheet.create({
-    panel: { gap: space.s4 },
-    lede: { color: colors.inkMuted, fontSize: text.s, marginTop: -space.s3 },
-    who: { flexDirection: "row", alignItems: "center", gap: space.s3 },
-    name: { color: colors.ink, fontSize: text.m, fontWeight: "600", flexShrink: 1 },
-    setting: { gap: space.s2, alignItems: "flex-start" },
-    settingLabel: { color: colors.ink, fontSize: text.s, fontWeight: "600" },
+    panel: { gap: space.s5 },
+    hidden: { position: "absolute", width: 1, height: 1, opacity: 0, color: colors.ink },
+    who: { flexDirection: "row", alignItems: "center", gap: space.s3, paddingLeft: space.s2 },
+    name: { flex: 1 },
+    username: { color: colors.ink, fontSize: text.l, fontWeight: "700" },
+    state: { color: colors.inkMuted, fontSize: text.s },
+    out: { marginLeft: "auto" },
   }),
 );

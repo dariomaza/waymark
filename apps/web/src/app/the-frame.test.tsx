@@ -211,7 +211,9 @@ describe("the frame every signed-in screen sits in", () => {
     it("says who is signed in, which is where that sentence went", async () => {
       await openAccount();
 
-      expect(screen.getByText(/signed in as dario/i)).toBeVisible();
+      // The name on its own line and "Signed in" under it (grouped settings).
+      expect(screen.getByText("dario")).toBeVisible();
+      expect(screen.getByText("Signed in")).toBeVisible();
     });
 
     it("holds the language and the way out", async () => {
@@ -229,14 +231,16 @@ describe("the frame every signed-in screen sits in", () => {
     it("keeps the passkeys, which only this client has", async () => {
       await openAccount();
 
-      expect(await screen.findByRole("heading", { name: /passkey/i })).toBeVisible();
+      // The passkeys are the security group of the grouped settings.
+      expect(await screen.findByRole("heading", { name: /^security$/i })).toBeVisible();
     });
 
     /** Credentials for programs (ADR 18), which both clients have. */
     it("keeps the credentials handed to programs", async () => {
       await openAccount();
 
-      expect(await screen.findByRole("heading", { name: /machine/i })).toBeVisible();
+      // The machine tokens are the connected programs group.
+      expect(await screen.findByRole("heading", { name: /connected programs/i })).toBeVisible();
     });
 
     it("still lets the language be chosen, and remembers which one", async () => {

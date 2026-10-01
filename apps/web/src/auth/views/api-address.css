@@ -1,35 +1,20 @@
 /*
- * Deliberately plain. This is a fact somebody looks up, not a warning and not
- * a refusal, so it carries none of the ceremony `issued-secret` does — a
- * second bordered box beside that one would make the panel that matters look
- * like one of a pair.
- */
-.api-address {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  align-items: flex-start;
-}
-
-.api-address__title {
-  margin: 0;
-  font-size: var(--text-s);
-  font-weight: 650;
-}
-
-.api-address__note {
-  margin: 0;
-  font-size: var(--text-s);
-  color: var(--color-ink-muted);
-}
-
-/*
- * The address and its copy control are one block now, and that block draws
- * its own monospaced value — see `copyable-value.css`. What is left here is
- * only the one thing this panel knows that the molecule does not: it has to
- * take the full width, or a short address leaves the control floating in the
- * middle of the sheet.
+ * A row of the card, not a box inside it: the address is a fact somebody looks
+ * up, and the sunken box the molecule draws for a secret would make it look
+ * like one.
  */
 .api-address > .copyable {
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.api-address .copyable__row {
+  align-items: center;
+}
+
+.api-address .copyable__value {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
 }

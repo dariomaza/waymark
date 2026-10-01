@@ -82,4 +82,31 @@ describe("a button carrying a picture", () => {
     expect(carriesADrawing(drawn.toJSON() as DrawnNode | null)).toBe(true);
     expect(screen.getByRole("button", { name: "Close" })).toBeOnTheScreen();
   });
+
+  /**
+   * A picture with no word beside it is a square, and the square is the floor
+   * a thumb needs — the same 48 the browser draws it at. With the word's
+   * padding still on it the button was 50 wide.
+   */
+  it("is a 48 by 48 square once the word is gone", async () => {
+    await render(<Button onPress={() => undefined} icon="trash" label="Remove" />);
+
+    expect(screen.getByRole("button", { name: "Remove" })).toHaveStyle({
+      width: 48,
+      minHeight: 48,
+      paddingHorizontal: 0,
+    });
+  });
+
+  it("keeps the word's padding when it has a word", async () => {
+    await render(
+      <Button onPress={() => undefined} icon="trash">
+        Remove
+      </Button>,
+    );
+
+    expect(screen.getByRole("button", { name: "Remove" })).not.toHaveStyle({
+      paddingHorizontal: 0,
+    });
+  });
 });

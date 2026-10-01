@@ -9,6 +9,7 @@ import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { TextField } from "../ui/atoms/text-field.js";
+import { SettingsGroup } from "../ui/molecules/settings-group.js";
 import { useTranslate } from "../app/language-context.js";
 import { PasskeyCancelled, PasskeyCeremonyFailed } from "./passkey-platform.js";
 import {
@@ -18,12 +19,11 @@ import {
   useRemovePasskey,
 } from "./passkey-queries.js";
 import { PasskeyRow } from "./views/passkey-row.js";
-import "./passkeys-panel.css";
 
 /**
  * # The devices that can open this account, managed by the person they belong to
  *
- * It sits beside the machine tokens in the account sheet, and the two are
+ * The account screen's security group. It sits above the machine tokens, and the two are
  * deliberately different shapes even though they are both credentials.
  *
  * A machine token is a key to the shared house: ADR 18 makes every one of them
@@ -41,7 +41,7 @@ import "./passkeys-panel.css";
  *
  * ## The list is shown even when this device cannot make one
  *
- * Only the ADD button is hidden when the platform has no authenticator. A
+ * Only the [+] in the group's title line is hidden when the platform has no authenticator. A
  * laptop with no reader is exactly where somebody sits down to remove the
  * passkey on the phone they have just lost, and hiding the whole panel there
  * would take away the screen at the moment it is most needed.
@@ -91,35 +91,57 @@ export const PasskeysPanel = (): JSX.Element => {
     });
   };
 
+  const title = t("account.security");
+
   return (
-    <section className="passkeys" aria-labelledby={`${formId}-title`}>
-      <h4 className="passkeys__title" id={`${formId}-title`}>
-        {t("passkeys.title")}
-      </h4>
-      <p className="passkeys__explains">{t("passkeys.explains")}</p>
+    <SettingsGroup
+      title={title}
+      about={[t("passkeys.explains")]}
+      aboutLabel={t("account.moreAbout", { group: title })}
+      action={
+        support.data !== true || composing ? null : (
+          <Button
+            tone="quiet"
+            icon="plus"
+            aria-label={t("passkeys.addAction")}
+            onClick={() => {
+              setComposing(true);
+            }}
+          />
+        )
+      }
+      notes={
+        <>
+          {cancelled ? (
+            <Callout tone="note">
+              <p>{t("passkeys.cancelled")}</p>
+            </Callout>
+          ) : null}
 
-      {cancelled ? (
-        <Callout tone="note">
-          <p>{t("passkeys.cancelled")}</p>
-        </Callout>
-      ) : null}
-
-      {said === null ? null : (
-        <Callout tone="wrong">
-          <p>{t(said)}</p>
-        </Callout>
-      )}
-
+          {said === null ? null : (
+            <Callout tone="wrong">
+              <p>{t(said)}</p>
+            </Callout>
+          )}
+        </>
+      }
+    >
       {passkeys.isPending ? (
-        <Loading label={t("passkeys.loading")} />
+        <div className="settings-group__block">
+          <Loading label={t("passkeys.loading")} />
+        </div>
       ) : passkeys.isError ? (
-        <Callout tone="wrong">
-          <p>{t(describeFailure(passkeys.error))}</p>
-        </Callout>
+        <div className="settings-group__block">
+          <Callout tone="wrong">
+            <p>{t(describeFailure(passkeys.error))}</p>
+          </Callout>
+        </div>
       ) : passkeys.data.passkeys.length === 0 ? (
-        <p className="passkeys__none">{t("passkeys.none")}</p>
+        <div className="settings-group__block">
+          <p className="settings-group__empty">{t("passkeys.none")}</p>
+        </div>
       ) : (
-        <ul className="passkeys__list">
+        <ul aria-label={t("passkeys.title")}>
           {passkeys.data.passkeys.map((passkey) => (
             <PasskeyRow
               key={passkey.id}
@@ -144,8 +166,8 @@ export const PasskeysPanel = (): JSX.Element => {
         </ul>
       )}
 
-      {support.data !== true ? null : composing ? (
-        <form className="passkeys__form" onSubmit={onAdd}>
+      {support.data === true && composing ? (
+        <form className="settings-group__block" onSubmit={onAdd}>
           <TextField
             id={`${formId}-label`}
             label={t("passkeys.nameLabel")}
@@ -155,7 +177,7 @@ export const PasskeysPanel = (): JSX.Element => {
               setLabel(event.target.value);
             }}
           />
-          <div className="passkeys__actions">
+          <div className="settings-group__buttons">
             <Button type="submit" tone="primary" disabled={add.isPending}>
               {add.isPending ? t("passkeys.adding") : t("passkeys.addConfirm")}
             </Button>
@@ -170,17 +192,7 @@ export const PasskeysPanel = (): JSX.Element => {
             </Button>
           </div>
         </form>
-      ) : (
-        <Button
-          tone="secondary"
-          icon="plus"
-          onClick={() => {
-            setComposing(true);
-          }}
-        >
-          {t("passkeys.addAction")}
-        </Button>
-      )}
-    </section>
+      ) : null}
+    </SettingsGroup>
   );
 };

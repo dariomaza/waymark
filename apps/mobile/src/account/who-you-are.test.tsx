@@ -75,7 +75,9 @@ describe("who you are", () => {
       await screen.findByText(theCamera);
       await fireEvent.press(screen.getByRole("button", { name: "You, signed in as dario" }));
 
-      expect(await screen.findByText("Signed in as dario")).toBeOnTheScreen();
+      // The name on its own line and "Signed in" under it (grouped settings).
+      expect(await screen.findByText("dario")).toBeOnTheScreen();
+      expect(screen.getByText("Signed in")).toBeOnTheScreen();
     });
 
     /**
@@ -145,7 +147,7 @@ describe("who you are", () => {
       const avatar = screen.getByRole("button", { name: "Tú, sesión iniciada como dario" });
       await fireEvent.press(avatar);
 
-      expect(await screen.findByText("Sesión iniciada como dario")).toBeOnTheScreen();
+      expect(await screen.findByText("Sesión iniciada")).toBeOnTheScreen();
       expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeOnTheScreen();
     });
   });
