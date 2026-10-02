@@ -69,8 +69,10 @@ export interface MachineToken {
  * impossible rather than unlikely. `read-write` exists because some machine
  * will eventually need to file something away.
  *
- * Anything past those two — "may delete", "may touch the garage only" — is the
- * role system ADR 5 refused, and ADR 17 says why the line is here and not there.
+ * Anything past those two — "may delete", "may not rename" — is a permission
+ * the token's person does not have either, and ADR 17 says why the line is here
+ * and not there. Which SPACES it reaches is a separate matter: its issuer's
+ * access, optionally narrowed to chosen spaces (ADR 26, `chosenSpaces`).
  */
 export const MachineTokenScope = {
   Read: "read",

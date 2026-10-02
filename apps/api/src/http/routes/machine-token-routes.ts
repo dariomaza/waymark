@@ -63,9 +63,10 @@ export interface MachineTokenRouteOptions {
  *    revoke itself into looking innocent". Minting and revoking credentials is
  *    the same act with a larger blast radius. This extends a precedent rather
  *    than inventing a rule.
- * 4. **ADR 5 is not touched.** This is not a permission on a person; every
- *    human still does everything. It is the same shape of statement ADR 17
- *    already makes: a rule about what a PROGRAM is, not about who is trusted.
+ * 4. **It is not a role.** This is not a permission on a person; roles and
+ *    shares are ADR 26's and say which spaces a person reaches. It is the same
+ *    shape of statement ADR 17 already makes: a rule about what a PROGRAM is,
+ *    not about who is trusted.
  *
  * Listing is refused for a reason of its own, and it is the one that would have
  * been missed. A `GET` sails through the scope hook untouched, so without this

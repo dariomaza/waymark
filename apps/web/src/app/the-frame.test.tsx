@@ -144,7 +144,7 @@ describe("the frame every signed-in screen sits in", () => {
      * # A line of chrome on the screen you look at most is rent
      *
      * "Signed in as dario" was printed above every single screen to answer a
-     * question nobody asks twice in a household of one shared inventory (ADR 5).
+     * question nobody asks twice on a phone that is their own.
      * It is not deleted, it is MOVED — first behind an avatar in this bar, and
      * now onto the account destination, where the phone has always kept it.
      */

@@ -15,12 +15,11 @@
  * is not a statement about boxes. `packages/domain` gains nothing from this
  * file, exactly as it gained nothing from ADR 17.
  *
- * ## Why it HAS a `userId`, where a machine token does not
+ * ## Why it HAS a `userId`
  *
- * `machine-token.ts` argues at length that provenance nothing reads is a
- * column that goes stale, and that a machine token is a credential against the
- * shared inventory rather than a delegation of one person's access. Both of
- * those are true of a machine and false of a thumb.
+ * ADR 18 once argued that provenance nothing reads is a column that goes
+ * stale. That was never true of a thumb, and since ADR 26 it is not true of a
+ * machine token either: each acts as the person who issued it.
  *
  * A passkey is a proof of one particular PERSON — it answers "this is Darío",
  * which is the only question it is asked, so the answer has to be stored. And

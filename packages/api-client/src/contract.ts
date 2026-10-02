@@ -187,7 +187,8 @@ export interface SessionView {
 
 /**
  * What a machine token may do. Two values, and the API says there will not be
- * a third: anything finer is the role system ADR 5 refused.
+ * a third (ADR 17). Which spaces it reaches is not its scope but its issuer's
+ * access, optionally narrowed to chosen spaces (ADR 26).
  *
  * Mirrored here by hand like every other view. A client cannot import it from
  * `apps/api`, and it does not belong in `@waymark/domain` either — ADR 17 is

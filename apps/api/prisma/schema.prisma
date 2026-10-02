@@ -308,7 +308,8 @@ model Session {
 /// It is a CREDENTIAL, the third kind in this schema beside a password hash
 /// and a machine token, and it is an ADDITIONAL way in rather than a
 /// replacement: the password form never leaves the sign-in screen, and the
-/// password that `create-user` set from a shell is untouched by any of this.
+/// password — set by `create-user` or by an administrator (ADR 26) — is
+/// untouched by any of this.
 /// So removing every row here for a person locks nobody out of anything.
 ///
 /// `Cascade`, like `Session` and unlike everything in the inventory: a deleted
