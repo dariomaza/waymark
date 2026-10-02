@@ -49,29 +49,6 @@ install in five lines, and a link to the site.
 - It must not become a second copy that drifts: one source per fact, the site
   built from the same Markdown, and a CI check that its links resolve.
 
-## Decided, being built
-
-### Each person's inventory, an administrator, and shares (ADR 26)
-
-Decided 2026-10-01; the ADR is the design. Slices 1-6 are built: `Access`,
-ownership and shares in the schema, every read scoped and every write checked
-(1-4); machine tokens that belong to their issuer (5) and tokens narrowed to
-chosen spaces (5b): people manage the tokens they issued and an administrator
-all of them; a narrowed token reaches its issuer's `Access` intersected with
-the chosen subtrees, never acts at the top of the tree
-(`OUTSIDE_TOKEN_SPACES`), and reaches nothing once its spaces are all gone.
-And roles and accounts (6): `create-user` makes the first administrator, and
-the *People* group on the account screen, in both clients and only for an
-administrator, creates accounts, changes roles, resets passwords and disables
-or enables (`/auth/accounts`); never the last active administrator
-(`LAST_ADMINISTRATOR`), never your own account (`OWN_ACCOUNT`), and a disabled
-account opens nothing, whatever was left behind.
-What is left, each slice shipped and mutation-tested, both clients together
-where visible:
-
-7. **Sharing**: *Share* in a space's menu, view or edit; the administrator's
-   home groups other people's spaces by owner.
-
 ## Known gaps between the clients
 
 Found by the parity audit and confirmed still open:
@@ -105,6 +82,9 @@ Tests assert styles and bytes; these need a person, a phone or a printer.
   to two lines by design — confirm it is not three; "Escanear" in a five-tab bar
   (~72 px per tab).
 - **48 px targets on the web**: stated in CSS, unmeasurable in jsdom.
+- **ADR 26 on a phone.** Sharing, the *People* group, the token space picker
+  and the grouped home screen have not been seen on a real phone at 360 px,
+  and their new Spanish copy has had no native reader.
 - **The release pipeline end to end.** release-please's configuration was
   dry-run against the real repository, but no release PR has been merged yet,
   so `release.yml` has never run, and the `EXPO_TOKEN` secret has never been

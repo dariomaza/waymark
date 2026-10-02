@@ -126,8 +126,8 @@ of them: the patch schemas are strict and carry no `parentId` and no
 the all-or-nothing batch move (ADR 3) — stay behind routes whose names say
 what they do.
 
-**Every item is one unpaginated request** (ADR 15). `GET /items` answers the
-whole inventory, each row carrying the same breadcrumb a search hit does,
+**Every item is one unpaginated request** (ADR 15). `GET /items` answers
+every item its caller can see (ADR 26), each row carrying the same breadcrumb a search hit does,
 because a flat list of names answers nothing in a product about knowing where
 things are. It is unpaginated for the reason ADR 1, ADR 11 and ADR 12 already
 gave: a homelab inventory is small enough to read whole, and the honest answer
@@ -136,13 +136,12 @@ to one that is not is search, which takes a limit.
 **A machine token is a smaller key, not a role** (ADR 17). An MCP server needs
 a credential, and a person's password in an environment file is not one: it
 cannot be revoked without signing that person out of their own phone. ADR 5
-refused roles and permissions, and a `read` scope is on its face the check it
-refused — so ADR 17 says that plainly rather than waving it away. What makes it
-worth paying is that ADR 5's reasons are about PEOPLE and all of them still
-hold: no owner column, no query scoped by anybody, and every authenticated human
-may still do everything. The thing holding a machine token is not a person,
-cannot be told to be careful, and cannot be asked afterwards what it was
-thinking.
+refused roles and permissions, and a `read` scope was on its face the check it
+refused — so ADR 17 said that plainly rather than waving it away. ADR 26 has
+since given people roles and shares; a token still has only its two scopes,
+acts as the person who issued it, and may be narrowed to chosen spaces but
+never widened. The thing holding a machine token is not a person, cannot be
+told to be careful, and cannot be asked afterwards what it was thinking.
 
 **A person issues machine tokens; a machine never does** (ADR 18). They can be
 listed, made, rotated and revoked from the account sheet now, because a
@@ -271,15 +270,24 @@ JSON, and a write to a path nothing serves is JSON.
 | `POST`   | `/auth/passkeys/options`    | `{ ceremonyId, options }` — needs a password-backed session |
 | `POST`   | `/auth/passkeys`            | `201 { passkey }` — needs a password-backed session |
 | `DELETE` | `/auth/passkeys/:id`        | `204` — one device, any session                |
+| `GET`    | `/auth/accounts`            | `{ accounts }` — every account, its role and state; administrator only |
+| `POST`   | `/auth/accounts`            | `201 { account }` — body `{ username, password, role }`; administrator only |
+| `POST`   | `/auth/accounts/:id/role`   | `{ account }` — body `{ role }`; administrator only |
+| `POST`   | `/auth/accounts/:id/password` | `{ account }` — body `{ password }`, signs them out; administrator only |
+| `POST`   | `/auth/accounts/:id/disable` | `{ account }` — signs them out, revokes their tokens; administrator only |
+| `POST`   | `/auth/accounts/:id/enable` | `{ account }`; administrator only            |
 | `GET`    | `/search`                   | `{ query, terms, items, storageUnits }`      |
-| `GET`    | `/storage-units`            | `{ tree }` — the whole forest, nested        |
+| `GET`    | `/storage-units`            | `{ tree }` — every tree you can see, nested, each space with your `access` |
 | `POST`   | `/storage-units`            | `201 { unit }`                               |
 | `GET`    | `/storage-units/:id`        | `{ unit, path, children, items }`            |
 | `PATCH`  | `/storage-units/:id`        | `{ unit }` — name, kind, description         |
 | `POST`   | `/storage-units/:id/move`   | `{ unit }` — body `{ parentId }`             |
 | `POST`   | `/storage-units/:id/empty`  | `{ movedItems, movedChildUnits }`            |
 | `DELETE` | `/storage-units/:id`        | `204`                                        |
-| `GET`    | `/items`                    | `{ items }` — every item, each with its path |
+| `GET`    | `/storage-units/:id/shares` | `{ shares }` — who it is shared with, and how far; administrator only |
+| `POST`   | `/storage-units/:id/shares/:accountId` | `{ share }` — body `{ access: "view" \| "edit" }`; administrator only |
+| `DELETE` | `/storage-units/:id/shares/:accountId` | `204`, shared or not; administrator only |
+| `GET`    | `/items`                    | `{ items }` — every item you can see, each with its path |
 | `POST`   | `/items`                    | `201 { item }`                               |
 | `GET`    | `/items/:id`                | `{ item, storageUnit, path }`                |
 | `PATCH`  | `/items/:id`                | `{ item }` — name, description, quantity, tags |
@@ -305,8 +313,8 @@ schema rather than by discipline: the patch bodies are strict and carry no
 in one call is refused with a 400 naming the key. Ignoring it would be the
 worse failure — a client would believe it had moved a box.
 
-`GET /items` answers the whole inventory in one request, unpaginated, and
-every row carries its breadcrumb (ADR 15). A flat list of names answers
+`GET /items` answers everything its caller can see in one request,
+unpaginated, and every row carries its breadcrumb (ADR 15). A flat list of names answers
 nothing in a product about knowing where things are, and the honest answer to
 an inventory too large to list is search rather than a page.
 
@@ -325,6 +333,7 @@ an inventory too large to list is search rather than a page.
 | `PhotoNotOnItem`                | 422    | The request names a photo the item does not hold.    |
 | `SpaceIsViewOnly`               | 403    | `VIEW_ONLY`: seen, shared to view, not to edit (ADR 26). |
 | `OwnerOnly`                     | 403    | `OWNER_ONLY`: only the owner makes or moves a root (ADR 26). |
+| `OutsideTokenSpaces`            | 403    | `OUTSIDE_TOKEN_SPACES`: beyond a narrowed token's chosen spaces (ADR 26). |
 | `InvalidMachineToken`           | 401    | Unknown, revoked, expired, or not shaped like one.   |
 | `ReadOnlyMachineToken`          | 403    | Authenticated, and not allowed to change anything.   |
 
@@ -349,6 +358,21 @@ stops the write. Every write checks in one order — can every target be seen,
 then may it be changed, then the inventory's own rules — so not even "this box
 is not empty" can confirm that somebody else's box exists. A machine token's
 scope is checked before all of it, and its issuer's access after.
+
+The account and share routes refuse with codes of their own:
+
+| Code                                   | Status | Why                                                  |
+| -------------------------------------- | ------ | ---------------------------------------------------- |
+| `ADMINISTRATOR_ONLY`                   | 403    | Only an administrator manages accounts and shares.   |
+| `MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS` | 403    | A machine never manages a person (ADR 18).           |
+| `MACHINE_TOKEN_CANNOT_SHARE`           | 403    | A machine never hands out access (ADR 18).           |
+| `ACCOUNT_NOT_FOUND`                    | 404    | The account in the path is not there.                |
+| `USERNAME_ALREADY_TAKEN`               | 409    | Somebody already has that name.                      |
+| `LAST_ADMINISTRATOR`                   | 409    | The last active administrator can be neither demoted nor disabled. |
+| `OWN_ACCOUNT`                          | 409    | Another administrator changes your own role, password or state. |
+| `ACCOUNT_DISABLED`                     | 409    | Enable it first; then the same share succeeds.       |
+| `ALREADY_HAS_EDIT`                     | 409    | The tree's owner, or an administrator, already may edit it. |
+| `PASSWORD_TOO_SHORT`                   | 422    | Under the 12 character minimum.                      |
 
 ## Search
 
@@ -588,10 +612,24 @@ switched off, which is exactly what "optional" has to mean.
 ## Authentication
 
 Each person has an inventory of their own (ADR 26, superseding ADR 5's single
-shared house). An account is either an **administrator**, who sees everything
-and is the only one who shares, or a **user**. Ownership is recorded on root
-spaces; scoping every read and checking every write by it is being built in
-the slices listed in `docs/roadmap.md`.
+shared house). An account is either an **administrator**, who sees and may edit
+every space and is the only one who shares, or a **user**, who sees the spaces
+they own and the ones shared with them. Ownership is recorded on root
+spaces; everything below a root is its owner's. Every read is scoped by it and
+every write checked against it, and a space somebody may not see answers
+exactly as a missing one does.
+
+- **A share is on a space, `view` or `edit`, and cascades down the tree.** It
+  covers every space and item under it; there are no shares on an item. Only an
+  administrator sets one, from the space's menu (the *Share* sheet, in both
+  clients): one choice per person, saved as it is made.
+- **The home screen is grouped by whose each space is.** A person sees their
+  own spaces, then *Shared with you*, with a space shared to look at marked
+  so. An administrator sees their own, then each other person's under that
+  person's name.
+- **Only the owner makes or moves a root.** A space made inside somebody's
+  tree, even by a person it was shared with to edit, belongs to that tree's
+  owner.
 
 There are three kinds of credential: a password, a passkey (ADR 19) and a
 machine token (ADR 17). The first two open the same session for a person; the
@@ -742,7 +780,8 @@ Authorization: Machine wmk_hhKABz-fSeDJwWCfiNRkmB9BoSGcv6wrPAhTya7CW28
   the session ADR 6 built: password backed, rate limited, revocable in one
   DELETE. The cost is named in ADR 18: a stolen session can now mint a
   credential that outlives it. What pays for it is that every credential is now
-  visible, with its last use, to everybody who could have minted one. The
+  visible, with its last use, to the person who issued it and to every
+  administrator (ADR 26), who may also rotate and revoke it. The
   secret is shown once and never again either way.
 - **Its own `Authorization` scheme**, `Machine`, not a prefix inside `Bearer`
   and not a second header. The scheme is read once and the request goes to
@@ -753,8 +792,8 @@ Authorization: Machine wmk_hhKABz-fSeDJwWCfiNRkmB9BoSGcv6wrPAhTya7CW28
 - **Scoped `read` or `read-write`.** A read-only token is refused every write,
   in the hook that authenticated it, before the body is parsed and before any
   use case runs — so a refusal cannot have changed anything. It is a **403**,
-  and the reasoning is above and in ADR 17. Two values, and a third would be
-  the role system ADR 5 refused.
+  and the reasoning is above and in ADR 17. Two values, and there will not be a
+  third: which spaces a token reaches is its issuer's access, narrowed or not.
 - **Stored as SHA-256, not scrypt**, which is the opposite of what accounts get
   and is deliberate. A KDF is slow to make GUESSING expensive, and there is
   nothing to guess: the secret is 256 uniform random bits, so an attacker
