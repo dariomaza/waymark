@@ -4,6 +4,7 @@ import {
   type AccountListResponse,
   type AccountResponse,
   type CreateAccountInput,
+  type UserView,
 } from "@waymark/api-client";
 import { Role } from "@waymark/domain";
 import {
@@ -26,16 +27,15 @@ import { useSession } from "./use-session.js";
  */
 
 /**
- * Whether the person signed in is an administrator, as `GET /auth/me` says
- * NOW — the very question the session gate already asked, under the same
- * key, so this costs no second request. Read from there rather than from the
- * session kept since sign-in, which predates the role and goes stale when an
- * administrator is demoted.
+ * The person signed in, as `GET /auth/me` says NOW — the very question the
+ * session gate already asked, under the same key, so this costs no second
+ * request. Read from there rather than from the session kept since sign-in,
+ * which predates the role and goes stale when an administrator is demoted.
  *
- * It decides only what is DRAWN. Every route the People group calls checks
- * the role itself.
+ * `null` while that is not known, and for a machine token, which is nobody.
+ * It decides only what is DRAWN: every route checks the caller itself.
  */
-export const useIsAdministrator = (): boolean => {
+export const useCaller = (): UserView | null => {
   const api = useApi();
   const session = useSession();
 
@@ -47,12 +47,11 @@ export const useIsAdministrator = (): boolean => {
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  return (
-    me.data !== undefined &&
-    !isMachineCaller(me.data) &&
-    me.data.user.role === Role.ADMINISTRATOR
-  );
+  return me.data === undefined || isMachineCaller(me.data) ? null : me.data.user;
 };
+
+/** Whether the person signed in is an administrator (ADR 26). */
+export const useIsAdministrator = (): boolean => useCaller()?.role === Role.ADMINISTRATOR;
 
 export const useAccounts = (enabled: boolean): UseQueryResult<AccountListResponse> => {
   const api = useApi();
