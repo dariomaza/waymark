@@ -1,4 +1,4 @@
-import type { SpacePermissionsView, StorageUnitView } from "@waymark/api-client";
+import { findTreeNode, type SpacePermissionsView, type StorageUnitView } from "@waymark/api-client";
 import { ShareLevel } from "@waymark/domain";
 import { useState, type JSX } from "react";
 
@@ -8,6 +8,9 @@ import { DeleteUnitSheet } from "./delete-unit-sheet.js";
 import { EditUnitSheet } from "./edit-unit-sheet.js";
 import { EmptyUnitSheet } from "./empty-unit-sheet.js";
 import { MoveUnitSheet } from "./move-unit-sheet.js";
+import { ShareUnitSheet } from "./share-unit-sheet.js";
+import { useStorageUnitTree } from "./unit-queries.js";
+import { useIsAdministrator } from "../auth/people-queries.js";
 import { useTranslate } from "../app/language-context.js";
 
 export interface UnitMenuProps {
@@ -29,7 +32,7 @@ export interface UnitMenuProps {
   readonly onPickSeveral?: (() => void) | undefined;
 }
 
-type OpenSheet = "add" | "edit" | "move" | "empty" | "delete" | null;
+type OpenSheet = "add" | "share" | "edit" | "move" | "empty" | "delete" | null;
 
 /**
  * # Everything that can be done TO a storage unit
@@ -52,7 +55,8 @@ type OpenSheet = "add" | "edit" | "move" | "empty" | "delete" | null;
  *    shelf holds things a hundred times for every time it grows a drawer, and
  *    the owner wanted the visible pair to be adding a thing and searching; it
  *    sits this high IN here because of that same count.
- * 3. **Show the label** — looking at something, changing nothing.
+ * 3. **Show the label** — looking at something, changing nothing. Then
+ *    **Share**, for an administrator only (ADR 26).
  * 4. **Edit** and **Move** — two acts, not one "manage": editing changes what
  *    the unit SAYS about itself and cannot carry a parent, while moving
  *    changes where it IS and is guarded by the subtree invariant (ADR 2, ADR
@@ -83,6 +87,8 @@ export const UnitMenu = ({
   */
   const mayChange = permissions?.access === ShareLevel.EDIT;
   const mayMove = permissions?.mayMove === true;
+  const isAdministrator = useIsAdministrator();
+  const tree = useStorageUnitTree();
 
   const actions: readonly OverflowAction[] = [
     ...(onPickSeveral === undefined || !mayChange
@@ -105,6 +111,22 @@ export const UnitMenu = ({
         ]
       : []),
     { label: t("units.showLabel"), icon: "tag", onSelect: onShowLabel },
+    /*
+      Who else may look at it, or change it (ADR 26). Only an administrator
+      shares, so only an administrator is offered it; the API refuses anybody
+      else regardless.
+    */
+    ...(isAdministrator
+      ? [
+          {
+            label: t("units.share"),
+            icon: "person" as const,
+            onSelect: () => {
+              setOpen("share");
+            },
+          },
+        ]
+      : []),
     ...(mayChange
       ? [
           {
@@ -162,6 +184,13 @@ export const UnitMenu = ({
 
       {open === "add" ? (
         <CreateUnitSheet parentId={unit.id} parentName={unit.name} onClose={close} />
+      ) : null}
+      {open === "share" ? (
+        <ShareUnitSheet
+          unit={unit}
+          ownerId={findTreeNode(tree.data?.tree ?? [], unit.id)?.owner?.id ?? null}
+          onClose={close}
+        />
       ) : null}
       {open === "edit" ? <EditUnitSheet unit={unit} onClose={close} /> : null}
       {open === "move" ? (

@@ -10,6 +10,7 @@ import {
 
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
 import { fireEvent, renderApp, screen, waitFor, within } from "../testing/render-app.js";
+import { theSheetCalled } from "../testing/the-sheet.js";
 
 /**
  * # A space shared to look at offers nothing that would change it (ADR 26)
@@ -99,20 +100,6 @@ const theHouse = ({
 };
 
 const at = (name: string, id: string) => ({ name, params: { id } }) as const;
-
-/**
- * The sheet a title opens, and only that sheet: the screen under it carries
- * buttons with the same words, and a claim about a menu is about the menu.
- */
-const theSheetCalled = async (title: string): Promise<ReturnType<typeof within>> => {
-  const header = await screen.findByRole("header", { name: title });
-  const sheet = header.parent?.parent;
-  if (sheet === null || sheet === undefined) {
-    throw new Error(`No sheet around the title ${title}`);
-  }
-
-  return within(sheet);
-};
 
 const openTheMenuFor = async (name: string): Promise<ReturnType<typeof within>> => {
   await fireEvent.press(await screen.findByRole("button", { name: `More actions for ${name}` }));
