@@ -1,4 +1,5 @@
-import type { StorageUnitView } from "@waymark/api-client";
+import type { SpacePermissionsView, StorageUnitView } from "@waymark/api-client";
+import { ShareLevel } from "@waymark/domain";
 import { useState, type JSX } from "react";
 
 import { OverflowMenu, type OverflowAction } from "../ui/molecules/overflow-menu.js";
@@ -13,6 +14,11 @@ export interface UnitMenuProps {
   readonly unit: StorageUnitView;
   /** Root first, ending at this unit; the step before last is its parent. */
   readonly path: readonly StorageUnitView[];
+  /**
+   * What the person may do with it (ADR 26); `null` while that is not known,
+   * which offers only what changes nothing.
+   */
+  readonly permissions: SpacePermissionsView | null;
   readonly onShowLabel: () => void;
   readonly onDeleted: () => void;
   /**
@@ -57,6 +63,7 @@ type OpenSheet = "add" | "edit" | "move" | "empty" | "delete" | null;
 export const UnitMenu = ({
   unit,
   path,
+  permissions,
   onShowLabel,
   onDeleted,
   onPickSeveral,
@@ -69,8 +76,16 @@ export const UnitMenu = ({
     setOpen(null);
   };
 
+  /*
+    A space shared to look at keeps only its label (ADR 26). Moving has its
+    own answer, because it needs edit on the space AND on where it is, which
+    the API has already worked out as `mayMove`.
+  */
+  const mayChange = permissions?.access === ShareLevel.EDIT;
+  const mayMove = permissions?.mayMove === true;
+
   const actions: readonly OverflowAction[] = [
-    ...(onPickSeveral === undefined
+    ...(onPickSeveral === undefined || !mayChange
       ? []
       : [{ label: t("items.selectSeveral"), icon: "check" as const, onSelect: onPickSeveral }]),
     /*
@@ -78,28 +93,40 @@ export const UnitMenu = ({
       about to be added is a container and not a thing, and that distinction is
       the only one separating this line from "Add an item" outside.
     */
-    {
-      label: t("units.addInside"),
-      icon: "box" as const,
-      onSelect: () => {
-        setOpen("add");
-      },
-    },
+    ...(mayChange
+      ? [
+          {
+            label: t("units.addInside"),
+            icon: "box" as const,
+            onSelect: () => {
+              setOpen("add");
+            },
+          },
+        ]
+      : []),
     { label: t("units.showLabel"), icon: "tag", onSelect: onShowLabel },
-    {
-      label: t("action.edit"),
-      icon: "pencil",
-      onSelect: () => {
-        setOpen("edit");
-      },
-    },
-    {
-      label: t("action.move"),
-      icon: "move",
-      onSelect: () => {
-        setOpen("move");
-      },
-    },
+    ...(mayChange
+      ? [
+          {
+            label: t("action.edit"),
+            icon: "pencil" as const,
+            onSelect: () => {
+              setOpen("edit");
+            },
+          },
+        ]
+      : []),
+    ...(mayMove
+      ? [
+          {
+            label: t("action.move"),
+            icon: "move" as const,
+            onSelect: () => {
+              setOpen("move");
+            },
+          },
+        ]
+      : []),
     /*
       Emptying takes the contents out and keeps the box, so it is not drawn in
       the danger colour — nothing is deleted by it. It is still marked
@@ -107,22 +134,26 @@ export const UnitMenu = ({
       own ends up. No icon, for the reason there never was one: no shape means
       "empty this box but keep it".
     */
-    {
-      label: t("action.empty"),
-      destructive: true,
-      onSelect: () => {
-        setOpen("empty");
-      },
-    },
-    {
-      label: t("action.delete"),
-      icon: "trash",
-      tone: "danger",
-      destructive: true,
-      onSelect: () => {
-        setOpen("delete");
-      },
-    },
+    ...(mayChange
+      ? [
+          {
+            label: t("action.empty"),
+            destructive: true,
+            onSelect: () => {
+              setOpen("empty");
+            },
+          },
+          {
+            label: t("action.delete"),
+            icon: "trash" as const,
+            tone: "danger" as const,
+            destructive: true,
+            onSelect: () => {
+              setOpen("delete");
+            },
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -133,7 +164,13 @@ export const UnitMenu = ({
         <CreateUnitSheet parentId={unit.id} parentName={unit.name} onClose={close} />
       ) : null}
       {open === "edit" ? <EditUnitSheet unit={unit} onClose={close} /> : null}
-      {open === "move" ? <MoveUnitSheet unit={unit} onClose={close} /> : null}
+      {open === "move" ? (
+        <MoveUnitSheet
+          unit={unit}
+          mayMoveToTop={permissions?.mayMoveToTop === true}
+          onClose={close}
+        />
+      ) : null}
       {open === "empty" ? (
         <EmptyUnitSheet unit={unit} parent={parent} onClose={close} />
       ) : null}

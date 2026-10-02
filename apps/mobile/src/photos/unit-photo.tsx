@@ -30,8 +30,11 @@ import { useTranslate } from "../app/language-context.js";
  */
 export const UnitPhoto = ({
   unit,
+  editable,
 }: {
   readonly unit: StorageUnitWithPhotoView;
+  /** False in a space shared to look at (ADR 26): the photo, and nothing to change it. */
+  readonly editable: boolean;
 }): JSX.Element => {
   const t = useTranslate();
 
@@ -58,20 +61,26 @@ export const UnitPhoto = ({
           onSeeFailed={() => {
             navigation.navigate("Processing");
           }}
-          onRetry={() => {
-            reprocess.mutate(photo.id);
-          }}
+          onRetry={
+            editable
+              ? () => {
+                  reprocess.mutate(photo.id);
+                }
+              : undefined
+          }
         />
       )}
 
-      <PhotoPicker
-        busy={upload.isPending}
-        onPick={(picked) => {
-          upload.mutate(picked);
-        }}
-      />
+      {editable ? (
+        <PhotoPicker
+          busy={upload.isPending}
+          onPick={(picked) => {
+            upload.mutate(picked);
+          }}
+        />
+      ) : null}
 
-      {photo === null ? null : (
+      {photo === null || !editable ? null : (
         <Button
           tone="quiet"
           label={t("photos.remove")}

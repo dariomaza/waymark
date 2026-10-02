@@ -20,6 +20,11 @@ export interface UnitDetailProps {
   readonly childUnits: readonly StorageUnitView[];
   readonly items: readonly ItemView[];
   readonly photo: ReactNode;
+  /**
+   * Shared with this person to look at and not to change (ADR 26), said once
+   * under the name so the missing buttons are not a mystery.
+   */
+  readonly viewOnly?: boolean;
   /** What this screen is FOR: the primary action, and at most one secondary. */
   readonly actions: ReactNode;
   /**
@@ -87,6 +92,7 @@ export const UnitDetail = ({
   childUnits,
   items,
   photo,
+  viewOnly = false,
   actions,
   menu,
   itemPhoto,
@@ -151,6 +157,12 @@ export const UnitDetail = ({
             {menu}
           </View>
           <Text style={styles.kind}>{kindLabel(t, unit.kind)}</Text>
+          {viewOnly ? (
+            <View style={styles.viewOnly}>
+              <Icon name="eye" size={18} color={colors.inkMuted} />
+              <Text style={styles.kind}>{t("units.viewOnly")}</Text>
+            </View>
+          ) : null}
           {unit.description === null ? null : (
             <Text style={styles.description}>{unit.description}</Text>
           )}
@@ -224,6 +236,7 @@ const useStyles = themed((colors) =>
     title: { flexDirection: "row", alignItems: "flex-start", gap: space.s2 },
     titleText: { flex: 1 },
     kind: { color: colors.inkMuted, fontSize: text.s },
+    viewOnly: { flexDirection: "row", alignItems: "center", gap: space.s1 },
     description: { color: colors.ink, fontSize: text.m, lineHeight: 22 },
     actions: { flexDirection: "row", flexWrap: "wrap", gap: space.s2 },
     heading: { color: colors.ink, fontSize: text.l, fontWeight: "700", marginTop: space.s3 },

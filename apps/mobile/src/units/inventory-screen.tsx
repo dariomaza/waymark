@@ -28,6 +28,13 @@ export const InventoryScreen = (): JSX.Element => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const tree = useStorageUnitTree();
   const [adding, setAdding] = useState(false);
+  /*
+    A new top-level space is refused only to a narrowed machine token (ADR
+    26), and the tree says so. Not offered until the tree has said it, as in
+    the browser: a guess that has to be taken back is worse than a button that
+    arrives a moment late.
+  */
+  const mayMakeRoot = tree.data?.mayMakeRoot === true;
 
   return (
     <Screen>
@@ -51,16 +58,18 @@ export const InventoryScreen = (): JSX.Element => {
         screen offering nothing at all — which the browser never did.
       */}
       <View style={styles.actions}>
-        <Button
-          tone="primary"
-          icon="plus"
-          share
-          onPress={() => {
-            setAdding(true);
-          }}
-        >
-          {t("inventory.addSpace")}
-        </Button>
+        {mayMakeRoot ? (
+          <Button
+            tone="primary"
+            icon="plus"
+            share
+            onPress={() => {
+              setAdding(true);
+            }}
+          >
+            {t("inventory.addSpace")}
+          </Button>
+        ) : null}
         <Button
           icon="tags"
           share

@@ -16,6 +16,11 @@ export interface UnitActionsProps {
    * and not a box's.
    */
   readonly onSearchInside: () => void;
+  /**
+   * Whether things may be put in it. A space shared to look at (ADR 26)
+   * keeps only the search, which changes nothing.
+   */
+  readonly mayChange: boolean;
 }
 
 /**
@@ -48,22 +53,28 @@ export interface UnitActionsProps {
  * arriving, a magnifier for something being looked for — so a thumb lands on
  * the right one without reading either.
  */
-export const UnitActions = ({ unit, onSearchInside }: UnitActionsProps): JSX.Element => {
+export const UnitActions = ({
+  unit,
+  onSearchInside,
+  mayChange,
+}: UnitActionsProps): JSX.Element => {
   const t = useTranslate();
 
   const [adding, setAdding] = useState(false);
 
   return (
     <>
-      <Button
-        tone="primary"
-        icon="plus"
-        onPress={() => {
-          setAdding(true);
-        }}
-      >
-        {t("units.addItem")}
-      </Button>
+      {mayChange ? (
+        <Button
+          tone="primary"
+          icon="plus"
+          onPress={() => {
+            setAdding(true);
+          }}
+        >
+          {t("units.addItem")}
+        </Button>
+      ) : null}
       <Button icon="search" onPress={onSearchInside}>
         {t("units.searchInside")}
       </Button>

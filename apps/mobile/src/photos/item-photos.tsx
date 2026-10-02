@@ -24,6 +24,11 @@ import { useTranslate } from "../app/language-context.js";
 
 export interface ItemPhotosProps {
   readonly item: ItemView;
+  /**
+   * False for a thing in a space shared to look at (ADR 26): its photos, and
+   * nothing that would add, reorder or delete them.
+   */
+  readonly editable: boolean;
 }
 
 /**
@@ -43,7 +48,7 @@ export interface ItemPhotosProps {
  * nothing here builds `/photos/<id>` out of an id and hopes the route has not
  * moved.
  */
-export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
+export const ItemPhotos = ({ item, editable }: ItemPhotosProps): JSX.Element => {
   const styles = useStyles();
   const t = useTranslate();
 
@@ -65,12 +70,14 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
         {t("photos.title")}
       </Text>
 
-      <PhotoPicker
-        busy={upload.isPending}
-        onPick={(photo) => {
-          upload.mutate(photo);
-        }}
-      />
+      {editable ? (
+        <PhotoPicker
+          busy={upload.isPending}
+          onPick={(photo) => {
+            upload.mutate(photo);
+          }}
+        />
+      ) : null}
 
       {upload.isError ? (
         <Callout tone={full === null ? "wrong" : "blocked"}>
@@ -96,10 +103,15 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                   onSeeFailed={() => {
                     navigation.navigate("Processing");
                   }}
-                  onRetry={() => {
-                    reprocess.mutate(photo.id);
-                  }}
+                  onRetry={
+                    editable
+                      ? () => {
+                          reprocess.mutate(photo.id);
+                        }
+                      : undefined
+                  }
                 />
+                {editable ? (
                 <View style={styles.controls}>
                   {index === 0 ? (
                     <Text style={styles.cover}>{t("photos.cover")}</Text>
@@ -135,6 +147,9 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                     {t("photos.deleteNumbered", { index: index + 1 })}
                   </Button>
                 </View>
+                ) : index === 0 ? (
+                  <Text style={styles.cover}>{t("photos.cover")}</Text>
+                ) : null}
               </View>
             ))}
         </View>

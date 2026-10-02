@@ -1,4 +1,4 @@
-import { type ItemView, flattenUnits } from "@waymark/api-client";
+import { type ItemView, editableUnits } from "@waymark/api-client";
 import { describeFailure, moveRefusedMessage } from "@waymark/i18n";
 import { unitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
@@ -39,7 +39,7 @@ export const MoveItemSheet = ({
       <OptionList
         label={t("items.moveInto")}
         value={target}
-        options={unitOptions(flattenUnits(tree.data?.tree ?? []))}
+        options={unitOptions(editableUnits(tree.data?.tree ?? []))}
         onChange={setTarget}
       />
 

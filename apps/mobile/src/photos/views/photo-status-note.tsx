@@ -10,8 +10,11 @@ import { useTranslate } from "../../app/language-context.js";
 
 export interface PhotoStatusNoteProps {
   readonly photo: PhotoView;
-  /** Puts this photo back in the queue. See `useReprocessPhoto`. */
-  readonly onRetry: () => void;
+  /**
+   * Puts this photo back in the queue. See `useReprocessPhoto`. Absent where
+   * the photo may not be changed (ADR 26): the note still says what happened.
+   */
+  readonly onRetry?: (() => void) | undefined;
   readonly retrying: boolean;
   /**
    * The way to the queue screen, which answers the question a failure
@@ -66,14 +69,16 @@ export const PhotoStatusNote = ({
         ? {
             action: (
               <>
-                <Button
-                  tone="quiet"
-                  label={t("photos.retryRemoval")}
-                  disabled={retrying}
-                  onPress={onRetry}
-                >
-                  {t("photos.retryRemoval")}
-                </Button>
+                {onRetry === undefined ? null : (
+                  <Button
+                    tone="quiet"
+                    label={t("photos.retryRemoval")}
+                    disabled={retrying}
+                    onPress={onRetry}
+                  >
+                    {t("photos.retryRemoval")}
+                  </Button>
+                )}
                 {onSeeFailed === undefined ? null : (
                   /*
                    * The site ADR 21 named for `QuietLink` and then left alone.
