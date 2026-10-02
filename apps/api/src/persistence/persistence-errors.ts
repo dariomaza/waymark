@@ -126,3 +126,37 @@ export class UnknownSessionOpener extends DomainError {
     super(`Stored session ${sessionId} was opened by nothing recognisable: "${value}"`);
   }
 }
+
+/**
+ * Raised when an account's `role` column holds something outside `Role`.
+ *
+ * The same reasoning as `UnknownMachineTokenScope`, pointed at the column that
+ * decides what a person may see and change (ADR 26). Falling back to either
+ * role would be a guess about an authorization decision.
+ */
+export class UnknownRole extends DomainError {
+  constructor(
+    readonly userId: string,
+    readonly value: string,
+  ) {
+    super(`Stored account ${userId} has an impossible role: "${value}"`);
+  }
+}
+
+/**
+ * Raised when a share's `access` column holds something outside `ShareLevel`.
+ *
+ * The same reasoning as `UnknownRole`: guessing "view" or "edit" for a value
+ * nobody recognises would be a guess about an authorization decision.
+ */
+export class UnknownShareLevel extends DomainError {
+  constructor(
+    readonly storageUnitId: string,
+    readonly userId: string,
+    readonly value: string,
+  ) {
+    super(
+      `Stored share of ${storageUnitId} with ${userId} has an impossible level: "${value}"`,
+    );
+  }
+}

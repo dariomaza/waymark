@@ -82,6 +82,34 @@ describe("resolving a scanned code against the forest", () => {
 });
 
 /**
+ * A person's tree is only what they may see (ADR 26): a space shared from
+ * inside somebody else's house arrives as a root, its parent nowhere in it.
+ * `/u/<publicId>` and the label sheet resolve against that tree and nothing
+ * else, so a label is found exactly when its box may be seen, and a printed
+ * ancestry never names a space above the share.
+ */
+describe("a tree cut to what one person may see", () => {
+  const sharedWardrobe = [aTree(wardrobe, [aTree(box)])];
+
+  it("finds a box inside a space shared with the person", () => {
+    expect(findByPublicId(sharedWardrobe, publicId("7ZK3QWERTY"))?.name).toBe("Box 3");
+  });
+
+  it("finds nothing for the label of a box the person may not see", () => {
+    const theirOwn = [aTree(aStorageUnit({ id: "shed", name: "Shed", publicId: "SHED000001" }))];
+
+    expect(findByPublicId(theirOwn, publicId("7ZK3QWERTY"))).toBeNull();
+  });
+
+  it("starts every ancestry at the shared space", () => {
+    expect(flattenUnits(sharedWardrobe).map((entry) => entry.ancestry)).toEqual([
+      [],
+      ["Metal wardrobe"],
+    ]);
+  });
+});
+
+/**
  * # "Everything inside the garage"
  *
  * A location IS a storage unit (ADR 1), so every question about a place is a

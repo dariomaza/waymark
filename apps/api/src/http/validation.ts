@@ -1,4 +1,4 @@
-import { MAX_ITEM_PHOTOS, StorageUnitKind } from "@waymark/domain";
+import { MAX_ITEM_PHOTOS, Role, ShareLevel, StorageUnitKind } from "@waymark/domain";
 import { z } from "zod";
 
 import { MACHINE_TOKEN_SCOPES } from "../auth/machine-token.js";
@@ -90,6 +90,34 @@ export const loginBodySchema = z.strictObject({
   // Not capped at the bottom: "your password is too short" is a rule for
   // whoever creates the account, not a hint for whoever is guessing it.
   password: z.string().min(1).max(MAX_PASSWORD_LENGTH),
+});
+
+/**
+ * # An administrator managing accounts (ADR 26)
+ *
+ * The password has no minimum HERE: `CreateUser` holds the one minimum every
+ * door shares, and answers a short one with `PASSWORD_TOO_SHORT` (422) and
+ * the number, which a client can put beside the field.
+ */
+const role = z.enum([Role.ADMINISTRATOR, Role.USER]);
+const newPassword = z.string().max(MAX_PASSWORD_LENGTH);
+
+export const createAccountBodySchema = z.strictObject({
+  username: z.string().max(MAX_USERNAME_LENGTH),
+  password: newPassword,
+  role,
+});
+
+export const changeRoleBodySchema = z.strictObject({ role });
+
+export const resetPasswordBodySchema = z.strictObject({ password: newPassword });
+
+/** A space and the account it is shared with, both addressed by the path. */
+export const shareParamsSchema = z.strictObject({ id, accountId: id });
+
+/** How far a space is shared: to look, or to change (ADR 26). */
+export const shareBodySchema = z.strictObject({
+  access: z.enum([ShareLevel.VIEW, ShareLevel.EDIT]),
 });
 
 export const createStorageUnitBodySchema = z.strictObject({
@@ -235,6 +263,12 @@ export const createMachineTokenBodySchema = z.strictObject({
   name: machineTokenName,
   scope: machineTokenScope,
   expiresInDays: z.number().optional(),
+  /**
+   * The spaces to narrow it to (ADR 26). Absent means none chosen: the
+   * issuer's whole reach. An empty list is refused rather than read either
+   * way, so "none chosen" has exactly one spelling.
+   */
+  spaceIds: z.array(id).min(1).max(MAX_BATCH_SIZE).optional(),
 });
 
 /**
@@ -245,7 +279,8 @@ export const createMachineTokenBodySchema = z.strictObject({
  * silently dropped a scope would let somebody believe they had turned a read
  * key into a writing one, and a rotation that honoured it would be an
  * escalation path wearing the word "maintenance". Refusing the key is the only
- * answer that is true either way.
+ * answer that is true either way. The same goes for `spaceIds` (ADR 26): a
+ * rotation keeps the spaces a token was narrowed to.
  */
 export const rotateMachineTokenBodySchema = z.strictObject({
   expiresInDays: z.number().optional(),

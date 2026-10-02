@@ -1,3 +1,4 @@
+import { WHOLE_REACH } from "@waymark/domain";
 import { FakeClock } from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -8,6 +9,7 @@ import {
   MachineTokenScope,
   type MachineToken,
 } from "./machine-token.js";
+import { ANY_ISSUER } from "./machine-token-repository.js";
 import { InMemoryMachineTokenRepository } from "./machine-token-repository.fake.js";
 import { issueMachineTokenSecret } from "./machine-token-secret.js";
 
@@ -28,6 +30,8 @@ describe("authenticating a machine token", () => {
       name: "mcp-server",
       tokenHash,
       scope: MachineTokenScope.Read,
+      userId: "dario",
+      chosenSpaces: WHOLE_REACH,
       createdAt: NOW,
       expiresAt: null,
       lastUsedAt: null,
@@ -79,7 +83,7 @@ describe("authenticating a machine token", () => {
 
     it("refuses a revoked token", async () => {
       const token = await store();
-      await machineTokens.deleteByName("mcp-server");
+      await machineTokens.deleteByName("mcp-server", ANY_ISSUER);
 
       await expect(authenticate.execute(token)).rejects.toThrow(
         InvalidMachineToken,
@@ -139,7 +143,7 @@ describe("authenticating a machine token", () => {
 
     it("says the same thing for unknown, revoked and expired", async () => {
       const revoked = await store();
-      await machineTokens.deleteByName("mcp-server");
+      await machineTokens.deleteByName("mcp-server", ANY_ISSUER);
       const expired = await store({
         id: "machine-token-2",
         name: "backup",

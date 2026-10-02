@@ -43,10 +43,15 @@ export const createTestDatabase = async (): Promise<TestDatabase> => {
     client,
 
     async reset(): Promise<void> {
-      // Detaching every unit first breaks the self-referencing foreign key —
-      // AND any cycle a test deliberately wrote — so the deletes below never
-      // depend on hierarchy order and never get stuck on corrupt data.
-      await client.$executeRawUnsafe(`UPDATE "StorageUnit" SET "parentId" = NULL`);
+      // Pointing every unit at itself first breaks the self-referencing
+      // foreign key — AND any cycle a test deliberately wrote — so the deletes
+      // below never depend on hierarchy order and never get stuck on corrupt
+      // data. At itself rather than at nothing, because a unit with no parent
+      // is a root, and the database refuses a root without an owner (ADR 26).
+      await client.$executeRawUnsafe(
+        `UPDATE "StorageUnit" SET "parentId" = "id", "ownerId" = NULL`,
+      );
+      await client.$executeRawUnsafe(`DELETE FROM "Share"`);
       await client.$executeRawUnsafe(`DELETE FROM "ItemPhoto"`);
       await client.$executeRawUnsafe(`DELETE FROM "ItemTag"`);
       await client.$executeRawUnsafe(`DELETE FROM "Item"`);

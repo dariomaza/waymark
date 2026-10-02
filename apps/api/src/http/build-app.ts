@@ -7,11 +7,17 @@ import {
   DetachItemPhoto,
   DomainError,
   EmptyStorageUnit,
+  FindPhoto,
+  GetItem,
+  GetStorageUnit,
   GetStorageUnitPath,
   ListItems,
+  ListStorageUnits,
   MoveItems,
   MoveStorageUnit,
+  ReachablePhotos,
   ReorderItemPhotos,
+  RequeuePhotos,
   SearchInventory,
   SetStorageUnitPhoto,
   UpdateItem,
@@ -21,7 +27,9 @@ import {
   type ItemRepository,
   type PhotoRepository,
   type PublicIdGenerator,
+  type Access,
   type SearchRepository,
+  type ShareRepository,
   type StorageUnitRepository,
 } from "@waymark/domain";
 import cors from "@fastify/cors";
@@ -34,9 +42,14 @@ import Fastify, {
 } from "fastify";
 import { ZodError } from "zod";
 
+import { AccessOfCaller } from "../auth/access-of-caller.js";
 import { AuthenticateMachineToken } from "../auth/authenticate-machine-token.js";
 import { AuthenticateSession } from "../auth/authenticate-session.js";
 import {
+  AccountDisabled,
+  AccountNotFound,
+  AdministratorOnly,
+  AlreadyHasEdit,
   AuthError,
   ClonedPasskey,
   InvalidCredentials,
@@ -45,16 +58,24 @@ import {
   InvalidPasskey,
   InvalidPasskeyLabel,
   InvalidSession,
+  InvalidUsername,
+  LastAdministrator,
   MachineTokenNameAlreadyTaken,
+  OwnAccount,
   PasskeyAlreadyRegistered,
   PasskeyCeremonyExpired,
   PasskeyDidNotVerifyTheUser,
   PasskeyNeedsAPassword,
   PasskeyNotFound,
+  PasswordTooShort,
   ReadOnlyMachineToken,
   TooManyLoginAttempts,
   TooManyPasskeyAttempts,
+  UsernameAlreadyTaken,
 } from "../auth/auth-errors.js";
+import { CreateUser } from "../auth/create-user.js";
+import { ManageAccounts } from "../auth/manage-accounts.js";
+import { ManageShares } from "../sharing/manage-shares.js";
 import { callerMayWrite, type Caller } from "../auth/caller.js";
 import type { MachineTokenRepository } from "../auth/machine-token-repository.js";
 import type { RateLimiter } from "../auth/login-rate-limiter.js";
@@ -68,6 +89,7 @@ import { FinishPasskeyRegistration } from "../auth/finish-passkey-registration.j
 import type { PasskeyRepository } from "../auth/passkey-repository.js";
 import type { PasskeyChallengeRepository } from "../auth/passkey-challenge-repository.js";
 import { relyingPartyFor } from "../auth/relying-party.js";
+import { ListMachineTokens } from "../auth/list-machine-tokens.js";
 import { RevokeMachineToken } from "../auth/revoke-machine-token.js";
 import { RotateMachineToken } from "../auth/rotate-machine-token.js";
 import type { PasswordHasher } from "../auth/password-hasher.js";
@@ -86,9 +108,11 @@ import {
 import { resolveClientIp, type TrustedProxyPolicy } from "./client-ip.js";
 import { createWebClient, type WebClient, type WebClientConfig } from "./web-client.js";
 import { mapDomainError } from "./error-mapping.js";
+import { AccountNames } from "./account-names.js";
 import { ItemViews } from "./item-views.js";
 import { StorageUnitViews } from "./storage-unit-views.js";
 import { errorBody, HttpError } from "./http-error.js";
+import { accountRoutes } from "./routes/account-routes.js";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth-routes.js";
 import { itemRoutes } from "./routes/item-routes.js";
 import { machineTokenRoutes } from "./routes/machine-token-routes.js";
@@ -96,6 +120,7 @@ import { passkeyLoginRoutes, passkeyRoutes } from "./routes/passkey-routes.js";
 import { photoRoutes } from "./routes/photo-routes.js";
 import { qrRoutes } from "./routes/qr-routes.js";
 import { searchRoutes } from "./routes/search-routes.js";
+import { shareRoutes } from "./routes/share-routes.js";
 import { storageUnitRoutes } from "./routes/storage-unit-routes.js";
 import { toValidationIssues } from "./validation.js";
 
@@ -118,6 +143,12 @@ declare module "fastify" {
      * is what lets a handler read it without a check of its own.
      */
     caller: Caller;
+    /**
+     * What the person behind the caller may see (ADR 26), resolved in the same
+     * hook right after the caller is identified. Every inventory read takes
+     * it as a required argument, so a route cannot forget to pass it.
+     */
+    access: Access;
   }
 }
 
@@ -142,6 +173,8 @@ export interface AppDependencies {
   readonly photos: PhotoRepository;
   /** Finds the candidates a query could answer; see `SearchRepository`. */
   readonly search: SearchRepository;
+  /** Who else may see a space, and at what level (ADR 26). */
+  readonly shares: ShareRepository;
   readonly users: UserRepository;
   readonly sessions: SessionRepository;
   /** Long-lived credentials that are not people; see ADR 17. */
@@ -258,6 +291,11 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     getStorageUnitPath: new GetStorageUnitPath({
       storageUnits: deps.storageUnits,
     }),
+    listStorageUnits: new ListStorageUnits({ storageUnits: deps.storageUnits }),
+    getStorageUnit: new GetStorageUnit({
+      storageUnits: deps.storageUnits,
+      items: deps.items,
+    }),
     createItem: new CreateItem({
       items: deps.items,
       storageUnits: deps.storageUnits,
@@ -268,6 +306,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       items: deps.items,
       storageUnits: deps.storageUnits,
     }),
+    getItem: new GetItem({ items: deps.items, storageUnits: deps.storageUnits }),
     moveItems: new MoveItems({
       items: deps.items,
       storageUnits: deps.storageUnits,
@@ -289,6 +328,20 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       storageUnits: deps.storageUnits,
       photos: deps.photos,
       clock: deps.clock,
+    }),
+    findPhoto: new FindPhoto({
+      photos: deps.photos,
+      items: deps.items,
+      storageUnits: deps.storageUnits,
+    }),
+    reachablePhotos: new ReachablePhotos({
+      items: deps.items,
+      storageUnits: deps.storageUnits,
+    }),
+    requeuePhotos: new RequeuePhotos({
+      photos: deps.photos,
+      items: deps.items,
+      storageUnits: deps.storageUnits,
     }),
     searchInventory: new SearchInventory({
       search: deps.search,
@@ -323,6 +376,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
    */
   const createMachineToken = new CreateMachineToken({
     machineTokens: deps.machineTokens,
+    storageUnits: deps.storageUnits,
     ids: deps.ids,
     clock: deps.clock,
   });
@@ -332,6 +386,23 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   });
   const revokeMachineToken = new RevokeMachineToken({
     machineTokens: deps.machineTokens,
+  });
+  /**
+   * The People group (ADR 26), driving the same `CreateUser` the shell does so
+   * an account made on the screen is made by the same rules.
+   */
+  const manageAccounts = new ManageAccounts({
+    users: deps.users,
+    sessions: deps.sessions,
+    machineTokens: deps.machineTokens,
+    createUser: new CreateUser({
+      users: deps.users,
+      hasher: deps.hasher,
+      ids: deps.ids,
+      clock: deps.clock,
+    }),
+    hasher: deps.hasher,
+    clock: deps.clock,
   });
   const authenticateMachine = new AuthenticateMachineToken({
     machineTokens: deps.machineTokens,
@@ -394,6 +465,13 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   // The explicit type argument matters: with a union, Fastify's inference
   // picks one arm and then rejects the other as a getter/setter pair.
   app.decorateRequest<Caller>("caller", null as unknown as Caller);
+  // The same arrangement for what that caller may see.
+  app.decorateRequest<Access>("access", null as unknown as Access);
+  const accessOfCaller = new AccessOfCaller({
+    users: deps.users,
+    storageUnits: deps.storageUnits,
+    shares: deps.shares,
+  });
 
   app.addHook("onRequest", async (request) => {
     request.clientIp = resolveClientIp(
@@ -459,6 +537,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   void app.register(async (scope) => {
     scope.addHook("onRequest", async (request) => {
       request.caller = await identify(request.headers.authorization);
+      request.access = await accessOfCaller.execute(request.caller);
 
       /**
        * The scope check, here and not in a route.
@@ -469,8 +548,9 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
        * cannot have changed anything, and a caller that may not write learns
        * nothing about the shape of the route it was refused.
        *
-       * A person is never refused here: ADR 5 is unchanged, and every
-       * authenticated human may perform every inventory operation.
+       * A person is never refused here. What they may see is their access,
+       * resolved above and passed to every use case (ADR 26); which spaces
+       * they may change is decided against the same access, not by this hook.
        */
       if (isWriteRequest(request.method) && !callerMayWrite(request.caller)) {
         throw new ReadOnlyMachineToken(
@@ -515,10 +595,22 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
 
     void scope.register(authenticatedAuthRoutes, { login, logout });
     void scope.register(machineTokenRoutes, {
-      machineTokens: deps.machineTokens,
+      listMachineTokens: new ListMachineTokens({
+        machineTokens: deps.machineTokens,
+        users: deps.users,
+        storageUnits: deps.storageUnits,
+      }),
       createMachineToken,
       rotateMachineToken,
       revokeMachineToken,
+    });
+    void scope.register(accountRoutes, { manageAccounts });
+    void scope.register(shareRoutes, {
+      manageShares: new ManageShares({
+        users: deps.users,
+        storageUnits: deps.storageUnits,
+        shares: deps.shares,
+      }),
     });
     void scope.register(passkeyRoutes, {
       passkeys: deps.passkeys,
@@ -526,22 +618,17 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       finishPasskeyRegistration,
     });
     void scope.register(storageUnitRoutes, {
-      storageUnits: deps.storageUnits,
-      items: deps.items,
       itemViews,
       storageUnitViews,
+      accountNames: new AccountNames(deps.users),
       ...useCases,
     });
     void scope.register(itemRoutes, {
-      items: deps.items,
       itemViews,
       photoRelease,
       ...useCases,
     });
     void scope.register(photoRoutes, {
-      items: deps.items,
-      storageUnits: deps.storageUnits,
-      photos: deps.photos,
       files: photoFiles,
       release: photoRelease,
       ids: deps.ids,
@@ -556,7 +643,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       itemViews,
     });
     void scope.register(qrRoutes, {
-      storageUnits: deps.storageUnits,
+      getStorageUnitPath: useCases.getStorageUnitPath,
       publicBaseUrl: deps.publicBaseUrl,
     });
   });
@@ -873,6 +960,78 @@ const sendAuthError = async (
           requiredScope: "read-write",
         }),
       );
+  }
+
+  /**
+   * # What managing accounts can be refused with (ADR 26)
+   *
+   * 403 for a person who is not an administrator: authenticated, and refused.
+   * 404 for an id that names no account — the path addresses it. 409 for the
+   * two that need the WORLD to change first: a username somebody already has,
+   * and the last active administrator or your own account, which another
+   * administrator has to act on. 422 for a password or a username the request
+   * itself got wrong.
+   */
+  if (error instanceof AdministratorOnly) {
+    return reply.code(403).send(errorBody("ADMINISTRATOR_ONLY", error.message));
+  }
+
+  if (error instanceof AccountNotFound) {
+    return reply
+      .code(404)
+      .send(errorBody("ACCOUNT_NOT_FOUND", error.message, { accountId: error.accountId }));
+  }
+
+  /*
+   * Sharing (ADR 26): a disabled account opens nothing, so enable it first;
+   * and the tree's owner or an administrator already has edit. Both are 409:
+   * the request is right, and the world has to change for it to succeed.
+   */
+  if (error instanceof AccountDisabled) {
+    return reply
+      .code(409)
+      .send(errorBody("ACCOUNT_DISABLED", error.message, { accountId: error.accountId }));
+  }
+
+  if (error instanceof AlreadyHasEdit) {
+    return reply.code(409).send(
+      errorBody("ALREADY_HAS_EDIT", error.message, {
+        accountId: error.accountId,
+        because: error.because,
+      }),
+    );
+  }
+
+  if (error instanceof UsernameAlreadyTaken) {
+    return reply
+      .code(409)
+      .send(
+        errorBody("USERNAME_ALREADY_TAKEN", error.message, { username: error.username }),
+      );
+  }
+
+  if (error instanceof LastAdministrator) {
+    return reply
+      .code(409)
+      .send(errorBody("LAST_ADMINISTRATOR", error.message, { accountId: error.accountId }));
+  }
+
+  if (error instanceof OwnAccount) {
+    return reply
+      .code(409)
+      .send(errorBody("OWN_ACCOUNT", error.message, { accountId: error.accountId }));
+  }
+
+  if (error instanceof PasswordTooShort) {
+    return reply.code(422).send(
+      errorBody("PASSWORD_TOO_SHORT", error.message, {
+        minimumLength: error.minimumLength,
+      }),
+    );
+  }
+
+  if (error instanceof InvalidUsername) {
+    return reply.code(422).send(errorBody("INVALID_USERNAME", error.message));
   }
 
   /**

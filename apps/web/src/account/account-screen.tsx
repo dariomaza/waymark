@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "../app/language-switcher.js";
 import { ThemeSwitcher } from "../app/theme-switcher.js";
 import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
 import { PasskeysPanel } from "../auth/passkeys-panel.js";
+import { PeoplePanel } from "../auth/people-panel.js";
 import { useSession, useSignOut } from "../auth/use-session.js";
 import { AccountPanel } from "./views/account-panel.js";
 
@@ -61,6 +62,11 @@ export const AccountScreen = (): JSX.Element => {
          * this surface is ordered from "you" outwards.
          */
         machineTokens={<MachineTokensPanel />}
+        /*
+         * The other accounts (ADR 26). The group decides for itself whether
+         * it is drawn, from what `/auth/me` says about the person signed in.
+         */
+        people={<PeoplePanel />}
         busy={signOut.isPending}
         onSignOut={() => {
           signOut.mutate();

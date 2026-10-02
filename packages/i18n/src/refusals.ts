@@ -154,6 +154,77 @@ export const machineTokenFailureMessage = (error: unknown): Message | null => {
 };
 
 /**
+ * # What the People group's refusals mean (ADR 26)
+ *
+ * Each one is a different next step — another username, a longer password,
+ * another administrator first, another administrator to do it — which is why
+ * none of them is left to the API's English. `null` for anything else, the
+ * same bargain every function in this file makes.
+ */
+export const accountFailureMessage = (error: unknown): Message | null => {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  switch (error.code) {
+    case ApiErrorCode.USERNAME_ALREADY_TAKEN:
+      return message("people.usernameTaken", {
+        username: detailText(error, "username") ?? "",
+      });
+    case ApiErrorCode.PASSWORD_TOO_SHORT:
+      // The API's number, not a copy of it: the minimum is decided there.
+      return message("people.passwordTooShort", {
+        minimum: detailNumber(error, "minimumLength") ?? 12,
+      });
+    case ApiErrorCode.INVALID_USERNAME:
+      return message("people.badUsername");
+    case ApiErrorCode.LAST_ADMINISTRATOR:
+      return message("people.lastAdministrator");
+    case ApiErrorCode.OWN_ACCOUNT:
+      return message("people.ownAccount");
+    case ApiErrorCode.ACCOUNT_NOT_FOUND:
+      return message("people.alreadyGone");
+    case ApiErrorCode.ADMINISTRATOR_ONLY:
+      return message("failure.administratorOnly");
+    case ApiErrorCode.MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS:
+      return message("people.notForMachines");
+    default:
+      return null;
+  }
+};
+
+/**
+ * # What the Share sheet's refusals mean (ADR 26)
+ *
+ * The sheet only offers people who may be given a share, so these are what a
+ * stale list meets: somebody became an administrator, was disabled, or was
+ * never there. Each is a different next step, so each has its sentence.
+ * `null` for anything else.
+ */
+export const shareFailureMessage = (error: unknown): Message | null => {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  switch (error.code) {
+    case ApiErrorCode.ALREADY_HAS_EDIT:
+      return detailText(error, "because") === "administrator"
+        ? message("share.isAdministrator")
+        : message("share.ownsIt");
+    case ApiErrorCode.ACCOUNT_DISABLED:
+      return message("share.accountDisabled");
+    case ApiErrorCode.ACCOUNT_NOT_FOUND:
+      return message("people.alreadyGone");
+    case ApiErrorCode.ADMINISTRATOR_ONLY:
+      return message("failure.administratorOnly");
+    case ApiErrorCode.MACHINE_TOKEN_CANNOT_SHARE:
+      return message("share.notForMachines");
+    default:
+      return null;
+  }
+};
+
+/**
  * # What a refused passkey means, as a sentence somebody can act on
  *
  * Each of these is a different NEXT STEP, which is the entire reason they are
@@ -346,6 +417,22 @@ const detailText = (error: ApiError, key: string): string | null => {
 export const describeFailure = (error: unknown): Message => {
   if (!(error instanceof ApiError)) {
     return message("failure.unexpected");
+  }
+
+  // Two 403s that are not about the session at all (ADR 26): the person is
+  // signed in and may see the space. "Sign in again" would be the wrong layer.
+  if (error.code === ApiErrorCode.VIEW_ONLY) {
+    return message("failure.viewOnly");
+  }
+  if (error.code === ApiErrorCode.OWNER_ONLY) {
+    return message("failure.ownerOnly");
+  }
+  if (error.code === ApiErrorCode.OUTSIDE_TOKEN_SPACES) {
+    return message("failure.outsideTokenSpaces");
+  }
+  // Signed in and not an administrator (ADR 26): the role, not the session.
+  if (error.code === ApiErrorCode.ADMINISTRATOR_ONLY) {
+    return message("failure.administratorOnly");
   }
 
   switch (failureKindOf(error)) {

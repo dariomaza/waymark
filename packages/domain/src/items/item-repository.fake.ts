@@ -1,4 +1,4 @@
-import type { ItemId, UnitId } from "../shared/identity.js";
+import type { ItemId, PhotoId, UnitId } from "../shared/identity.js";
 import type { Item } from "./item.js";
 import type { ItemRepository } from "./item-repository.js";
 
@@ -28,6 +28,10 @@ export class InMemoryItemRepository implements ItemRepository {
 
   async findAll(): Promise<Item[]> {
     return [...this.#items.values()];
+  }
+
+  async findByPhoto(id: PhotoId): Promise<Item[]> {
+    return [...this.#items.values()].filter((item) => item.photos.includes(id));
   }
 
   async findByStorageUnit(id: UnitId): Promise<Item[]> {

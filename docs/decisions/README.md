@@ -34,12 +34,13 @@ was tried first and failed.
 
 | # | Decision |
 |---|---|
-| [5](0005-one-shared-inventory-users-are-credentials.md) | One inventory per household. A user is a way in, not an owner of data. |
-| [6](0006-opaque-server-side-session-tokens.md) | Sessions are opaque tokens stored server side, and accounts are created by an admin — there is no sign-up. |
+| [5](0005-one-shared-inventory-users-are-credentials.md) | ~~One inventory per household. A user is a way in, not an owner of data.~~ *Superseded by ADR 26.* |
+| [6](0006-opaque-server-side-session-tokens.md) | Sessions are opaque tokens stored server side, and accounts are created by an admin — there is no sign-up. *Amended: the administrator creates them from the app (ADR 26).* |
 | [7](0007-client-address-comes-from-a-trusted-proxy-header.md) | Rate limiting trusts `CF-Connecting-IP` only from a configured proxy. |
-| [17](0017-machine-tokens-are-a-smaller-key-not-a-role.md) | A machine token is a narrower credential for a program, not a separate kind of user. |
+| [17](0017-machine-tokens-are-a-smaller-key-not-a-role.md) | A machine token is a narrower credential for a program, not a separate kind of user. *Amended: it belongs to, and sees what, its issuer sees (ADR 26).* |
 | [18](0018-a-person-issues-machine-tokens-a-machine-never-does.md) | Only a person's session can mint a machine token; a credential that could issue its successor could never be revoked. |
 | [19](0019-a-passkey-is-an-additional-door-never-a-replacement.md) | Passkeys and the phone's fingerprint are extra doors. The password form never goes away. *Amended: on the phone it is a switch, and the sealed state is a report of what the keystore did.* |
+| [26](0026-each-person-has-an-inventory-and-the-administrator-shares-it.md) | Each person sees their own inventory; the administrator sees everything and shares a space, view or edit, down the tree. One function decides visibility and every use case must take it. |
 
 ## The two clients
 
@@ -62,7 +63,7 @@ was tried first and failed.
 
 ## Writing a new one
 
-- Number it next, name it with the decision as a sentence (`0025-…`), and keep
+- Number it next, name it with the decision as a sentence (`0027-…`), and keep
   the voice of the others: the reasoning, not just the conclusion.
 - **Name the cost.** A decision that lists no cost has not been made.
 - **Amend, do not contradict.** When a later change reverses part of an ADR,

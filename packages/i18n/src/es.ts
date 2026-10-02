@@ -97,6 +97,17 @@ export const ES: Dictionary = {
     "La aplicación no ha podido conectar con Waymark. Comprueba la conexión e inténtalo de nuevo.",
   "failure.notFound": "Esto ya no está aquí. Puede que se haya borrado o movido.",
   "failure.sessionEnded": "La sesión ha terminado. Inicia sesión de nuevo.",
+  /** Shared to view, not to edit (ADR 26); the administrator is who shares. */
+  "failure.viewOnly":
+    "Esto se ha compartido contigo para verlo, no para cambiarlo. Pídeselo al administrador si necesitas cambiarlo.",
+  /** Only the owner, or the administrator, makes or moves a root (ADR 26). */
+  "failure.ownerOnly":
+    "Solo la persona a quien pertenece este espacio, o el administrador, puede convertirlo en una unidad raíz o sacarlo de arriba del todo.",
+  /** Un token de máquina limitado a los espacios elegidos (ADR 26). */
+  "failure.outsideTokenSpaces":
+    "Este token de máquina está limitado a los espacios que se eligieron para él, así que no puede crear una unidad raíz, ni llevar nada arriba del todo ni sacarlo de ahí.",
+  "failure.administratorOnly":
+    "Solo un administrador puede hacer esto. Sigues con la sesión iniciada; volver a entrar no lo cambiaría.",
   "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
   "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
   "failure.unexpected":
@@ -156,6 +167,10 @@ export const ES: Dictionary = {
   "inventory.failed": "No se ha podido cargar tu inventario",
   "inventory.addSpace": "Añadir un espacio",
   "inventory.emptyTitle": "Todavía no hay nada registrado",
+  /** A person's group of spaces shared with them (ADR 26). */
+  "inventory.sharedWithYou": "Compartido contigo",
+  /** One person's group on an administrator's home screen, read aloud. */
+  "inventory.spacesOf": "Espacios de {username}",
   "inventory.emptyExplains":
     "Empieza por un sitio que llamarías por su nombre en voz alta: una habitación, el garaje, la caseta.",
 
@@ -300,6 +315,10 @@ export const ES: Dictionary = {
   "label.drawFailed": "No se ha podido dibujar esa etiqueta",
   "label.print": "Imprimir esta etiqueta",
   "label.backToUnit": "Volver a la unidad",
+  /** The Share entry in a space's menu, for an administrator (ADR 26). */
+  "units.share": "Compartir",
+  /** A space shared with this person to look at, not to change. */
+  "units.viewOnly": "Solo ver",
   "units.showLabel": "Ver la etiqueta",
   "label.sheet": "Hoja de etiquetas",
 
@@ -448,6 +467,23 @@ export const ES: Dictionary = {
   "tokens.lastUsedOn": "Último uso: {when}",
   "tokens.neverUsed": "Sin usar",
   "tokens.lapsesOn": "Caduca el {when}",
+  /** De quién es el token; solo lo ve un administrador (ADR 26). */
+  "tokens.issuedBy": "Emitido por {username}",
+  /** Un token limitado a espacios elegidos: cuáles ve (ADR 26). */
+  "tokens.seesOnly": "Solo ve {spaces}",
+  /** Un token limitado cuyos espacios ya no existen: no ve nada. */
+  "tokens.seesNothing": "Sus espacios ya no están, así que no ve nada",
+  /** La pregunta del formulario: cuánto de la casa puede ver. */
+  "tokens.reachLabel": "Qué puede ver",
+  /** Lo normal: todo lo que ve quien lo crea. */
+  "tokens.reachEverything": "Todo lo que puedes ver",
+  /** Solo los espacios marcados debajo y lo que tienen dentro. */
+  "tokens.reachChosen": "Solo los espacios que elijas",
+  "tokens.spacesLabel": "Espacios que puede ver",
+  "tokens.spacesHint":
+    "Ve cada espacio que marques y todo lo que tiene dentro, y nunca más de lo que ves tú.",
+  /** Mientras no hay ningún espacio marcado. */
+  "tokens.chooseASpace": "Marca al menos un espacio.",
 
   "tokens.addressNote":
     "Esta es la dirección de Waymark a la que llama un programa. No es un secreto, así que cógela cuando la necesites.",
@@ -509,6 +545,74 @@ export const ES: Dictionary = {
     "Usa minúsculas, dígitos y . _ - — tiene que poder escribirse en una shell.",
   "tokens.alreadyGone":
     "No hay ningún token de máquina con ese nombre. Puede que ya se haya revocado.",
+
+  // ---------------------------------------------------------------------
+  // Personas: el administrador gestiona las demás cuentas (ADR 26)
+  // ---------------------------------------------------------------------
+  "account.people": "Personas",
+  "people.explains":
+    "Todas las personas con cuenta en esta casa. Solo un administrador ve este grupo y solo un administrador puede cambiarlo.",
+  "people.handOver":
+    "No se envía nada por correo: tú escribes la contraseña de una persona nueva, o la de un restablecimiento, y se la das en persona.",
+  "people.loading": "Cargando las personas de esta casa",
+  "people.addAction": "Añadir una persona",
+  "people.usernameLabel": "Usuario",
+  "people.passwordLabel": "Contraseña",
+  "people.passwordHint": "Al menos 12 caracteres. Se la das tú en persona.",
+  "people.roleLabel": "Rol",
+  "people.roleAdministrator": "Administrador",
+  "people.roleUser": "Usuario",
+  "people.createAction": "Añádela",
+  "people.creating": "Añadiendo…",
+  "people.you": "Eres tú",
+  "people.disabled": "Desactivada",
+  "people.makeAdministrator": "Hacer administrador",
+  "people.makeUser": "Hacer usuario",
+  "people.resetAction": "Restablecer la contraseña",
+  "people.disableAction": "Desactivar",
+  "people.enableAction": "Activar",
+
+  "people.resetTitle": "¿Restablecer la contraseña de {username}?",
+  "people.resetWarning":
+    "Se cierra la sesión de {username} en todas partes y necesitará esta contraseña nueva para volver a entrar. Sus passkeys y sus tokens de máquina siguen funcionando.",
+  "people.newPasswordLabel": "Contraseña nueva",
+  "people.resetConfirm": "Restablécela",
+  "people.resetting": "Restableciendo…",
+
+  "people.disableTitle": "¿Desactivar a {username}?",
+  "people.disableWarning":
+    "Se cierra la sesión de {username} en todas partes y sus tokens de máquina dejan de funcionar. Su cuenta y todo lo que contiene se conservan, y puedes volver a activarla.",
+  "people.disableConfirm": "Desactívala",
+  "people.disabling": "Desactivando…",
+
+  "people.usernameTaken": "Ya hay alguien que se llama {username}.",
+  "people.passwordTooShort": "La contraseña necesita al menos {minimum} caracteres.",
+  "people.badUsername": "Ponle un nombre de usuario.",
+  "people.lastAdministrator":
+    "Es el último administrador activo. Haz administrador a otra persona primero.",
+  "people.ownAccount": "Tu propia cuenta la tiene que cambiar otro administrador.",
+  "people.alreadyGone": "Esa cuenta ya no está. Cierra esta pantalla y vuelve a abrirla.",
+  "people.notForMachines":
+    "Un token de máquina no puede gestionar cuentas. Lo hace un administrador con su sesión iniciada.",
+
+  // ---------------------------------------------------------------------
+  // Compartir un espacio (ADR 26)
+  // ---------------------------------------------------------------------
+
+  "share.title": "Compartir {name}",
+  "share.cascades": "Compartir un espacio comparte todo lo que hay dentro.",
+  "share.loading": "Cargando con quién se comparte",
+  "share.nobody":
+    "No hay nadie con quien compartirlo. Añade personas en la pantalla de tu cuenta; un administrador ya lo ve todo.",
+  "share.levelNone": "Sin compartir",
+  "share.levelView": "Ver",
+  "share.levelEdit": "Ver y editar",
+  "share.ownsIt": "Este espacio es suyo, así que ya puede cambiarlo.",
+  "share.isAdministrator": "Tiene el rol de administrador, así que ya puede cambiarlo todo.",
+  "share.accountDisabled":
+    "Esa cuenta está desactivada. Actívala en Personas antes de compartir nada con ella.",
+  "share.notForMachines":
+    "Un token de máquina no puede compartir espacios. Lo hace un administrador con su sesión iniciada.",
 
   // ---------------------------------------------------------------------
   // Passkeys: una puerta más, nunca un reemplazo (ADR 19)

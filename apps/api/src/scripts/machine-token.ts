@@ -1,3 +1,5 @@
+import { resolveAccess, StorageUnitNotFound, userId } from "@waymark/domain";
+
 import { SystemClock } from "../adapters/system-clock.js";
 import { UuidIdGenerator } from "../adapters/uuid-id-generator.js";
 import {
@@ -6,15 +8,24 @@ import {
 } from "../auth/auth-errors.js";
 import { CreateMachineToken } from "../auth/create-machine-token.js";
 import type { MachineToken } from "../auth/machine-token.js";
+import { THE_SHELL } from "../auth/machine-token-manager.js";
 import { RevokeMachineToken } from "../auth/revoke-machine-token.js";
 import { loadConfig } from "../config.js";
 import { createPrismaClient } from "../persistence/prisma-client.js";
 import { PrismaMachineTokenRepository } from "../persistence/prisma-machine-token-repository.js";
+import { PrismaShareRepository } from "../persistence/prisma-share-repository.js";
+import { PrismaStorageUnitRepository } from "../persistence/prisma-storage-unit-repository.js";
+import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
 import {
   USAGE,
   parseMachineTokenCommand,
   type MachineTokenCommand,
 } from "./machine-token-command.js";
+import {
+  IssuerNotFound,
+  NoAdministratorToIssueFor,
+  resolveMachineTokenIssuer,
+} from "./machine-token-issuer.js";
 
 /**
  * `pnpm --filter @waymark/api machine-token <create|revoke|list>`
@@ -88,24 +99,50 @@ const run = async (command: MachineTokenCommand): Promise<void> => {
   const config = loadConfig(process.env);
   const prisma = createPrismaClient(config.databaseUrl);
   const machineTokens = new PrismaMachineTokenRepository(prisma);
+  const storageUnits = new PrismaStorageUnitRepository(prisma);
 
   try {
     switch (command.kind) {
       case "create": {
+        const issuer = await resolveMachineTokenIssuer(
+          new PrismaUserRepository(prisma),
+          command.username,
+        );
+        // Chosen spaces are checked against what the issuer can see (ADR 26).
+        const narrowTo =
+          command.spaceIds === null
+            ? {}
+            : {
+                narrowTo: {
+                  spaceIds: command.spaceIds,
+                  issuerAccess: resolveAccess({
+                    caller: { userId: userId(issuer.id), role: issuer.role },
+                    storageUnits: await storageUnits.findAll(),
+                    shares: await new PrismaShareRepository(prisma).findAll(),
+                  }),
+                },
+              };
         const { token, machineToken } = await new CreateMachineToken({
           machineTokens,
+          storageUnits,
           ids: new UuidIdGenerator(),
           clock: new SystemClock(),
         }).execute({
           name: command.name,
           scope: command.scope,
+          userId: issuer.id,
           ...(command.expiresInDays === null
             ? {}
             : { expiresInDays: command.expiresInDays }),
+          ...narrowTo,
         });
 
         process.stdout.write(
-          `Created machine token "${machineToken.name}" (${machineToken.scope}).\n\n` +
+          `Created machine token "${machineToken.name}" (${machineToken.scope}) ` +
+            `for ${issuer.username}` +
+            (machineToken.chosenSpaces.narrowed
+              ? `, narrowed to ${machineToken.chosenSpaces.spaceIds.join(", ")}.\n\n`
+              : ".\n\n") +
             `  ${token}\n\n` +
             "This is the only time it will ever be shown. Store it now.\n" +
             "Present it as:  Authorization: Machine <token>\n",
@@ -114,8 +151,10 @@ const run = async (command: MachineTokenCommand): Promise<void> => {
       }
 
       case "revoke": {
+        // The shell holds the server, so it may revoke anybody's (ADR 26).
         const revoked = await new RevokeMachineToken({ machineTokens }).execute(
           command.name,
+          THE_SHELL,
         );
 
         if (!revoked) {
@@ -141,9 +180,14 @@ const run = async (command: MachineTokenCommand): Promise<void> => {
   } catch (error) {
     if (
       error instanceof MachineTokenNameAlreadyTaken ||
-      error instanceof InvalidMachineTokenName
+      error instanceof InvalidMachineTokenName ||
+      error instanceof IssuerNotFound ||
+      error instanceof NoAdministratorToIssueFor
     ) {
       return void fail(error.message);
+    }
+    if (error instanceof StorageUnitNotFound) {
+      return void fail(`The issuer cannot see a space with the id "${error.id}".`);
     }
     throw error;
   } finally {

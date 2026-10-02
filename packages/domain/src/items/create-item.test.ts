@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { photoId, unitId } from "../shared/identity.js";
+import { photoId, unitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { StorageUnitNotFound } from "../storage-units/storage-unit-errors.js";
 import { StorageUnitKind } from "../storage-units/storage-unit.js";
@@ -22,7 +23,11 @@ describe("CreateItem", () => {
   let createItem: CreateItem;
 
   const createUnit = async (name: string) =>
-    createStorageUnit.execute({ name, kind: StorageUnitKind.BOX });
+    createStorageUnit.execute(SEES_EVERYTHING, {
+      callerId: userId("dario"),
+      name,
+      kind: StorageUnitKind.BOX,
+    });
 
   beforeEach(() => {
     items = new InMemoryItemRepository();
@@ -45,7 +50,7 @@ describe("CreateItem", () => {
   it("stores a new item inside its storage unit", async () => {
     const box = await createUnit("Box 3");
 
-    const created = await createItem.execute({
+    const created = await createItem.execute(SEES_EVERYTHING, {
       storageUnitId: box.id,
       name: "Cordless drill",
     });
@@ -59,7 +64,7 @@ describe("CreateItem", () => {
     const box = await createUnit("Box 3");
     clock.advanceTo(new Date("2026-04-04T08:00:00.000Z"));
 
-    const created = await createItem.execute({
+    const created = await createItem.execute(SEES_EVERYTHING, {
       storageUnitId: box.id,
       name: "Cordless drill",
     });
@@ -70,7 +75,7 @@ describe("CreateItem", () => {
   it("stores one unit when no quantity is given", async () => {
     const box = await createUnit("Box 3");
 
-    const created = await createItem.execute({
+    const created = await createItem.execute(SEES_EVERYTHING, {
       storageUnitId: box.id,
       name: "Cordless drill",
     });
@@ -81,7 +86,7 @@ describe("CreateItem", () => {
   it("keeps tags and photos in the order they were given", async () => {
     const box = await createUnit("Box 3");
 
-    const created = await createItem.execute({
+    const created = await createItem.execute(SEES_EVERYTHING, {
       storageUnitId: box.id,
       name: "Cordless drill",
       description: "18V, with two batteries",
@@ -98,7 +103,7 @@ describe("CreateItem", () => {
 
   it("rejects creating an item in a storage unit that does not exist", async () => {
     await expect(
-      createItem.execute({
+      createItem.execute(SEES_EVERYTHING, {
         storageUnitId: unitId("ghost"),
         name: "Cordless drill",
       }),
@@ -109,7 +114,7 @@ describe("CreateItem", () => {
     const box = await createUnit("Box 3");
 
     await expect(
-      createItem.execute({
+      createItem.execute(SEES_EVERYTHING, {
         storageUnitId: box.id,
         name: "Cordless drill",
         quantity: 0,
@@ -121,7 +126,7 @@ describe("CreateItem", () => {
     const box = await createUnit("Box 3");
 
     await expect(
-      createItem.execute({
+      createItem.execute(SEES_EVERYTHING, {
         storageUnitId: box.id,
         name: "Cordless drill",
         quantity: 0,

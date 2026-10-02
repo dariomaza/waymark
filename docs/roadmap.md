@@ -49,36 +49,6 @@ install in five lines, and a link to the site.
 - It must not become a second copy that drifts: one source per fact, the site
   built from the same Markdown, and a CI check that its links resolve.
 
-### An administrator, created accounts, and what each person may see
-
-The owner (2026-10-01): the first account on a fresh deployment should be the
-administrator, who creates the other accounts from the app and chooses what
-each one can see, and whether it is a full user or not.
-
-This reopens ADR 5 (one shared inventory; users are credentials only) and
-ADR 6 (accounts created by hand). ADR 5 already separates the two halves,
-because they cost very different amounts:
-
-- **Roles** (administrator / user / read-only): cheap. ADR 5 says adding roles
-  "means touching the use cases, not the schema". The first-account-is-admin
-  rule, creating and disabling accounts from the account screen, and a
-  read-only role fit here.
-- **What each person may see** (visibility scoped per account, e.g. one
-  person sees only the garage): expensive. It is ADR 5's option 3: every query
-  scoped by user, and a permanent class of bug where one unscoped query leaks
-  what was meant to be hidden. If wanted, scope by top-level space (a grant on
-  a root unit that covers everything under it), never per item.
-
-**Owner's answer (2026-10-01): hide things, cascading down the tree, knowing it
-costs more.** So the work is both halves: roles, and visibility granted on a
-space and inherited by everything under it. It needs a new ADR superseding
-ADR 5 and ADR 6 before any code, and the leak class of bug has to be closed by
-construction, not by care: one place where a person's visible subtrees are
-resolved, every read use case taking it as a required argument, and a
-contract test per port proving an ungranted space, item, photo, search hit,
-label lookup and MCP answer are all invisible — including through search, the
-`/u/<publicId>` label route, and moves between spaces.
-
 ## Known gaps between the clients
 
 Found by the parity audit and confirmed still open:
@@ -112,6 +82,9 @@ Tests assert styles and bytes; these need a person, a phone or a printer.
   to two lines by design — confirm it is not three; "Escanear" in a five-tab bar
   (~72 px per tab).
 - **48 px targets on the web**: stated in CSS, unmeasurable in jsdom.
+- **ADR 26 on a phone.** Sharing, the *People* group, the token space picker
+  and the grouped home screen have not been seen on a real phone at 360 px,
+  and their new Spanish copy has had no native reader.
 - **The release pipeline end to end.** release-please's configuration was
   dry-run against the real repository, but no release PR has been merged yet,
   so `release.yml` has never run, and the `EXPO_TOKEN` secret has never been

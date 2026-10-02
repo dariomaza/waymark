@@ -1,10 +1,13 @@
 import { type StorageUnitTreeView } from "@waymark/api-client";
+import { ShareLevel } from "@waymark/domain";
 import { kindLabel } from "@waymark/i18n";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 
+import { Icon } from "../../ui/atoms/icon.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
 import { space } from "../../ui/styles/tokens.js";
+import { useColors } from "../../ui/styles/theme.js";
 import { useTranslate } from "../../app/language-context.js";
 
 export interface UnitTreeProps {
@@ -22,6 +25,7 @@ export interface UnitTreeProps {
  */
 export const UnitTree = ({ nodes, onOpen, depth = 0 }: UnitTreeProps): JSX.Element => {
   const t = useTranslate();
+  const colors = useColors();
 
   return (
     <View style={styles.level}>
@@ -33,6 +37,17 @@ export const UnitTree = ({ nodes, onOpen, depth = 0 }: UnitTreeProps): JSX.Eleme
             onPress={() => {
               onOpen(node.id);
             }}
+            /*
+              Shared to look at and not to change (ADR 26): an eye, named, so
+              the missing buttons inside are not a surprise.
+            */
+            {...(node.permissions.access === ShareLevel.VIEW
+              ? {
+                  leading: (
+                    <Icon name="eye" size={18} color={colors.inkMuted} label={t("units.viewOnly")} />
+                  ),
+                }
+              : {})}
           />
           {node.children.length === 0 ? null : (
             <UnitTree nodes={node.children} onOpen={onOpen} depth={depth + 1} />

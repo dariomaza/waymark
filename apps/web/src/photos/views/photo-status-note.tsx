@@ -11,8 +11,11 @@ import { useTranslate } from "../../app/language-context.js";
 
 export interface PhotoStatusNoteProps {
   readonly photo: PhotoView;
-  /** Puts this photo back in the queue. See `useReprocessPhoto`. */
-  readonly onRetry: () => void;
+  /**
+   * Puts this photo back in the queue. See `useReprocessPhoto`. Absent where
+   * the photo may not be changed (ADR 26): the note still says what happened.
+   */
+  readonly onRetry?: (() => void) | undefined;
   readonly retrying: boolean;
 }
 
@@ -48,7 +51,7 @@ export const PhotoStatusNote = ({
     return null;
   }
 
-  const failed = photo.processingStatus === PhotoProcessingStatus.FAILED;
+  const failed = photo.processingStatus === PhotoProcessingStatus.FAILED && onRetry !== undefined;
 
   return (
     <Callout

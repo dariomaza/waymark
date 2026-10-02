@@ -3,12 +3,15 @@ import {
   photoId,
   publicId,
   PhotoProcessingStatus,
+  Role,
   SearchMatchField,
+  ShareLevel,
   StorageUnitKind,
   unitId,
 } from "@waymark/domain";
 
 import type {
+  AccountView,
   ItemSearchResultView,
   ItemView,
   PhotoView,
@@ -68,10 +71,36 @@ export const withPhoto = (
   photo: typeof photo === "string" ? aPhoto({ id: photo }) : photo,
 });
 
+/**
+ * A node of the tree. By default the caller owns it and may do everything
+ * with it, which is what every test about something else wants; a test about
+ * who may do what (ADR 26) says so in `overrides`.
+ */
 export const aTree = (
   unit: StorageUnitView,
   children: readonly StorageUnitTreeView[] = [],
-): StorageUnitTreeView => ({ ...unit, children });
+  overrides: Partial<Pick<StorageUnitTreeView, "permissions" | "owner" | "shared">> = {},
+): StorageUnitTreeView => ({
+  ...unit,
+  permissions: overrides.permissions ?? EVERYTHING_PERMITTED,
+  owner: overrides.owner ?? null,
+  shared: overrides.shared ?? false,
+  children,
+});
+
+/** What an owner may do with a space in their own tree. */
+export const EVERYTHING_PERMITTED = {
+  access: ShareLevel.EDIT,
+  mayMove: true,
+  mayMoveToTop: true,
+} as const;
+
+/** What somebody a space was shared with to view may do: look. */
+export const VIEW_ONLY = {
+  access: ShareLevel.VIEW,
+  mayMove: false,
+  mayMoveToTop: false,
+} as const;
 
 export interface ItemOverrides {
   readonly id?: string;
@@ -147,11 +176,30 @@ export interface SessionOverrides {
   readonly token?: string;
   readonly expiresAt?: string;
   readonly username?: string;
+  readonly role?: Role;
 }
 
-/** A session that is live for years, unless a test says otherwise. */
+/**
+ * A session that is live for years, unless a test says otherwise. Its person
+ * is a user unless a test makes them the administrator: the People group is
+ * drawn only on purpose.
+ */
 export const aSession = (overrides: SessionOverrides = {}): SessionView => ({
   token: overrides.token ?? "a-live-token",
   expiresAt: overrides.expiresAt ?? "2099-01-01T00:00:00.000Z",
-  user: { id: "u1", username: overrides.username ?? "dario" },
+  user: {
+    id: "u1",
+    username: overrides.username ?? "dario",
+    role: overrides.role ?? Role.USER,
+  },
+});
+
+/** An account as the People group lists it: an active user, unless told. */
+export const anAccount = (overrides: Partial<AccountView> = {}): AccountView => ({
+  id: "u1",
+  username: "partner",
+  role: Role.USER,
+  disabledAt: null,
+  createdAt: "2026-10-01T10:00:00.000Z",
+  ...overrides,
 });

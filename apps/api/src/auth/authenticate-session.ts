@@ -8,7 +8,7 @@ import {
 } from "./session.js";
 import type { SessionRepository } from "./session-repository.js";
 import { hashSessionToken } from "./session-token.js";
-import type { User } from "./user.js";
+import { isActive, type User } from "./user.js";
 import type { UserRepository } from "./user-repository.js";
 
 export interface AuthenticateSessionDependencies {
@@ -53,6 +53,15 @@ export class AuthenticateSession {
     if (user === null) {
       // The account was deleted while the session was alive. The schema
       // cascades, so this is belt and braces rather than an expected path.
+      await this.deps.sessions.delete(session.id);
+      throw new InvalidSession();
+    }
+
+    if (!isActive(user)) {
+      // Disabling deletes every session (ADR 26), and this is why that is not
+      // trusted to have happened: a disable interrupted between marking the
+      // account and deleting its rows leaves a session that must still open
+      // nothing. The state decides, and the leftover goes with the refusal.
       await this.deps.sessions.delete(session.id);
       throw new InvalidSession();
     }

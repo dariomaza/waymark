@@ -1,3 +1,5 @@
+import type { ChosenSpaces } from "@waymark/domain";
+
 /**
  * A named, long-lived credential that is not a person.
  *
@@ -13,15 +15,13 @@
  * A machine token answers all three. It is revoked on its own, it can be
  * narrower than the person who issued it, and it records when it was last used.
  *
- * ## Why there is no `userId` on it
+ * ## Whose it is
  *
- * Because there is nothing to put there that would mean anything. ADR 5 says
- * users are credentials and the inventory is shared; a machine token is another
- * credential against that same shared inventory, not a delegation of one
- * person's access. Storing "dario issued this" would be provenance, and
- * provenance that nothing reads is a column that goes stale — the `name` is
- * where a human says what the token is for, and it is the field revocation is
- * keyed by.
+ * The person who issued it (ADR 26). It acts as that person, narrowed by its
+ * scope, so an MCP server sees exactly what its issuer sees and nothing more.
+ * ADR 18 once argued against this column because provenance nothing reads goes
+ * stale; under ADR 26 deciding what the token may see reads it on every
+ * request.
  */
 export interface MachineToken {
   readonly id: string;
@@ -33,6 +33,8 @@ export interface MachineToken {
   /** SHA-256 of the token. The token itself is shown once and never stored. */
   readonly tokenHash: string;
   readonly scope: MachineTokenScope;
+  /** The account this token acts as: the person who issued it. */
+  readonly userId: string;
   readonly createdAt: Date;
   /**
    * `null` means it never lapses, which is the normal case and the point of
@@ -49,6 +51,13 @@ export interface MachineToken {
    * It is deliberately COARSE. See `LAST_USED_GRANULARITY_MS`.
    */
   readonly lastUsedAt: Date | null;
+  /**
+   * The spaces it was narrowed to, or that it was not (ADR 26). It reaches its
+   * issuer's access within those spaces and never more; see `narrowAccess`.
+   * Kept as chosen; whether each is still there and still the issuer's to
+   * reach is decided on every request.
+   */
+  readonly chosenSpaces: ChosenSpaces;
 }
 
 /**
@@ -60,8 +69,10 @@ export interface MachineToken {
  * impossible rather than unlikely. `read-write` exists because some machine
  * will eventually need to file something away.
  *
- * Anything past those two — "may delete", "may touch the garage only" — is the
- * role system ADR 5 refused, and ADR 17 says why the line is here and not there.
+ * Anything past those two — "may delete", "may not rename" — is a permission
+ * the token's person does not have either, and ADR 17 says why the line is here
+ * and not there. Which SPACES it reaches is a separate matter: its issuer's
+ * access, optionally narrowed to chosen spaces (ADR 26, `chosenSpaces`).
  */
 export const MachineTokenScope = {
   Read: "read",

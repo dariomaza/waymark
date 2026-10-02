@@ -1,4 +1,4 @@
-import type { ItemId, UnitId } from "../shared/identity.js";
+import type { ItemId, PhotoId, UnitId } from "../shared/identity.js";
 import type { Item } from "./item.js";
 
 export interface ItemRepository {
@@ -8,6 +8,12 @@ export interface ItemRepository {
   findManyByIds(ids: readonly ItemId[]): Promise<Item[]>;
 
   findByStorageUnit(id: UnitId): Promise<Item[]>;
+
+  /**
+   * Every item that shows this photo. Who may see a photo's bytes is decided
+   * by whether they may see something showing it (ADR 26).
+   */
+  findByPhoto(id: PhotoId): Promise<Item[]>;
 
   /**
    * Every stored item, in no guaranteed order.

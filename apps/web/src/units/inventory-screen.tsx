@@ -1,4 +1,6 @@
-import { useState, type JSX } from "react";
+import { rootsByWhose, type StorageUnitTreeView } from "@waymark/api-client";
+import { Role } from "@waymark/domain";
+import { useId, useState, type JSX } from "react";
 import { Link } from "react-router-dom";
 
 import { Button } from "../ui/atoms/button.js";
@@ -11,6 +13,7 @@ import { useStorageUnitTree } from "./unit-queries.js";
 import { UnitTree } from "./views/unit-tree.js";
 import "./label-sheet-screen.css";
 import { ROUTES } from "../app/routes.js";
+import { useCaller } from "../auth/people-queries.js";
 import { useTranslate } from "../app/language-context.js";
 
 /**
@@ -26,7 +29,13 @@ export const InventoryScreen = (): JSX.Element => {
   const t = useTranslate();
 
   const tree = useStorageUnitTree();
+  const caller = useCaller();
   const [adding, setAdding] = useState(false);
+  /*
+    A new top-level space is refused only to a narrowed machine token (ADR
+    26), and the tree says so. Not offered until the tree has said it.
+  */
+  const mayMakeRoot = tree.data?.mayMakeRoot === true;
 
   return (
     <main className="screen">
@@ -45,15 +54,17 @@ export const InventoryScreen = (): JSX.Element => {
         at 360px.
       */}
       <div className="inventory-screen__actions">
-        <Button
-          tone="primary"
-          icon="plus"
-          onClick={() => {
-            setAdding(true);
-          }}
-        >
-          {t("inventory.addSpace")}
-        </Button>
+        {mayMakeRoot ? (
+          <Button
+            tone="primary"
+            icon="plus"
+            onClick={() => {
+              setAdding(true);
+            }}
+          >
+            {t("inventory.addSpace")}
+          </Button>
+        ) : null}
         <Link className="button button--secondary" to={ROUTES.labels}>
           <Icon name="tags" size={18} />
           {t("label.sheet")}
@@ -90,7 +101,10 @@ export const InventoryScreen = (): JSX.Element => {
       ) : null}
 
       {tree.isSuccess && tree.data.tree.length > 0 ? (
-        <UnitTree nodes={tree.data.tree} />
+        <WhoseRoots
+          roots={tree.data.tree}
+          caller={caller ?? { id: "", role: Role.USER }}
+        />
       ) : null}
 
       {adding ? (
@@ -102,5 +116,49 @@ export const InventoryScreen = (): JSX.Element => {
         />
       ) : null}
     </main>
+  );
+};
+
+/**
+ * The roots, grouped by whose they are (ADR 26).
+ *
+ * Yours first, with no heading: it is the house you came to look at. Then,
+ * for an administrator, each other person's under that person's name; for
+ * anybody else, what was shared with them. `rootsByWhose` decides which is
+ * which, the same way for both clients.
+ */
+const WhoseRoots = ({
+  roots,
+  caller,
+}: {
+  readonly roots: readonly StorageUnitTreeView[];
+  readonly caller: { readonly id: string; readonly role: Role };
+}): JSX.Element => {
+  const t = useTranslate();
+  const sharedHeading = useId();
+  const groups = rootsByWhose(roots, caller);
+
+  return (
+    <>
+      {groups.yours.length === 0 ? null : <UnitTree nodes={groups.yours} />}
+
+      {groups.others.map((group) => (
+        <section
+          key={group.owner.id}
+          className="inventory-screen__group"
+          aria-label={t("inventory.spacesOf", { username: group.owner.username })}
+        >
+          <h3>{group.owner.username}</h3>
+          <UnitTree nodes={group.roots} />
+        </section>
+      ))}
+
+      {groups.sharedWithYou.length === 0 ? null : (
+        <section className="inventory-screen__group" aria-labelledby={sharedHeading}>
+          <h3 id={sharedHeading}>{t("inventory.sharedWithYou")}</h3>
+          <UnitTree nodes={groups.sharedWithYou} />
+        </section>
+      )}
+    </>
   );
 };

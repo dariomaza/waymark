@@ -1,3 +1,5 @@
+import { mayViewSpace, type Access } from "../access/access.js";
+import { refuseViewOnly } from "../access/write-checks.js";
 import type { ItemRepository } from "../items/item-repository.js";
 import type { UnitId } from "../shared/identity.js";
 import {
@@ -15,15 +17,20 @@ export interface DeleteStorageUnitDependencies {
  * You do not throw away a full box; you empty it first (ADR 3). A unit is
  * empty only when it holds no item AND no child unit, and nothing in the
  * domain ever cascades.
+ *
+ * Deleting needs edit on the space, and is refused for that before emptiness
+ * is even counted (ADR 26): "not empty" about a space somebody may not see
+ * would tell them it exists.
  */
 export class DeleteStorageUnit {
   constructor(private readonly deps: DeleteStorageUnitDependencies) {}
 
-  async execute(id: UnitId): Promise<void> {
+  async execute(access: Access, id: UnitId): Promise<void> {
     const unit = await this.deps.storageUnits.findById(id);
-    if (unit === null) {
+    if (unit === null || !mayViewSpace(access, unit.id)) {
       throw new StorageUnitNotFound(id);
     }
+    refuseViewOnly(access, unit.id);
 
     const [itemCount, childUnitCount] = await Promise.all([
       this.deps.items.countByStorageUnit(id),

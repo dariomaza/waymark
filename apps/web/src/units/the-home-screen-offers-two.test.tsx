@@ -36,7 +36,7 @@ const signedIn = (): void => {
     http.get(`${API_URL}/auth/me`, () =>
       HttpResponse.json({ user: { id: "u1", username: "dario" } }),
     ),
-    http.get(`${API_URL}/storage-units`, () => HttpResponse.json({ tree: [aTree(garage)] })),
+    http.get(`${API_URL}/storage-units`, () => HttpResponse.json({ mayMakeRoot: true, tree: [aTree(garage)] })),
   );
 };
 
@@ -107,7 +107,7 @@ describe("what the home screen says when there is nothing in it", () => {
       http.get(`${API_URL}/auth/me`, () =>
         HttpResponse.json({ user: { id: "u1", username: "dario" } }),
       ),
-      http.get(`${API_URL}/storage-units`, () => HttpResponse.json({ tree: [] })),
+      http.get(`${API_URL}/storage-units`, () => HttpResponse.json({ mayMakeRoot: true, tree: [] })),
     );
   });
 

@@ -5,6 +5,7 @@ import type { JSX, ReactNode } from "react";
 import { ItemCard } from "../../items/views/item-card.js";
 import { Breadcrumb } from "../../ui/molecules/breadcrumb.js";
 import { EmptyNote } from "../../ui/molecules/empty-note.js";
+import { Icon } from "../../ui/atoms/icon.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
 
 import "./unit-detail.css";
@@ -31,6 +32,11 @@ export interface UnitDetailProps {
   readonly menu?: ReactNode;
   /** A photo of the unit, when there is one. */
   readonly photo?: ReactNode;
+  /**
+   * Shared with this person to look at and not to change (ADR 26), said once
+   * under the name so the missing buttons are not a mystery.
+   */
+  readonly viewOnly?: boolean;
   /** Rendered next to each item row; a checkbox during a bulk move. */
   readonly itemTrailing?: (item: ItemView) => ReactNode;
   /**
@@ -60,6 +66,7 @@ export const UnitDetail = ({
   actions,
   menu,
   photo,
+  viewOnly = false,
   itemTrailing,
   itemPhoto,
   belowItems,
@@ -83,6 +90,12 @@ export const UnitDetail = ({
           {menu}
         </div>
         <p className="unit-detail__kind">{kindLabel(t, unit.kind)}</p>
+        {viewOnly ? (
+          <p className="unit-detail__view-only">
+            <Icon name="eye" size={18} />
+            {t("units.viewOnly")}
+          </p>
+        ) : null}
         {unit.description === null ? null : (
           <p className="unit-detail__description">{unit.description}</p>
         )}

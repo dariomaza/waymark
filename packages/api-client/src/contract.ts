@@ -3,7 +3,9 @@ import type {
   PhotoId,
   PhotoProcessingStatus,
   PublicId,
+  Role,
   SearchMatchField,
+  ShareLevel,
   StorageUnitKind,
   UnitId,
 } from "@waymark/domain";
@@ -65,7 +67,40 @@ export interface StorageUnitWithPhotoView extends StorageUnitView {
   readonly photo: PhotoView | null;
 }
 
+/**
+ * # What the caller may do with a space, said before they try (ADR 26)
+ *
+ * The API refuses on its own; this is there so a client never OFFERS what it
+ * would refuse. It decides nothing: a stale tree still meets the refusal,
+ * which is why every one of them keeps its sentence.
+ */
+export interface SpacePermissionsView {
+  /** `view` hides every act that changes the space or anything in it. */
+  readonly access: ShareLevel;
+  /** Whether it may leave where it is: edit on it and on its place. */
+  readonly mayMove: boolean;
+  /** Whether it may be a top-level space where it lands: its owner's call. */
+  readonly mayMoveToTop: boolean;
+}
+
+/** The person whose inventory a space is in. */
+export interface OwnerView {
+  readonly id: string;
+  readonly username: string;
+}
+
+/**
+ * A node of the home screen's tree, and what the caller may do with it.
+ *
+ * `owner` is named for an administrator only, so their home screen can group
+ * other people's spaces under their names; anybody else reads `null`.
+ * `shared` says the space reached the caller through a share rather than
+ * being theirs, and is never true for an administrator.
+ */
 export interface StorageUnitTreeView extends StorageUnitView {
+  readonly permissions: SpacePermissionsView;
+  readonly owner: OwnerView | null;
+  readonly shared: boolean;
   readonly children: readonly StorageUnitTreeView[];
 }
 
@@ -105,6 +140,43 @@ export interface PhotoView {
 export interface UserView {
   readonly id: string;
   readonly username: string;
+  /**
+   * What a client reads to decide whether to draw the People group (ADR 26).
+   * It decides nothing: every route the group uses checks the role itself.
+   * Read it from `GET /auth/me`, which says what is true now, rather than
+   * from a session kept since sign-in.
+   */
+  readonly role: Role;
+}
+
+/**
+ * # An account, as the administrator's People group lists it (ADR 26)
+ *
+ * Never a hash. `disabledAt` is `null` while the account is active; a
+ * disabled one is still listed, because accounts are never deleted.
+ */
+export interface AccountView extends UserView {
+  readonly disabledAt: string | null;
+  readonly createdAt: string;
+}
+
+export interface AccountListResponse {
+  readonly accounts: readonly AccountView[];
+}
+
+export interface AccountResponse {
+  readonly account: AccountView;
+}
+
+/**
+ * What an administrator types to make an account. The password is typed
+ * here and handed over in person; there is no mail (ADR 26). The API holds
+ * the minimum length and answers `PASSWORD_TOO_SHORT` with it.
+ */
+export interface CreateAccountInput {
+  readonly username: string;
+  readonly password: string;
+  readonly role: Role;
 }
 
 export interface SessionView {
@@ -115,7 +187,8 @@ export interface SessionView {
 
 /**
  * What a machine token may do. Two values, and the API says there will not be
- * a third: anything finer is the role system ADR 5 refused.
+ * a third (ADR 17). Which spaces it reaches is not its scope but its issuer's
+ * access, optionally narrowed to chosen spaces (ADR 26).
  *
  * Mirrored here by hand like every other view. A client cannot import it from
  * `apps/api`, and it does not belong in `@waymark/domain` either — ADR 17 is
@@ -171,7 +244,23 @@ export interface MachineTokenView {
  * reads to decide whether a credential is still in use.
  */
 export interface MachineTokenListResponse {
-  readonly machineTokens: readonly MachineTokenView[];
+  readonly machineTokens: readonly ListedMachineTokenView[];
+}
+
+/**
+ * A row of that list (ADR 26). A person lists the tokens they issued; an
+ * administrator lists everybody's, and only then does each row say whose it
+ * is.
+ */
+export interface ListedMachineTokenView extends MachineTokenView {
+  /** The issuer's username. Absent when the list is the caller's own. */
+  readonly issuedBy?: string;
+  /**
+   * The spaces it was narrowed to, by name, among those the caller can see;
+   * `null` when none were chosen. An empty list is a narrowed token whose
+   * spaces are gone, or out of the caller's sight: it reaches nothing.
+   */
+  readonly spaces: readonly { readonly id: string; readonly name: string }[] | null;
 }
 
 /**
@@ -192,6 +281,11 @@ export interface CreateMachineTokenInput {
   readonly scope: MachineTokenScope;
   /** Absent means it never lapses, which is the normal case. */
   readonly expiresInDays?: number;
+  /**
+   * The spaces to narrow it to (ADR 26). Absent, or empty, means none chosen:
+   * everything the person issuing it can reach. Each must be one they see.
+   */
+  readonly spaceIds?: readonly string[];
 }
 
 /**
@@ -300,6 +394,28 @@ export const isMachineCaller = (
 
 export interface StorageUnitTreeResponse {
   readonly tree: readonly StorageUnitTreeView[];
+  /** Whether a new top-level space may be made. False only for a narrowed token. */
+  readonly mayMakeRoot: boolean;
+}
+
+/**
+ * # A space shared with one person (ADR 26)
+ *
+ * Only the shares placed on that space itself; one placed on a space above it
+ * covers it too, and is listed there. An administrator reads these, and only
+ * an administrator.
+ */
+export interface ShareView {
+  readonly account: OwnerView;
+  readonly access: ShareLevel;
+}
+
+export interface ShareListResponse {
+  readonly shares: readonly ShareView[];
+}
+
+export interface ShareResponse {
+  readonly share: ShareView;
 }
 
 /** One screen in one response: the unit, its breadcrumb, and what it holds. */

@@ -21,6 +21,7 @@ import { PrismaMachineTokenRepository } from "./persistence/prisma-machine-token
 import { PrismaPasskeyRepository } from "./persistence/prisma-passkey-repository.js";
 import { PrismaPasskeyChallengeRepository } from "./persistence/prisma-passkey-challenge-repository.js";
 import { PrismaPhotoRepository } from "./persistence/prisma-photo-repository.js";
+import { PrismaShareRepository } from "./persistence/prisma-share-repository.js";
 import { PrismaSearchRepository } from "./persistence/prisma-search-repository.js";
 import { PrismaSessionRepository } from "./persistence/prisma-session-repository.js";
 import { PrismaStorageUnitRepository } from "./persistence/prisma-storage-unit-repository.js";
@@ -105,6 +106,7 @@ export const composeApp = (
       items: new PrismaItemRepository(prisma),
       photos,
       search: new PrismaSearchRepository(prisma),
+      shares: new PrismaShareRepository(prisma),
       users: new PrismaUserRepository(prisma),
       sessions: new PrismaSessionRepository(prisma),
       machineTokens: new PrismaMachineTokenRepository(prisma),

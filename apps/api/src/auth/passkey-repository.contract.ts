@@ -193,10 +193,10 @@ export const passkeyRepositoryContract = (
       });
 
       /**
-       * A machine token is deliberately visible to everybody who could have
-       * minted one (ADR 18), because it is a key to the shared house. A
-       * passkey is a particular person's particular device, and the list of
-       * somebody's authenticators is information about them.
+       * A machine token is deliberately visible to its issuer and to every
+       * administrator (ADR 18, ADR 26). A passkey is a particular person's
+       * particular device, and the list of somebody's authenticators is
+       * information about them.
        */
       it("never answers with somebody else's device", async () => {
         await passkeys.create(

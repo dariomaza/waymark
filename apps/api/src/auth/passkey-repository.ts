@@ -10,23 +10,20 @@ import type { Passkey } from "./passkey.js";
  * `passkey-repository.contract.ts` — so the in-memory fake and the Prisma
  * adapter are provably interchangeable rather than hopefully so.
  *
- * ## Every read but one is scoped by person, and that is not ADR 5's scoping
+ * ## Every read but one is scoped by person, and nobody else may list them
  *
- * ADR 18 makes every machine token visible to everybody who could have minted
- * one, on purpose: a machine token is a key to the shared house, and a
- * credential nobody can see is a credential nobody revokes.
+ * A machine token is visible to the person who issued it and to every
+ * administrator (ADR 18, ADR 26), on purpose: a credential nobody can see is
+ * a credential nobody revokes.
  *
  * A passkey is the other kind of thing. It is a particular person's particular
  * device, and the list of somebody's authenticators is information about them
  * — which laptop they own, whether they carry a security key, how many devices
  * they have. So `list` and `deleteFor` take a `userId`.
  *
- * That is not the per-user scoping ADR 5 refused. ADR 5 refused an owner
- * column on `StorageUnit`, `Item` and `Photo` and a query scoped by a person;
- * no inventory query changes here, no inventory entity gains a column, and
- * every authenticated human still performs every inventory operation. This is
- * scoped for the reason a session is: `POST /auth/logout` has always ended
- * only your own.
+ * Not even an administrator sees them. Who may see and change which spaces
+ * is ADR 26's rule and lives with the inventory; this is scoped for the
+ * reason a session is: `POST /auth/logout` has always ended only your own.
  */
 export interface PasskeyRepository {
   /**

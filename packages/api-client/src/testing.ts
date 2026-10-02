@@ -10,12 +10,15 @@
  * server; what they share is what goes in the responses.
  */
 export {
+  anAccount,
   anItem,
   anItemHit,
   aPhoto,
   aSession,
   aStorageUnit,
   aTree,
+  EVERYTHING_PERMITTED,
+  VIEW_ONLY,
   aUnitHit,
   withPhoto,
   type ItemOverrides,

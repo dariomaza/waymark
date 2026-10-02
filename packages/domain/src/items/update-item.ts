@@ -1,3 +1,5 @@
+import { mayViewSpace, type Access } from "../access/access.js";
+import { refuseViewOnly } from "../access/write-checks.js";
 import type { Clock } from "../shared/clock.js";
 import type { ItemId } from "../shared/identity.js";
 import { ItemNotFound } from "./item-errors.js";
@@ -30,11 +32,14 @@ export interface UpdateItemCommand extends ItemRevision {
 export class UpdateItem {
   constructor(private readonly deps: UpdateItemDependencies) {}
 
-  async execute(command: UpdateItemCommand): Promise<Item> {
+  async execute(access: Access, command: UpdateItemCommand): Promise<Item> {
     const item = await this.deps.items.findById(command.id);
-    if (item === null) {
+    if (item === null || !mayViewSpace(access, item.storageUnitId)) {
       throw new ItemNotFound(command.id);
     }
+    // Before the revision, so a view-only person learns nothing about which
+    // of their values the domain would have refused (ADR 26).
+    refuseViewOnly(access, item.storageUnitId);
 
     // `reviseItem` may refuse the quantity, and it refuses BEFORE anything is
     // written, so a rejected edit leaves the stored item exactly as it was.

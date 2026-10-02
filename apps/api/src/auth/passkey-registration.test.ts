@@ -1,3 +1,4 @@
+import { Role } from "@waymark/domain";
 import { FakeClock, SequentialIdGenerator } from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -31,8 +32,10 @@ const DARIO: User = {
   id: "user-dario",
   username: "dario",
   passwordHash: "scrypt$...",
+  role: Role.ADMINISTRATOR,
   createdAt: NOW,
   updatedAt: NOW,
+  disabledAt: null,
 };
 
 const SOMEBODY_ELSE: User = { ...DARIO, id: "user-elena", username: "elena" };

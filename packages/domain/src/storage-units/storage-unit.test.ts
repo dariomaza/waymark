@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { photoId, publicId, unitId } from "../shared/identity.js";
+import { photoId, publicId, unitId, userId } from "../shared/identity.js";
 import {
   createStorageUnit,
   reparentStorageUnit,
@@ -100,7 +100,7 @@ describe("StorageUnit", () => {
     });
     const movedAt = new Date("2026-02-02T11:00:00.000Z");
 
-    const moved = reparentStorageUnit(unit, unitId("unit-9"), movedAt);
+    const moved = reparentStorageUnit(unit, { parentId: unitId("unit-9") }, movedAt);
 
     expect(moved.parentId).toBe("unit-9");
     expect(moved.updatedAt).toEqual(movedAt);
@@ -118,9 +118,78 @@ describe("StorageUnit", () => {
       now: createdAt,
     });
 
-    const moved = reparentStorageUnit(unit, null, createdAt);
+    const moved = reparentStorageUnit(
+      unit,
+      { parentId: null, ownerId: userId("dario") },
+      createdAt,
+    );
 
     expect(moved.parentId).toBeNull();
+  });
+
+  describe("whose it is (ADR 26)", () => {
+    const dario = userId("dario");
+
+    it("records the owner of a root", () => {
+      const room = createStorageUnit({
+        id: unitId("unit-1"),
+        ownerId: dario,
+        name: "Storage room",
+        kind: StorageUnitKind.ROOM,
+        publicId: publicId("PUB-1"),
+        now: createdAt,
+      });
+
+      expect(room.ownerId).toBe("dario");
+    });
+
+    it("records no owner on a space inside another, which belongs to its root's owner", () => {
+      const wardrobe = createStorageUnit({
+        id: unitId("unit-2"),
+        parentId: unitId("unit-1"),
+        ownerId: dario,
+        name: "Wardrobe",
+        kind: StorageUnitKind.FURNITURE,
+        publicId: publicId("PUB-2"),
+        now: createdAt,
+      });
+
+      expect(wardrobe.ownerId).toBeNull();
+    });
+
+    it("loses its owner when a root is put inside another space", () => {
+      const room = createStorageUnit({
+        id: unitId("unit-1"),
+        ownerId: dario,
+        name: "Storage room",
+        kind: StorageUnitKind.ROOM,
+        publicId: publicId("PUB-1"),
+        now: createdAt,
+      });
+
+      const moved = reparentStorageUnit(room, { parentId: unitId("house") }, createdAt);
+
+      expect(moved.ownerId).toBeNull();
+    });
+
+    it("takes the owner it is given when it becomes a root", () => {
+      const wardrobe = createStorageUnit({
+        id: unitId("unit-2"),
+        parentId: unitId("unit-1"),
+        name: "Wardrobe",
+        kind: StorageUnitKind.FURNITURE,
+        publicId: publicId("PUB-2"),
+        now: createdAt,
+      });
+
+      const moved = reparentStorageUnit(
+        wardrobe,
+        { parentId: null, ownerId: dario },
+        createdAt,
+      );
+
+      expect(moved.ownerId).toBe("dario");
+    });
   });
 
   describe("revising what a unit says about itself", () => {

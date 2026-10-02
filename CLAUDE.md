@@ -24,7 +24,7 @@ Area-specific rules load on their own from `.claude/rules/` when you touch
 | `apps/mcp` | stdio MCP server over `api-client`, authenticated with a machine token. |
 | `services/image-processor` | Optional rembg sidecar (ADR 4). |
 
-Decisions are in `docs/decisions/` (24 ADRs, indexed in its README). What is
+Decisions are in `docs/decisions/` (26 ADRs, indexed in its README). What is
 pending, unproven or deliberately postponed is in `docs/roadmap.md` — read it
 before proposing something, it may already have been argued.
 
@@ -40,8 +40,8 @@ cd apps/mobile && EXPO_PUBLIC_WAYMARK_API_URL=https://example.invalid npx expo e
 ```
 
 Baselines at the time of writing — confirm them at your branch point before
-trusting them, stale numbers have misled work here twice: tokens 45, domain 264,
-contract 152, api-client 90, mcp 88, i18n 1434, api 1329, web 555, mobile 303.
+trusting them, stale numbers have misled work here twice: tokens 96, domain 358,
+contract 407, api-client 111, mcp 91, i18n 1721, api 2053, web 677, mobile 402.
 
 ## Rules that are not negotiable
 

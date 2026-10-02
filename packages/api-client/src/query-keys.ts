@@ -47,6 +47,18 @@ export const queryKeys = {
    * list of credentials, and adding a device must not invalidate the forest.
    */
   passkeys: () => ["passkeys"] as const,
+  /**
+   * The administrator's list of accounts (ADR 26). Outside `INVENTORY_ROOTS`
+   * like the other credentials: a box moving says nothing about who has an
+   * account.
+   */
+  accounts: () => ["accounts"] as const,
+  /**
+   * Who one space is shared with (ADR 26). Outside `INVENTORY_ROOTS`: moving
+   * a box does not change who it is shared with, and an administrator, the
+   * only one who reads this, sees the same tree whatever is shared.
+   */
+  shares: (id: UnitId) => ["shares", id] as const,
 } as const;
 
 /** What a change to the inventory makes stale. Used by every mutation. */

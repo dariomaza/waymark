@@ -1,8 +1,10 @@
 import { type StorageUnitTreeView } from "@waymark/api-client";
+import { ShareLevel } from "@waymark/domain";
 import { kindLabel } from "@waymark/i18n";
 import type { JSX } from "react";
 
 import { useTranslate } from "../../app/language-context.js";
+import { Icon } from "../../ui/atoms/icon.js";
 import { RowLink } from "../../ui/molecules/row-link.js";
 
 import "./unit-tree.css";
@@ -36,7 +38,18 @@ const UnitTreeBranch = ({ node }: { readonly node: StorageUnitTreeView }): JSX.E
 
   return (
     <li className="unit-tree__branch">
-      <RowLink to={unitPath(node.id)} title={node.name} meta={kindLabel(t, node.kind)} />
+      <RowLink
+        to={unitPath(node.id)}
+        title={node.name}
+        meta={kindLabel(t, node.kind)}
+        /*
+          Shared to look at and not to change (ADR 26): an eye, named, so the
+          missing buttons inside are not a surprise.
+        */
+        {...(node.permissions.access === ShareLevel.VIEW
+          ? { leading: <Icon name="eye" size={18} label={t("units.viewOnly")} /> }
+          : {})}
+      />
       {node.children.length === 0 ? null : (
         <ul className="unit-tree__children row-list">
           {node.children.map((child) => (

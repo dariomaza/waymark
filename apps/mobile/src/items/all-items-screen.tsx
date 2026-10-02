@@ -1,5 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { unitId } from "@waymark/domain";
 import type { JSX } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -13,6 +14,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { space } from "../ui/styles/tokens.js";
 import { BulkMoveBar } from "./bulk-move-bar.js";
+import { mayChange, useSpacePermissionsIn } from "../units/unit-queries.js";
 import { useEveryItem } from "./item-queries.js";
 import { useItemSelection } from "./use-item-selection.js";
 import { ItemGrid } from "./views/item-grid.js";
@@ -36,6 +38,15 @@ export const AllItemsScreen = (): JSX.Element => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const items = useEveryItem();
   const selection = useItemSelection();
+  const permissionsIn = useSpacePermissionsIn();
+  /*
+    A thing in a space shared to look at is listed like any other, and is not
+    offered for a bulk move, because ticking it is the first half of moving it
+    (ADR 26).
+  */
+  const pickable = (storageUnitId: string): boolean =>
+    mayChange(permissionsIn(unitId(storageUnitId)));
+  const anyPickable = items.data?.items.some((row) => pickable(row.item.storageUnitId)) === true;
 
   return (
     // The grid is the scroller here; see `ItemGrid` for why that matters.
@@ -48,7 +59,7 @@ export const AllItemsScreen = (): JSX.Element => {
         ways in, because a gesture learnt in one place that does nothing in
         the other is worse than never having offered it.
       */}
-      {items.data === undefined || items.data.items.length === 0 || selection.picking ? null : (
+      {!anyPickable || selection.picking ? null : (
         <Button
           onPress={() => {
             selection.start();
@@ -79,22 +90,29 @@ export const AllItemsScreen = (): JSX.Element => {
           <View style={styles.list}>
             <ItemGrid
               label={t("items.everything")}
-              cells={items.data.items.map((row) => ({
+              cells={items.data.items.map((row) => {
+                const ticking = selection.picking && pickable(row.item.storageUnitId);
+
+                return {
                 key: row.item.id,
                 name: row.item.name,
                 secondary: row.path.at(-1)?.name,
                 quantity: row.item.quantity,
-                label: selection.picking
+                label: ticking
                   ? t("units.select", { name: row.item.name })
                   : `${row.item.name}, ${row.location}`,
                 photo: <ItemCover item={row.item} />,
-                picking: selection.picking,
+                picking: ticking,
                 selected: selection.isSelected(row.item.id),
-                onLongPress: () => {
-                  selection.toggle(row.item.id);
-                },
+                ...(pickable(row.item.storageUnitId)
+                  ? {
+                      onLongPress: () => {
+                        selection.toggle(row.item.id);
+                      },
+                    }
+                  : {}),
                 onPress: () => {
-                  if (selection.picking) {
+                  if (ticking) {
                     selection.toggle(row.item.id);
 
                     return;
@@ -102,7 +120,8 @@ export const AllItemsScreen = (): JSX.Element => {
 
                   navigation.navigate("Item", { id: row.item.id });
                 },
-              }))}
+                };
+              })}
             />
 
             {selection.picking ? (

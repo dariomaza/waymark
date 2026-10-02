@@ -10,6 +10,9 @@
 export {
   A_LATER_MOMENT,
   A_MOMENT,
+  AN_OWNER,
+  ANOTHER_OWNER,
+  CONTRACT_PEOPLE,
   aChainOfStorageUnits,
   aPhotoId,
   aStorageUnit,
@@ -22,14 +25,20 @@ export {
 } from "./builders.js";
 export type {
   DomainUseCaseContext,
+  InvisibilityContext,
   ItemRepositoryContext,
   PhotoRepositoryContext,
   RepositoryHarness,
   SearchRepositoryContext,
+  ShareRepositoryContext,
   StorageUnitRepositoryContext,
 } from "./harness.js";
 export { storageUnitRepositoryContract } from "./storage-unit-repository.contract.js";
 export { itemRepositoryContract } from "./item-repository.contract.js";
 export { photoRepositoryContract } from "./photo-repository.contract.js";
 export { searchRepositoryContract } from "./search-repository.contract.js";
+export { shareRepositoryContract } from "./share-repository.contract.js";
 export { domainUseCaseContract } from "./domain-use-case.contract.js";
+export { invisibilityContract } from "./invisibility.contract.js";
+export { whatEachPersonMayChangeContract } from "./what-each-person-may-change.contract.js";
+export { aNarrowedTokenContract } from "./a-narrowed-token.contract.js";

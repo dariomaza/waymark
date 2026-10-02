@@ -1,14 +1,21 @@
 import type { UnitId } from "@waymark/domain";
 import {
+  CONTRACT_PEOPLE,
   domainUseCaseContract,
+  invisibilityContract,
+  whatEachPersonMayChangeContract,
+  aNarrowedTokenContract,
   itemRepositoryContract,
   photoRepositoryContract,
   searchRepositoryContract,
+  shareRepositoryContract,
   storageUnitRepositoryContract,
   type DomainUseCaseContext,
+  type InvisibilityContext,
   type ItemRepositoryContext,
   type PhotoRepositoryContext,
   type SearchRepositoryContext,
+  type ShareRepositoryContext,
   type StorageUnitRepositoryContext,
 } from "@waymark/domain-contract-tests";
 import { afterAll, beforeAll } from "vitest";
@@ -16,6 +23,7 @@ import { afterAll, beforeAll } from "vitest";
 import { PrismaItemRepository } from "./prisma-item-repository.js";
 import { PrismaPhotoRepository } from "./prisma-photo-repository.js";
 import { PrismaSearchRepository } from "./prisma-search-repository.js";
+import { PrismaShareRepository } from "./prisma-share-repository.js";
 import { PrismaStorageUnitRepository } from "./prisma-storage-unit-repository.js";
 import { createTestDatabase, type TestDatabase } from "./testing/test-database.js";
 
@@ -34,6 +42,25 @@ beforeAll(async () => {
   database = await createTestDatabase();
 });
 
+/**
+ * Empty tables, except that everybody the contracts mention has an account: a
+ * root's owner is a foreign key (ADR 26), which a Map never had to satisfy.
+ */
+const emptyHouseOfContractPeople = async (): Promise<void> => {
+  await database.reset();
+  for (const id of CONTRACT_PEOPLE) {
+    await database.client.user.create({
+      data: {
+        id,
+        username: id,
+        passwordHash: "not-a-real-hash",
+        createdAt: new Date("2026-04-01T09:00:00.000Z"),
+        updatedAt: new Date("2026-04-01T09:00:00.000Z"),
+      },
+    });
+  }
+};
+
 afterAll(async () => {
   await database.destroy();
 });
@@ -41,14 +68,15 @@ afterAll(async () => {
 storageUnitRepositoryContract({
   name: "PrismaStorageUnitRepository",
   setUp: async (): Promise<StorageUnitRepositoryContext> => {
-    await database.reset();
+    await emptyHouseOfContractPeople();
     return {
       storageUnits: new PrismaStorageUnitRepository(database.client),
       // Straight past Prisma's model layer and past every use case: a cycle is
       // perfectly legal to a foreign key, which is exactly why ADR 2 exists.
+      // The owner goes with it: only a root may record one (ADR 26).
       forceParentLink: async (id: UnitId, parentId: UnitId): Promise<void> => {
         await database.client
-          .$executeRaw`UPDATE "StorageUnit" SET "parentId" = ${parentId} WHERE "id" = ${id}`;
+          .$executeRaw`UPDATE "StorageUnit" SET "parentId" = ${parentId}, "ownerId" = NULL WHERE "id" = ${id}`;
       },
     };
   },
@@ -58,7 +86,7 @@ storageUnitRepositoryContract({
 itemRepositoryContract({
   name: "PrismaItemRepository",
   setUp: async (): Promise<ItemRepositoryContext> => {
-    await database.reset();
+    await emptyHouseOfContractPeople();
     return {
       items: new PrismaItemRepository(database.client),
       storageUnits: new PrismaStorageUnitRepository(database.client),
@@ -70,7 +98,7 @@ itemRepositoryContract({
 photoRepositoryContract({
   name: "PrismaPhotoRepository",
   setUp: async (): Promise<PhotoRepositoryContext> => {
-    await database.reset();
+    await emptyHouseOfContractPeople();
     return { photos: new PrismaPhotoRepository(database.client) };
   },
   tearDown: async () => {},
@@ -79,7 +107,7 @@ photoRepositoryContract({
 searchRepositoryContract({
   name: "PrismaSearchRepository",
   setUp: async (): Promise<SearchRepositoryContext> => {
-    await database.reset();
+    await emptyHouseOfContractPeople();
     return {
       search: new PrismaSearchRepository(database.client),
       items: new PrismaItemRepository(database.client),
@@ -89,13 +117,70 @@ searchRepositoryContract({
   tearDown: async () => {},
 });
 
+shareRepositoryContract({
+  name: "PrismaShareRepository",
+  setUp: async (): Promise<ShareRepositoryContext> => {
+    await emptyHouseOfContractPeople();
+    return {
+      shares: new PrismaShareRepository(database.client),
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+    };
+  },
+  tearDown: async () => {},
+});
+
 domainUseCaseContract({
   name: "Prisma repositories on real SQLite",
   setUp: async (): Promise<DomainUseCaseContext> => {
-    await database.reset();
+    await emptyHouseOfContractPeople();
     return {
       storageUnits: new PrismaStorageUnitRepository(database.client),
       items: new PrismaItemRepository(database.client),
+    };
+  },
+  tearDown: async () => {},
+});
+
+invisibilityContract({
+  name: "Prisma repositories on real SQLite",
+  setUp: async (): Promise<InvisibilityContext> => {
+    await emptyHouseOfContractPeople();
+    return {
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+      items: new PrismaItemRepository(database.client),
+      photos: new PrismaPhotoRepository(database.client),
+      search: new PrismaSearchRepository(database.client),
+      shares: new PrismaShareRepository(database.client),
+    };
+  },
+  tearDown: async () => {},
+});
+
+whatEachPersonMayChangeContract({
+  name: "Prisma repositories on real SQLite",
+  setUp: async (): Promise<InvisibilityContext> => {
+    await emptyHouseOfContractPeople();
+    return {
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+      items: new PrismaItemRepository(database.client),
+      photos: new PrismaPhotoRepository(database.client),
+      search: new PrismaSearchRepository(database.client),
+      shares: new PrismaShareRepository(database.client),
+    };
+  },
+  tearDown: async () => {},
+});
+
+aNarrowedTokenContract({
+  name: "Prisma repositories on real SQLite",
+  setUp: async (): Promise<InvisibilityContext> => {
+    await emptyHouseOfContractPeople();
+    return {
+      storageUnits: new PrismaStorageUnitRepository(database.client),
+      items: new PrismaItemRepository(database.client),
+      photos: new PrismaPhotoRepository(database.client),
+      search: new PrismaSearchRepository(database.client),
+      shares: new PrismaShareRepository(database.client),
     };
   },
   tearDown: async () => {},

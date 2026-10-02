@@ -1,12 +1,10 @@
 import {
-  ItemNotFound,
   itemId as toItemId,
   photoId as toPhotoId,
   unitId,
   type CreateItem,
   type DeleteItem,
-  type GetStorageUnitPath,
-  type ItemRepository,
+  type GetItem,
   type ListItems,
   type MoveItems,
   type UpdateItem,
@@ -27,13 +25,12 @@ import {
 import { itemAtLocationView, storageUnitView } from "../views.js";
 
 export interface ItemRouteOptions {
-  readonly items: ItemRepository;
   readonly createItem: CreateItem;
   readonly listItems: ListItems;
   readonly moveItems: MoveItems;
   readonly updateItem: UpdateItem;
   readonly deleteItem: DeleteItem;
-  readonly getStorageUnitPath: GetStorageUnitPath;
+  readonly getItem: GetItem;
   readonly itemViews: ItemViews;
   readonly photoRelease: PhotoRelease;
 }
@@ -103,7 +100,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.post("/items", async (request, reply) => {
     const body = createItemBodySchema.parse(request.body);
 
-    const item = await options.createItem.execute({
+    const item = await options.createItem.execute(request.access, {
       storageUnitId: unitId(body.storageUnitId),
       name: body.name,
       description: body.description ?? null,
@@ -121,7 +118,9 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.get("/items", async (request, reply) => {
     listItemsQuerySchema.parse(request.query);
 
-    const rows = await options.itemViews.withViews(await options.listItems.execute());
+    const rows = await options.itemViews.withViews(
+      await options.listItems.execute(request.access),
+    );
 
     return reply.code(200).send({
       items: rows.map(({ row, view }) => itemAtLocationView(view, row.path)),
@@ -131,14 +130,10 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.get("/items/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    const item = await options.items.findById(toItemId(id));
-    if (item === null) {
-      throw new ItemNotFound(toItemId(id));
-    }
-
-    // "Where is it" is the question the product exists to answer, so the path
-    // ships with the item instead of costing a second round trip.
-    const path = await options.getStorageUnitPath.execute(item.storageUnitId);
+    // An item out of reach is the same 404 as a missing one (ADR 26). "Where
+    // is it" is the question the product exists to answer, so the path ships
+    // with the item instead of costing a second round trip.
+    const { item, path } = await options.getItem.execute(request.access, toItemId(id));
     const storageUnit = path.at(-1);
 
     return reply.code(200).send({
@@ -152,7 +147,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
     const { id } = idParamsSchema.parse(request.params);
     const body = updateItemBodySchema.parse(request.body);
 
-    const item = await options.updateItem.execute({
+    const item = await options.updateItem.execute(request.access, {
       id: toItemId(id),
       ...(body.name === undefined ? {} : { name: body.name }),
       ...(body.description === undefined ? {} : { description: body.description }),
@@ -166,7 +161,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.post("/items/move", async (request, reply) => {
     const body = moveItemsBodySchema.parse(request.body);
 
-    const items = await options.moveItems.execute({
+    const items = await options.moveItems.execute(request.access, {
       itemIds: body.itemIds.map(toItemId),
       targetUnitId: unitId(body.targetUnitId),
     });
@@ -177,7 +172,7 @@ export const itemRoutes: FastifyPluginAsync<ItemRouteOptions> = async (
   app.delete("/items/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    const result = await options.deleteItem.execute(toItemId(id));
+    const result = await options.deleteItem.execute(request.access, toItemId(id));
 
     // The item is gone from the database before a single file is touched. A
     // disk that refuses to give up a file cannot un-delete the item.

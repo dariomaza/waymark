@@ -119,6 +119,34 @@ export const EN = {
   "failure.offline": "The app could not reach Waymark. Check the connection and try again.",
   "failure.notFound": "That is not here any more. It may have been deleted or moved.",
   "failure.sessionEnded": "Your session has ended. Sign in again.",
+  /**
+   * A write refused because the space was shared with this person to view,
+   * not to edit (ADR 26). The administrator is the only one who shares, so
+   * they are who to ask.
+   */
+  "failure.viewOnly":
+    "This was shared with you to look at, not to change. Ask the administrator if you need to change it.",
+  /**
+   * A write refused because only the owner of a space, or the administrator,
+   * may make it a root or move it from the top (ADR 26). The person may edit
+   * the space; what they may not do is take it out of its owner's tree.
+   */
+  "failure.ownerOnly":
+    "Only the owner of this space, or the administrator, can make it a root or move it from the top.",
+  /**
+   * A write refused because the machine token making it was narrowed to
+   * chosen spaces, and the top of the tree is outside them (ADR 26). Only a
+   * program holding a token meets this; it names the token, not the session.
+   */
+  "failure.outsideTokenSpaces":
+    "This machine token is limited to the spaces chosen for it, so it cannot make a root or move anything to or from the top.",
+  /**
+   * Something only an administrator may do, refused to a person who is not
+   * one (ADR 26). It is a 403 and it is not about the session: signing in
+   * again would change nothing, so the sentence says so.
+   */
+  "failure.administratorOnly":
+    "Only an administrator can do this. You are still signed in; signing in again would not change it.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
   "failure.server": "Waymark had a problem answering. Try again in a moment.",
   /**
@@ -236,6 +264,16 @@ export const EN = {
    * way is a key that should go when the two clients agree.
    */
   "inventory.emptyTitle": "Nothing is registered yet",
+  /**
+   * The heading of a person's home screen group of spaces an administrator
+   * shared with them (ADR 26), below their own.
+   */
+  "inventory.sharedWithYou": "Shared with you",
+  /**
+   * What a screen reader calls one person's group of spaces on an
+   * administrator's home screen. The heading itself is the username.
+   */
+  "inventory.spacesOf": "Spaces of {username}",
   "inventory.emptyExplains":
     "Start with somewhere you would name out loud: a room, the garage, the shed.",
 
@@ -416,6 +454,17 @@ export const EN = {
    * what it does. A key that exists only because a row was cramped is a key
    * that should go when the row does — see ADR 21.
    */
+  /**
+   * A space's menu entry that opens the Share sheet (ADR 21, ADR 26). Drawn
+   * only for an administrator, the only one who shares.
+   */
+  "units.share": "Share",
+  /**
+   * Beside a space on the home screen, and under its name on its own screen,
+   * when it was shared with this person to look at and not to change. Every
+   * act that would change it is hidden there.
+   */
+  "units.viewOnly": "View only",
   "units.showLabel": "Show the label",
   "label.sheet": "Label sheet",
 
@@ -662,6 +711,35 @@ export const EN = {
   /** The answer that makes an abandoned credential visible. */
   "tokens.neverUsed": "Never used",
   "tokens.lapsesOn": "Lapses {when}",
+  /**
+   * Whose token this is, on each row, shown only to an administrator, who
+   * sees everybody's (ADR 26). A person sees only their own and is not told.
+   */
+  "tokens.issuedBy": "Issued by {username}",
+  /**
+   * On a row, for a token narrowed to chosen spaces (ADR 26): the spaces it
+   * sees, by name, joined. A token that was not narrowed says nothing here.
+   */
+  "tokens.seesOnly": "Sees only {spaces}",
+  /**
+   * On a row, for a narrowed token whose chosen spaces have all been deleted
+   * or are out of your sight. It sees nothing, and says so, rather than
+   * looking like a token that sees everything.
+   */
+  "tokens.seesNothing": "Its spaces are gone, so it sees nothing",
+  /** The question on the new-token form: how much of the house it may see. */
+  "tokens.reachLabel": "What it may see",
+  /** The default answer: everything the person issuing it can see. */
+  "tokens.reachEverything": "Everything you can see",
+  /** The other answer: only spaces ticked below, and what is inside them. */
+  "tokens.reachChosen": "Only the spaces you choose",
+  /** Above the list of spaces to tick. */
+  "tokens.spacesLabel": "Spaces it may see",
+  /** Under it: what ticking a space gives, and that it never exceeds you. */
+  "tokens.spacesHint":
+    "It sees each space you tick and everything inside it, and never more than you can.",
+  /** Said while "only the spaces you choose" has none ticked yet. */
+  "tokens.chooseASpace": "Tick at least one space.",
 
   /**
    * # The other half of a credential
@@ -765,6 +843,121 @@ export const EN = {
     "Use lower case letters, digits, and any of . _ - — it has to be typeable in a shell.",
   "tokens.alreadyGone":
     "There is no machine token by that name. It may already have been revoked.",
+
+  // ---------------------------------------------------------------------
+  // People: the administrator manages the other accounts (ADR 26)
+  // ---------------------------------------------------------------------
+
+  /**
+   * The title of the account screen's group of accounts, drawn only for an
+   * administrator. "People" rather than "Accounts" or "Users": it is the
+   * household, and a role is one of the facts on each row.
+   */
+  "account.people": "People",
+  /** The two sentences folded behind the group's ⓘ. */
+  "people.explains":
+    "Everybody with an account in this house. Only an administrator sees this group, and only an administrator can change it.",
+  "people.handOver":
+    "Nothing is emailed: you type the password for a new person, or a reset one, and hand it over yourself.",
+  "people.loading": "Loading the people in this house",
+  /** The [+] in the group's title line: the one primary action (ADR 21). */
+  "people.addAction": "Add a person",
+  "people.usernameLabel": "Username",
+  "people.passwordLabel": "Password",
+  /** Under the password of a new person, or of a reset. */
+  "people.passwordHint": "At least 12 characters. You hand it over yourself.",
+  "people.roleLabel": "Role",
+  /** The two roles, as a chip on a row and as the choice in the form. */
+  "people.roleAdministrator": "Administrator",
+  "people.roleUser": "User",
+  "people.createAction": "Add them",
+  "people.creating": "Adding…",
+  /**
+   * On the administrator's own row, beside their name. A sentence rather
+   * than "You", which is already the word under the avatar in the bar.
+   */
+  "people.you": "That is you",
+  /** On the row of a disabled account. It is kept; it opens nothing. */
+  "people.disabled": "Disabled",
+  "people.makeAdministrator": "Make an administrator",
+  "people.makeUser": "Make a user",
+  "people.resetAction": "Reset password",
+  "people.disableAction": "Disable",
+  "people.enableAction": "Enable",
+
+  "people.resetTitle": "Reset the password of {username}?",
+  /**
+   * Said before the button, because it is the consequence somebody would
+   * otherwise discover from a phone that suddenly asks for a password.
+   */
+  "people.resetWarning":
+    "{username} is signed out everywhere and needs this new password to sign in again. Their passkeys and machine tokens keep working.",
+  "people.newPasswordLabel": "New password",
+  "people.resetConfirm": "Reset it",
+  "people.resetting": "Resetting…",
+
+  "people.disableTitle": "Disable {username}?",
+  /**
+   * The consequence, and what is kept, so nobody reads "disable" as
+   * "delete": the account and everything it holds stay.
+   */
+  "people.disableWarning":
+    "{username} is signed out everywhere and their machine tokens stop working. Their account and everything in it are kept, and you can enable it again.",
+  "people.disableConfirm": "Disable them",
+  "people.disabling": "Disabling…",
+
+  /** The refusals the People group has its own answer for. */
+  "people.usernameTaken": "Somebody is already called {username}.",
+  "people.passwordTooShort": "The password needs at least {minimum} characters.",
+  "people.badUsername": "Give them a username.",
+  "people.lastAdministrator":
+    "This is the last active administrator. Make somebody else an administrator first.",
+  "people.ownAccount": "Another administrator has to change your own account.",
+  "people.alreadyGone": "That account is not here any more. Close this screen and open it again.",
+  /**
+   * Only a program holding a machine token meets this, and neither app holds
+   * one; it exists so the refusal is never described as a session problem.
+   */
+  "people.notForMachines":
+    "A machine token cannot manage accounts. An administrator does that, signed in.",
+
+  // ---------------------------------------------------------------------
+  // Sharing a space: the administrator's Share sheet (ADR 26)
+  // ---------------------------------------------------------------------
+
+  /** The Share sheet's title, naming the space being shared. */
+  "share.title": "Share {name}",
+  /**
+   * The one line the sheet says before its list, because it is the thing
+   * somebody would otherwise get wrong: a share is not on one box.
+   */
+  "share.cascades": "Sharing a space shares everything inside it.",
+  /** While the sheet asks who the space is shared with. */
+  "share.loading": "Loading who this is shared with",
+  /**
+   * Nobody may be given a share: everybody else is an administrator, is
+   * disabled, or owns this space. People are added on the account screen.
+   */
+  "share.nobody":
+    "There is nobody to share this with. Add people on the account screen; an administrator already sees everything.",
+  /**
+   * The three answers for each person, read aloud; each is drawn as a
+   * picture (ADR 20): a cross, an eye, a pencil.
+   */
+  "share.levelNone": "Not shared",
+  "share.levelView": "View",
+  "share.levelEdit": "View and edit",
+  /** The refusals the sheet has its own answer for. */
+  "share.ownsIt": "They own this space, so they can already change it.",
+  "share.isAdministrator": "They are an administrator, so they can already change everything.",
+  "share.accountDisabled":
+    "That account is disabled. Enable it under People before sharing anything with it.",
+  /**
+   * Only a program holding a machine token meets this, and neither app holds
+   * one; it exists so the refusal is never described as a session problem.
+   */
+  "share.notForMachines":
+    "A machine token cannot share spaces. An administrator does that, signed in.",
 
   // ---------------------------------------------------------------------
   // Passkeys: an additional door, never a replacement (ADR 19)

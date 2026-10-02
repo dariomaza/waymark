@@ -1,4 +1,4 @@
-import { MachineTokenScope, type MachineTokenView } from "@waymark/api-client";
+import { flattenUnits, MachineTokenScope, type MachineTokenView } from "@waymark/api-client";
 import { machineTokenFailureMessage, describeFailure } from "@waymark/i18n";
 import { useId, useState, type FormEvent, type JSX } from "react";
 
@@ -9,6 +9,7 @@ import { SelectField } from "../ui/atoms/select-field.js";
 import { TextField } from "../ui/atoms/text-field.js";
 import { SettingsGroup } from "../ui/molecules/settings-group.js";
 import { apiEndpoint } from "../app/api-endpoint.js";
+import { useStorageUnitTree } from "../units/unit-queries.js";
 import { useTranslate } from "../app/language-context.js";
 import {
   useCreateMachineToken,
@@ -19,6 +20,10 @@ import {
 import { ApiAddress } from "./views/api-address.js";
 import { IssuedSecret } from "./views/issued-secret.js";
 import { MachineTokenRow, type PendingAct } from "./views/machine-token-row.js";
+import { SpaceChoice } from "./views/space-choice.js";
+
+/** How much of the house a new token may see (ADR 26). */
+type Reach = "everything" | "chosen";
 
 /** The secret currently on screen, and which credential it belongs to. */
 interface ShownSecret {
@@ -73,6 +78,9 @@ export const MachineTokensPanel = (): JSX.Element => {
   const [composing, setComposing] = useState(false);
   const [name, setName] = useState("");
   const [scope, setScope] = useState<string>(MachineTokenScope.Read);
+  const [reach, setReach] = useState<Reach>("everything");
+  const [chosen, setChosen] = useState<readonly string[]>([]);
+  const tree = useStorageUnitTree();
   const [asking, setAsking] = useState<{ name: string; act: PendingAct } | null>(null);
   const [shown, setShown] = useState<ShownSecret | null>(null);
 
@@ -96,15 +104,29 @@ export const MachineTokensPanel = (): JSX.Element => {
     event.preventDefault();
 
     create.mutate(
-      { name, scope },
+      { name, scope, ...(reach === "chosen" ? { spaceIds: chosen } : {}) },
       {
         onSuccess: (issued) => {
           setShown({ name: issued.machineToken.name, secret: issued.token });
           setComposing(false);
           setName("");
           setScope(MachineTokenScope.Read);
+          setReach("everything");
+          setChosen([]);
         },
       },
+    );
+  };
+
+  /**
+   * "Only the spaces you choose" with none ticked cannot be sent: leaving the
+   * spaces off would mean everything, the opposite of what was asked for.
+   */
+  const nothingChosen = reach === "chosen" && chosen.length === 0;
+
+  const toggle = (spaceId: string): void => {
+    setChosen((current) =>
+      current.includes(spaceId) ? current.filter((id) => id !== spaceId) : [...current, spaceId],
     );
   };
 
@@ -247,8 +269,27 @@ export const MachineTokensPanel = (): JSX.Element => {
               },
             ]}
           />
+          <SelectField
+            id={`${formId}-reach`}
+            label={t("tokens.reachLabel")}
+            value={reach}
+            onChange={(event) => {
+              setReach(event.target.value as Reach);
+            }}
+            options={[
+              { value: "everything", label: t("tokens.reachEverything") },
+              { value: "chosen", label: t("tokens.reachChosen") },
+            ]}
+          />
+          {reach === "chosen" ? (
+            <SpaceChoice
+              spaces={flattenUnits(tree.data?.tree ?? [])}
+              chosen={chosen}
+              onToggle={toggle}
+            />
+          ) : null}
           <div className="settings-group__buttons">
-            <Button type="submit" tone="primary" disabled={create.isPending}>
+            <Button type="submit" tone="primary" disabled={create.isPending || nothingChosen}>
               {create.isPending ? t("tokens.creating") : t("tokens.createAction")}
             </Button>
             <Button

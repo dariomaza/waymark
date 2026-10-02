@@ -46,7 +46,10 @@ export const theApiKnowsTheHouse = (): void => {
       HttpResponse.json({ machineTokens: [] }),
     ),
     http.get(`${API_URL}/storage-units`, () =>
-      HttpResponse.json({ tree: [aTree(garage, [aTree(wardrobe, [aTree(box)])])] }),
+      HttpResponse.json({
+        tree: [aTree(garage, [aTree(wardrobe, [aTree(box)])])],
+        mayMakeRoot: true,
+      }),
     ),
     http.get(`${API_URL}/storage-units/garage`, () =>
       HttpResponse.json({

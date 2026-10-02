@@ -1,4 +1,4 @@
-import type { PhotoId, PublicId, UnitId } from "../shared/identity.js";
+import type { PhotoId, PublicId, UnitId, UserId } from "../shared/identity.js";
 
 /**
  * Presentational and filtering hint only. Nesting is never constrained by kind
@@ -21,10 +21,15 @@ export type StorageUnitKind =
  * A place that holds items and other storage units. Location is not an
  * attribute: a `null` parent means a root, and the location of a unit is the
  * computed path to its root (ADR 1).
+ *
+ * `ownerId` is set on a root and on nothing else (ADR 26): everything below a
+ * root belongs to that root's owner through the tree, so ownership has one
+ * source and moving a subtree carries it along with no extra writes.
  */
 export interface StorageUnit {
   readonly id: UnitId;
   readonly parentId: UnitId | null;
+  readonly ownerId: UserId | null;
   readonly name: string;
   readonly kind: StorageUnitKind;
   readonly description: string | null;
@@ -37,6 +42,8 @@ export interface StorageUnit {
 export interface CreateStorageUnitInput {
   readonly id: UnitId;
   readonly parentId?: UnitId | null;
+  /** Kept on a root only; a space inside another belongs to its root's owner. */
+  readonly ownerId?: UserId | null;
   readonly name: string;
   readonly kind: StorageUnitKind;
   readonly description?: string | null;
@@ -47,29 +54,44 @@ export interface CreateStorageUnitInput {
 
 export const createStorageUnit = (
   input: CreateStorageUnitInput,
-): StorageUnit => ({
-  id: input.id,
-  parentId: input.parentId ?? null,
-  name: input.name.trim(),
-  kind: input.kind,
-  description: input.description ?? null,
-  photoId: input.photoId ?? null,
-  publicId: input.publicId,
-  createdAt: input.now,
-  updatedAt: input.now,
-});
+): StorageUnit => {
+  const parentId = input.parentId ?? null;
+
+  return {
+    id: input.id,
+    parentId,
+    ownerId: parentId === null ? (input.ownerId ?? null) : null,
+    name: input.name.trim(),
+    kind: input.kind,
+    description: input.description ?? null,
+    photoId: input.photoId ?? null,
+    publicId: input.publicId,
+    createdAt: input.now,
+    updatedAt: input.now,
+  };
+};
 
 /**
- * Returns a copy of the unit under a new parent. Whether the move is legal is
- * decided by the MoveStorageUnit use case, not here (ADR 2).
+ * Where a unit is put: inside another space, or at the top as a root, which
+ * cannot be said without saying whose root it is (ADR 26).
+ */
+export type StorageUnitPlacement =
+  | { readonly parentId: UnitId }
+  | { readonly parentId: null; readonly ownerId: UserId };
+
+/**
+ * Returns a copy of the unit in a new place. Whether the move is legal is
+ * decided by the use case, not here (ADR 2). A unit put inside another space
+ * stops recording an owner, because it now belongs to that space's root.
  */
 export const reparentStorageUnit = (
   unit: StorageUnit,
-  parentId: UnitId | null,
+  placement: StorageUnitPlacement,
   now: Date,
 ): StorageUnit => ({
   ...unit,
-  parentId,
+  parentId: placement.parentId,
+  ownerId: placement.parentId === null ? placement.ownerId : null,
   updatedAt: now,
 });
 

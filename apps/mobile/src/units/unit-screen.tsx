@@ -13,7 +13,7 @@ import { FailureNote } from "../ui/molecules/failure-note.js";
 import { Screen } from "../ui/organisms/screen.js";
 import { UnitActions } from "./unit-actions.js";
 import { UnitMenu } from "./unit-menu.js";
-import { useStorageUnit } from "./unit-queries.js";
+import { mayChange as mayChangeWith, useSpacePermissions, useStorageUnit } from "./unit-queries.js";
 import { UnitDetail } from "./views/unit-detail.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -33,6 +33,8 @@ export const UnitScreen = (): JSX.Element => {
   const id = unitId(route.params.id);
   const unit = useStorageUnit(id);
   const selection = useItemSelection();
+  const permissions = useSpacePermissions(id);
+  const mayChange = mayChangeWith(permissions);
 
   return (
     // Not a scroll view: the item grid below is the scroller, because a
@@ -57,7 +59,8 @@ export const UnitScreen = (): JSX.Element => {
           path={unit.data.path}
           childUnits={unit.data.children}
           items={unit.data.items}
-          photo={<UnitPhoto unit={unit.data.unit} />}
+          viewOnly={permissions !== null && !mayChange}
+          photo={<UnitPhoto unit={unit.data.unit} editable={mayChange} />}
           itemPhoto={(item) => <ItemCover item={item} />}
           onOpenUnit={(openId) => {
             navigation.push("Unit", { id: openId });
@@ -68,6 +71,7 @@ export const UnitScreen = (): JSX.Element => {
           actions={
             <UnitActions
               unit={unit.data.unit}
+              mayChange={mayChange}
               onSearchInside={() => {
                 // The search tab, already narrowed to this subtree (ADR 11).
                 navigation.navigate("Tabs", {
@@ -81,6 +85,7 @@ export const UnitScreen = (): JSX.Element => {
             <UnitMenu
               unit={unit.data.unit}
               path={unit.data.path}
+              permissions={permissions}
               onShowLabel={() => {
                 navigation.navigate("Label", { id: unit.data.unit.id });
               }}
@@ -96,14 +101,22 @@ export const UnitScreen = (): JSX.Element => {
                   })}
             />
           }
-          picking={{
-            on: selection.picking,
-            isSelected: (item) => selection.isSelected(item.id),
-            toggle: (item) => {
-              selection.toggle(item.id);
-            },
-            label: (item) => t("units.select", { name: item.name }),
-          }}
+          /*
+            Ticking a thing is the first half of moving it, so a space whose
+            things may not be moved offers nothing to tick (ADR 26).
+          */
+          picking={
+            mayChange
+              ? {
+                  on: selection.picking,
+                  isSelected: (item) => selection.isSelected(item.id),
+                  toggle: (item) => {
+                    selection.toggle(item.id);
+                  },
+                  label: (item) => t("units.select", { name: item.name }),
+                }
+              : undefined
+          }
           {...(selection.picking
             ? {
                 belowItems: (

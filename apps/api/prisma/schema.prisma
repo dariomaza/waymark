@@ -8,7 +8,9 @@
 // `ItemSearch` and `StorageUnitSearch` virtual tables and the nine triggers
 // that keep them in step (ADR 11) — lives only in
 // `migrations/20260921090000_add_full_text_search_index`, because Prisma has
-// no way to declare an FTS5 table or a trigger.
+// no way to declare an FTS5 table or a trigger. Neither do the two triggers
+// that keep `StorageUnit.ownerId` on roots only (ADR 26), which live in
+// `migrations/20261001130000_root_spaces_have_owners_and_can_be_shared`.
 //
 // The consequence is a trap: `prisma migrate dev` diffs the database against
 // THIS file, does not find them, and offers to DROP them. Accepting that
@@ -41,6 +43,13 @@ model StorageUnit {
   parent   StorageUnit?  @relation("StorageUnitTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   children StorageUnit[] @relation("StorageUnitTree")
 
+  /// Whose inventory this is (ADR 26). Set on a root and on nothing else:
+  /// every space and item below a root belongs to the root's owner through the
+  /// tree. The database keeps it so with two triggers (see the header).
+  /// `Restrict`: an account that owns an inventory is disabled, never deleted.
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
   name        String
   /// Presentational hint only (ADR 1). SQLite has no enum type and Prisma does
   /// not emulate one here, so the column is a string and the mapper rejects
@@ -61,10 +70,33 @@ model StorageUnit {
   createdAt DateTime
   updatedAt DateTime
 
-  items Item[]
+  items  Item[]
+  shares Share[]
+  /// Machine tokens narrowed to this space (ADR 26).
+  machineTokens MachineTokenSpace[]
 
   @@index([parentId])
+  @@index([ownerId])
   @@index([name])
+}
+
+/// A space shared with one person, at one level (ADR 26): `view` or `edit`,
+/// covering everything under the space. On any space, never on an item.
+///
+/// One row per (space, person), so the pair has one answer. `Cascade` on both
+/// sides, like `Session`: a share is a grant rather than inventory, and a grant
+/// on a space or for a person that is gone means nothing.
+model Share {
+  storageUnitId String
+  userId        String
+  /// `view` | `edit`. A string for the same reason `StorageUnit.kind` is.
+  access        String
+
+  storageUnit StorageUnit @relation(fields: [storageUnitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([storageUnitId, userId])
+  @@index([userId])
 }
 
 /// A thing stored inside exactly one storage unit.
@@ -195,13 +227,12 @@ model PhotoProcessingAttempt {
   @@index([nextAttemptAt])
 }
 
-/// An account. Credentials and nothing else.
+/// An account: a person, their credentials, and their role (ADR 26).
 ///
-/// Waymark is ONE SHARED INVENTORY: a user is a way to get in, not a tenant.
-/// There is deliberately no owner column on `StorageUnit`, `Item` or `Photo`,
-/// no per-user scoping of any query, and no role. Everyone who can log in sees
-/// and edits the same house. Adding a tenant id "just in case" would put a
-/// filter on every single query to express a rule the product does not have.
+/// Each person has an inventory of their own. Ownership is written on root
+/// spaces only (`StorageUnit.ownerId`) and everything below a root belongs to
+/// its owner through the tree; `Share` grants a person a space of somebody
+/// else's. See ADR 26, which supersedes the single shared inventory of ADR 5.
 model User {
   id           String @id
   /// Stored lower case. SQLite compares TEXT case sensitively and Postgres
@@ -211,11 +242,25 @@ model User {
   /// `scrypt$N=...,r=...,p=...$<salt>$<digest>`. The parameters travel with the
   /// hash so they can be raised later without locking anybody out.
   passwordHash String
+  /// `administrator` | `user`. A string because SQLite has no enum, checked on
+  /// the way out like `StorageUnit.kind`. `user` by default, so an account that
+  /// forgot to say what it is gets the narrower role: making an administrator
+  /// is always written on purpose.
+  role         String @default("user")
 
   createdAt DateTime
   updatedAt DateTime
+  /// When an administrator disabled the account, or null while it is active
+  /// (ADR 26). Accounts are disabled, never deleted: the row keeps owning its
+  /// inventory. Every way in reads this column, so a session or a token left
+  /// behind by an interrupted disable still opens nothing.
+  disabledAt DateTime?
 
   sessions Session[]
+  machineTokens MachineToken[]
+  /// The roots this person owns; everything below them is theirs too.
+  ownedStorageUnits StorageUnit[]
+  shares Share[]
   passkeys Passkey[]
   /// Ceremonies this person has in flight. Rows live for two minutes.
   passkeyChallenges PasskeyChallenge[]
@@ -263,7 +308,8 @@ model Session {
 /// It is a CREDENTIAL, the third kind in this schema beside a password hash
 /// and a machine token, and it is an ADDITIONAL way in rather than a
 /// replacement: the password form never leaves the sign-in screen, and the
-/// password that `create-user` set from a shell is untouched by any of this.
+/// password — set by `create-user` or by an administrator (ADR 26) — is
+/// untouched by any of this.
 /// So removing every row here for a person locks nobody out of anything.
 ///
 /// `Cascade`, like `Session` and unlike everything in the inventory: a deleted
@@ -341,14 +387,10 @@ model PasskeyChallenge {
 
 /// A machine credential: named, long-lived, revocable on its own (ADR 17).
 ///
-/// It is deliberately NOT a `User` and carries no `userId`. ADR 5 says users
-/// are credentials against one shared inventory, and this is another credential
-/// against that same inventory rather than a delegation of somebody's account —
-/// which is the whole point, because a machine using a person's password cannot
-/// be revoked without changing that person's password.
-///
-/// There is no relation to `User` for that reason, and so deleting an account
-/// does not silently kill the MCP server the household depends on.
+/// It belongs to the person who issued it and acts as that person, narrowed by
+/// its scope (ADR 26). A machine using a person's PASSWORD still could not be
+/// revoked without changing that password, which is why this is a credential
+/// of its own rather than a session.
 model MachineToken {
   id String @id
   /// What the token is FOR, in a human's words. Unique, because it is what
@@ -369,6 +411,12 @@ model MachineToken {
   /// SQLite has no enum, so the value is checked on the way out by the mapper.
   scope String
 
+  /// Who this token acts as. `Cascade`, like `Session`: a credential that kept
+  /// working for an account that is gone would be a security bug, and ADR 3's
+  /// refusal of destructive cascades is about inventory, not credentials.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
   createdAt DateTime
   /// `null` means it never lapses, which is the normal case for a credential
   /// that lives in a compose file.
@@ -378,5 +426,30 @@ model MachineToken {
   /// inventory walk into forty writes on a single SQLite file.
   lastUsedAt DateTime?
 
+  /// Whether this token was narrowed to chosen spaces (ADR 26). Its own fact,
+  /// never inferred from `spaces`: the rows below go when a space is deleted,
+  /// and a narrowed token whose spaces are all gone must reach nothing rather
+  /// than widen to its issuer's whole reach. `false` is "no spaces chosen".
+  narrowed Boolean @default(false)
+  spaces   MachineTokenSpace[]
+
   @@index([expiresAt])
+  @@index([userId])
+}
+
+/// A space a machine token was narrowed to (ADR 26). The token reaches what
+/// its issuer reaches within this space and everything under it.
+///
+/// `Cascade` on both sides, like `Share`: this is a grant rather than
+/// inventory. A deleted space takes its row with it, and the token's
+/// `narrowed` stays true, so it never widens.
+model MachineTokenSpace {
+  machineTokenId String
+  storageUnitId  String
+
+  machineToken MachineToken @relation(fields: [machineTokenId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  storageUnit  StorageUnit  @relation(fields: [storageUnitId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([machineTokenId, storageUnitId])
+  @@index([storageUnitId])
 }

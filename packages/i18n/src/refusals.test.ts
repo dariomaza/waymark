@@ -2,7 +2,9 @@ import { ApiError, OFFLINE_STATUS } from "@waymark/api-client";
 import { describe, expect, it } from "vitest";
 
 import {
+  accountFailureMessage,
   cyclicMoveMessage,
+  shareFailureMessage,
   describeFailure,
   fieldComplaints,
   loginFailureMessage,
@@ -182,6 +184,43 @@ describe("a failure no screen expected", () => {
     expect(es(describeFailure(new ApiError(401, "INVALID_SESSION", "gone")))).toBe(
       "La sesión ha terminado. Inicia sesión de nuevo.",
     );
+  });
+
+  /**
+   * A 403 used to mean only one thing to a person — the session — and a view
+   * share is not that (ADR 26). Telling somebody to sign in again because the
+   * shelf was shared with them to look at would send them to the wrong layer.
+   */
+  it("says a space shared to view may only be looked at, not that the session ended", () => {
+    const said = describeFailure(
+      new ApiError(403, "VIEW_ONLY", "view only", { storageUnitId: "a-shelf" }),
+    );
+
+    expect(said.key).toBe("failure.viewOnly");
+    expect(en(said)).not.toMatch(/sign in/iu);
+  });
+
+  /**
+   * Only a machine token meets this one (ADR 26), and neither client holds
+   * one; the sentence exists so that no code falls through to a session
+   * problem should a client ever be handed it.
+   */
+  it("says a narrowed token may not act outside its spaces, not that the session ended", () => {
+    const said = describeFailure(
+      new ApiError(403, "OUTSIDE_TOKEN_SPACES", "outside", { storageUnitId: null }),
+    );
+
+    expect(said.key).toBe("failure.outsideTokenSpaces");
+    expect(es(said)).not.toMatch(/inicia sesión/iu);
+  });
+
+  it("says only the owner may make or move a root, not that the session ended", () => {
+    const said = describeFailure(
+      new ApiError(403, "OWNER_ONLY", "owner only", { storageUnitId: "a-trunk" }),
+    );
+
+    expect(said.key).toBe("failure.ownerOnly");
+    expect(es(said)).not.toMatch(/inicia sesión/iu);
   });
 
   /**
@@ -577,5 +616,117 @@ describe("what a photo that could not be read becomes", () => {
 
   it("speaks to the owner as tú, never as usted", () => {
     expect(es(photoReadFailureMessage({ reason: "gone" }))).not.toMatch(/\busted\b/iu);
+  });
+});
+
+/**
+ * # What the People group's refusals become (ADR 26)
+ *
+ * Each is a different next step: pick another username, type a longer
+ * password, make somebody else an administrator first, ask another
+ * administrator. Compared by key, because two sentences that interpolate a
+ * value always render differently.
+ */
+describe("what refusing to manage an account becomes", () => {
+  const refusal = (status: number, code: string, details: Record<string, unknown> = {}) =>
+    new ApiError(status, code, "the API's own words", details);
+
+  it("gives each refusal a sentence of its own", () => {
+    const keys = [
+      accountFailureMessage(refusal(409, "USERNAME_ALREADY_TAKEN", { username: "partner" })),
+      accountFailureMessage(refusal(422, "PASSWORD_TOO_SHORT", { minimumLength: 12 })),
+      accountFailureMessage(refusal(422, "INVALID_USERNAME")),
+      accountFailureMessage(refusal(409, "LAST_ADMINISTRATOR")),
+      accountFailureMessage(refusal(409, "OWN_ACCOUNT")),
+      accountFailureMessage(refusal(404, "ACCOUNT_NOT_FOUND")),
+      accountFailureMessage(refusal(403, "ADMINISTRATOR_ONLY")),
+      accountFailureMessage(refusal(403, "MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS")),
+    ].map((said) => said?.key);
+
+    expect(keys).toEqual([
+      "people.usernameTaken",
+      "people.passwordTooShort",
+      "people.badUsername",
+      "people.lastAdministrator",
+      "people.ownAccount",
+      "people.alreadyGone",
+      "failure.administratorOnly",
+      "people.notForMachines",
+    ]);
+  });
+
+  it("names the username somebody already has, in both languages", () => {
+    const said = accountFailureMessage(
+      refusal(409, "USERNAME_ALREADY_TAKEN", { username: "partner" }),
+    );
+
+    expect(en(said)).toContain("partner");
+    expect(es(said)).toContain("partner");
+  });
+
+  it("says how long a password has to be, with the API's own number", () => {
+    const said = accountFailureMessage(refusal(422, "PASSWORD_TOO_SHORT", { minimumLength: 14 }));
+
+    expect(en(said)).toContain("14");
+    expect(es(said)).toContain("14");
+  });
+
+  it("tells the last administrator to make another one first", () => {
+    const said = accountFailureMessage(refusal(409, "LAST_ADMINISTRATOR"));
+
+    expect(en(said)).toMatch(/somebody else an administrator/iu);
+  });
+
+  it("stays out of the way of every other failure", () => {
+    expect(accountFailureMessage(refusal(409, "STORAGE_UNIT_NOT_EMPTY"))).toBeNull();
+    expect(accountFailureMessage(new Error("boom"))).toBeNull();
+    expect(accountFailureMessage(null)).toBeNull();
+  });
+
+  /**
+   * A 403 that is not about the session (ADR 26): the person is signed in and
+   * is not an administrator. "Sign in again" would be the wrong layer.
+   */
+  it("says an administrator-only refusal is about the role, not that the session ended", () => {
+    const said = describeFailure(refusal(403, "ADMINISTRATOR_ONLY"));
+
+    expect(said.key).toBe("failure.administratorOnly");
+    expect(en(said)).not.toMatch(/session has ended/iu);
+  });
+});
+
+/**
+ * # What refusing to share a space becomes (ADR 26)
+ *
+ * Each is a different next step: they already have edit, so nothing is
+ * needed; enable the account first; the account is gone. Compared by key.
+ */
+describe("what refusing to share a space becomes", () => {
+  const refusal = (status: number, code: string, details: Record<string, unknown> = {}) =>
+    new ApiError(status, code, "the API's own words", details);
+
+  it("gives each refusal a sentence of its own", () => {
+    const keys = [
+      shareFailureMessage(refusal(409, "ALREADY_HAS_EDIT", { because: "owner" })),
+      shareFailureMessage(refusal(409, "ALREADY_HAS_EDIT", { because: "administrator" })),
+      shareFailureMessage(refusal(409, "ACCOUNT_DISABLED")),
+      shareFailureMessage(refusal(404, "ACCOUNT_NOT_FOUND")),
+      shareFailureMessage(refusal(403, "ADMINISTRATOR_ONLY")),
+      shareFailureMessage(refusal(403, "MACHINE_TOKEN_CANNOT_SHARE")),
+    ].map((said) => said?.key);
+
+    expect(keys).toEqual([
+      "share.ownsIt",
+      "share.isAdministrator",
+      "share.accountDisabled",
+      "people.alreadyGone",
+      "failure.administratorOnly",
+      "share.notForMachines",
+    ]);
+  });
+
+  it("stays out of the way of every other failure", () => {
+    expect(shareFailureMessage(refusal(404, "STORAGE_UNIT_NOT_FOUND"))).toBeNull();
+    expect(shareFailureMessage(new Error("not from the API"))).toBeNull();
   });
 });

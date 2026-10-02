@@ -15,6 +15,12 @@ machineTokenRepositoryContract({
   name: "InMemoryMachineTokenRepository",
   setUp: async (): Promise<MachineTokenRepositoryContext> => ({
     machineTokens: new InMemoryMachineTokenRepository(),
+    // Nothing to satisfy: a Map has no foreign keys.
+    givenTheUser: async () => {},
+    // Nor spaces: the fake keeps a chosen id whether or not a space has it,
+    // and what may be reached is decided against the stored tree anyway.
+    givenTheSpace: async () => {},
+    deleteTheSpace: async () => {},
   }),
   tearDown: async () => {},
 });

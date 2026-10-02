@@ -4,6 +4,7 @@ import {
   createStorageUnit,
   publicId,
   unitId,
+  userId,
   type StorageUnit,
   type UnitId,
 } from "@waymark/domain";
@@ -28,6 +29,7 @@ const aUnit = (id: string, parentId: UnitId | null = null): StorageUnit =>
   createStorageUnit({
     id: unitId(id),
     parentId,
+    ownerId: userId("dario"),
     name: `Unit ${id}`,
     kind: StorageUnitKind.BOX,
     publicId: publicId(`PUB-${id.toUpperCase()}`),
@@ -77,16 +79,24 @@ describe("PrismaStorageUnitRepository against real SQLite", () => {
 
   beforeEach(async () => {
     await database.reset();
+    // A root's owner is a foreign key (ADR 26).
+    await database.client.$executeRaw`
+      INSERT INTO "User" ("id", "username", "passwordHash", "createdAt", "updatedAt")
+      VALUES ('dario', 'dario', 'x', 0, 0)
+    `;
     storageUnits = new PrismaStorageUnitRepository(database.client);
   });
 
-  /** Writes a parent link with raw SQL, bypassing the use cases entirely. */
+  /**
+   * Writes a parent link with raw SQL, bypassing the use cases entirely. The
+   * owner goes with it, since only a root may record one (ADR 26).
+   */
   const forceParentLink = async (
     id: UnitId,
     parentId: UnitId,
   ): Promise<void> => {
     await database.client
-      .$executeRaw`UPDATE "StorageUnit" SET "parentId" = ${parentId} WHERE "id" = ${id}`;
+      .$executeRaw`UPDATE "StorageUnit" SET "parentId" = ${parentId}, "ownerId" = NULL WHERE "id" = ${id}`;
   };
 
   describe("findAncestors on corrupt data (ADR 2)", () => {

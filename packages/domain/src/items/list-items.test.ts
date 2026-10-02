@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
+import { resolveAccess, Role, ShareLevel, type Access } from "../access/access.js";
+
 import { FakeClock } from "../shared/clock.fake.js";
 import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { itemId, unitId, type UnitId } from "../shared/identity.js";
+import { itemId, unitId, type UnitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { formatStorageUnitPath } from "../storage-units/get-storage-unit-path.js";
 import type { StorageUnit } from "../storage-units/storage-unit.js";
@@ -17,6 +20,8 @@ import { InMemoryItemRepository } from "./item-repository.fake.js";
 import { ListItems } from "./list-items.js";
 
 const A_MOMENT = new Date("2026-01-01T10:00:00.000Z");
+
+const EVERYTHING: Access = { kind: "everything" };
 
 /** Counts how often the forest is read, which is the whole design here. */
 class CountingStorageUnits extends InMemoryStorageUnitRepository {
@@ -36,14 +41,23 @@ describe("ListItems", () => {
   let createItem: CreateItem;
   let listItems: ListItems;
 
-  const aUnit = async (name: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({ name, kind: StorageUnitKind.BOX, parentId });
+  const aUnit = async (
+    name: string,
+    parentId: UnitId | null = null,
+    owner = "dario",
+  ) =>
+    createStorageUnit.execute(SEES_EVERYTHING, {
+      callerId: userId(owner),
+      name,
+      kind: StorageUnitKind.BOX,
+      parentId,
+    });
 
   const anItem = async (name: string, storageUnitId: UnitId) =>
-    createItem.execute({ storageUnitId, name });
+    createItem.execute(SEES_EVERYTHING, { storageUnitId, name });
 
   const locations = async (): Promise<string[]> =>
-    (await listItems.execute()).map(
+    (await listItems.execute(EVERYTHING)).map(
       (row) => `${row.item.name} @ ${formatStorageUnitPath(row.path)}`,
     );
 
@@ -67,7 +81,7 @@ describe("ListItems", () => {
   });
 
   it("answers with nothing when nothing is stored", async () => {
-    await expect(listItems.execute()).resolves.toEqual([]);
+    await expect(listItems.execute(EVERYTHING)).resolves.toEqual([]);
   });
 
   it("answers with every item in the house, whichever box holds it", async () => {
@@ -76,7 +90,7 @@ describe("ListItems", () => {
     await anItem("Drill", garage.id);
     await anItem("Whisk", kitchen.id);
 
-    const rows = await listItems.execute();
+    const rows = await listItems.execute(EVERYTHING);
 
     expect(rows.map((row) => row.item.name)).toEqual(["Drill", "Whisk"]);
   });
@@ -105,7 +119,7 @@ describe("ListItems", () => {
     await anItem("Anvil", box.id);
     await anItem("Drill", box.id);
 
-    const rows = await listItems.execute();
+    const rows = await listItems.execute(EVERYTHING);
 
     expect(rows.map((row) => row.item.name)).toEqual(["Anvil", "Drill", "Whisk"]);
   });
@@ -115,7 +129,7 @@ describe("ListItems", () => {
     const first = await anItem("Drill", box.id);
     const second = await anItem("Drill", box.id);
 
-    const rows = await listItems.execute();
+    const rows = await listItems.execute(EVERYTHING);
 
     expect(rows.map((row) => row.item.id)).toEqual(
       [first.id, second.id].sort((left, right) => left.localeCompare(right)),
@@ -130,7 +144,7 @@ describe("ListItems", () => {
     await anItem("Whisk", garage.id);
     storageUnits.reads = 0;
 
-    await listItems.execute();
+    await listItems.execute(EVERYTHING);
 
     // A path walked per item would be a read per item, which is the very N+1
     // this use case exists to remove.
@@ -150,7 +164,7 @@ describe("ListItems", () => {
       }),
     );
 
-    const rows = await listItems.execute();
+    const rows = await listItems.execute(EVERYTHING);
 
     expect(rows.map((row) => row.item.name)).toEqual(["Orphan"]);
     expect(rows[0]?.path).toEqual([]);
@@ -163,8 +177,52 @@ describe("ListItems", () => {
     // Straight into storage, past the use case that forbids it (ADR 2).
     await storageUnits.save({ ...left, parentId: right.id });
 
-    const rows = await listItems.execute();
+    const rows = await listItems.execute(EVERYTHING);
 
     expect(rows).toHaveLength(1);
+  });
+
+  describe("for a person who may not see the whole house (ADR 26)", () => {
+    const accessOf = async (
+      who: string,
+      shared: readonly UnitId[] = [],
+    ): Promise<Access> =>
+      resolveAccess({
+        caller: { userId: userId(who), role: Role.USER },
+        storageUnits: await storageUnits.findAll(),
+        shares: shared.map((storageUnitId) => ({
+          storageUnitId,
+          userId: userId(who),
+          access: ShareLevel.VIEW,
+        })),
+      });
+
+    const locationsSeenBy = async (access: Access): Promise<string[]> =>
+      (await listItems.execute(access)).map(
+        (row) => `${row.item.name} @ ${formatStorageUnitPath(row.path)}`,
+      );
+
+    it("lists only the items in spaces the person may see", async () => {
+      const garage = await aUnit("Garage", null, "ana");
+      await anItem("Drill", garage.id);
+      const flat = await aUnit("Flat", null, "bea");
+      await anItem("Scarf", flat.id);
+
+      await expect(locationsSeenBy(await accessOf("bea"))).resolves.toEqual([
+        "Scarf @ Flat",
+      ]);
+    });
+
+    it("cuts each location at the space shared with the person", async () => {
+      const garage = await aUnit("Garage", null, "ana");
+      const shelf = await aUnit("Shelf", garage.id, "ana");
+      const box = await aUnit("Box 3", shelf.id, "ana");
+      await anItem("Drill", box.id);
+      await anItem("Sander", garage.id);
+
+      await expect(locationsSeenBy(await accessOf("bea", [shelf.id]))).resolves.toEqual([
+        "Drill @ Shelf > Box 3",
+      ]);
+    });
   });
 });

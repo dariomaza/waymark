@@ -1,18 +1,19 @@
 import {
-  StorageUnitNotFound,
+  mayMakeRoot,
   photoId as toPhotoId,
   unitId,
   type CreateStorageUnit,
   type DeleteStorageUnit,
   type EmptyStorageUnit,
-  type GetStorageUnitPath,
-  type ItemRepository,
+  type GetStorageUnit,
+  type ListStorageUnits,
   type MoveStorageUnit,
-  type StorageUnitRepository,
   type UpdateStorageUnit,
 } from "@waymark/domain";
 import type { FastifyPluginAsync } from "fastify";
 
+import { personBehind } from "../../auth/caller.js";
+import type { AccountNames } from "../account-names.js";
 import type { ItemViews } from "../item-views.js";
 import { buildStorageUnitForest } from "../storage-unit-tree.js";
 import type { StorageUnitViews } from "../storage-unit-views.js";
@@ -26,17 +27,18 @@ import {
 import { storageUnitTreeView, storageUnitView } from "../views.js";
 
 export interface StorageUnitRouteOptions {
-  readonly storageUnits: StorageUnitRepository;
-  readonly items: ItemRepository;
+  readonly listStorageUnits: ListStorageUnits;
+  readonly getStorageUnit: GetStorageUnit;
   readonly createStorageUnit: CreateStorageUnit;
   readonly moveStorageUnit: MoveStorageUnit;
   readonly updateStorageUnit: UpdateStorageUnit;
   readonly deleteStorageUnit: DeleteStorageUnit;
   readonly emptyStorageUnit: EmptyStorageUnit;
-  readonly getStorageUnitPath: GetStorageUnitPath;
   readonly itemViews: ItemViews;
   /** Only the unit an answer is ABOUT carries its photo; rows never do. */
   readonly storageUnitViews: StorageUnitViews;
+  /** The owners' names an administrator's tree carries (ADR 26). */
+  readonly accountNames: AccountNames;
 }
 
 /** A total order, so two reads of an unchanged unit list the same way. */
@@ -83,18 +85,30 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
   app,
   options,
 ) => {
-  app.get("/storage-units", async (_request, reply) => {
-    const units = await options.storageUnits.findAll();
+  app.get("/storage-units", async (request, reply) => {
+    // Only what this person may see (ADR 26). A space whose parent is not
+    // among them becomes a root of the forest, which is how a space shared
+    // from inside somebody else's tree arrives at the top of the screen.
+    const units = await options.listStorageUnits.execute(request.access);
+    // And what this person may do with each, so no client offers a refusal.
+    const viewer = {
+      access: request.access,
+      callerId: personBehind(request.caller),
+      usernames: await options.accountNames.visibleTo(request.access),
+    };
 
     return reply.code(200).send({
-      tree: buildStorageUnitForest(units).map(storageUnitTreeView),
+      tree: buildStorageUnitForest(units).map((node) => storageUnitTreeView(node, viewer)),
+      mayMakeRoot: mayMakeRoot(request.access),
     });
   });
 
   app.post("/storage-units", async (request, reply) => {
     const body = createStorageUnitBodySchema.parse(request.body);
 
-    const unit = await options.createStorageUnit.execute({
+    const unit = await options.createStorageUnit.execute(request.access, {
+      // A root made here is the caller's; for a machine token, its issuer's.
+      callerId: personBehind(request.caller),
       parentId: body.parentId == null ? null : unitId(body.parentId),
       name: body.name,
       kind: body.kind,
@@ -111,18 +125,13 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
   app.get("/storage-units/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    // Throws `StorageUnitNotFound` when the unit is not there, which the error
-    // mapping turns into a 404 because the id came from the path.
-    const path = await options.getStorageUnitPath.execute(unitId(id));
-    const unit = path.at(-1);
-    if (unit === undefined) {
-      throw new StorageUnitNotFound(unitId(id));
-    }
-
-    const [children, items] = await Promise.all([
-      options.storageUnits.findChildren(unitId(id)),
-      options.items.findByStorageUnit(unitId(id)),
-    ]);
+    // Throws `StorageUnitNotFound` when the unit is not there or may not be
+    // seen, which the error mapping turns into the same 404 for both because
+    // the id came from the path (ADR 26).
+    const { unit, path, children, items } = await options.getStorageUnit.execute(
+      request.access,
+      unitId(id),
+    );
 
     return reply.code(200).send({
       unit: await options.storageUnitViews.of(unit),
@@ -136,7 +145,8 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const { id } = idParamsSchema.parse(request.params);
     const body = moveStorageUnitBodySchema.parse(request.body);
 
-    const unit = await options.moveStorageUnit.execute({
+    const unit = await options.moveStorageUnit.execute(request.access, {
+      callerId: personBehind(request.caller),
       id: unitId(id),
       targetParentId: body.parentId === null ? null : unitId(body.parentId),
     });
@@ -148,7 +158,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const { id } = idParamsSchema.parse(request.params);
     const body = updateStorageUnitBodySchema.parse(request.body);
 
-    const unit = await options.updateStorageUnit.execute({
+    const unit = await options.updateStorageUnit.execute(request.access, {
       id: unitId(id),
       // Spread field by field, so an absent field stays absent rather than
       // becoming an explicit `undefined` the use case would have to unpick.
@@ -164,10 +174,11 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
     const { id } = idParamsSchema.parse(request.params);
     const body = emptyStorageUnitBodySchema.parse(request.body);
 
-    const result = await options.emptyStorageUnit.execute(
-      unitId(id),
-      body.targetUnitId === undefined ? undefined : unitId(body.targetUnitId),
-    );
+    const result = await options.emptyStorageUnit.execute(request.access, {
+      callerId: personBehind(request.caller),
+      id: unitId(id),
+      ...(body.targetUnitId === undefined ? {} : { targetUnitId: unitId(body.targetUnitId) }),
+    });
 
     return reply.code(200).send({
       movedItems: await options.itemViews.ofMany(result.movedItems),
@@ -178,7 +189,7 @@ export const storageUnitRoutes: FastifyPluginAsync<StorageUnitRouteOptions> = as
   app.delete("/storage-units/:id", async (request, reply) => {
     const { id } = idParamsSchema.parse(request.params);
 
-    await options.deleteStorageUnit.execute(unitId(id));
+    await options.deleteStorageUnit.execute(request.access, unitId(id));
 
     return reply.code(204).send();
   });

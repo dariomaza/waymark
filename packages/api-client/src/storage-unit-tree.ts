@@ -1,6 +1,6 @@
-import type { PublicId, UnitId } from "@waymark/domain";
+import { Role, ShareLevel, type PublicId, type UnitId } from "@waymark/domain";
 
-import type { StorageUnitTreeView, StorageUnitView } from "./contract.js";
+import type { OwnerView, StorageUnitTreeView, StorageUnitView } from "./contract.js";
 
 /**
  * # Reading the forest the API answers with
@@ -13,7 +13,8 @@ import type { StorageUnitTreeView, StorageUnitView } from "./contract.js";
  * flagship feature quietly breaks on one of them.
  */
 export interface FlatUnit {
-  readonly unit: StorageUnitView;
+  /** The tree's own node, so what the caller may do there comes along. */
+  readonly unit: StorageUnitTreeView;
   /** How deep it sits, for indenting a picker. Roots are 0. */
   readonly depth: number;
   /** `Garage > Metal wardrobe > Box 3`, ending at this unit. */
@@ -107,6 +108,75 @@ export const subtreeOf = (
   const found = findNode(nodes, id);
 
   return found === null ? [] : flattenUnits(found.children).map((entry) => entry.unit);
+};
+
+/**
+ * A node of the tree by id, with what the caller may do there (ADR 26), or
+ * `null` when it is not in the tree — which, for a space the person may see,
+ * means the tree is not loaded or is stale, and nothing should be offered.
+ */
+export const findTreeNode = (
+  nodes: readonly StorageUnitTreeView[],
+  id: UnitId,
+): StorageUnitTreeView | null => findNode(nodes, id);
+
+/**
+ * The places something may be put: every space the caller may edit, in the
+ * order the tree is drawn (ADR 26). A view-only space is left out because the
+ * API would refuse it for certain; the cycle rule is still not pre-empted
+ * here (ADR 2), because that one is the domain's to say, with a sentence.
+ */
+export const editableUnits = (nodes: readonly StorageUnitTreeView[]): readonly FlatUnit[] =>
+  flattenUnits(nodes).filter(
+    (entry) => entry.unit.permissions.access === ShareLevel.EDIT,
+  );
+
+/** The home screen's groups of roots (ADR 26). */
+export interface RootsByWhose {
+  /** The caller's own, first. */
+  readonly yours: readonly StorageUnitTreeView[];
+  /** For a person: the spaces shared with them, each a root of its own. */
+  readonly sharedWithYou: readonly StorageUnitTreeView[];
+  /** For an administrator: each other person's roots, by username. */
+  readonly others: readonly { readonly owner: OwnerView; readonly roots: readonly StorageUnitTreeView[] }[];
+}
+
+/**
+ * The roots of the tree, grouped the way the home screen draws them.
+ *
+ * An administrator sees their own roots first and then each other person's,
+ * under that person's name. A person sees their own and then a "shared with
+ * you" group, and is never shown a group named after anybody, whatever a tree
+ * might carry: grouping by owner is an administrator's view.
+ */
+export const rootsByWhose = (
+  roots: readonly StorageUnitTreeView[],
+  caller: { readonly id: string; readonly role: Role },
+): RootsByWhose => {
+  const yours: StorageUnitTreeView[] = [];
+  const sharedWithYou: StorageUnitTreeView[] = [];
+  const others = new Map<string, { owner: OwnerView; roots: StorageUnitTreeView[] }>();
+
+  for (const root of roots) {
+    const owner = caller.role === Role.ADMINISTRATOR ? root.owner : null;
+    if (owner !== null && owner.id !== caller.id) {
+      const group = others.get(owner.id) ?? { owner, roots: [] };
+      group.roots.push(root);
+      others.set(owner.id, group);
+    } else if (root.shared) {
+      sharedWithYou.push(root);
+    } else {
+      yours.push(root);
+    }
+  }
+
+  return {
+    yours,
+    sharedWithYou,
+    others: [...others.values()].sort((left, right) =>
+      left.owner.username.localeCompare(right.owner.username, "en"),
+    ),
+  };
 };
 
 const findNode = (

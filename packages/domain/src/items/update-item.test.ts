@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { itemId } from "../shared/identity.js";
+import { itemId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "../storage-units/create-storage-unit.js";
 import { StorageUnitKind } from "../storage-units/storage-unit.js";
 import { InMemoryStorageUnitRepository } from "../storage-units/storage-unit-repository.fake.js";
@@ -30,9 +31,13 @@ describe("UpdateItem", () => {
       ids: new SequentialIdGenerator("unit"),
       publicIds: new SequentialPublicIdGenerator(),
       clock,
-    }).execute({ name: "Box 3", kind: StorageUnitKind.BOX });
+    }).execute(SEES_EVERYTHING, {
+      callerId: userId("dario"),
+      name: "Box 3",
+      kind: StorageUnitKind.BOX,
+    });
 
-    return createItem.execute({
+    return createItem.execute(SEES_EVERYTHING, {
       storageUnitId: box.id,
       name: "Drill",
       description: "18V, two batteries",
@@ -58,7 +63,7 @@ describe("UpdateItem", () => {
     const drill = await create();
     clock.advanceTo(EDITED_AT);
 
-    const revised = await updateItem.execute({
+    const revised = await updateItem.execute(SEES_EVERYTHING, {
       id: drill.id,
       name: "Cordless drill",
     });
@@ -71,7 +76,10 @@ describe("UpdateItem", () => {
     const drill = await create();
     clock.advanceTo(EDITED_AT);
 
-    const revised = await updateItem.execute({ id: drill.id, name: "Cordless drill" });
+    const revised = await updateItem.execute(SEES_EVERYTHING, {
+      id: drill.id,
+      name: "Cordless drill",
+    });
 
     expect(revised.updatedAt).toEqual(EDITED_AT);
     expect(revised.createdAt).toEqual(CREATED_AT);
@@ -80,7 +88,11 @@ describe("UpdateItem", () => {
   it("retags an item outright, so a wrong tag can be taken off", async () => {
     const drill = await create();
 
-    const revised = await updateItem.execute({ id: drill.id, tags: ["diy", "18v"] });
+    const revised = await updateItem.execute(SEES_EVERYTHING, {
+      id: drill.id,
+      tags: ["diy",
+      "18v"],
+    });
 
     expect(revised.tags).toEqual(["diy", "18v"]);
   });
@@ -88,7 +100,7 @@ describe("UpdateItem", () => {
   it("changes the quantity and the description together", async () => {
     const drill = await create();
 
-    const revised = await updateItem.execute({
+    const revised = await updateItem.execute(SEES_EVERYTHING, {
       id: drill.id,
       quantity: 7,
       description: null,
@@ -103,7 +115,7 @@ describe("UpdateItem", () => {
     const drill = await create();
 
     await expect(
-      updateItem.execute({ id: drill.id, quantity: 0 }),
+      updateItem.execute(SEES_EVERYTHING, { id: drill.id, quantity: 0 }),
     ).rejects.toBeInstanceOf(InvalidQuantity);
   });
 
@@ -111,7 +123,7 @@ describe("UpdateItem", () => {
     const drill = await create();
 
     await expect(
-      updateItem.execute({ id: drill.id, name: "Cordless drill", quantity: 0 }),
+      updateItem.execute(SEES_EVERYTHING, { id: drill.id, name: "Cordless drill", quantity: 0 }),
     ).rejects.toBeInstanceOf(InvalidQuantity);
 
     await expect(items.findById(drill.id)).resolves.toEqual(drill);
@@ -120,7 +132,10 @@ describe("UpdateItem", () => {
   it("leaves the item where it is: editing is not moving (ADR 3)", async () => {
     const drill = await create();
 
-    const revised = await updateItem.execute({ id: drill.id, name: "Cordless drill" });
+    const revised = await updateItem.execute(SEES_EVERYTHING, {
+      id: drill.id,
+      name: "Cordless drill",
+    });
 
     expect(revised.storageUnitId).toBe(drill.storageUnitId);
   });
@@ -128,20 +143,23 @@ describe("UpdateItem", () => {
   it("keeps the photos it holds, in the order that decides the cover", async () => {
     const drill = await create();
 
-    const revised = await updateItem.execute({ id: drill.id, name: "Cordless drill" });
+    const revised = await updateItem.execute(SEES_EVERYTHING, {
+      id: drill.id,
+      name: "Cordless drill",
+    });
 
     expect(revised.photos).toEqual(drill.photos);
   });
 
   it("refuses to edit an item nobody stored", async () => {
     await expect(
-      updateItem.execute({ id: itemId("ghost"), name: "Cordless drill" }),
+      updateItem.execute(SEES_EVERYTHING, { id: itemId("ghost"), name: "Cordless drill" }),
     ).rejects.toBeInstanceOf(ItemNotFound);
   });
 
   it("does not invent an item when the id names nothing", async () => {
     await expect(
-      updateItem.execute({ id: itemId("ghost"), name: "Cordless drill" }),
+      updateItem.execute(SEES_EVERYTHING, { id: itemId("ghost"), name: "Cordless drill" }),
     ).rejects.toBeInstanceOf(ItemNotFound);
 
     await expect(items.findById(itemId("ghost"))).resolves.toBeNull();

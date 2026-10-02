@@ -45,6 +45,8 @@ export const useMachineTokens = (): UseQueryResult<MachineTokenListResponse> => 
 export interface CreateMachineTokenVariables {
   readonly name: string;
   readonly scope: string;
+  /** The spaces to narrow it to; absent means everything (ADR 26). */
+  readonly spaceIds?: readonly string[];
 }
 
 /**
@@ -70,6 +72,7 @@ export const useCreateMachineToken = (): UseMutationResult<
       await api.createMachineToken({
         name: variables.name,
         scope: variables.scope as never,
+        ...(variables.spaceIds === undefined ? {} : { spaceIds: variables.spaceIds }),
       }),
     onSuccess: () => {
       void queries.invalidateQueries({ queryKey: queryKeys.machineTokens() });

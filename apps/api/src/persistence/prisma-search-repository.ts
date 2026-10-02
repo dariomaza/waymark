@@ -1,4 +1,9 @@
-import type { Item, SearchRepository, StorageUnit } from "@waymark/domain";
+import type {
+  Item,
+  SearchRepository,
+  SpaceReach,
+  StorageUnit,
+} from "@waymark/domain";
 import type { PrismaClient } from "@prisma/client";
 
 import { ITEM_RELATIONS, toDomainItem } from "./item-mapper.js";
@@ -32,16 +37,25 @@ import { toDomainStorageUnit } from "./storage-unit-mapper.js";
  *
  * # Why the MATCH does not do more
  *
- * No scope, no order, no limit. FTS5 could do all three, and doing them here
+ * No subtree scope, no order, no limit. FTS5 could do all three, and doing them here
  * would make the Prisma adapter and the in-memory one different in ways their
  * shared contract could never pin down. Ranking in particular is a product
  * rule — a name beats a tag beats a description — and bm25 is not a rule, it
  * is a number that depends on how many other rows happen to contain the word.
+ *
+ * # What it does do: stay within the person's reach (ADR 26)
+ *
+ * The spaces a person may reach are applied in the query that loads the rows,
+ * so a row they may not see never leaves the database as a candidate. That is
+ * who is asking, not how to rank, and it must happen before anything is cut.
  */
 export class PrismaSearchRepository implements SearchRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findItemsMatching(terms: readonly string[]): Promise<Item[]> {
+  async findItemsMatching(
+    terms: readonly string[],
+    reach: SpaceReach,
+  ): Promise<Item[]> {
     const expression = toMatchExpression(terms);
     if (expression === null) {
       return [];
@@ -55,7 +69,12 @@ export class PrismaSearchRepository implements SearchRepository {
     }
 
     const rows = await this.prisma.item.findMany({
-      where: { id: { in: matches.map((match) => match.itemId) } },
+      where: {
+        id: { in: matches.map((match) => match.itemId) },
+        ...(reach.kind === "everywhere"
+          ? {}
+          : { storageUnitId: { in: [...reach.spaceIds] } }),
+      },
       include: ITEM_RELATIONS,
     });
 
@@ -64,6 +83,7 @@ export class PrismaSearchRepository implements SearchRepository {
 
   async findStorageUnitsMatching(
     terms: readonly string[],
+    reach: SpaceReach,
   ): Promise<StorageUnit[]> {
     const expression = toMatchExpression(terms);
     if (expression === null) {
@@ -78,7 +98,12 @@ export class PrismaSearchRepository implements SearchRepository {
     }
 
     const rows = await this.prisma.storageUnit.findMany({
-      where: { id: { in: matches.map((match) => match.unitId) } },
+      where: {
+        AND: [
+          { id: { in: matches.map((match) => match.unitId) } },
+          ...(reach.kind === "everywhere" ? [] : [{ id: { in: [...reach.spaceIds] } }]),
+        ],
+      },
     });
 
     return rows.map(toDomainStorageUnit);

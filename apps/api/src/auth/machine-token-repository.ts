@@ -1,6 +1,19 @@
 import type { MachineToken } from "./machine-token.js";
 
 /**
+ * Whose token a rotation or a revocation may touch (ADR 26): the id of the
+ * person who issued it, or `ANY_ISSUER` for an administrator and for the shell.
+ *
+ * It is a condition of the one statement that writes, not a read before it, so
+ * nothing can change hands between the check and the write. A token of
+ * somebody else's is answered exactly as a name that is not there.
+ */
+export type IssuedBy = string | typeof ANY_ISSUER;
+
+/** No limit on whose token it is. */
+export const ANY_ISSUER = null;
+
+/**
  * Where machine tokens are kept.
  *
  * A port beside `SessionRepository` and `UserRepository`, in `@waymark/api`
@@ -62,15 +75,28 @@ export interface MachineTokenRepository {
    * answers `false`: rotating a credential is a person acting on a decision,
    * and success in answer to a typo lets them walk away believing a secret
    * they still hold has been replaced.
+   *
+   * `issuedBy` limits it to one person's tokens; see `IssuedBy`.
    */
-  rotate(rotation: MachineTokenRotation): Promise<MachineToken | null>;
+  rotate(
+    rotation: MachineTokenRotation,
+    issuedBy: IssuedBy,
+  ): Promise<MachineToken | null>;
 
   /**
    * Revocation. `true` when a token went, `false` when the name named nothing —
    * so the CLI can tell "revoked" from "there was nothing to revoke" rather
    * than reporting success at a typo.
+   *
+   * `issuedBy` limits it to one person's tokens; see `IssuedBy`.
    */
-  deleteByName(name: string): Promise<boolean>;
+  deleteByName(name: string, issuedBy: IssuedBy): Promise<boolean>;
+
+  /**
+   * Revokes every token one person issued, in one statement, and answers how
+   * many went. What disabling an account does to its credentials (ADR 26).
+   */
+  deleteAllIssuedBy(userId: string): Promise<number>;
 
   /** Every token, by name, for the CLI. Never the secret; there is none stored. */
   list(): Promise<readonly MachineToken[]>;
@@ -79,7 +105,10 @@ export interface MachineTokenRepository {
 /**
  * Everything a rotation replaces, which is deliberately not everything.
  *
- * `name` addresses the row; `scope` is absent because a rotation issues a new
+ * `name` addresses the row; `userId` is absent because the token keeps the
+ * person it belongs to (ADR 26) — an owner set by whoever rotates it would
+ * let an administrator's rotation widen what the token sees; `scope` is
+ * absent because a rotation issues a new
  * secret for the SAME key, and a rotation that could widen `read` into
  * `read-write` would be a way to escalate a credential while calling it
  * maintenance.

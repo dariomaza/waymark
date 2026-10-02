@@ -209,3 +209,10 @@ exists to make possible.
   a test for each of the four routes.
 - A third scope value would still be a role system, and would still have to
   reopen ADR 5. Nothing here needs one.
+
+## Amended (2026-10-01)
+
+ADR 26 gives a machine token a `userId`: the argument above against provenance
+nobody reads no longer applies, because access is resolved from it on every
+request. People list the tokens they issued; an administrator lists all of
+them. A machine still cannot manage machine tokens.

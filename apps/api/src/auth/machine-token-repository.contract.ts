@@ -1,11 +1,12 @@
+import { unitId, WHOLE_REACH, type ChosenSpaces } from "@waymark/domain";
 import type { RepositoryHarness } from "@waymark/domain-contract-tests";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { MachineTokenScope, type MachineToken } from "./machine-token.js";
 import {
-  MachineTokenScope,
-  type MachineToken,
-} from "./machine-token.js";
-import type { MachineTokenRepository } from "./machine-token-repository.js";
+  ANY_ISSUER,
+  type MachineTokenRepository,
+} from "./machine-token-repository.js";
 
 /**
  * # The shared contract for `MachineTokenRepository`
@@ -41,10 +42,17 @@ const aMachineToken = (
   name: "mcp-server",
   tokenHash: "hash-1",
   scope: MachineTokenScope.Read,
+  userId: "dario",
   createdAt: A_MOMENT,
   expiresAt: null,
   lastUsedAt: null,
+  chosenSpaces: WHOLE_REACH,
   ...overrides,
+});
+
+const narrowedTo = (...ids: string[]): ChosenSpaces => ({
+  narrowed: true,
+  spaceIds: ids.map(unitId),
 });
 
 export const machineTokenRepositoryContract = (
@@ -54,7 +62,74 @@ export const machineTokenRepositoryContract = (
     let machineTokens: MachineTokenRepository;
 
     beforeEach(async () => {
-      ({ machineTokens } = await harness.setUp());
+      const context = await harness.setUp();
+      machineTokens = context.machineTokens;
+      // A token belongs to somebody (ADR 26), and in a database that is a
+      // foreign key: both people these cases mention have accounts.
+      await context.givenTheUser("dario");
+      await context.givenTheUser("partner");
+      context_ = context;
+    });
+
+    let context_: MachineTokenRepositoryContext;
+
+    /**
+     * The spaces a token was narrowed to (ADR 26), kept beside it. What the
+     * token may then reach is decided on every request from these and from
+     * what its issuer may reach; the repository only keeps the choice.
+     */
+    describe("the spaces a token was narrowed to", () => {
+      beforeEach(async () => {
+        await context_.givenTheSpace("garage");
+        await context_.givenTheSpace("attic");
+      });
+
+      it("keeps that nothing was chosen", async () => {
+        await machineTokens.create(aMachineToken());
+
+        expect((await machineTokens.findByName("mcp-server"))?.chosenSpaces).toEqual(WHOLE_REACH);
+      });
+
+      it("keeps the spaces chosen, whichever way the token is found", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-a", chosenSpaces: narrowedTo("garage", "attic") }),
+        );
+
+        const sorted = (found: MachineToken | null | undefined) =>
+          found?.chosenSpaces.narrowed === true ? [...found.chosenSpaces.spaceIds].sort() : null;
+        expect(sorted(await machineTokens.findByName("mcp-server"))).toEqual(["attic", "garage"]);
+        expect(sorted(await machineTokens.findByTokenHash("hash-a"))).toEqual(["attic", "garage"]);
+        expect(sorted((await machineTokens.list())[0])).toEqual(["attic", "garage"]);
+      });
+
+      it("keeps them across a rotation, as it keeps the scope", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-a", chosenSpaces: narrowedTo("garage") }),
+        );
+
+        const rotated = await machineTokens.rotate(
+          { name: "mcp-server", tokenHash: "hash-b", createdAt: A_LATER_MOMENT, expiresAt: null },
+          ANY_ISSUER,
+        );
+
+        expect(rotated?.chosenSpaces).toEqual(narrowedTo("garage"));
+        expect((await machineTokens.findByTokenHash("hash-b"))?.chosenSpaces).toEqual(
+          narrowedTo("garage"),
+        );
+      });
+
+      /**
+       * The edge everything here is shaped around: when the chosen spaces go,
+       * the token is still narrowed. It must never come back as "nothing
+       * chosen", which would widen it to its issuer's whole reach.
+       */
+      it("stays narrowed when every chosen space has been deleted", async () => {
+        await machineTokens.create(aMachineToken({ chosenSpaces: narrowedTo("garage") }));
+
+        await context_.deleteTheSpace("garage");
+
+        expect((await machineTokens.findByName("mcp-server"))?.chosenSpaces.narrowed).toBe(true);
+      });
     });
 
     describe("finding one by the hash a caller presented", () => {
@@ -201,14 +276,14 @@ export const machineTokenRepositoryContract = (
 
       it("answers null for a name nobody was ever issued", async () => {
         expect(
-          await machineTokens.rotate({ ...A_ROTATION, name: "nothing" }),
+          await machineTokens.rotate({ ...A_ROTATION, name: "nothing" }, ANY_ISSUER),
         ).toBeNull();
       });
 
       it("makes the new hash open the token", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        await machineTokens.rotate(A_ROTATION);
+        await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
         expect((await machineTokens.findByTokenHash("hash-next"))?.name).toBe(
           "mcp-server",
@@ -223,7 +298,7 @@ export const machineTokenRepositoryContract = (
       it("makes the old hash open nothing, in the same step", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        await machineTokens.rotate(A_ROTATION);
+        await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
         expect(await machineTokens.findByTokenHash("hash-old")).toBeNull();
       });
@@ -231,7 +306,7 @@ export const machineTokenRepositoryContract = (
       it("keeps the name, so an operator still finds it where they left it", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        await machineTokens.rotate(A_ROTATION);
+        await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
         expect((await machineTokens.findByName("mcp-server"))?.tokenHash).toBe(
           "hash-next",
@@ -248,9 +323,20 @@ export const machineTokenRepositoryContract = (
           aMachineToken({ tokenHash: "hash-old", scope: MachineTokenScope.Read }),
         );
 
-        const rotated = await machineTokens.rotate(A_ROTATION);
+        const rotated = await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
         expect(rotated?.scope).toBe(MachineTokenScope.Read);
+      });
+
+      it("keeps the person it belongs to, as it keeps the scope (ADR 26)", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-old", userId: "partner" }),
+        );
+
+        expect((await machineTokens.rotate(A_ROTATION, ANY_ISSUER))?.userId).toBe("partner");
+        expect((await machineTokens.findByName("mcp-server"))?.userId).toBe(
+          "partner",
+        );
       });
 
       it("keeps the id, because this is the same credential slot", async () => {
@@ -258,7 +344,7 @@ export const machineTokenRepositoryContract = (
           aMachineToken({ id: "token-9", tokenHash: "hash-old" }),
         );
 
-        expect((await machineTokens.rotate(A_ROTATION))?.id).toBe("token-9");
+        expect((await machineTokens.rotate(A_ROTATION, ANY_ISSUER))?.id).toBe("token-9");
       });
 
       /**
@@ -273,13 +359,13 @@ export const machineTokenRepositoryContract = (
           aMachineToken({ tokenHash: "hash-old", lastUsedAt: A_MOMENT }),
         );
 
-        expect((await machineTokens.rotate(A_ROTATION))?.lastUsedAt).toBeNull();
+        expect((await machineTokens.rotate(A_ROTATION, ANY_ISSUER))?.lastUsedAt).toBeNull();
       });
 
       it("stamps the moment the new secret was issued", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        expect((await machineTokens.rotate(A_ROTATION))?.createdAt).toEqual(
+        expect((await machineTokens.rotate(A_ROTATION, ANY_ISSUER))?.createdAt).toEqual(
           A_LATER_MOMENT,
         );
       });
@@ -289,16 +375,13 @@ export const machineTokenRepositoryContract = (
           aMachineToken({ tokenHash: "hash-old", expiresAt: A_MOMENT }),
         );
 
-        expect((await machineTokens.rotate(A_ROTATION))?.expiresAt).toBeNull();
+        expect((await machineTokens.rotate(A_ROTATION, ANY_ISSUER))?.expiresAt).toBeNull();
       });
 
       it("sets an expiry when one is asked for", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        const rotated = await machineTokens.rotate({
-          ...A_ROTATION,
-          expiresAt: A_LATER_MOMENT,
-        });
+        const rotated = await machineTokens.rotate({ ...A_ROTATION, expiresAt: A_LATER_MOMENT }, ANY_ISSUER);
 
         expect(rotated?.expiresAt).toEqual(A_LATER_MOMENT);
       });
@@ -308,16 +391,18 @@ export const machineTokenRepositoryContract = (
           aMachineToken({ id: "token-3", tokenHash: "hash-old" }),
         );
 
-        const rotated = await machineTokens.rotate(A_ROTATION);
+        const rotated = await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
         expect(rotated).toEqual({
           id: "token-3",
           name: "mcp-server",
           tokenHash: "hash-next",
           scope: MachineTokenScope.Read,
+          userId: "dario",
           createdAt: A_LATER_MOMENT,
           expiresAt: null,
           lastUsedAt: null,
+          chosenSpaces: WHOLE_REACH,
         });
       });
 
@@ -329,7 +414,7 @@ export const machineTokenRepositoryContract = (
           aMachineToken({ id: "b", name: "writer", tokenHash: "h-b" }),
         );
 
-        await machineTokens.rotate(A_ROTATION);
+        await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
         expect((await machineTokens.findByTokenHash("h-b"))?.name).toBe("writer");
       });
@@ -337,7 +422,7 @@ export const machineTokenRepositoryContract = (
       it("adds nothing: the list is as long as it was", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        await machineTokens.rotate(A_ROTATION);
+        await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
         expect(await machineTokens.list()).toHaveLength(1);
       });
@@ -345,8 +430,8 @@ export const machineTokenRepositoryContract = (
       it("can be done again, so a rotated token is still rotatable", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        await machineTokens.rotate(A_ROTATION);
-        await machineTokens.rotate({ ...A_ROTATION, tokenHash: "hash-third" });
+        await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
+        await machineTokens.rotate({ ...A_ROTATION, tokenHash: "hash-third" }, ANY_ISSUER);
 
         expect(await machineTokens.findByTokenHash("hash-next")).toBeNull();
         expect((await machineTokens.findByTokenHash("hash-third"))?.name).toBe(
@@ -358,10 +443,29 @@ export const machineTokenRepositoryContract = (
       it("leaves the token revocable by the name it still has", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-old" }));
 
-        await machineTokens.rotate(A_ROTATION);
+        await machineTokens.rotate(A_ROTATION, ANY_ISSUER);
 
-        expect(await machineTokens.deleteByName("mcp-server")).toBe(true);
+        expect(await machineTokens.deleteByName("mcp-server", ANY_ISSUER)).toBe(true);
         expect(await machineTokens.findByTokenHash("hash-next")).toBeNull();
+      });
+      /**
+       * Whose token may be rotated is decided in the same statement that
+       * rotates it, so nothing can change hands between a check and the write
+       * (ADR 26): a token of somebody else's is answered as one that is not
+       * there, and is left exactly as it was.
+       */
+      it("rotates only a token of the person it is limited to", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-old", userId: "partner" }),
+        );
+
+        expect(await machineTokens.rotate(A_ROTATION, "dario")).toBeNull();
+        expect((await machineTokens.findByName("mcp-server"))?.tokenHash).toBe(
+          "hash-old",
+        );
+        expect((await machineTokens.rotate(A_ROTATION, "partner"))?.tokenHash).toBe(
+          "hash-next",
+        );
       });
     });
 
@@ -369,12 +473,12 @@ export const machineTokenRepositoryContract = (
       it("says it removed one, and the hash then opens nothing", async () => {
         await machineTokens.create(aMachineToken({ tokenHash: "hash-a" }));
 
-        expect(await machineTokens.deleteByName("mcp-server")).toBe(true);
+        expect(await machineTokens.deleteByName("mcp-server", ANY_ISSUER)).toBe(true);
         expect(await machineTokens.findByTokenHash("hash-a")).toBeNull();
       });
 
       it("says it removed nothing for a name that was never issued", async () => {
-        expect(await machineTokens.deleteByName("nothing")).toBe(false);
+        expect(await machineTokens.deleteByName("nothing", ANY_ISSUER)).toBe(false);
       });
 
       it("leaves every other token alone", async () => {
@@ -385,9 +489,39 @@ export const machineTokenRepositoryContract = (
           aMachineToken({ id: "b", name: "writer", tokenHash: "h-b" }),
         );
 
-        await machineTokens.deleteByName("reader");
+        await machineTokens.deleteByName("reader", ANY_ISSUER);
 
         expect((await machineTokens.findByTokenHash("h-b"))?.name).toBe("writer");
+      });
+      it("revokes only a token of the person it is limited to (ADR 26)", async () => {
+        await machineTokens.create(
+          aMachineToken({ tokenHash: "hash-a", userId: "partner" }),
+        );
+
+        expect(await machineTokens.deleteByName("mcp-server", "dario")).toBe(false);
+        expect((await machineTokens.findByTokenHash("hash-a"))?.name).toBe("mcp-server");
+        expect(await machineTokens.deleteByName("mcp-server", "partner")).toBe(true);
+      });
+    });
+
+    describe("revoking every token one person issued (ADR 26)", () => {
+      it("removes each of theirs, answers how many, and leaves everybody else's", async () => {
+        await machineTokens.create(
+          aMachineToken({ id: "a", name: "theirs-1", tokenHash: "h-a", userId: "partner" }),
+        );
+        await machineTokens.create(
+          aMachineToken({ id: "b", name: "theirs-2", tokenHash: "h-b", userId: "partner" }),
+        );
+        await machineTokens.create(
+          aMachineToken({ id: "c", name: "mine", tokenHash: "h-c", userId: "dario" }),
+        );
+
+        expect(await machineTokens.deleteAllIssuedBy("partner")).toBe(2);
+        expect((await machineTokens.list()).map((token) => token.name)).toEqual(["mine"]);
+      });
+
+      it("answers none when they issued nothing", async () => {
+        expect(await machineTokens.deleteAllIssuedBy("partner")).toBe(0);
       });
     });
 
@@ -420,4 +554,10 @@ export const machineTokenRepositoryContract = (
 /** Everything a `MachineTokenRepository` contract run needs, which is the port. */
 export interface MachineTokenRepositoryContext {
   readonly machineTokens: MachineTokenRepository;
+  /** Makes sure an account with this id exists; a token's owner is a foreign key. */
+  givenTheUser(id: string): Promise<void>;
+  /** Makes sure a root space with this id exists; a chosen space is a foreign key. */
+  givenTheSpace(id: string): Promise<void>;
+  /** Deletes a space the way the inventory does, to see what it takes with it. */
+  deleteTheSpace(id: string): Promise<void>;
 }

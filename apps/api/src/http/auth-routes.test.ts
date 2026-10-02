@@ -38,7 +38,7 @@ describe("authentication over HTTP", () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.json()).toMatchObject({
-        user: { username: TEST_USERNAME },
+        user: { username: TEST_USERNAME, role: "administrator" },
       });
       expect((response.json() as { token: string }).token).toEqual(
         expect.any(String),
@@ -243,8 +243,26 @@ describe("authentication over HTTP", () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({
-        user: { id: expect.any(String), username: TEST_USERNAME },
+        user: { id: expect.any(String), username: TEST_USERNAME, role: "administrator" },
       });
+    });
+
+    /**
+     * The role rides on `/auth/me` because it is what a client asks before
+     * drawing the People group (ADR 26), and the answer has to be the
+     * server's current one rather than whatever was true at sign-in.
+     */
+    it("says a later account is a user", async () => {
+      await api.createUser("partner", "another-password");
+      const token = await api.login("partner", "another-password");
+
+      const response = await api.app.inject({
+        method: "GET",
+        url: "/auth/me",
+        headers: api.authHeaders(token),
+      });
+
+      expect(response.json()).toMatchObject({ user: { username: "partner", role: "user" } });
     });
 
     it("answers 401 with no Authorization header at all", async () => {

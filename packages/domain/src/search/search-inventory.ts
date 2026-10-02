@@ -1,3 +1,4 @@
+import { mayViewSpace, reachOf, type Access } from "../access/access.js";
 import type { Item } from "../items/item.js";
 import type { UnitId } from "../shared/identity.js";
 import { GetStorageUnitPath } from "../storage-units/get-storage-unit-path.js";
@@ -86,6 +87,7 @@ export class SearchInventory {
   }
 
   async execute(
+    access: Access,
     command: SearchInventoryCommand,
   ): Promise<SearchInventoryResult> {
     const terms = toSearchTerms(command.query);
@@ -95,13 +97,29 @@ export class SearchInventory {
       return { terms, items: [], storageUnits: [] };
     }
 
-    const scope = await this.#scopeOf(command.withinUnitId ?? null);
+    const scope = await this.#scopeOf(access, command.withinUnitId ?? null);
+    const reach = reachOf(access);
     const limit = command.limit ?? DEFAULT_SEARCH_LIMIT;
 
     const [candidateItems, candidateUnits] = await Promise.all([
-      this.deps.search.findItemsMatching(terms),
-      this.deps.search.findStorageUnitsMatching(terms),
+      this.deps.search.findItemsMatching(terms, reach),
+      this.deps.search.findStorageUnitsMatching(terms, reach),
     ]);
+
+    // Memoized for the length of THIS search only: a box holding six matching
+    // items is one walk, not six. Kept across searches it would serve a path
+    // from before a move, and one person's uncut path to the next person.
+    const paths = new Map<string, Promise<StorageUnit[]>>();
+    const pathTo = (id: UnitId): Promise<StorageUnit[]> => {
+      const cached = paths.get(id);
+      if (cached !== undefined) {
+        return cached;
+      }
+      const path = this.#paths.execute(access, id);
+      paths.set(id, path);
+
+      return path;
+    };
 
     const items = rank(
       candidateItems.filter(
@@ -124,7 +142,7 @@ export class SearchInventory {
       items: await Promise.all(
         items.map(async ({ entity, match }) => ({
           item: entity,
-          path: await this.#pathTo(entity.storageUnitId),
+          path: await pathTo(entity.storageUnitId),
           matchedFields: match.matchedFields,
           relevance: match.relevance,
         })),
@@ -132,7 +150,7 @@ export class SearchInventory {
       storageUnits: await Promise.all(
         storageUnits.map(async ({ entity, match }) => ({
           unit: entity,
-          path: await this.#pathTo(entity.id),
+          path: await pathTo(entity.id),
           matchedFields: match.matchedFields,
           relevance: match.relevance,
         })),
@@ -140,33 +158,17 @@ export class SearchInventory {
     };
   }
 
-  /**
-   * Paths are memoized for the length of one search: a box holding six
-   * matching items is one walk, not six. Beyond that the walk is the same one
-   * `GET /storage-units/:id` already uses, rather than a second implementation
-   * of "climb to the root" that could disagree with it about a corrupt tree.
-   */
-  readonly #cachedPaths = new Map<string, Promise<StorageUnit[]>>();
-
-  async #pathTo(id: UnitId): Promise<StorageUnit[]> {
-    const cached = this.#cachedPaths.get(id);
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    const path = this.#paths.execute(id);
-    this.#cachedPaths.set(id, path);
-
-    return path;
-  }
-
-  async #scopeOf(withinUnitId: UnitId | null): Promise<SearchScope | null> {
+  async #scopeOf(
+    access: Access,
+    withinUnitId: UnitId | null,
+  ): Promise<SearchScope | null> {
     if (withinUnitId === null) {
       return null;
     }
 
     const root = await this.deps.storageUnits.findById(withinUnitId);
-    if (root === null) {
+    // A scope the person may not see is a scope that does not exist.
+    if (root === null || !mayViewSpace(access, withinUnitId)) {
       throw new StorageUnitNotFound(withinUnitId);
     }
 

@@ -3,20 +3,27 @@ import {
   InMemoryItemRepository,
   InMemoryPhotoRepository,
   InMemorySearchRepository,
+  InMemoryShareRepository,
   InMemoryStorageUnitRepository,
 } from "@waymark/domain/testing";
 
 import { domainUseCaseContract } from "./domain-use-case.contract.js";
+import { invisibilityContract } from "./invisibility.contract.js";
+import { whatEachPersonMayChangeContract } from "./what-each-person-may-change.contract.js";
+import { aNarrowedTokenContract } from "./a-narrowed-token.contract.js";
 import type {
   DomainUseCaseContext,
+  InvisibilityContext,
   ItemRepositoryContext,
   PhotoRepositoryContext,
   SearchRepositoryContext,
+  ShareRepositoryContext,
   StorageUnitRepositoryContext,
 } from "./harness.js";
 import { itemRepositoryContract } from "./item-repository.contract.js";
 import { photoRepositoryContract } from "./photo-repository.contract.js";
 import { searchRepositoryContract } from "./search-repository.contract.js";
+import { shareRepositoryContract } from "./share-repository.contract.js";
 import { storageUnitRepositoryContract } from "./storage-unit-repository.contract.js";
 
 /**
@@ -35,8 +42,9 @@ const forceParentLink = (repository: InMemoryStorageUnitRepository) =>
     if (unit === null) {
       throw new Error(`Cannot corrupt ${id}: it was never stored`);
     }
-    // Straight into the Map, past every use case and every invariant.
-    await repository.save({ ...unit, parentId });
+    // Straight into the Map, past every use case and every invariant. The
+    // owner goes too, as it would in the database: only a root records one.
+    await repository.save({ ...unit, parentId, ownerId: null });
   };
 
 storageUnitRepositoryContract({
@@ -79,11 +87,68 @@ searchRepositoryContract({
   tearDown: async () => {},
 });
 
+shareRepositoryContract({
+  name: "InMemoryShareRepository",
+  setUp: async (): Promise<ShareRepositoryContext> => ({
+    shares: new InMemoryShareRepository(),
+    storageUnits: newStorageUnits(),
+  }),
+  tearDown: async () => {},
+});
+
 domainUseCaseContract({
   name: "in-memory repositories",
   setUp: async (): Promise<DomainUseCaseContext> => ({
     storageUnits: newStorageUnits(),
     items: new InMemoryItemRepository(),
   }),
+  tearDown: async () => {},
+});
+
+invisibilityContract({
+  name: "in-memory repositories",
+  setUp: async (): Promise<InvisibilityContext> => {
+    const storageUnits = newStorageUnits();
+    const items = new InMemoryItemRepository();
+    return {
+      storageUnits,
+      items,
+      photos: new InMemoryPhotoRepository(),
+      search: new InMemorySearchRepository({ items, storageUnits }),
+      shares: new InMemoryShareRepository(),
+    };
+  },
+  tearDown: async () => {},
+});
+
+whatEachPersonMayChangeContract({
+  name: "in-memory repositories",
+  setUp: async (): Promise<InvisibilityContext> => {
+    const storageUnits = newStorageUnits();
+    const items = new InMemoryItemRepository();
+    return {
+      storageUnits,
+      items,
+      photos: new InMemoryPhotoRepository(),
+      search: new InMemorySearchRepository({ items, storageUnits }),
+      shares: new InMemoryShareRepository(),
+    };
+  },
+  tearDown: async () => {},
+});
+
+aNarrowedTokenContract({
+  name: "in-memory repositories",
+  setUp: async (): Promise<InvisibilityContext> => {
+    const storageUnits = newStorageUnits();
+    const items = new InMemoryItemRepository();
+    return {
+      storageUnits,
+      items,
+      photos: new InMemoryPhotoRepository(),
+      search: new InMemorySearchRepository({ items, storageUnits }),
+      shares: new InMemoryShareRepository(),
+    };
+  },
   tearDown: async () => {},
 });

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING, THE_ADMINISTRATOR } from "../access/access.fake.js";
 import { CreateItem } from "../items/create-item.js";
 import { InMemoryItemRepository } from "../items/item-repository.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
@@ -7,7 +8,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { unitId, type UnitId } from "../shared/identity.js";
+import { unitId, userId, type UnitId, type UserId } from "../shared/identity.js";
 import { CreateStorageUnit } from "./create-storage-unit.js";
 import { DeleteStorageUnit } from "./delete-storage-unit.js";
 import { EmptyStorageUnit } from "./empty-storage-unit.js";
@@ -30,8 +31,13 @@ describe("EmptyStorageUnit", () => {
   let deleteStorageUnit: DeleteStorageUnit;
   let getStorageUnitPath: GetStorageUnitPath;
 
-  const createUnit = async (name: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({
+  const createUnit = async (
+    name: string,
+    parentId: UnitId | null = null,
+    callerId: UserId = userId("dario"),
+  ) =>
+    createStorageUnit.execute(SEES_EVERYTHING, {
+      callerId,
       parentId,
       name,
       kind: StorageUnitKind.OTHER,
@@ -59,15 +65,45 @@ describe("EmptyStorageUnit", () => {
   });
 
   describe("emptying into the parent", () => {
+    it("makes the children of an emptied root roots of the same owner (ADR 26)", async () => {
+      const garage = await createUnit("Garage", null, userId("partner"));
+      const shelf = await createUnit("Shelf", garage.id, userId("dario"));
+
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: garage.id,
+      });
+
+      const moved = await storageUnits.findById(shelf.id);
+      expect(moved?.parentId).toBeNull();
+      expect(moved?.ownerId).toBe("partner");
+    });
+
+    it("leaves the children of an emptied inner space without an owner", async () => {
+      const room = await createUnit("Storage room");
+      const wardrobe = await createUnit("Wardrobe", room.id);
+      const box = await createUnit("Box 3", wardrobe.id);
+
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+      });
+
+      expect((await storageUnits.findById(box.id))?.ownerId).toBeNull();
+    });
+
     it("moves the items up to the parent", async () => {
       const room = await createUnit("Storage room");
       const wardrobe = await createUnit("Metal wardrobe", room.id);
-      await createItem.execute({
+      await createItem.execute(SEES_EVERYTHING, {
         storageUnitId: wardrobe.id,
         name: "Loose screws",
       });
 
-      await emptyStorageUnit.execute(wardrobe.id);
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+      });
 
       await expect(items.countByStorageUnit(wardrobe.id)).resolves.toBe(0);
       await expect(items.countByStorageUnit(room.id)).resolves.toBe(1);
@@ -78,7 +114,10 @@ describe("EmptyStorageUnit", () => {
       const wardrobe = await createUnit("Metal wardrobe", room.id);
       const box = await createUnit("Box 3", wardrobe.id);
 
-      await emptyStorageUnit.execute(wardrobe.id);
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+      });
 
       const stored = await storageUnits.findById(box.id);
       expect(stored?.parentId).toBe(room.id);
@@ -89,12 +128,15 @@ describe("EmptyStorageUnit", () => {
       const wardrobe = await createUnit("Metal wardrobe", room.id);
       await createUnit("Box 3", wardrobe.id);
       await createUnit("Box 4", wardrobe.id);
-      await createItem.execute({
+      await createItem.execute(SEES_EVERYTHING, {
         storageUnitId: wardrobe.id,
         name: "Loose screws",
       });
 
-      const result = await emptyStorageUnit.execute(wardrobe.id);
+      const result = await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+      });
 
       expect(result.movedItems).toHaveLength(1);
       expect(result.movedChildUnits).toHaveLength(2);
@@ -104,13 +146,16 @@ describe("EmptyStorageUnit", () => {
       const room = await createUnit("Storage room");
       const wardrobe = await createUnit("Metal wardrobe", room.id);
       await createUnit("Box 3", wardrobe.id);
-      await createItem.execute({
+      await createItem.execute(SEES_EVERYTHING, {
         storageUnitId: wardrobe.id,
         name: "Loose screws",
       });
 
-      await emptyStorageUnit.execute(wardrobe.id);
-      await deleteStorageUnit.execute(wardrobe.id);
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+      });
+      await deleteStorageUnit.execute(SEES_EVERYTHING, wardrobe.id);
 
       await expect(storageUnits.findById(wardrobe.id)).resolves.toBeNull();
     });
@@ -120,9 +165,12 @@ describe("EmptyStorageUnit", () => {
       const wardrobe = await createUnit("Metal wardrobe", room.id);
       const box = await createUnit("Box 3", wardrobe.id);
 
-      await emptyStorageUnit.execute(wardrobe.id);
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+      });
 
-      const path = await getStorageUnitPath.execute(box.id);
+      const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
       expect(path.map((unit) => unit.name)).toEqual(["Storage room", "Box 3"]);
     });
 
@@ -130,7 +178,10 @@ describe("EmptyStorageUnit", () => {
       const room = await createUnit("Storage room");
       const wardrobe = await createUnit("Metal wardrobe", room.id);
 
-      await emptyStorageUnit.execute(room.id);
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: room.id,
+      });
 
       const stored = await storageUnits.findById(wardrobe.id);
       expect(stored?.parentId).toBeNull();
@@ -138,12 +189,15 @@ describe("EmptyStorageUnit", () => {
 
     it("refuses to empty a root that holds items, because they have nowhere to go", async () => {
       const room = await createUnit("Storage room");
-      await createItem.execute({
+      await createItem.execute(SEES_EVERYTHING, {
         storageUnitId: room.id,
         name: "Loose screws",
       });
 
-      await expect(emptyStorageUnit.execute(room.id)).rejects.toBeInstanceOf(
+      await expect(emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: room.id,
+      })).rejects.toBeInstanceOf(
         MissingEmptyTarget,
       );
     });
@@ -151,12 +205,15 @@ describe("EmptyStorageUnit", () => {
     it("moves nothing when it refuses to empty a root that holds items", async () => {
       const room = await createUnit("Storage room");
       const wardrobe = await createUnit("Metal wardrobe", room.id);
-      await createItem.execute({
+      await createItem.execute(SEES_EVERYTHING, {
         storageUnitId: room.id,
         name: "Loose screws",
       });
 
-      await expect(emptyStorageUnit.execute(room.id)).rejects.toBeInstanceOf(
+      await expect(emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: room.id,
+      })).rejects.toBeInstanceOf(
         MissingEmptyTarget,
       );
 
@@ -168,7 +225,10 @@ describe("EmptyStorageUnit", () => {
       const room = await createUnit("Storage room");
       const wardrobe = await createUnit("Metal wardrobe", room.id);
 
-      const result = await emptyStorageUnit.execute(wardrobe.id);
+      const result = await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+      });
 
       expect(result.movedItems).toEqual([]);
       expect(result.movedChildUnits).toEqual([]);
@@ -181,12 +241,16 @@ describe("EmptyStorageUnit", () => {
       const wardrobe = await createUnit("Metal wardrobe", room.id);
       const box = await createUnit("Box 3", wardrobe.id);
       const garage = await createUnit("Garage");
-      await createItem.execute({
+      await createItem.execute(SEES_EVERYTHING, {
         storageUnitId: wardrobe.id,
         name: "Loose screws",
       });
 
-      await emptyStorageUnit.execute(wardrobe.id, garage.id);
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+        targetUnitId: garage.id,
+      });
 
       await expect(items.countByStorageUnit(garage.id)).resolves.toBe(1);
       const stored = await storageUnits.findById(box.id);
@@ -197,13 +261,17 @@ describe("EmptyStorageUnit", () => {
       const room = await createUnit("Storage room");
       const wardrobe = await createUnit("Metal wardrobe", room.id);
       const box = await createUnit("Box 3", wardrobe.id);
-      const drill = await createItem.execute({
+      const drill = await createItem.execute(SEES_EVERYTHING, {
         storageUnitId: wardrobe.id,
         name: "Cordless drill",
       });
       clock.advanceTo(new Date("2026-07-07T06:00:00.000Z"));
 
-      await emptyStorageUnit.execute(wardrobe.id, room.id);
+      await emptyStorageUnit.execute(SEES_EVERYTHING, {
+        callerId: THE_ADMINISTRATOR,
+        id: wardrobe.id,
+        targetUnitId: room.id,
+      });
 
       const movedBox = await storageUnits.findById(box.id);
       const movedDrill = await items.findById(drill.id);
@@ -218,7 +286,11 @@ describe("EmptyStorageUnit", () => {
       const wardrobe = await createUnit("Metal wardrobe", room.id);
 
       await expect(
-        emptyStorageUnit.execute(wardrobe.id, wardrobe.id),
+        emptyStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: wardrobe.id,
+          targetUnitId: wardrobe.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
     });
 
@@ -229,7 +301,11 @@ describe("EmptyStorageUnit", () => {
       const bag = await createUnit("Bag", box.id);
 
       await expect(
-        emptyStorageUnit.execute(wardrobe.id, bag.id),
+        emptyStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: wardrobe.id,
+          targetUnitId: bag.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
     });
 
@@ -239,7 +315,11 @@ describe("EmptyStorageUnit", () => {
       const box = await createUnit("Box 3", wardrobe.id);
 
       await expect(
-        emptyStorageUnit.execute(wardrobe.id, box.id),
+        emptyStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: wardrobe.id,
+          targetUnitId: box.id,
+        }),
       ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
 
       const stored = await storageUnits.findById(box.id);
@@ -251,13 +331,20 @@ describe("EmptyStorageUnit", () => {
       const wardrobe = await createUnit("Metal wardrobe", room.id);
 
       await expect(
-        emptyStorageUnit.execute(wardrobe.id, unitId("ghost")),
+        emptyStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: wardrobe.id,
+          targetUnitId: unitId("ghost"),
+        }),
       ).rejects.toBeInstanceOf(StorageUnitNotFound);
     });
 
     it("rejects emptying a unit that does not exist", async () => {
       await expect(
-        emptyStorageUnit.execute(unitId("ghost")),
+        emptyStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: unitId("ghost"),
+        }),
       ).rejects.toBeInstanceOf(StorageUnitNotFound);
     });
   });

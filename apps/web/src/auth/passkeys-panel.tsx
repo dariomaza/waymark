@@ -26,9 +26,9 @@ import { PasskeyRow } from "./views/passkey-row.js";
  * The account screen's security group. It sits above the machine tokens, and the two are
  * deliberately different shapes even though they are both credentials.
  *
- * A machine token is a key to the shared house: ADR 18 makes every one of them
- * visible to everybody who could have minted one, and creating one hands back
- * a secret that is shown once and never again. A passkey is somebody's thumb:
+ * A machine token is a key that acts as its issuer: ADR 18 and ADR 26 make
+ * each one visible to that person and to every administrator, and creating
+ * one hands back a secret that is shown once and never again. A passkey is somebody's thumb:
  * the list is theirs alone, and **there is no secret to show**, because the
  * private half never leaves the authenticator. That is why this panel has no
  * warning banner, no copy button and no "I have stored it" — there is nothing

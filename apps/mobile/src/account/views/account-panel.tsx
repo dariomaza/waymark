@@ -30,6 +30,12 @@ export interface AccountPanelProps {
    * ordered from "you" outwards.
    */
   readonly machineTokens: ReactNode;
+  /**
+   * The people in the house (ADR 26), drawn by the group itself only for an
+   * administrator and as nothing for anybody else. Last, because it is the
+   * furthest out from "you".
+   */
+  readonly people: ReactNode;
   readonly busy: boolean;
   readonly onSignOut: () => void;
 }
@@ -56,6 +62,7 @@ export const AccountPanel = ({
   appearance,
   biometrics,
   machineTokens,
+  people,
   busy,
   onSignOut,
 }: AccountPanelProps): JSX.Element => {
@@ -102,6 +109,8 @@ export const AccountPanel = ({
       {biometrics}
 
       {machineTokens}
+
+      {people}
     </View>
   );
 };

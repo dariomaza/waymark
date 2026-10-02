@@ -1,3 +1,4 @@
+import { Role } from "@waymark/domain";
 import { FakeClock, SequentialIdGenerator } from "@waymark/domain/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -38,8 +39,10 @@ const DARIO: User = {
   id: "user-dario",
   username: "dario",
   passwordHash: "scrypt$...",
+  role: Role.ADMINISTRATOR,
   createdAt: NOW,
   updatedAt: NOW,
+  disabledAt: null,
 };
 
 /** Just enough of the port to answer "who is this". */
@@ -48,6 +51,23 @@ const usersHolding = (...people: readonly User[]): UserRepository => ({
   findByUsername: async (username) =>
     people.find((person) => person.username === username) ?? null,
   create: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  anyoneExists: async () => people.length > 0,
+  findOldestAdministrator: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  list: async () => people,
+  changeRole: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  disable: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  enable: async () => {
+    throw new Error("not part of this ceremony");
+  },
+  changePassword: async () => {
     throw new Error("not part of this ceremony");
   },
 });
@@ -72,6 +92,10 @@ class RecordingSessionRepository implements SessionRepository {
     if (at >= 0) {
       this.saved.splice(at, 1);
     }
+  }
+
+  async deleteAllOf(): Promise<number> {
+    throw new Error("not part of this ceremony");
   }
 
   async deleteExpired(): Promise<number> {

@@ -1,3 +1,5 @@
+import { mayViewSpace, type Access } from "../access/access.js";
+import { refuseViewOnly } from "../access/write-checks.js";
 import type { Clock } from "../shared/clock.js";
 import type { IdGenerator } from "../shared/id-generator.js";
 import { itemId, type PhotoId, type UnitId } from "../shared/identity.js";
@@ -22,16 +24,21 @@ export interface CreateItemCommand {
   readonly photos?: readonly PhotoId[];
 }
 
+/**
+ * Puts a new item in a space, which needs edit on that space (ADR 26). A space
+ * out of reach is refused exactly as a missing one.
+ */
 export class CreateItem {
   constructor(private readonly deps: CreateItemDependencies) {}
 
-  async execute(command: CreateItemCommand): Promise<Item> {
+  async execute(access: Access, command: CreateItemCommand): Promise<Item> {
     const storageUnit = await this.deps.storageUnits.findById(
       command.storageUnitId,
     );
-    if (storageUnit === null) {
+    if (storageUnit === null || !mayViewSpace(access, storageUnit.id)) {
       throw new StorageUnitNotFound(command.storageUnitId);
     }
+    refuseViewOnly(access, storageUnit.id);
 
     const item = createItem({
       id: itemId(this.deps.ids.next()),

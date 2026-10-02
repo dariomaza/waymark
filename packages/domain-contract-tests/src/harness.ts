@@ -2,6 +2,7 @@ import type {
   ItemRepository,
   PhotoRepository,
   SearchRepository,
+  ShareRepository,
   StorageUnitRepository,
   UnitId,
 } from "@waymark/domain";
@@ -52,6 +53,16 @@ export interface SearchRepositoryContext {
   readonly storageUnits: StorageUnitRepository;
 }
 
+/**
+ * A share is on a space (ADR 26), so the suite seeds the spaces it shares
+ * through the real storage unit repository, which keeps a relational
+ * adapter's foreign keys satisfiable.
+ */
+export interface ShareRepositoryContext {
+  readonly shares: ShareRepository;
+  readonly storageUnits: StorageUnitRepository;
+}
+
 /** Both ports at once, so the domain use cases can be wired to them. */
 export interface DomainUseCaseContext {
   readonly storageUnits: StorageUnitRepository;
@@ -59,10 +70,25 @@ export interface DomainUseCaseContext {
 }
 
 /**
+ * Every port a read can reach, for the invisibility fixture (ADR 26). It is
+ * seeded through the real repositories, so what each person sees is decided
+ * against what the adapter actually stored.
+ */
+export interface InvisibilityContext {
+  readonly storageUnits: StorageUnitRepository;
+  readonly items: ItemRepository;
+  readonly photos: PhotoRepository;
+  readonly search: SearchRepository;
+  readonly shares: ShareRepository;
+}
+
+/**
  * How one implementation plugs itself into a contract suite.
  *
  * `setUp` must hand back EMPTY storage every time; a contract that leaks state
- * between cases proves nothing. `tearDown` releases whatever `setUp` claimed.
+ * between cases proves nothing. The one thing it must already hold is an
+ * account for every person in `CONTRACT_PEOPLE`, because a root's owner is a
+ * person (ADR 26). `tearDown` releases whatever `setUp` claimed.
  */
 export interface RepositoryHarness<TContext> {
   /** Shown in the test names, so a failure says which implementation broke. */

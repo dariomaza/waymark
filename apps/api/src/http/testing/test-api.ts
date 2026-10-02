@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { FakeClock } from "@waymark/domain/testing";
 import type { FastifyInstance } from "fastify";
 
-import type { PhotoId } from "@waymark/domain";
+import { unitId, userId, type PhotoId, type ShareLevel } from "@waymark/domain";
 
 import { UuidIdGenerator } from "../../adapters/uuid-id-generator.js";
 import { Base32PublicIdGenerator } from "../../adapters/public-id-generator.js";
@@ -15,6 +15,7 @@ import { FixedWindowRateLimiter } from "../../auth/login-rate-limiter.js";
 import type { MachineTokenScope } from "../../auth/machine-token.js";
 import { ScryptPasswordHasher } from "../../auth/password-hasher.js";
 import { relyingPartyFor, type RelyingParty } from "../../auth/relying-party.js";
+import { THE_SHELL } from "../../auth/machine-token-manager.js";
 import { RevokeMachineToken } from "../../auth/revoke-machine-token.js";
 import { PrismaItemRepository } from "../../persistence/prisma-item-repository.js";
 import { PrismaMachineTokenRepository } from "../../persistence/prisma-machine-token-repository.js";
@@ -22,6 +23,7 @@ import { PrismaPasskeyRepository } from "../../persistence/prisma-passkey-reposi
 import { PrismaPasskeyChallengeRepository } from "../../persistence/prisma-passkey-challenge-repository.js";
 import { PrismaPhotoRepository } from "../../persistence/prisma-photo-repository.js";
 import { PrismaSearchRepository } from "../../persistence/prisma-search-repository.js";
+import { PrismaShareRepository } from "../../persistence/prisma-share-repository.js";
 import { PrismaSessionRepository } from "../../persistence/prisma-session-repository.js";
 import { PrismaStorageUnitRepository } from "../../persistence/prisma-storage-unit-repository.js";
 import { PrismaUserRepository } from "../../persistence/prisma-user-repository.js";
@@ -138,12 +140,29 @@ export interface TestApi {
   runProcessing(): Promise<RunSummary>;
   /** Re-points the processor, for the cases about a sidecar going away. */
   pointProcessorAt(baseUrl: string): void;
-  createUser(username: string, password: string): Promise<void>;
-  /** Issues one and returns the secret, exactly as the CLI prints it once. */
+  /**
+   * As the shell makes one. The first account is the administrator; a later
+   * one is a user unless `administrator` says otherwise (ADR 26).
+   */
+  createUser(
+    username: string,
+    password: string,
+    options?: { readonly administrator?: boolean },
+  ): Promise<void>;
+  /**
+   * Shares a space with somebody, straight through the repository: there is
+   * no route that shares yet (ADR 26, roadmap slice 7).
+   */
+  share(storageUnitId: string, username: string, level: ShareLevel): Promise<void>;
+  /**
+   * Issues one and returns the secret, exactly as the CLI prints it once. It
+   * belongs to `issuedBy` (ADR 26), whose account must already exist.
+   */
   createMachineToken(
     name: string,
     scope: MachineTokenScope,
     expiresInDays?: number,
+    issuedBy?: string,
   ): Promise<string>;
   revokeMachineToken(name: string): Promise<boolean>;
   /** Straight out of the database, so a test can assert it never leaves it. */
@@ -173,6 +192,7 @@ export const createTestApi = async (
   const items = new PrismaItemRepository(database.client);
   const photos = new PrismaPhotoRepository(database.client);
   const search = new PrismaSearchRepository(database.client);
+  const shares = new PrismaShareRepository(database.client);
   const files = new PhotoFileStore(photoRoot);
   const queue = new PrismaPhotoProcessingQueue(database.client);
 
@@ -228,6 +248,7 @@ export const createTestApi = async (
         items,
         photos,
         search,
+        shares,
         users,
         sessions,
         machineTokens,
@@ -302,10 +323,32 @@ export const createTestApi = async (
       rebuildProcessing();
     },
 
-    async createUser(username: string, password: string): Promise<void> {
+    async createUser(
+      username: string,
+      password: string,
+      options: { readonly administrator?: boolean } = {},
+    ): Promise<void> {
       await new CreateUser({ users, hasher, ids, clock: api.clock }).execute({
         username,
         password,
+        ...(options.administrator === true ? { administrator: true } : {}),
+      });
+    },
+
+    async share(
+      storageUnitId: string,
+      username: string,
+      level: ShareLevel,
+    ): Promise<void> {
+      const person = await users.findByUsername(username);
+      if (person === null) {
+        throw new Error(`Create "${username}" before sharing anything with them`);
+      }
+
+      await shares.set({
+        storageUnitId: unitId(storageUnitId),
+        userId: userId(person.id),
+        access: level,
       });
     },
 
@@ -313,14 +356,24 @@ export const createTestApi = async (
       name: string,
       scope: MachineTokenScope,
       expiresInDays?: number,
+      issuedBy: string = TEST_USERNAME,
     ): Promise<string> {
+      const issuer = await users.findByUsername(issuedBy);
+      if (issuer === null) {
+        throw new Error(
+          `A machine token belongs to somebody: create "${issuedBy}" before issuing one`,
+        );
+      }
+
       const { token } = await new CreateMachineToken({
         machineTokens,
+        storageUnits,
         ids,
         clock: api.clock,
       }).execute({
         name,
         scope,
+        userId: issuer.id,
         ...(expiresInDays === undefined ? {} : { expiresInDays }),
       });
 
@@ -328,7 +381,7 @@ export const createTestApi = async (
     },
 
     async revokeMachineToken(name: string): Promise<boolean> {
-      return new RevokeMachineToken({ machineTokens }).execute(name);
+      return new RevokeMachineToken({ machineTokens }).execute(name, THE_SHELL);
     },
 
     async machineTokenHashOf(name: string): Promise<string> {

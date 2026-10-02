@@ -10,6 +10,11 @@ import { useTranslate } from "../app/language-context.js";
 
 export interface UnitActionsProps {
   readonly unit: StorageUnitView;
+  /**
+   * Whether things may be put in it. A space shared to look at (ADR 26)
+   * keeps only the search, which changes nothing.
+   */
+  readonly mayChange: boolean;
 }
 
 /**
@@ -42,22 +47,24 @@ export interface UnitActionsProps {
  * It owns the one dialog it opens and nothing else. The dialog owns its own
  * request and its own refusal.
  */
-export const UnitActions = ({ unit }: UnitActionsProps): JSX.Element => {
+export const UnitActions = ({ unit, mayChange }: UnitActionsProps): JSX.Element => {
   const t = useTranslate();
 
   const [adding, setAdding] = useState(false);
 
   return (
     <>
-      <Button
-        tone="primary"
-        icon="plus"
-        onClick={() => {
-          setAdding(true);
-        }}
-      >
-        {t("units.addItem")}
-      </Button>
+      {mayChange ? (
+        <Button
+          tone="primary"
+          icon="plus"
+          onClick={() => {
+            setAdding(true);
+          }}
+        >
+          {t("units.addItem")}
+        </Button>
+      ) : null}
       {/*
         The two shapes say what KIND of intention each one is: a plus for
         something arriving, a magnifier for something being looked for. Two

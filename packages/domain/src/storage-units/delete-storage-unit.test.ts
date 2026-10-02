@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { CreateItem } from "../items/create-item.js";
 import { InMemoryItemRepository } from "../items/item-repository.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
@@ -7,7 +8,7 @@ import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { unitId, type UnitId } from "../shared/identity.js";
+import { unitId, type UnitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "./create-storage-unit.js";
 import { DeleteStorageUnit } from "./delete-storage-unit.js";
 import {
@@ -25,7 +26,8 @@ describe("DeleteStorageUnit", () => {
   let deleteStorageUnit: DeleteStorageUnit;
 
   const createUnit = async (name: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
+      callerId: userId("dario"),
       parentId,
       name,
       kind: StorageUnitKind.OTHER,
@@ -53,19 +55,19 @@ describe("DeleteStorageUnit", () => {
   it("deletes a unit that holds nothing", async () => {
     const box = await createUnit("Box 3");
 
-    await deleteStorageUnit.execute(box.id);
+    await deleteStorageUnit.execute(SEES_EVERYTHING, box.id);
 
     await expect(storageUnits.findById(box.id)).resolves.toBeNull();
   });
 
   it("refuses to delete a unit that holds items", async () => {
     const box = await createUnit("Box 3");
-    await createItem.execute({
+    await createItem.execute(SEES_EVERYTHING, {
       storageUnitId: box.id,
       name: "Cordless drill",
     });
 
-    await expect(deleteStorageUnit.execute(box.id)).rejects.toBeInstanceOf(
+    await expect(deleteStorageUnit.execute(SEES_EVERYTHING, box.id)).rejects.toBeInstanceOf(
       StorageUnitNotEmpty,
     );
   });
@@ -74,7 +76,7 @@ describe("DeleteStorageUnit", () => {
     const wardrobe = await createUnit("Metal wardrobe");
     await createUnit("Box 3", wardrobe.id);
 
-    await expect(deleteStorageUnit.execute(wardrobe.id)).rejects.toBeInstanceOf(
+    await expect(deleteStorageUnit.execute(SEES_EVERYTHING, wardrobe.id)).rejects.toBeInstanceOf(
       StorageUnitNotEmpty,
     );
   });
@@ -82,12 +84,12 @@ describe("DeleteStorageUnit", () => {
   it("refuses to delete a unit that holds both items and child units", async () => {
     const wardrobe = await createUnit("Metal wardrobe");
     await createUnit("Box 3", wardrobe.id);
-    await createItem.execute({
+    await createItem.execute(SEES_EVERYTHING, {
       storageUnitId: wardrobe.id,
       name: "Loose screws",
     });
 
-    await expect(deleteStorageUnit.execute(wardrobe.id)).rejects.toBeInstanceOf(
+    await expect(deleteStorageUnit.execute(SEES_EVERYTHING, wardrobe.id)).rejects.toBeInstanceOf(
       StorageUnitNotEmpty,
     );
   });
@@ -96,12 +98,12 @@ describe("DeleteStorageUnit", () => {
     const wardrobe = await createUnit("Metal wardrobe");
     await createUnit("Box 3", wardrobe.id);
     await createUnit("Box 4", wardrobe.id);
-    await createItem.execute({
+    await createItem.execute(SEES_EVERYTHING, {
       storageUnitId: wardrobe.id,
       name: "Loose screws",
     });
 
-    await expect(deleteStorageUnit.execute(wardrobe.id)).rejects.toMatchObject({
+    await expect(deleteStorageUnit.execute(SEES_EVERYTHING, wardrobe.id)).rejects.toMatchObject({
       itemCount: 1,
       childUnitCount: 2,
     });
@@ -111,7 +113,7 @@ describe("DeleteStorageUnit", () => {
     const wardrobe = await createUnit("Metal wardrobe");
     const box = await createUnit("Box 3", wardrobe.id);
 
-    await expect(deleteStorageUnit.execute(wardrobe.id)).rejects.toBeInstanceOf(
+    await expect(deleteStorageUnit.execute(SEES_EVERYTHING, wardrobe.id)).rejects.toBeInstanceOf(
       StorageUnitNotEmpty,
     );
 
@@ -123,14 +125,14 @@ describe("DeleteStorageUnit", () => {
     const wardrobe = await createUnit("Metal wardrobe");
     const box = await createUnit("Box 3", wardrobe.id);
 
-    await deleteStorageUnit.execute(box.id);
+    await deleteStorageUnit.execute(SEES_EVERYTHING, box.id);
 
     await expect(storageUnits.findById(wardrobe.id)).resolves.toEqual(wardrobe);
   });
 
   it("rejects deleting a unit that does not exist", async () => {
     await expect(
-      deleteStorageUnit.execute(unitId("ghost")),
+      deleteStorageUnit.execute(SEES_EVERYTHING, unitId("ghost")),
     ).rejects.toBeInstanceOf(StorageUnitNotFound);
   });
 });

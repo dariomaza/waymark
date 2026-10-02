@@ -352,6 +352,34 @@ export const itemRepositoryContract = (
       });
     });
 
+    /**
+     * Which items show a photo, so serving its bytes can be decided against
+     * what the person may see (ADR 26). A photo may be on more than one item.
+     */
+    describe("findByPhoto", () => {
+      it("finds every item that shows the photo, and only those", async () => {
+        await storageUnits.saveAll([box, crate]);
+        await items.saveAll([
+          anItem("drill", box.id, { photos: [aPhotoId("p-1"), aPhotoId("p-2")] }),
+          anItem("sander", crate.id, { photos: [aPhotoId("p-2")] }),
+          anItem("whisk", crate.id, { photos: [aPhotoId("p-3")] }),
+        ]);
+
+        expect(sortedIds(await items.findByPhoto(aPhotoId("p-2")))).toEqual([
+          "drill",
+          "sander",
+        ]);
+        expect(sortedIds(await items.findByPhoto(aPhotoId("p-1")))).toEqual(["drill"]);
+      });
+
+      it("finds nothing for a photo no item shows", async () => {
+        await storageUnits.saveAll([box]);
+        await items.save(anItem("drill", box.id));
+
+        await expect(items.findByPhoto(aPhotoId("p-9"))).resolves.toEqual([]);
+      });
+    });
+
     describe("findAll", () => {
       it("returns nothing when nothing is stored", async () => {
         await expect(items.findAll()).resolves.toEqual([]);

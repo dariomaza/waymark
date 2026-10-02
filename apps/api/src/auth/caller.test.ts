@@ -1,6 +1,12 @@
+import { Role, WHOLE_REACH } from "@waymark/domain";
 import { describe, expect, it } from "vitest";
 
-import { callerMayWrite, callerName, type Caller } from "./caller.js";
+import {
+  callerMayWrite,
+  callerName,
+  personBehind,
+  type Caller,
+} from "./caller.js";
 import { MachineTokenScope } from "./machine-token.js";
 import { SessionOpener } from "./session.js";
 
@@ -12,8 +18,10 @@ const aPerson: Caller = {
     id: "user-1",
     username: "dario",
     passwordHash: "scrypt$...",
+    role: Role.ADMINISTRATOR,
     createdAt: NOW,
     updatedAt: NOW,
+    disabledAt: null,
   },
   session: {
     id: "session-1",
@@ -32,16 +40,18 @@ const aMachine = (scope: MachineTokenScope): Caller => ({
     name: "mcp-server",
     tokenHash: "hash",
     scope,
+    userId: "user-9",
     createdAt: NOW,
     expiresAt: null,
     lastUsedAt: null,
+    chosenSpaces: WHOLE_REACH,
   },
 });
 
 describe("what a caller may do", () => {
-  it("lets a person write, because ADR 5 has not changed", () => {
-    // Users are credentials, there are no roles, and everybody who can log in
-    // edits the same house. A machine token narrows a MACHINE, never a person.
+  it("lets a person write", () => {
+    // Who may change WHICH space is decided against their access (ADR 26);
+    // a machine token's scope narrows a MACHINE, never a person.
     expect(callerMayWrite(aPerson)).toBe(true);
   });
 
@@ -61,5 +71,15 @@ describe("naming a caller for a log", () => {
 
   it("names a machine by the name it was issued under", () => {
     expect(callerName(aMachine(MachineTokenScope.Read))).toBe("mcp-server");
+  });
+});
+
+describe("whom a caller acts as (ADR 26)", () => {
+  it("is the person signed in, for a session", () => {
+    expect(personBehind(aPerson)).toBe("user-1");
+  });
+
+  it("is the person who issued it, for a machine token", () => {
+    expect(personBehind(aMachine(MachineTokenScope.ReadWrite))).toBe("user-9");
   });
 });

@@ -4,7 +4,7 @@ import type { Login } from "../../auth/login.js";
 import type { Logout } from "../../auth/logout.js";
 import { bearerTokenOf } from "../bearer-token.js";
 import { HttpError } from "../http-error.js";
-import { machineTokenView, type UserView } from "../views.js";
+import { machineTokenView, userView } from "../views.js";
 import { loginBodySchema } from "../validation.js";
 
 export interface AuthRouteOptions {
@@ -17,13 +17,13 @@ export interface AuthRouteOptions {
  *
  * The API is reachable from the internet through a Cloudflare Tunnel on a real
  * domain. A public sign-up route on a household inventory is not a feature, it
- * is a door. Accounts are created with `pnpm --filter @waymark/api create-user`
- * by whoever has a shell on the server.
+ * is a door. The first account is created with
+ * `pnpm --filter @waymark/api create-user` by whoever has a shell on the
+ * server; later ones by them, or by an administrator from the account screen
+ * (`account-routes.ts`, ADR 26), always behind a session.
  *
- * There is no route that mints a machine token either, for the same reason and
- * more so: a machine token is long-lived, so an endpoint that issued one would
- * be a door that does not close by itself. They come from
- * `pnpm --filter @waymark/api machine-token create` (ADR 17).
+ * Machine tokens are minted from a shell (ADR 17) and, behind a person's
+ * session, from the account screen (`machine-token-routes.ts`, ADR 18).
  */
 export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (
   app,
@@ -38,15 +38,10 @@ export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (
       clientIp: request.clientIp,
     });
 
-    const user: UserView = {
-      id: result.user.id,
-      username: result.user.username,
-    };
-
     return reply.code(200).send({
       token: result.token,
       expiresAt: result.session.expiresAt.toISOString(),
-      user,
+      user: userView(result.user),
     });
   });
 };
@@ -77,12 +72,9 @@ export const authenticatedAuthRoutes: FastifyPluginAsync<AuthRouteOptions> = asy
         .send({ machineToken: machineTokenView(request.caller.machineToken) });
     }
 
-    const user: UserView = {
-      id: request.caller.user.id,
-      username: request.caller.user.username,
-    };
-
-    return reply.code(200).send({ user });
+    // The role is read from the account on this request, so a demotion is
+    // what the next `/auth/me` says (ADR 26).
+    return reply.code(200).send({ user: userView(request.caller.user) });
   });
 
   app.post("/auth/logout", async (request, reply) => {

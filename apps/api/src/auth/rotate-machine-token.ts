@@ -2,6 +2,10 @@ import type { Clock } from "@waymark/domain";
 
 import type { CreatedMachineToken } from "./create-machine-token.js";
 import { normalizeMachineTokenName } from "./machine-token.js";
+import {
+  tokensManagedBy,
+  type MachineTokenManager,
+} from "./machine-token-manager.js";
 import type { MachineTokenRepository } from "./machine-token-repository.js";
 import { issueMachineTokenSecret } from "./machine-token-secret.js";
 
@@ -12,6 +16,11 @@ export interface RotateMachineTokenDependencies {
 
 export interface RotateMachineTokenCommand {
   readonly name: string;
+  /**
+   * Who is rotating it. The issuer, an administrator or the shell may; for
+   * anybody else the name is answered as one nobody holds (ADR 26).
+   */
+  readonly by: MachineTokenManager;
   /**
    * Absent means it never lapses, exactly as it does on a creation — and
    * deliberately NOT "keep whatever the old one had".
@@ -78,6 +87,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  *
  * ## What it will not do
  *
+ * Change the person it belongs to (ADR 26). A token acts as its owner, so an
+ * administrator rotating somebody's token and becoming its owner would turn a
+ * key that sees one inventory into one that sees all of them. There is no
+ * `userId` anywhere in a rotation, for the same reason there is no `scope`.
+ *
  * Change the scope. The command has no `scope` field and `MachineTokenRotation`
  * has none either, so a `read` key cannot become a `read-write` one through a
  * door labelled maintenance. Widening a credential is issuing a new one, under
@@ -101,15 +115,18 @@ export class RotateMachineToken {
     const now = this.deps.clock.now();
     const { token, tokenHash } = issueMachineTokenSecret();
 
-    const machineToken = await this.deps.machineTokens.rotate({
-      name,
-      tokenHash,
-      createdAt: now,
-      expiresAt:
-        command.expiresInDays === undefined
-          ? null
-          : new Date(now.getTime() + command.expiresInDays * DAY_MS),
-    });
+    const machineToken = await this.deps.machineTokens.rotate(
+      {
+        name,
+        tokenHash,
+        createdAt: now,
+        expiresAt:
+          command.expiresInDays === undefined
+            ? null
+            : new Date(now.getTime() + command.expiresInDays * DAY_MS),
+      },
+      tokensManagedBy(command.by),
+    );
 
     // The secret generated above is simply dropped when there was nothing to
     // rotate. It was never stored, so there is nothing to undo — and building

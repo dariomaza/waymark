@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { SystemClock } from "../adapters/system-clock.js";
 import { UuidIdGenerator } from "../adapters/uuid-id-generator.js";
 import { UsernameAlreadyTaken } from "../auth/auth-errors.js";
-import { CreateUser } from "../auth/create-user.js";
+import { CreateUser, MINIMUM_PASSWORD_LENGTH } from "../auth/create-user.js";
 import { ScryptPasswordHasher } from "../auth/password-hasher.js";
 import { normalizeUsername } from "../auth/user.js";
 import { loadConfig } from "../config.js";
@@ -14,7 +14,9 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
 /**
  * `pnpm --filter @waymark/api create-user`
  *
- * The only way an account comes into existence. There is no registration
+ * How the FIRST account comes into existence, and still a way to make any
+ * other. Later accounts can also be made by an administrator from the account
+ * screen (ADR 26); both go through `CreateUser`. There is no registration
  * endpoint: the API is on the public internet through a Cloudflare Tunnel, and
  * a sign-up form on a household inventory is a door, not a feature.
  *
@@ -38,10 +40,11 @@ import { PrismaUserRepository } from "../persistence/prisma-user-repository.js";
  *    processes of the same user and leak into crash dumps.
  */
 
-const MINIMUM_PASSWORD_LENGTH = 12;
-
 const usage = `
-Usage: pnpm --filter @waymark/api create-user [--username <name>]
+Usage: pnpm --filter @waymark/api create-user [--username <name>] [--admin]
+
+The first account on a deployment is the administrator. Every later one is a
+user, unless --admin makes it an administrator too.
 
 The password is NEVER taken as an argument. It is read, in this order, from:
   1. standard input, when it is piped
@@ -112,6 +115,7 @@ const main = async (): Promise<void> => {
       options: {
         username: { type: "string" },
         password: { type: "string" },
+        admin: { type: "boolean" },
         help: { type: "boolean", short: "h" },
       },
       allowPositionals: false,
@@ -149,7 +153,7 @@ const main = async (): Promise<void> => {
   if (password.length < MINIMUM_PASSWORD_LENGTH) {
     return void fail(
       `The password must be at least ${MINIMUM_PASSWORD_LENGTH} characters. ` +
-        "This account can read and edit the whole inventory from the public internet.",
+        "This account can be signed in to from the public internet.",
     );
   }
 
@@ -162,9 +166,11 @@ const main = async (): Promise<void> => {
       hasher: new ScryptPasswordHasher(),
       ids: new UuidIdGenerator(),
       clock: new SystemClock(),
-    }).execute({ username, password });
+    }).execute({ username, password, administrator: parsed.values.admin === true });
 
-    process.stdout.write(`Created user "${user.username}" (${user.id}).\n`);
+    process.stdout.write(
+      `Created ${user.role} "${user.username}" (${user.id}).\n`,
+    );
   } catch (error) {
     if (error instanceof UsernameAlreadyTaken) {
       return void fail(error.message);

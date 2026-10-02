@@ -1,10 +1,12 @@
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 
 import type { CreateMachineToken } from "../../auth/create-machine-token.js";
+import type { ListMachineTokens } from "../../auth/list-machine-tokens.js";
 import type { MachineTokenScope } from "../../auth/machine-token.js";
-import type { MachineTokenRepository } from "../../auth/machine-token-repository.js";
+import type { MachineTokenManager } from "../../auth/machine-token-manager.js";
 import type { RevokeMachineToken } from "../../auth/revoke-machine-token.js";
 import type { RotateMachineToken } from "../../auth/rotate-machine-token.js";
+import type { User } from "../../auth/user.js";
 import { HttpError } from "../http-error.js";
 import {
   createMachineTokenBodySchema,
@@ -14,7 +16,7 @@ import {
 import { machineTokenView } from "../views.js";
 
 export interface MachineTokenRouteOptions {
-  readonly machineTokens: MachineTokenRepository;
+  readonly listMachineTokens: ListMachineTokens;
   readonly createMachineToken: CreateMachineToken;
   readonly rotateMachineToken: RotateMachineToken;
   readonly revokeMachineToken: RevokeMachineToken;
@@ -52,21 +54,19 @@ export interface MachineTokenRouteOptions {
  *    tell a token a person made from one a token made. ADR 17's entire promise
  *    — a credential that can be killed without touching a human account — is
  *    silently withdrawn.
- * 2. **There is nobody at the bottom of it.** `machine-token.ts` argues there
- *    is no `userId` on a machine token because provenance nothing reads is a
- *    column that goes stale. That holds while every token is minted by a
- *    person at a shell or at this screen. Let a token mint a token and "who
- *    authorised this credential" becomes recursive with no human at the end,
- *    answered by a field that deliberately does not exist. The alternative is
- *    the owner column ADR 5 refused.
+ * 2. **The person at the bottom of it would be hidden.** A token belongs to
+ *    the person who issued it (ADR 26). Let a token mint a token and "who
+ *    authorised this credential" becomes a chain of machines with a person
+ *    somewhere at the end of it, which nobody reading the list can see.
  * 3. **The codebase already decided this.** `POST /auth/logout` refuses a
  *    machine caller outright, "precisely so that a compromised machine cannot
  *    revoke itself into looking innocent". Minting and revoking credentials is
  *    the same act with a larger blast radius. This extends a precedent rather
  *    than inventing a rule.
- * 4. **ADR 5 is not touched.** This is not a permission on a person; every
- *    human still does everything. It is the same shape of statement ADR 17
- *    already makes: a rule about what a PROGRAM is, not about who is trusted.
+ * 4. **It is not a role.** This is not a permission on a person; roles and
+ *    shares are ADR 26's and say which spaces a person reaches. It is the same
+ *    shape of statement ADR 17 already makes: a rule about what a PROGRAM is,
+ *    not about who is trusted.
  *
  * Listing is refused for a reason of its own, and it is the one that would have
  * been missed. A `GET` sails through the scope hook untouched, so without this
@@ -77,15 +77,23 @@ export interface MachineTokenRouteOptions {
 export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
   async (app, options) => {
     app.get("/auth/machine-tokens", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
-      const machineTokens = await options.machineTokens.list();
+      const listed = await options.listMachineTokens.execute(
+        managerOf(person),
+        request.access,
+      );
 
       // `machineTokenView` is what guarantees the hash never leaves the
-      // server, rather than somebody remembering to leave it out here.
-      return reply
-        .code(200)
-        .send({ machineTokens: machineTokens.map(machineTokenView) });
+      // server, rather than somebody remembering to leave it out here. Whose a
+      // token is goes only to somebody who sees other people's (ADR 26).
+      return reply.code(200).send({
+        machineTokens: listed.map(({ machineToken, issuedBy, spaces }) => ({
+          ...machineTokenView(machineToken),
+          spaces,
+          ...(issuedBy === null ? {} : { issuedBy }),
+        })),
+      });
     });
 
     /**
@@ -94,16 +102,22 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * cannot produce it again, which is the property rather than a limitation.
      */
     app.post("/auth/machine-tokens", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
       const body = createMachineTokenBodySchema.parse(request.body);
 
       const { token, machineToken } = await options.createMachineToken.execute({
         name: body.name,
         scope: body.scope as MachineTokenScope,
+        userId: person.id,
         ...(body.expiresInDays === undefined
           ? {}
           : { expiresInDays: body.expiresInDays }),
+        // Each chosen space is checked against what the person issuing it may
+        // see: the access of this session (ADR 26).
+        ...(body.spaceIds === undefined
+          ? {}
+          : { narrowTo: { spaceIds: body.spaceIds, issuerAccess: request.access } }),
       });
 
       return reply
@@ -119,16 +133,21 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * scope, which this refuses on purpose.
      *
      * 200 rather than 201: nothing was created. The credential that was there
-     * is still there, under the same name, id and scope, holding a new secret.
+     * is still there, under the same name, id, scope and owner, holding a new
+     * secret.
      */
     app.post("/auth/machine-tokens/:name/rotate", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
       const { name } = machineTokenNameParamsSchema.parse(request.params);
+      // Strict: a body naming a scope or an owner is refused with 400 rather
+      // than ignored, because a rotation changes neither (ADR 18, ADR 26).
       const body = rotateMachineTokenBodySchema.parse(request.body ?? {});
 
+      // Somebody else's token is answered as a name nobody holds (ADR 26).
       const rotated = await options.rotateMachineToken.execute({
         name,
+        by: managerOf(person),
         ...(body.expiresInDays === undefined
           ? {}
           : { expiresInDays: body.expiresInDays }),
@@ -155,17 +174,24 @@ export const machineTokenRoutes: FastifyPluginAsync<MachineTokenRouteOptions> =
      * is still live.
      */
     app.delete("/auth/machine-tokens/:name", async (request, reply) => {
-      refuseMachineCaller(request);
+      const person = refuseMachineCaller(request);
 
       const { name } = machineTokenNameParamsSchema.parse(request.params);
 
-      if (!(await options.revokeMachineToken.execute(name))) {
+      // Somebody else's token is answered as a name nobody holds (ADR 26).
+      if (!(await options.revokeMachineToken.execute(name, managerOf(person)))) {
         throw noSuchMachineToken(name);
       }
 
       return reply.code(204).send();
     });
   };
+
+const managerOf = (person: User): MachineTokenManager => ({
+  kind: "person",
+  userId: person.id,
+  role: person.role,
+});
 
 const noSuchMachineToken = (name: string): HttpError =>
   new HttpError(
@@ -181,9 +207,11 @@ const noSuchMachineToken = (name: string): HttpError =>
  * `POST /auth/logout` answers a machine with. 401 would say "authenticate",
  * which this caller already did, successfully.
  */
-const refuseMachineCaller = (request: FastifyRequest): void => {
+const refuseMachineCaller = (request: FastifyRequest): User => {
   if (request.caller.kind !== "machine") {
-    return;
+    // The person behind the session: whoever issues or rotates a token is who
+    // it belongs to (ADR 26).
+    return request.caller.user;
   }
 
   throw new HttpError(

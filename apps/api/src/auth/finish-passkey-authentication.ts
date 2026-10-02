@@ -14,7 +14,7 @@ import type { RelyingParty } from "./relying-party.js";
 import { openSession, SessionOpener, type Session } from "./session.js";
 import type { SessionRepository } from "./session-repository.js";
 import { issueSessionToken } from "./session-token.js";
-import type { User } from "./user.js";
+import { isActive, type User } from "./user.js";
 import type { UserRepository } from "./user-repository.js";
 
 export interface FinishPasskeyAuthenticationDependencies {
@@ -99,6 +99,17 @@ export class FinishPasskeyAuthentication {
     }
 
     const newCounter = await this.#verify(challenge.challenge, passkey, command);
+
+    /*
+     * A disabled account keeps its passkeys (ADR 26) and opens nothing with
+     * them. Answered as a passkey that is not recognised, after the signature
+     * was checked, so the answer says nothing about the account: the same
+     * bargain `Login` makes with a disabled account's password.
+     */
+    if (!isActive(user)) {
+      this.deps.rateLimiter.recordFailure(command.clientIp);
+      throw new InvalidPasskey();
+    }
 
     /*
      * The counter check is AFTER the signature check, deliberately: a

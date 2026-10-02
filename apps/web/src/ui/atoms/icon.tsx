@@ -26,6 +26,7 @@ import {
   Tag,
   Tags,
   Trash2,
+  User,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -167,6 +168,8 @@ export const ICON_NAMES = [
   "info",
   /** Where a program is pointed: the address of this Waymark. */
   "link",
+  /** Somebody with an account in this house (ADR 26): a row of People. */
+  "person",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -215,6 +218,8 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "pinnedW">, LucideIcon> = {
   moon: Moon,
   info: Info,
   link: Link,
+  /** `User`: one head and shoulders, the shape every product uses for a person. */
+  person: User,
 };
 
 /**

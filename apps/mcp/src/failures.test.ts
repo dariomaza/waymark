@@ -44,6 +44,44 @@ describe("turning a refusal into something a reader can act on", () => {
     expect(sentence).not.toContain("403");
   });
 
+  /**
+   * A token acts as the person who issued it (ADR 26). A space shared with
+   * that person to view is one the token may read and not change, and the
+   * reader has to hear that it is the SHARE, not the token's scope, that
+   * stops it — a read-write token would be refused identically.
+   */
+  it("says the space was shared to view, not that the token is read-only", () => {
+    const sentence = sentenceFor(
+      new ApiError(403, "VIEW_ONLY", "view only", { storageUnitId: "a-shelf" }),
+      { ...WHERE, doing: 'rename "Drill"' },
+    );
+
+    expect(sentence).toMatch(/shared .* to view/iu);
+    expect(sentence).toMatch(/nothing was changed/iu);
+    expect(sentence).not.toMatch(/read-only/iu);
+  });
+
+  it("says only the owner, or an administrator, makes or moves a root", () => {
+    const sentence = sentenceFor(
+      new ApiError(403, "OWNER_ONLY", "owner only", { storageUnitId: "a-trunk" }),
+      { ...WHERE, doing: 'move "Trunk" to the top' },
+    );
+
+    expect(sentence).toMatch(/owner/iu);
+    expect(sentence).toMatch(/nothing was changed/iu);
+  });
+
+  it("says the token is narrowed to chosen spaces and the top of the tree is outside them", () => {
+    const sentence = sentenceFor(
+      new ApiError(403, "OUTSIDE_TOKEN_SPACES", "outside", { storageUnitId: null }),
+      { ...WHERE, doing: 'create a space called "Shed"' },
+    );
+
+    expect(sentence).toMatch(/narrowed to chosen spaces/iu);
+    expect(sentence).toMatch(/nothing was changed/iu);
+    expect(sentence).not.toMatch(/owner/iu);
+  });
+
   it("gives the four situations four different sentences", () => {
     const four = [
       sentenceFor(new ApiError(OFFLINE_STATUS, "OFFLINE", "unreachable"), WHERE),

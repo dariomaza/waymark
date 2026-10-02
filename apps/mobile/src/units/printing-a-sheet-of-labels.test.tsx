@@ -50,6 +50,7 @@ const theApiKnowsTheHouseAndItsSymbols = (): void => {
     http.get(`${API_URL}/storage-units`, () =>
       HttpResponse.json({
         tree: [aTree(garage, [aTree(wardrobe, [aTree(box3)])]), aTree(shed)],
+        mayMakeRoot: true,
       }),
     ),
     ...[garage, wardrobe, box3, shed].map((unit) =>
@@ -314,10 +315,13 @@ describe("getting to the sheet", () => {
  * had arrived, so on a bad connection the home screen offered nothing at all
  * while the browser offered both ways in.
  *
- * The row is what the screen is FOR. It does not wait for a request.
+ * The row is what the screen is FOR. It does not wait for a request — with one
+ * exception both clients now share: a new top-level space is offered only once
+ * the tree has said one may be made (ADR 26), so a failed request leaves the
+ * way to the labels and not a guess.
  */
 describe("the home screen while the inventory is not there", () => {
-  it("still offers both ways in when the inventory could not be loaded", async () => {
+  it("still offers the label sheet when the inventory could not be loaded", async () => {
     apiServer.use(
       http.get(`${API_URL}/auth/me`, () =>
         HttpResponse.json({ user: { id: "u1", username: "dario" } }),
@@ -332,7 +336,7 @@ describe("the home screen while the inventory is not there", () => {
     });
 
     expect(await screen.findByText(/could not be loaded/i)).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "Add a space" })).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Label sheet" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Add a space" })).toBeNull();
   });
 });

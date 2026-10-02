@@ -28,6 +28,7 @@ import {
   Tag,
   Tags,
   Trash2,
+  User,
   X,
   type LucideIcon,
 } from "lucide-react-native";
@@ -159,6 +160,8 @@ export const ICON_NAMES = [
   "link",
   /** Unlocking with a finger: the one setting only the phone has. */
   "fingerprint",
+  /** Somebody with an account in this house (ADR 26): a row of People. */
+  "person",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
@@ -212,6 +215,8 @@ const DRAWN_BY_LUCIDE: Record<Exclude<IconName, "pinnedW">, LucideIcon> = {
   info: Info,
   link: Link,
   fingerprint: Fingerprint,
+  /** `User`: one head and shoulders, the shape every product uses for a person. */
+  person: User,
 };
 
 /**
@@ -265,6 +270,9 @@ const spokenAs = (
         importantForAccessibility: "yes",
         accessibilityRole: "image",
         accessibilityLabel: label,
+        // lucide marks every drawing `aria-hidden` unless told otherwise,
+        // which would silence a label given on purpose.
+        "aria-hidden": false,
       };
 
 export const Icon = ({

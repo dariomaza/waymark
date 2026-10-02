@@ -1,4 +1,4 @@
-import { type StorageUnitView, flattenUnits } from "@waymark/api-client";
+import { type StorageUnitView, editableUnits } from "@waymark/api-client";
 import { describeFailure } from "@waymark/i18n";
 import { unitId, type UnitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
@@ -53,7 +53,7 @@ export const EmptyUnitSheet = ({
             label={t("units.moveEverythingInto")}
             value={target}
             options={unitOptions(
-              flattenUnits(tree.data?.tree ?? []).filter(
+              editableUnits(tree.data?.tree ?? []).filter(
                 (entry) => entry.unit.id !== unit.id,
               ),
             )}

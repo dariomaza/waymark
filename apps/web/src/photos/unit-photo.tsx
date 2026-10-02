@@ -18,6 +18,8 @@ import { useTranslate } from "../app/language-context.js";
 
 export interface UnitPhotoProps {
   readonly unit: StorageUnitWithPhotoView;
+  /** False in a space shared to look at (ADR 26): the photo, and nothing to change it. */
+  readonly editable: boolean;
 }
 
 /**
@@ -30,7 +32,7 @@ export interface UnitPhotoProps {
  * not moved — and the screen can say which state the picture is in, which an
  * id could never have told it.
  */
-export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
+export const UnitPhoto = ({ unit, editable }: UnitPhotoProps): JSX.Element => {
   const t = useTranslate();
 
   const upload = useUploadUnitPhoto(unit.id);
@@ -48,32 +50,38 @@ export const UnitPhoto = ({ unit }: UnitPhotoProps): JSX.Element => {
         <PhotoStatusNote
           photo={photo}
           retrying={reprocess.isPending}
-          onRetry={() => {
-            reprocess.mutate(photo.id);
-          }}
+          onRetry={
+            editable
+              ? () => {
+                  reprocess.mutate(photo.id);
+                }
+              : undefined
+          }
         />
       )}
 
-      <div className="unit-photo__controls">
-        <PhotoPicker
-          label={photo === null ? t("photos.add") : t("photos.replace")}
-          busy={upload.isPending}
-          onPick={(file) => {
-            upload.mutate(file);
-          }}
-        />
-        {photo === null ? null : (
-          <Button
-            icon="trash"
-            disabled={remove.isPending}
-            onClick={() => {
-              remove.mutate();
+        {editable ? (
+        <div className="unit-photo__controls">
+          <PhotoPicker
+            label={photo === null ? t("photos.add") : t("photos.replace")}
+            busy={upload.isPending}
+            onPick={(file) => {
+              upload.mutate(file);
             }}
-          >
-            {t("photos.remove")}
-          </Button>
-        )}
+          />
+          {photo === null ? null : (
+            <Button
+              icon="trash"
+              disabled={remove.isPending}
+              onClick={() => {
+                remove.mutate();
+              }}
+            >
+              {t("photos.remove")}
+            </Button>
+          )}
       </div>
+      ) : null}
 
       {upload.isError ? (
         <Callout tone="wrong">{t(uploadFailureMessage(upload.error))}</Callout>

@@ -12,9 +12,12 @@ describe("@waymark/domain public surface", () => {
         "DeleteStorageUnit",
         "EmptyStorageUnit",
         "GetStorageUnitPath",
+        "ListStorageUnits",
+        "GetStorageUnit",
         "CreateItem",
         "MoveItems",
         "ListItems",
+        "GetItem",
         "UpdateItem",
         "DeleteItem",
         "AttachItemPhoto",
@@ -22,6 +25,9 @@ describe("@waymark/domain public surface", () => {
         "ReorderItemPhotos",
         "SetStorageUnitPhoto",
         "SearchInventory",
+        "FindPhoto",
+        "ReachablePhotos",
+        "RequeuePhotos",
       ]),
     );
   });
@@ -54,6 +60,20 @@ describe("@waymark/domain public surface", () => {
         "itemId",
         "photoId",
         "publicId",
+      ]),
+    );
+  });
+
+  it("exposes what decides what a person may see", () => {
+    expect(Object.keys(domain)).toEqual(
+      expect.arrayContaining([
+        "resolveAccess",
+        "mayViewSpace",
+        "mayEditSpace",
+        "visibleRootsOf",
+        "Role",
+        "ShareLevel",
+        "userId",
       ]),
     );
   });

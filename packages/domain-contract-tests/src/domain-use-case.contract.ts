@@ -22,15 +22,24 @@ import {
   type ItemRepository,
   type StorageUnit,
   type StorageUnitRepository,
+  type UserId,
 } from "@waymark/domain";
 import {
   FakeClock,
+  SEES_EVERYTHING,
+  THE_ADMINISTRATOR,
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "@waymark/domain/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { A_MOMENT, aPhotoId, sortedIds } from "./builders.js";
+import {
+  A_MOMENT,
+  AN_OWNER,
+  ANOTHER_OWNER,
+  aPhotoId,
+  sortedIds,
+} from "./builders.js";
 import type {
   DomainUseCaseContext,
   RepositoryHarness,
@@ -68,8 +77,10 @@ export const domainUseCaseContract = (
     const aUnit = async (
       name: string,
       parentId?: StorageUnit["parentId"],
+      callerId: UserId = AN_OWNER,
     ): Promise<StorageUnit> =>
-      createStorageUnit.execute({
+      createStorageUnit.execute(SEES_EVERYTHING, {
+        callerId,
         name,
         kind: StorageUnitKind.BOX,
         parentId: parentId ?? null,
@@ -108,6 +119,66 @@ export const domainUseCaseContract = (
       await harness.tearDown();
     });
 
+    describe("ADR 26 — ownership is written on roots and follows the tree", () => {
+      it("stores the person who made a root as its owner", async () => {
+        const room = await aUnit("Storage room", null, ANOTHER_OWNER);
+
+        expect((await storageUnits.findById(room.id))?.ownerId).toBe(
+          ANOTHER_OWNER,
+        );
+      });
+
+      it("stores no owner on a space made inside another", async () => {
+        const room = await aUnit("Storage room");
+        const box = await aUnit("Box 3", room.id, ANOTHER_OWNER);
+
+        expect((await storageUnits.findById(box.id))?.ownerId).toBeNull();
+      });
+
+      it("clears the owner of a root moved inside another space", async () => {
+        const house = await aUnit("House");
+        const garage = await aUnit("Garage", null, ANOTHER_OWNER);
+
+        await moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: garage.id,
+          targetParentId: house.id,
+        });
+
+        expect((await storageUnits.findById(garage.id))?.ownerId).toBeNull();
+      });
+
+      it("keeps the tree's owner on a space taken to the top", async () => {
+        const room = await aUnit("Storage room", null, ANOTHER_OWNER);
+        const wardrobe = await aUnit("Wardrobe", room.id);
+        const box = await aUnit("Box 3", wardrobe.id);
+
+        await moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: box.id,
+          targetParentId: null,
+        });
+
+        expect((await storageUnits.findById(box.id))?.ownerId).toBe(
+          ANOTHER_OWNER,
+        );
+      });
+
+      it("keeps the tree's owner on the children of an emptied root", async () => {
+        const garage = await aUnit("Garage", null, ANOTHER_OWNER);
+        const shelf = await aUnit("Shelf", garage.id);
+
+        await emptyStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: garage.id,
+        });
+
+        expect((await storageUnits.findById(shelf.id))?.ownerId).toBe(
+          ANOTHER_OWNER,
+        );
+      });
+    });
+
     describe("ADR 1 — storage units form a recursive tree", () => {
       it("stores a root unit and finds it again", async () => {
         const room = await aUnit("Storage room");
@@ -118,7 +189,8 @@ export const domainUseCaseContract = (
 
       it("refuses to create a unit under a parent that does not exist", async () => {
         await expect(
-          createStorageUnit.execute({
+          createStorageUnit.execute(SEES_EVERYTHING, {
+            callerId: AN_OWNER,
             name: "Orphan",
             kind: StorageUnitKind.BOX,
             parentId: unitId("ghost"),
@@ -131,7 +203,7 @@ export const domainUseCaseContract = (
         const wardrobe = await aUnit("Metal wardrobe", room.id);
         const box = await aUnit("Box 3", wardrobe.id);
 
-        const path = await getStorageUnitPath.execute(box.id);
+        const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
 
         expect(formatStorageUnitPath(path)).toBe(
           "Storage room > Metal wardrobe > Box 3",
@@ -144,12 +216,13 @@ export const domainUseCaseContract = (
         const wardrobe = await aUnit("Metal wardrobe", room.id);
         const box = await aUnit("Box 3", wardrobe.id);
 
-        await moveStorageUnit.execute({
+        await moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
           id: wardrobe.id,
           targetParentId: garage.id,
         });
 
-        const path = await getStorageUnitPath.execute(box.id);
+        const path = await getStorageUnitPath.execute({ kind: "everything" }, box.id);
         expect(formatStorageUnitPath(path)).toBe(
           "Garage > Metal wardrobe > Box 3",
         );
@@ -161,7 +234,11 @@ export const domainUseCaseContract = (
         const room = await aUnit("Storage room");
 
         await expect(
-          moveStorageUnit.execute({ id: room.id, targetParentId: room.id }),
+          moveStorageUnit.execute(SEES_EVERYTHING, {
+            callerId: THE_ADMINISTRATOR,
+            id: room.id,
+            targetParentId: room.id,
+          }),
         ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
       });
 
@@ -170,7 +247,11 @@ export const domainUseCaseContract = (
         const wardrobe = await aUnit("Metal wardrobe", room.id);
 
         await expect(
-          moveStorageUnit.execute({ id: room.id, targetParentId: wardrobe.id }),
+          moveStorageUnit.execute(SEES_EVERYTHING, {
+            callerId: THE_ADMINISTRATOR,
+            id: room.id,
+            targetParentId: wardrobe.id,
+          }),
         ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
       });
 
@@ -184,7 +265,11 @@ export const domainUseCaseContract = (
         const box = await aUnit("Box 3", wardrobe.id);
 
         await expect(
-          moveStorageUnit.execute({ id: room.id, targetParentId: box.id }),
+          moveStorageUnit.execute(SEES_EVERYTHING, {
+            callerId: THE_ADMINISTRATOR,
+            id: room.id,
+            targetParentId: box.id,
+          }),
         ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
       });
 
@@ -194,12 +279,16 @@ export const domainUseCaseContract = (
         const box = await aUnit("Box 3", wardrobe.id);
 
         await expect(
-          moveStorageUnit.execute({ id: room.id, targetParentId: box.id }),
+          moveStorageUnit.execute(SEES_EVERYTHING, {
+            callerId: THE_ADMINISTRATOR,
+            id: room.id,
+            targetParentId: box.id,
+          }),
         ).rejects.toBeInstanceOf(CyclicStorageUnitMove);
 
         const stillThere = await storageUnits.findById(room.id);
         expect(stillThere?.parentId).toBeNull();
-        await expect(getStorageUnitPath.execute(box.id)).resolves.toHaveLength(
+        await expect(getStorageUnitPath.execute({ kind: "everything" }, box.id)).resolves.toHaveLength(
           3,
         );
       });
@@ -208,7 +297,8 @@ export const domainUseCaseContract = (
         const room = await aUnit("Storage room");
         const wardrobe = await aUnit("Metal wardrobe", room.id);
 
-        const moved = await moveStorageUnit.execute({
+        const moved = await moveStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
           id: wardrobe.id,
           targetParentId: null,
         });
@@ -223,7 +313,8 @@ export const domainUseCaseContract = (
         const room = await aUnit("Storage room");
 
         await expect(
-          moveStorageUnit.execute({
+          moveStorageUnit.execute(SEES_EVERYTHING, {
+            callerId: THE_ADMINISTRATOR,
             id: room.id,
             targetParentId: unitId("ghost"),
           }),
@@ -234,9 +325,9 @@ export const domainUseCaseContract = (
     describe("ADR 3 — deleting a storage unit requires it to be empty", () => {
       it("refuses to delete a unit that still holds an item", async () => {
         const box = await aUnit("Box 3");
-        await createItem.execute({ storageUnitId: box.id, name: "Drill" });
+        await createItem.execute(SEES_EVERYTHING, { storageUnitId: box.id, name: "Drill" });
 
-        await expect(deleteStorageUnit.execute(box.id)).rejects.toBeInstanceOf(
+        await expect(deleteStorageUnit.execute(SEES_EVERYTHING, box.id)).rejects.toBeInstanceOf(
           StorageUnitNotEmpty,
         );
         await expect(storageUnits.findById(box.id)).resolves.not.toBeNull();
@@ -247,7 +338,7 @@ export const domainUseCaseContract = (
         await aUnit("Box 3", wardrobe.id);
 
         await expect(
-          deleteStorageUnit.execute(wardrobe.id),
+          deleteStorageUnit.execute(SEES_EVERYTHING, wardrobe.id),
         ).rejects.toBeInstanceOf(StorageUnitNotEmpty);
       });
 
@@ -255,13 +346,13 @@ export const domainUseCaseContract = (
         const wardrobe = await aUnit("Metal wardrobe");
         await aUnit("Box 3", wardrobe.id);
         await aUnit("Box 4", wardrobe.id);
-        await createItem.execute({
+        await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: wardrobe.id,
           name: "Loose screwdriver",
         });
 
         const failure = await deleteStorageUnit
-          .execute(wardrobe.id)
+          .execute(SEES_EVERYTHING, wardrobe.id)
           .catch((error: unknown) => error);
 
         expect(failure).toBeInstanceOf(StorageUnitNotEmpty);
@@ -272,7 +363,7 @@ export const domainUseCaseContract = (
       it("deletes a unit that is genuinely empty", async () => {
         const box = await aUnit("Box 3");
 
-        await deleteStorageUnit.execute(box.id);
+        await deleteStorageUnit.execute(SEES_EVERYTHING, box.id);
 
         await expect(storageUnits.findById(box.id)).resolves.toBeNull();
       });
@@ -281,14 +372,17 @@ export const domainUseCaseContract = (
         const room = await aUnit("Storage room");
         const wardrobe = await aUnit("Metal wardrobe", room.id);
         const box = await aUnit("Box 3", wardrobe.id);
-        const drill = await createItem.execute({
+        const drill = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: wardrobe.id,
           name: "Drill",
         });
 
         clock.advanceBy(60_000);
-        await emptyStorageUnit.execute(wardrobe.id);
-        await deleteStorageUnit.execute(wardrobe.id);
+        await emptyStorageUnit.execute(SEES_EVERYTHING, {
+          callerId: THE_ADMINISTRATOR,
+          id: wardrobe.id,
+        });
+        await deleteStorageUnit.execute(SEES_EVERYTHING, wardrobe.id);
 
         await expect(storageUnits.findById(wardrobe.id)).resolves.toBeNull();
         expect((await storageUnits.findById(box.id))?.parentId).toBe(room.id);
@@ -298,17 +392,17 @@ export const domainUseCaseContract = (
       it("moves a batch of items in one go", async () => {
         const box = await aUnit("Box 3");
         const crate = await aUnit("Crate");
-        const first = await createItem.execute({
+        const first = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "Drill",
         });
-        const second = await createItem.execute({
+        const second = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "Sander",
         });
 
         clock.advanceBy(1_000);
-        await moveItems.execute({
+        await moveItems.execute(SEES_EVERYTHING, {
           itemIds: [first.id, second.id],
           targetUnitId: crate.id,
         });
@@ -323,13 +417,13 @@ export const domainUseCaseContract = (
       it("rejects the whole batch when one item is unknown", async () => {
         const box = await aUnit("Box 3");
         const crate = await aUnit("Crate");
-        const known = await createItem.execute({
+        const known = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "Drill",
         });
 
         await expect(
-          moveItems.execute({
+          moveItems.execute(SEES_EVERYTHING, {
             itemIds: [known.id, itemId("ghost")],
             targetUnitId: crate.id,
           }),
@@ -339,13 +433,13 @@ export const domainUseCaseContract = (
 
       it("deletes an item unconditionally and reports its released photos", async () => {
         const box = await aUnit("Box 3");
-        const item = await createItem.execute({
+        const item = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "Drill",
           photos: [aPhotoId("photo-1"), aPhotoId("photo-2")],
         });
 
-        const result = await deleteItem.execute(item.id);
+        const result = await deleteItem.execute(SEES_EVERYTHING, item.id);
 
         expect(result.releasedPhotoIds).toEqual(["photo-1", "photo-2"]);
         await expect(items.findById(item.id)).resolves.toBeNull();
@@ -353,7 +447,7 @@ export const domainUseCaseContract = (
 
       it("refuses to create an item in a unit that does not exist", async () => {
         await expect(
-          createItem.execute({
+          createItem.execute(SEES_EVERYTHING, {
             storageUnitId: unitId("ghost"),
             name: "Drill",
           }),
@@ -367,10 +461,13 @@ export const domainUseCaseContract = (
         const wardrobe = await aUnit("Metal wardrobe", garage.id);
         const box = await aUnit("Box 3", wardrobe.id);
         const kitchen = await aUnit("Kitchen");
-        await createItem.execute({ storageUnitId: box.id, name: "Cordless drill" });
-        await createItem.execute({ storageUnitId: kitchen.id, name: "Whisk" });
+        await createItem.execute(SEES_EVERYTHING, {
+          storageUnitId: box.id,
+          name: "Cordless drill",
+        });
+        await createItem.execute(SEES_EVERYTHING, { storageUnitId: kitchen.id, name: "Whisk" });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
 
         expect(
           rows.map(
@@ -385,40 +482,40 @@ export const domainUseCaseContract = (
       it("follows a moved item to its new location", async () => {
         const garage = await aUnit("Garage");
         const kitchen = await aUnit("Kitchen");
-        const whisk = await createItem.execute({
+        const whisk = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: garage.id,
           name: "Whisk",
         });
 
-        await moveItems.execute({
+        await moveItems.execute(SEES_EVERYTHING, {
           itemIds: [whisk.id],
           targetUnitId: kitchen.id,
         });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
         expect(formatStorageUnitPath(rows[0]?.path ?? [])).toBe("Kitchen");
       });
 
       it("shows a renamed box under its new name", async () => {
         const garage = await aUnit("Garage");
-        await createItem.execute({ storageUnitId: garage.id, name: "Drill" });
+        await createItem.execute(SEES_EVERYTHING, { storageUnitId: garage.id, name: "Drill" });
 
-        await updateStorageUnit.execute({ id: garage.id, name: "Storage room" });
+        await updateStorageUnit.execute(SEES_EVERYTHING, { id: garage.id, name: "Storage room" });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
         expect(formatStorageUnitPath(rows[0]?.path ?? [])).toBe("Storage room");
       });
 
       it("carries the tags and the photos, not only the name", async () => {
         const box = await aUnit("Box 3");
-        await createItem.execute({
+        await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "HDMI 2.1",
           tags: ["cables"],
           photos: [aPhotoId("photo-1")],
         });
 
-        const rows = await listItems.execute();
+        const rows = await listItems.execute({ kind: "everything" });
 
         expect(rows[0]?.item.tags).toEqual(["cables"]);
         expect(rows[0]?.item.photos).toEqual(["photo-1"]);
@@ -430,7 +527,7 @@ export const domainUseCaseContract = (
         const box = await aUnit("Box 3");
 
         clock.advanceBy(1_000);
-        await updateStorageUnit.execute({ id: box.id, name: "Box 4" });
+        await updateStorageUnit.execute(SEES_EVERYTHING, { id: box.id, name: "Box 4" });
 
         expect((await storageUnits.findById(box.id))?.name).toBe("Box 4");
       });
@@ -438,7 +535,7 @@ export const domainUseCaseContract = (
       it("renames a unit without touching the label glued to it", async () => {
         const box = await aUnit("Box 3");
 
-        await updateStorageUnit.execute({ id: box.id, name: "Box 4" });
+        await updateStorageUnit.execute(SEES_EVERYTHING, { id: box.id, name: "Box 4" });
 
         expect((await storageUnits.findById(box.id))?.publicId).toBe(box.publicId);
       });
@@ -448,11 +545,14 @@ export const domainUseCaseContract = (
         const wardrobe = await aUnit("Metal wardrobe", room.id);
         const box = await aUnit("Box 3", wardrobe.id);
 
-        await updateStorageUnit.execute({ id: wardrobe.id, name: "Wooden wardrobe" });
+        await updateStorageUnit.execute(SEES_EVERYTHING, {
+          id: wardrobe.id,
+          name: "Wooden wardrobe",
+        });
 
         const revised = await storageUnits.findById(wardrobe.id);
         expect(revised?.parentId).toBe(room.id);
-        expect(formatStorageUnitPath(await getStorageUnitPath.execute(box.id))).toBe(
+        expect(formatStorageUnitPath(await getStorageUnitPath.execute({ kind: "everything" }, box.id))).toBe(
           "Storage room > Wooden wardrobe > Box 3",
         );
       });
@@ -460,7 +560,7 @@ export const domainUseCaseContract = (
       it("changes a unit's kind and description, and clears the description", async () => {
         const box = await aUnit("Box 3");
 
-        await updateStorageUnit.execute({
+        await updateStorageUnit.execute(SEES_EVERYTHING, {
           id: box.id,
           kind: StorageUnitKind.BAG,
           description: "Winter clothes",
@@ -469,7 +569,7 @@ export const domainUseCaseContract = (
           "Winter clothes",
         );
 
-        await updateStorageUnit.execute({ id: box.id, description: null });
+        await updateStorageUnit.execute(SEES_EVERYTHING, { id: box.id, description: null });
         const cleared = await storageUnits.findById(box.id);
         expect(cleared?.description).toBeNull();
         expect(cleared?.kind).toBe(StorageUnitKind.BAG);
@@ -477,58 +577,58 @@ export const domainUseCaseContract = (
 
       it("refuses to edit a unit that is not there", async () => {
         await expect(
-          updateStorageUnit.execute({ id: unitId("ghost"), name: "Box 4" }),
+          updateStorageUnit.execute(SEES_EVERYTHING, { id: unitId("ghost"), name: "Box 4" }),
         ).rejects.toBeInstanceOf(StorageUnitNotFound);
       });
 
       it("renames an item and reads the new name back", async () => {
         const box = await aUnit("Box 3");
-        const drill = await createItem.execute({
+        const drill = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "Drill",
         });
 
         clock.advanceBy(1_000);
-        await updateItem.execute({ id: drill.id, name: "Cordless drill" });
+        await updateItem.execute(SEES_EVERYTHING, { id: drill.id, name: "Cordless drill" });
 
         expect((await items.findById(drill.id))?.name).toBe("Cordless drill");
       });
 
       it("retags an item outright, dropping the tags the revision leaves out", async () => {
         const box = await aUnit("Box 3");
-        const cable = await createItem.execute({
+        const cable = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "HDMI 2.1",
           tags: ["cables", "typo"],
         });
 
-        await updateItem.execute({ id: cable.id, tags: ["cables", "video"] });
+        await updateItem.execute(SEES_EVERYTHING, { id: cable.id, tags: ["cables", "video"] });
 
         expect((await items.findById(cable.id))?.tags).toEqual(["cables", "video"]);
       });
 
       it("takes every tag off an item when the revision asks for none", async () => {
         const box = await aUnit("Box 3");
-        const cable = await createItem.execute({
+        const cable = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "HDMI 2.1",
           tags: ["cables"],
         });
 
-        await updateItem.execute({ id: cable.id, tags: [] });
+        await updateItem.execute(SEES_EVERYTHING, { id: cable.id, tags: [] });
 
         expect((await items.findById(cable.id))?.tags).toEqual([]);
       });
 
       it("keeps an edited item in its unit, holding the photos it held", async () => {
         const box = await aUnit("Box 3");
-        const drill = await createItem.execute({
+        const drill = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "Drill",
           photos: [aPhotoId("photo-1"), aPhotoId("photo-2")],
         });
 
-        await updateItem.execute({ id: drill.id, name: "Cordless drill" });
+        await updateItem.execute(SEES_EVERYTHING, { id: drill.id, name: "Cordless drill" });
 
         const revised = await items.findById(drill.id);
         expect(revised?.storageUnitId).toBe(box.id);
@@ -537,20 +637,24 @@ export const domainUseCaseContract = (
 
       it("leaves the stored item alone when the new quantity is refused", async () => {
         const box = await aUnit("Box 3");
-        const drill = await createItem.execute({
+        const drill = await createItem.execute(SEES_EVERYTHING, {
           storageUnitId: box.id,
           name: "Drill",
         });
 
         await expect(
-          updateItem.execute({ id: drill.id, name: "Cordless drill", quantity: 0 }),
+          updateItem.execute(SEES_EVERYTHING, {
+            id: drill.id,
+            name: "Cordless drill",
+            quantity: 0,
+          }),
         ).rejects.toBeInstanceOf(InvalidQuantity);
         expect((await items.findById(drill.id))?.name).toBe("Drill");
       });
 
       it("refuses to edit an item that is not there", async () => {
         await expect(
-          updateItem.execute({ id: itemId("ghost"), name: "Cordless drill" }),
+          updateItem.execute(SEES_EVERYTHING, { id: itemId("ghost"), name: "Cordless drill" }),
         ).rejects.toBeInstanceOf(ItemNotFound);
       });
     });

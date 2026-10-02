@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { SEES_EVERYTHING } from "../access/access.fake.js";
 import { FakeClock } from "../shared/clock.fake.js";
 import {
   SequentialIdGenerator,
   SequentialPublicIdGenerator,
 } from "../shared/id-generator.fake.js";
-import { unitId, type UnitId } from "../shared/identity.js";
+import { unitId, type UnitId, userId } from "../shared/identity.js";
 import { CreateStorageUnit } from "./create-storage-unit.js";
 import { StorageUnitNotFound } from "./storage-unit-errors.js";
 import { StorageUnitKind } from "./storage-unit.js";
@@ -22,7 +23,8 @@ describe("UpdateStorageUnit", () => {
   let updateStorageUnit: UpdateStorageUnit;
 
   const create = async (name: string, parentId: UnitId | null = null) =>
-    createStorageUnit.execute({
+    createStorageUnit.execute(SEES_EVERYTHING, {
+      callerId: userId("dario"),
       parentId,
       name,
       kind: StorageUnitKind.BOX,
@@ -45,7 +47,7 @@ describe("UpdateStorageUnit", () => {
     const box = await create("Box 3");
     clock.advanceTo(EDITED_AT);
 
-    const revised = await updateStorageUnit.execute({
+    const revised = await updateStorageUnit.execute(SEES_EVERYTHING, {
       id: box.id,
       name: "Box 4",
     });
@@ -58,7 +60,7 @@ describe("UpdateStorageUnit", () => {
     const box = await create("Box 3");
     clock.advanceTo(EDITED_AT);
 
-    const revised = await updateStorageUnit.execute({ id: box.id, name: "Box 4" });
+    const revised = await updateStorageUnit.execute(SEES_EVERYTHING, { id: box.id, name: "Box 4" });
 
     expect(revised.updatedAt).toEqual(EDITED_AT);
     expect(revised.createdAt).toEqual(CREATED_AT);
@@ -67,7 +69,7 @@ describe("UpdateStorageUnit", () => {
   it("changes the description and the kind together", async () => {
     const box = await create("Box 3");
 
-    const revised = await updateStorageUnit.execute({
+    const revised = await updateStorageUnit.execute(SEES_EVERYTHING, {
       id: box.id,
       description: "Winter clothes",
       kind: StorageUnitKind.BAG,
@@ -81,7 +83,7 @@ describe("UpdateStorageUnit", () => {
   it("clears a description when the revision says null", async () => {
     const box = await create("Box 3");
 
-    const revised = await updateStorageUnit.execute({
+    const revised = await updateStorageUnit.execute(SEES_EVERYTHING, {
       id: box.id,
       description: null,
     });
@@ -93,7 +95,7 @@ describe("UpdateStorageUnit", () => {
     const garage = await create("Garage");
     const box = await create("Box 3", garage.id);
 
-    const revised = await updateStorageUnit.execute({ id: box.id, name: "Box 4" });
+    const revised = await updateStorageUnit.execute(SEES_EVERYTHING, { id: box.id, name: "Box 4" });
 
     expect(revised.parentId).toBe(garage.id);
   });
@@ -101,20 +103,20 @@ describe("UpdateStorageUnit", () => {
   it("keeps the public id printed on the box, so the label still works", async () => {
     const box = await create("Box 3");
 
-    const revised = await updateStorageUnit.execute({ id: box.id, name: "Box 4" });
+    const revised = await updateStorageUnit.execute(SEES_EVERYTHING, { id: box.id, name: "Box 4" });
 
     expect(revised.publicId).toBe(box.publicId);
   });
 
   it("refuses to edit a unit nobody stored", async () => {
     await expect(
-      updateStorageUnit.execute({ id: unitId("ghost"), name: "Box 4" }),
+      updateStorageUnit.execute(SEES_EVERYTHING, { id: unitId("ghost"), name: "Box 4" }),
     ).rejects.toBeInstanceOf(StorageUnitNotFound);
   });
 
   it("writes nothing when the unit is not there", async () => {
     await expect(
-      updateStorageUnit.execute({ id: unitId("ghost"), name: "Box 4" }),
+      updateStorageUnit.execute(SEES_EVERYTHING, { id: unitId("ghost"), name: "Box 4" }),
     ).rejects.toBeInstanceOf(StorageUnitNotFound);
 
     expect(storageUnits.size).toBe(0);

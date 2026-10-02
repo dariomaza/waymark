@@ -7,11 +7,52 @@ export {
   photoId,
   publicId,
   unitId,
+  userId,
   type ItemId,
   type PhotoId,
   type PublicId,
   type UnitId,
+  type UserId,
 } from "./shared/identity.js";
+
+// Who may see what (ADR 26)
+export {
+  cutPathToReach,
+  mayEditSpace,
+  mayViewSpace,
+  narrowAccess,
+  outermostChoices,
+  reachOf,
+  reaches,
+  resolveAccess,
+  Role,
+  ShareLevel,
+  visibleRootsOf,
+  WHOLE_REACH,
+  type Access,
+  type AccessCaller,
+  type ChosenSpaces,
+  type ResolveAccessInput,
+  type ShareOfSpace,
+  type SpaceInTree,
+  type SpaceReach,
+} from "./access/access.js";
+export {
+  isSharedWith,
+  mayActAtTheTop,
+  mayMakeRoot,
+  ownerNamedBy,
+  permissionsOn,
+  type SpacePermissions,
+} from "./access/space-permissions.js";
+export {
+  OutsideTokenSpaces,
+  OwnerOnly,
+  SpaceIsViewOnly,
+} from "./access/access-errors.js";
+
+// Shares (ADR 26)
+export type { Share, ShareRepository } from "./shares/share-repository.js";
 
 // Storage units
 export {
@@ -22,6 +63,7 @@ export {
   StorageUnitKind,
   type CreateStorageUnitInput,
   type StorageUnit,
+  type StorageUnitPlacement,
   type StorageUnitRevision,
 } from "./storage-units/storage-unit.js";
 export type { StorageUnitRepository } from "./storage-units/storage-unit-repository.js";
@@ -32,6 +74,7 @@ export {
   StorageUnitNotFound,
 } from "./storage-units/storage-unit-errors.js";
 export { assertStorageUnitMoveIsAcyclic } from "./storage-units/storage-unit-cycle.js";
+export { ownerOfTreeHolding } from "./storage-units/storage-unit-owner.js";
 export {
   CreateStorageUnit,
   type CreateStorageUnitCommand,
@@ -56,6 +99,15 @@ export {
   type EmptyStorageUnitDependencies,
   type EmptyStorageUnitResult,
 } from "./storage-units/empty-storage-unit.js";
+export {
+  ListStorageUnits,
+  type ListStorageUnitsDependencies,
+} from "./storage-units/list-storage-units.js";
+export {
+  GetStorageUnit,
+  type GetStorageUnitDependencies,
+  type StorageUnitContents,
+} from "./storage-units/get-storage-unit.js";
 export {
   formatStorageUnitPath,
   GetStorageUnitPath,
@@ -99,6 +151,7 @@ export {
   type ItemAtLocation,
   type ListItemsDependencies,
 } from "./items/list-items.js";
+export { GetItem, type GetItemDependencies } from "./items/get-item.js";
 export {
   UpdateItem,
   type UpdateItemCommand,
@@ -160,6 +213,20 @@ export {
   type SetStorageUnitPhotoDependencies,
   type SetStorageUnitPhotoResult,
 } from "./photos/set-storage-unit-photo.js";
+export {
+  FindPhoto,
+  type FindPhotoDependencies,
+} from "./photos/find-photo.js";
+export {
+  ReachablePhotos,
+  reachesPhoto,
+  type PhotoReach,
+  type ReachablePhotosDependencies,
+} from "./photos/reachable-photos.js";
+export {
+  RequeuePhotos,
+  type RequeuePhotosDependencies,
+} from "./photos/requeue-photos.js";
 export {
   createPhoto,
   displayPathOf,

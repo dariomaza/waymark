@@ -1,4 +1,10 @@
-import type { Item, ItemId, ItemRepository, UnitId } from "@waymark/domain";
+import type {
+  Item,
+  ItemId,
+  ItemRepository,
+  PhotoId,
+  UnitId,
+} from "@waymark/domain";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 import {
@@ -62,6 +68,15 @@ export class PrismaItemRepository implements ItemRepository {
   async findByStorageUnit(id: UnitId): Promise<Item[]> {
     const rows = await this.prisma.item.findMany({
       where: { storageUnitId: id },
+      include: ITEM_RELATIONS,
+    });
+
+    return rows.map(toDomainItem);
+  }
+
+  async findByPhoto(id: PhotoId): Promise<Item[]> {
+    const rows = await this.prisma.item.findMany({
+      where: { photos: { some: { photoId: id } } },
       include: ITEM_RELATIONS,
     });
 

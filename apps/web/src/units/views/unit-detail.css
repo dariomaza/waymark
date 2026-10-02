@@ -12,6 +12,16 @@
   letter-spacing: 0.06em;
 }
 
+/* Shared to look at (ADR 26): quiet, beside the kind, never a warning. */
+.unit-detail__view-only {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-s);
+  color: var(--color-ink-muted);
+}
+
 .unit-detail__description {
   margin: 0;
   color: var(--color-ink-muted);

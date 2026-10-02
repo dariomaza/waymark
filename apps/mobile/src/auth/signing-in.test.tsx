@@ -11,6 +11,7 @@ const theHouse = (): void => {
     http.get(`${API_URL}/storage-units`, () =>
       HttpResponse.json({
         tree: [aTree(aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" }))],
+        mayMakeRoot: true,
       }),
     ),
   );
