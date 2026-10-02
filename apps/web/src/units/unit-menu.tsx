@@ -1,4 +1,4 @@
-import type { SpacePermissionsView, StorageUnitView } from "@waymark/api-client";
+import { findTreeNode, type SpacePermissionsView, type StorageUnitView } from "@waymark/api-client";
 import { ShareLevel } from "@waymark/domain";
 import { useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,9 @@ import { DeleteUnitDialog } from "./delete-unit-dialog.js";
 import { EditUnitDialog } from "./edit-unit-dialog.js";
 import { EmptyUnitDialog } from "./empty-unit-dialog.js";
 import { MoveUnitDialog } from "./move-unit-dialog.js";
+import { ShareUnitDialog } from "./share-unit-dialog.js";
+import { useStorageUnitTree } from "./unit-queries.js";
+import { useIsAdministrator } from "../auth/people-queries.js";
 import { ROUTES, unitLabelPath, unitPath } from "../app/routes.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -23,7 +26,7 @@ export interface UnitMenuProps {
   readonly permissions: SpacePermissionsView | null;
 }
 
-type OpenDialog = "add" | "edit" | "move" | "empty" | "delete" | null;
+type OpenDialog = "add" | "share" | "edit" | "move" | "empty" | "delete" | null;
 
 /**
  * # Everything that can be done TO a storage unit
@@ -77,6 +80,8 @@ export const UnitMenu = ({ unit, path, permissions }: UnitMenuProps): JSX.Elemen
   };
 
   const mayChange = permissions?.access === ShareLevel.EDIT;
+  const isAdministrator = useIsAdministrator();
+  const tree = useStorageUnitTree();
 
   /*
     A box for a box, the same shape the row used to carry it with: what is
@@ -103,6 +108,19 @@ export const UnitMenu = ({ unit, path, permissions }: UnitMenuProps): JSX.Elemen
     label: t("units.showLabel"),
     icon: "tag",
     to: unitLabelPath(unit.id),
+  };
+
+  /*
+    Who else may look at it, or change it (ADR 26). Only an administrator
+    shares, so only an administrator is offered it; the API refuses anybody
+    else regardless.
+  */
+  const share: OverflowAction = {
+    label: t("units.share"),
+    icon: "person",
+    onSelect: () => {
+      setOpen("share");
+    },
   };
 
   const edit: OverflowAction = {
@@ -155,6 +173,7 @@ export const UnitMenu = ({ unit, path, permissions }: UnitMenuProps): JSX.Elemen
   const actions: readonly OverflowAction[] = [
     ...(mayChange ? [addInside] : []),
     showLabel,
+    ...(isAdministrator ? [share] : []),
     ...(mayChange ? [edit] : []),
     ...(permissions?.mayMove === true ? [move] : []),
     ...(mayChange ? [empty, remove] : []),
@@ -165,6 +184,14 @@ export const UnitMenu = ({ unit, path, permissions }: UnitMenuProps): JSX.Elemen
       <OverflowMenu label={t("action.more", { name: unit.name })} actions={actions} />
 
       {open === "add" ? <CreateUnitDialog parentId={unit.id} onClose={close} /> : null}
+
+      {open === "share" ? (
+        <ShareUnitDialog
+          unit={unit}
+          ownerId={findTreeNode(tree.data?.tree ?? [], unit.id)?.owner?.id ?? null}
+          onClose={close}
+        />
+      ) : null}
 
       {open === "edit" ? <EditUnitDialog unit={unit} onClose={close} /> : null}
 
