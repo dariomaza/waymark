@@ -270,6 +270,9 @@ const spokenAs = (
         importantForAccessibility: "yes",
         accessibilityRole: "image",
         accessibilityLabel: label,
+        // lucide marks every drawing `aria-hidden` unless told otherwise,
+        // which would silence a label given on purpose.
+        "aria-hidden": false,
       };
 
 export const Icon = ({

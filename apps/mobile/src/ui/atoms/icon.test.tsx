@@ -168,4 +168,15 @@ describe("the icon set both clients draw", () => {
 
     expect(screen.getByLabelText("Waymark")).toBeOnTheScreen();
   });
+
+  /**
+   * The same for one of lucide's shapes, which hides every drawing it makes
+   * with `aria-hidden` unless told otherwise — so an eye labelled "View only"
+   * (ADR 26) was drawn, labelled, and silent.
+   */
+  it("says what a drawn shape means when it stands on its own", async () => {
+    await render(<Icon name="eye" label="View only" />);
+
+    expect(screen.getByRole("image", { name: "View only" })).toBeOnTheScreen();
+  });
 });
