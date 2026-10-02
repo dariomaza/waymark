@@ -1,4 +1,4 @@
-import { type StorageUnitView, flattenUnits } from "@waymark/api-client";
+import { type StorageUnitView, editableUnits } from "@waymark/api-client";
 import { cyclicMoveMessage, describeFailure } from "@waymark/i18n";
 import { unitId } from "@waymark/domain";
 import { useState, type JSX } from "react";
@@ -15,6 +15,12 @@ import { useTranslate } from "../app/language-context.js";
 
 export interface MoveUnitDialogProps {
   readonly unit: StorageUnitView;
+  /**
+   * Whether it may become a top-level space (ADR 26): its owner's call, so a
+   * space somebody was shared with edit on cannot be lifted out of the tree
+   * it was shared in.
+   */
+  readonly mayMoveToTop: boolean;
   readonly onClose: () => void;
 }
 
@@ -29,7 +35,7 @@ const MAKE_IT_A_ROOT = "";
  * illegal options would be this app's own second copy of it. The API refuses,
  * and the refusal is the sentence the person reads.
  */
-export const MoveUnitDialog = ({ unit, onClose }: MoveUnitDialogProps): JSX.Element => {
+export const MoveUnitDialog = ({ unit, mayMoveToTop, onClose }: MoveUnitDialogProps): JSX.Element => {
   const t = useTranslate();
 
   const tree = useStorageUnitTree();
@@ -45,8 +51,12 @@ export const MoveUnitDialog = ({ unit, onClose }: MoveUnitDialogProps): JSX.Elem
         label={t("units.moveInto")}
         value={target}
         options={[
-          { value: MAKE_IT_A_ROOT, label: t("units.nowhereRoot") },
-          ...unitOptions(flattenUnits(tree.data?.tree ?? [])),
+          mayMoveToTop
+            ? { value: MAKE_IT_A_ROOT, label: t("units.nowhereRoot") }
+            : { value: MAKE_IT_A_ROOT, label: t("units.chooseUnit") },
+          // Only where the person may put something; the cycle rule is still
+          // the domain's to say, with a sentence (ADR 2).
+          ...unitOptions(editableUnits(tree.data?.tree ?? [])),
         ]}
         onChange={(event) => {
           setTarget(event.target.value);
@@ -62,7 +72,7 @@ export const MoveUnitDialog = ({ unit, onClose }: MoveUnitDialogProps): JSX.Elem
       <div className="sheet__commit">
         <Button
           tone="primary"
-          disabled={move.isPending}
+          disabled={move.isPending || (target === MAKE_IT_A_ROOT && !mayMoveToTop)}
           onClick={() => {
             move.mutate(target === MAKE_IT_A_ROOT ? null : unitId(target), {
               onSuccess: onClose,

@@ -21,6 +21,11 @@ import { useTranslate } from "../app/language-context.js";
 
 export interface ItemPhotosProps {
   readonly item: ItemView;
+  /**
+   * False for a thing in a space shared to look at (ADR 26): its photos, and
+   * nothing that adds, reorders or deletes one.
+   */
+  readonly editable: boolean;
 }
 
 /**
@@ -40,7 +45,7 @@ export interface ItemPhotosProps {
  * nothing here builds `/photos/<id>` out of an id and hopes the route has not
  * moved.
  */
-export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
+export const ItemPhotos = ({ item, editable }: ItemPhotosProps): JSX.Element => {
   const t = useTranslate();
 
   const upload = useUploadItemPhoto(item.id);
@@ -60,13 +65,15 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
     <section className="item-photos">
       <h3>{t("photos.title")}</h3>
 
-      <PhotoPicker
-        label={t("photos.add")}
-        busy={upload.isPending}
-        onPick={(file) => {
-          upload.mutate(file);
-        }}
-      />
+      {editable ? (
+        <PhotoPicker
+          label={t("photos.add")}
+          busy={upload.isPending}
+          onPick={(file) => {
+            upload.mutate(file);
+          }}
+        />
+      ) : null}
 
       {upload.isError ? (
         <Callout tone={full === null ? "wrong" : "blocked"}>
@@ -89,49 +96,55 @@ export const ItemPhotos = ({ item }: ItemPhotosProps): JSX.Element => {
                 <PhotoStatusNote
                   photo={photo}
                   retrying={reprocess.isPending}
-                  onRetry={() => {
-                    reprocess.mutate(photo.id);
-                  }}
+                  onRetry={
+                    editable
+                      ? () => {
+                          reprocess.mutate(photo.id);
+                        }
+                      : undefined
+                  }
                 />
-                <div className="item-photos__controls">
-                  {index === 0 ? (
-                    <span className="item-photos__cover">{t("photos.cover")}</span>
-                  ) : (
-                    <>
-                      <Button
-                        tone="quiet"
-                        onClick={() => {
-                          reorder.mutate(withCoverFirst(order, photo.id));
-                        }}
-                      >
-                        {t("photos.makeCover", { index: index + 1 })}
-                      </Button>
-                      <Button
-                        tone="quiet"
-                        onClick={() => {
-                          reorder.mutate(movedEarlier(order, photo.id));
-                        }}
-                      >
-                        {t("photos.moveEarlier", { index: index + 1 })}
-                      </Button>
-                    </>
-                  )}
-                  {/*
-                    The two ordering controls above keep their words on
-                    purpose: nothing in the icon set means "make this the
-                    cover" or "move this one earlier", and a shape somebody
-                    has to learn by pressing it is worse than the sentence.
-                  */}
-                  <Button
-                    tone="quiet"
-                    icon="trash"
-                    onClick={() => {
-                      remove.mutate(photo.id);
-                    }}
-                  >
-                    {t("photos.deleteNumbered", { index: index + 1 })}
-                  </Button>
-                </div>
+                {editable ? (
+                  <div className="item-photos__controls">
+                    {index === 0 ? (
+                      <span className="item-photos__cover">{t("photos.cover")}</span>
+                    ) : (
+                      <>
+                        <Button
+                          tone="quiet"
+                          onClick={() => {
+                            reorder.mutate(withCoverFirst(order, photo.id));
+                          }}
+                        >
+                          {t("photos.makeCover", { index: index + 1 })}
+                        </Button>
+                        <Button
+                          tone="quiet"
+                          onClick={() => {
+                            reorder.mutate(movedEarlier(order, photo.id));
+                          }}
+                        >
+                          {t("photos.moveEarlier", { index: index + 1 })}
+                        </Button>
+                      </>
+                    )}
+                    {/*
+                      The two ordering controls above keep their words on
+                      purpose: nothing in the icon set means "make this the
+                      cover" or "move this one earlier", and a shape somebody
+                      has to learn by pressing it is worse than the sentence.
+                    */}
+                    <Button
+                      tone="quiet"
+                      icon="trash"
+                      onClick={() => {
+                        remove.mutate(photo.id);
+                      }}
+                    >
+                      {t("photos.deleteNumbered", { index: index + 1 })}
+                    </Button>
+                  </div>
+                ) : null}
               </li>
             ))}
         </ul>

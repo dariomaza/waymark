@@ -23,7 +23,7 @@ const theHouse = (): void => {
       HttpResponse.json({ user: { id: "u1", username: "dario" } }),
     ),
     http.get(`${API_URL}/storage-units`, () =>
-      HttpResponse.json({ tree: [aTree(garage, [aTree(wardrobe, [aTree(box)])])] }),
+      HttpResponse.json({ mayMakeRoot: true, tree: [aTree(garage, [aTree(wardrobe, [aTree(box)])])] }),
     ),
     http.get(`${API_URL}/storage-units/box3`, () =>
       HttpResponse.json({ unit: withPhoto(box), path: [garage, wardrobe, box], children: [], items: [drill] }),

@@ -90,7 +90,7 @@ describe("a sheet, wherever in the app it was opened from", () => {
         HttpResponse.json({ user: { id: "u1", username: "dario" } }),
       ),
       http.get(`${API_URL}/storage-units`, () =>
-        HttpResponse.json({ tree: [aTree(garage, [aTree(box)])] }),
+        HttpResponse.json({ mayMakeRoot: true, tree: [aTree(garage, [aTree(box)])] }),
       ),
       http.get(`${API_URL}/storage-units/box3`, () =>
         HttpResponse.json({ unit: withPhoto(box), path: [garage, box], children: [], items: [] }),

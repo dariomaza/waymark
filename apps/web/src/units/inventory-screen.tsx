@@ -27,6 +27,11 @@ export const InventoryScreen = (): JSX.Element => {
 
   const tree = useStorageUnitTree();
   const [adding, setAdding] = useState(false);
+  /*
+    A new top-level space is refused only to a narrowed machine token (ADR
+    26), and the tree says so. Not offered until the tree has said it.
+  */
+  const mayMakeRoot = tree.data?.mayMakeRoot === true;
 
   return (
     <main className="screen">
@@ -45,15 +50,17 @@ export const InventoryScreen = (): JSX.Element => {
         at 360px.
       */}
       <div className="inventory-screen__actions">
-        <Button
-          tone="primary"
-          icon="plus"
-          onClick={() => {
-            setAdding(true);
-          }}
-        >
-          {t("inventory.addSpace")}
-        </Button>
+        {mayMakeRoot ? (
+          <Button
+            tone="primary"
+            icon="plus"
+            onClick={() => {
+              setAdding(true);
+            }}
+          >
+            {t("inventory.addSpace")}
+          </Button>
+        ) : null}
         <Link className="button button--secondary" to={ROUTES.labels}>
           <Icon name="tags" size={18} />
           {t("label.sheet")}

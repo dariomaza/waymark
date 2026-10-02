@@ -1,4 +1,4 @@
-import { unitId } from "@waymark/domain";
+import { ShareLevel, unitId } from "@waymark/domain";
 import type { JSX } from "react";
 import { useParams } from "react-router-dom";
 
@@ -11,7 +11,7 @@ import { Loading } from "../ui/atoms/loading.js";
 import { FailureNote } from "../ui/molecules/failure-note.js";
 import { UnitActions } from "./unit-actions.js";
 import { UnitMenu } from "./unit-menu.js";
-import { useStorageUnit } from "./unit-queries.js";
+import { useSpacePermissions, useStorageUnit } from "./unit-queries.js";
 import { UnitDetail } from "./views/unit-detail.js";
 import { useTranslate } from "../app/language-context.js";
 
@@ -36,6 +36,8 @@ export const UnitScreen = (): JSX.Element => {
   const id = unitId(params.id ?? "");
   const unit = useStorageUnit(id);
   const selection = useItemSelection();
+  const permissions = useSpacePermissions(id);
+  const mayChange = permissions?.access === ShareLevel.EDIT;
 
   return (
     <main className="screen">
@@ -57,20 +59,29 @@ export const UnitScreen = (): JSX.Element => {
           path={unit.data.path}
           childUnits={unit.data.children}
           items={unit.data.items}
-          photo={<UnitPhoto unit={unit.data.unit} />}
+          viewOnly={permissions?.access === ShareLevel.VIEW}
+          photo={<UnitPhoto unit={unit.data.unit} editable={mayChange} />}
           itemPhoto={(item) => <ItemCover item={item} />}
-          actions={<UnitActions unit={unit.data.unit} />}
-          menu={<UnitMenu unit={unit.data.unit} path={unit.data.path} />}
-          itemTrailing={(item) => (
-            <Checkbox
-              className="checkbox--bare"
-              label={t("units.select", { name: item.name })}
-              checked={selection.isSelected(item.id)}
-              onChange={() => {
-                selection.toggle(item.id);
-              }}
-            />
-          )}
+          actions={<UnitActions unit={unit.data.unit} mayChange={mayChange} />}
+          menu={
+            <UnitMenu unit={unit.data.unit} path={unit.data.path} permissions={permissions} />
+          }
+          /*
+            Ticking a thing is the first half of moving it, so a space whose
+            things may not be moved offers nothing to tick (ADR 26).
+          */
+          itemTrailing={(item) =>
+            mayChange ? (
+              <Checkbox
+                className="checkbox--bare"
+                label={t("units.select", { name: item.name })}
+                checked={selection.isSelected(item.id)}
+                onChange={() => {
+                  selection.toggle(item.id);
+                }}
+              />
+            ) : null
+          }
           belowItems={
             selection.selected.length === 0 ? null : (
               <BulkMoveBar itemIds={selection.selected} onDone={selection.clear} />

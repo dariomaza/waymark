@@ -489,8 +489,9 @@ describe("a background removal that failed", () => {
     renderApp({ route: "/things/drill" });
 
     expect(await screen.findByText(/background removal failed/i)).toBeVisible();
+    // Offered once the tree has said the photo may be changed (ADR 26).
     await userEvent.click(
-      screen.getByRole("button", { name: /try removing the background again/i }),
+      await screen.findByRole("button", { name: /try removing the background again/i }),
     );
 
     await waitFor(() => {
@@ -538,8 +539,9 @@ describe("a background removal that failed", () => {
     renderApp({ route: "/units/box3" });
 
     expect(await screen.findByText(/background removal failed/i)).toBeVisible();
+    // Offered once the tree has said the photo may be changed (ADR 26).
     await userEvent.click(
-      screen.getByRole("button", { name: /try removing the background again/i }),
+      await screen.findByRole("button", { name: /try removing the background again/i }),
     );
 
     await waitFor(() => {

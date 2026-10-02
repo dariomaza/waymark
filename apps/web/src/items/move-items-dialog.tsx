@@ -1,4 +1,4 @@
-import { flattenUnits } from "@waymark/api-client";
+import { editableUnits } from "@waymark/api-client";
 import { describeFailure, moveRefusedMessage } from "@waymark/i18n";
 import { unitId, type ItemId } from "@waymark/domain";
 import { useState, type JSX } from "react";
@@ -51,7 +51,8 @@ export const MoveItemsDialog = ({
         value={target}
         options={[
           { value: "", label: t("units.chooseUnit") },
-          ...unitOptions(flattenUnits(tree.data?.tree ?? [])),
+          // Only where the person may put something (ADR 26).
+          ...unitOptions(editableUnits(tree.data?.tree ?? [])),
         ]}
         onChange={(event) => {
           setTarget(event.target.value);
