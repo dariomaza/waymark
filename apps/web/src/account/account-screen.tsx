@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "../app/language-switcher.js";
 import { ThemeSwitcher } from "../app/theme-switcher.js";
 import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
 import { PasskeysPanel } from "../auth/passkeys-panel.js";
+import { PasswordPanel } from "../auth/password-panel.js";
 import { PeoplePanel } from "../auth/people-panel.js";
 import { useSession, useSignOut } from "../auth/use-session.js";
 import { AccountPanel } from "./views/account-panel.js";
@@ -55,6 +56,11 @@ export const AccountScreen = (): JSX.Element => {
          * this client has and the phone does not. Handed in rather than reached
          * for, so the panel stays a thing that draws.
          */
+        /*
+         * Changing your own password (ADR 26, amended): about the person, so
+         * right after the preferences and before the devices.
+         */
+        password={<PasswordPanel />}
         passkeys={<PasskeysPanel />}
         /*
          * Credentials for programs (ADR 18). Under the passkeys, because those

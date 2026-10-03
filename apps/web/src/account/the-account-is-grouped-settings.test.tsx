@@ -227,13 +227,13 @@ describe("who is signed in", () => {
 });
 
 describe("the groups", () => {
-  it("are Preferences, Security and Connected programs, in that order", async () => {
+  it("are Preferences, Password, Security and Connected programs, in that order", async () => {
     await openAccount();
     await screen.findByText("dario");
 
     expect(
       screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent),
-    ).toEqual(["Preferences", "Security", "Connected programs"]);
+    ).toEqual(["Preferences", "Password", "Security", "Connected programs"]);
   });
 
   /**

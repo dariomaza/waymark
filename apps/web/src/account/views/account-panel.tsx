@@ -13,6 +13,8 @@ export interface AccountPanelProps {
   readonly language: ReactNode;
   /** The appearance row of the preferences: light, dark or the device's own (ADR 25). */
   readonly appearance: ReactNode;
+  /** The password group: changing your own (ADR 26, amended). It mutates. */
+  readonly password: ReactNode;
   /** The security group: the devices that can open this account. It fetches and mutates. */
   readonly passkeys: ReactNode;
   /**
@@ -54,6 +56,7 @@ export const AccountPanel = ({
   username,
   language,
   appearance,
+  password,
   passkeys,
   machineTokens,
   people,
@@ -94,6 +97,8 @@ export const AccountPanel = ({
         {language}
         {appearance}
       </SettingsGroup>
+
+      {password}
 
       {passkeys}
 
