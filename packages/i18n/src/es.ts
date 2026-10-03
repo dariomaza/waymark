@@ -619,6 +619,28 @@ export const ES: Dictionary = {
   /** La contraseña actual escrita no era la correcta; la sesión sigue. */
   "password.wrongCurrent": "Esa no es tu contraseña actual. Vuelve a escribirla.",
 
+  /** Elegir tu contraseña la primera vez (ADR 26, enmendado). */
+  "password.chooseTitle": "Elige tu contraseña",
+  "password.chooseLede":
+    "Has entrado con una contraseña temporal. Elige una tuya para seguir; solo la sabrás tú.",
+  /** La contraseña nueva, aquí y en la pantalla de la cuenta. */
+  "password.newLabel": "Contraseña nueva",
+  /** Bajo la contraseña nueva: el mínimo de la API, dicho antes de que la rechace. */
+  "password.newHint": "Al menos 12 caracteres.",
+  "password.chooseAction": "Guardar mi contraseña",
+  "password.saving": "Guardando…",
+
+  /** Cambiar tu contraseña desde la pantalla de la cuenta (ADR 26, enmendado). */
+  "password.group": "Contraseña",
+  /** Tras la ⓘ del grupo: lo que el cambio hace con las demás sesiones. */
+  "password.explains":
+    "Cambiar tu contraseña cierra tu sesión en todos los demás dispositivos. En este sigues dentro.",
+  "password.changeAction": "Cambiar la contraseña",
+  "password.currentLabel": "Contraseña actual",
+  "password.changeConfirm": "Cambiarla",
+  /** Dicho cuando el cambio está hecho, dentro del grupo. */
+  "password.changed": "Tu contraseña ha cambiado. Se ha cerrado la sesión en los demás dispositivos.",
+
   // ---------------------------------------------------------------------
   // Compartir un espacio (ADR 26)
   // ---------------------------------------------------------------------

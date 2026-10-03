@@ -959,6 +959,38 @@ export const EN = {
    */
   "password.wrongCurrent": "That is not your current password. Try typing it again.",
 
+  /**
+   * # Choosing your password, the first time (ADR 26, amended)
+   *
+   * The only screen a person signed in with a temporary password sees. One
+   * field, one primary action, and a way to sign out.
+   */
+  "password.chooseTitle": "Choose your password",
+  "password.chooseLede":
+    "You signed in with a temporary password. Choose one of your own to carry on; only you will know it.",
+  /** The new password, here and on the account screen. */
+  "password.newLabel": "New password",
+  /** Under the new password: the API's minimum, said before it refuses. */
+  "password.newHint": "At least 12 characters.",
+  "password.chooseAction": "Save my password",
+  "password.saving": "Saving…",
+
+  /**
+   * # Changing your password from the account screen (ADR 26, amended)
+   *
+   * A group of its own. The action opens the form; the form asks for the
+   * current password first, then the new one.
+   */
+  "password.group": "Password",
+  /** Folded behind the group's ⓘ: what changing it does to other sessions. */
+  "password.explains":
+    "Changing your password signs you out on every other device. This one stays signed in.",
+  "password.changeAction": "Change password",
+  "password.currentLabel": "Current password",
+  "password.changeConfirm": "Change it",
+  /** Said once the change is done, inside the group. */
+  "password.changed": "Your password is changed. Every other device is signed out.",
+
   // ---------------------------------------------------------------------
   // Sharing a space: the administrator's Share sheet (ADR 26)
   // ---------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { FailureKind, failureKindOf } from "@waymark/api-client";
+import { FailureKind, failureKindOf, isMachineCaller } from "@waymark/api-client";
 import { useQuery } from "@tanstack/react-query";
 import type { JSX } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
@@ -7,6 +7,7 @@ import { useApi } from "../api/api-context.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
+import { ChoosePasswordScreen } from "./choose-password-screen.js";
 import { useSession, useSignOut } from "./use-session.js";
 import { ROUTES } from "../app/routes.js";
 import { useTranslate } from "../app/language-context.js";
@@ -29,7 +30,11 @@ import { useTranslate } from "../app/language-context.js";
  * Checking once on entry means that happens on a splash rather than halfway
  * through a delete.
  *
- * Being unable to REACH the API is neither. The session is not over because
+ * **The account's password is a temporary one** (ADR 26, amended). The
+ * session is fine; the person must choose a password before anything else,
+ * so that screen is the only thing drawn.
+ *
+ * Being unable to REACH the API is none of these. The session is not over because
  * the wifi is; the app opens on what it already had.
  */
 export const RequireSession = (): JSX.Element => {
@@ -102,6 +107,18 @@ const ConfirmedSession = ({ token }: { readonly token: string }): JSX.Element =>
         </Callout>
       </main>
     );
+  }
+
+  // A temporary password (ADR 26, amended): every other route would be
+  // refused, so choosing one is the only thing drawn. Read from `/auth/me`,
+  // which `createQueryClient` asks again whenever any request answers
+  // `PASSWORD_CHANGE_REQUIRED` — that is how the app gets here mid-session.
+  if (
+    check.data !== undefined &&
+    !isMachineCaller(check.data) &&
+    check.data.user.mustChangePassword
+  ) {
+    return <ChoosePasswordScreen />;
   }
 
   // Offline counts as in: the app shell and everything already cached still
