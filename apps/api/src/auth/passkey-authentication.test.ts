@@ -99,6 +99,10 @@ class RecordingSessionRepository implements SessionRepository {
     throw new Error("not part of this ceremony");
   }
 
+  async deleteAllOfExcept(): Promise<number> {
+    throw new Error("not part of this ceremony");
+  }
+
   async deleteExpired(): Promise<number> {
     return 0;
   }

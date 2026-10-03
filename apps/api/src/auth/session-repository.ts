@@ -15,6 +15,13 @@ export interface SessionRepository {
    */
   deleteAllOf(userId: string): Promise<number>;
 
+  /**
+   * Every session of theirs but one: what changing your own password does,
+   * keeping the session it was changed from (ADR 26, amended). Answers how
+   * many went.
+   */
+  deleteAllOfExcept(userId: string, keptSessionId: string): Promise<number>;
+
   /** Housekeeping for sessions that lapsed without anybody presenting them. */
   deleteExpired(now: Date): Promise<number>;
 }

@@ -108,6 +108,17 @@ export const createAccountBodySchema = z.strictObject({
   role,
 });
 
+/**
+ * Changing your own password (ADR 26, amended). `currentPassword` is optional
+ * HERE because an account with a temporary password is not asked for it;
+ * `ChangeOwnPassword` decides when it is required. No minimum on it, as on a
+ * sign-in: it is checked against the hash, not judged.
+ */
+export const changeOwnPasswordBodySchema = z.strictObject({
+  password: z.string().max(MAX_PASSWORD_LENGTH),
+  currentPassword: z.string().max(MAX_PASSWORD_LENGTH).optional(),
+});
+
 export const changeRoleBodySchema = z.strictObject({ role });
 
 /** No body at all, or an empty one; anything in it is refused. */

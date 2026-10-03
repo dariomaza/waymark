@@ -67,13 +67,16 @@ import {
   PasskeyDidNotVerifyTheUser,
   PasskeyNeedsAPassword,
   PasskeyNotFound,
+  CurrentPasswordRequired,
   PasswordChangeRequired,
   PasswordTooShort,
+  PasswordUnchanged,
   ReadOnlyMachineToken,
   TooManyLoginAttempts,
   TooManyPasskeyAttempts,
   UsernameAlreadyTaken,
 } from "../auth/auth-errors.js";
+import { ChangeOwnPassword } from "../auth/change-own-password.js";
 import { CreateUser } from "../auth/create-user.js";
 import { ManageAccounts } from "../auth/manage-accounts.js";
 import { ManageShares } from "../sharing/manage-shares.js";
@@ -370,6 +373,13 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
     ...(deps.sessionTtlMs === undefined ? {} : { sessionTtlMs: deps.sessionTtlMs }),
   });
   const logout = new Logout({ sessions: deps.sessions });
+  const changeOwnPassword = new ChangeOwnPassword({
+    users: deps.users,
+    sessions: deps.sessions,
+    hasher: deps.hasher,
+    clock: deps.clock,
+    rateLimiter: deps.rateLimiter,
+  });
   /**
    * The same three use cases the admin CLI drives, built once here so the
    * account screen and the shell cannot drift into two behaviours. ADR 18 put
@@ -617,7 +627,7 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
       return { kind: "user", user, session };
     }
 
-    void scope.register(authenticatedAuthRoutes, { login, logout });
+    void scope.register(authenticatedAuthRoutes, { login, logout, changeOwnPassword });
     void scope.register(machineTokenRoutes, {
       listMachineTokens: new ListMachineTokens({
         machineTokens: deps.machineTokens,
@@ -1068,6 +1078,14 @@ const sendAuthError = async (
         minimumLength: error.minimumLength,
       }),
     );
+  }
+
+  if (error instanceof PasswordUnchanged) {
+    return reply.code(422).send(errorBody("PASSWORD_UNCHANGED", error.message));
+  }
+
+  if (error instanceof CurrentPasswordRequired) {
+    return reply.code(422).send(errorBody("CURRENT_PASSWORD_REQUIRED", error.message));
   }
 
   if (error instanceof InvalidUsername) {
