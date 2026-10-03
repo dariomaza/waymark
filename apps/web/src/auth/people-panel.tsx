@@ -84,7 +84,7 @@ const People = (): JSX.Element => {
     event.preventDefault();
 
     create.mutate(
-      { username, password, role },
+      { username, role },
       {
         onSuccess: () => {
           setComposing(false);

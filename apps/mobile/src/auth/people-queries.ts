@@ -3,6 +3,7 @@ import {
   queryKeys,
   type AccountListResponse,
   type AccountResponse,
+  type IssuedAccountResponse,
   type CreateAccountInput,
   type UserView,
 } from "@waymark/api-client";
@@ -66,9 +67,9 @@ export const useAccounts = (enabled: boolean): UseQueryResult<AccountListRespons
 };
 
 /** Every change answers the account as it stands; the list is fetched again. */
-const useAccountChange = <TVariables>(
-  call: (variables: TVariables) => Promise<AccountResponse>,
-): UseMutationResult<AccountResponse, Error, TVariables> => {
+const useAccountChange = <TVariables, TAnswer extends AccountResponse = AccountResponse>(
+  call: (variables: TVariables) => Promise<TAnswer>,
+): UseMutationResult<TAnswer, Error, TVariables> => {
   const queries = useQueryClient();
 
   return useMutation({
@@ -82,7 +83,7 @@ const useAccountChange = <TVariables>(
 };
 
 export const useCreateAccount = (): UseMutationResult<
-  AccountResponse,
+  IssuedAccountResponse,
   Error,
   CreateAccountInput
 > => {
@@ -105,15 +106,18 @@ export const useChangeAccountRole = (): UseMutationResult<
 };
 
 export const useResetAccountPassword = (): UseMutationResult<
-  AccountResponse,
+  IssuedAccountResponse,
   Error,
   { readonly id: string; readonly password: string }
 > => {
   const api = useApi();
 
   return useAccountChange(
-    async ({ id, password }: { readonly id: string; readonly password: string }) =>
-      await api.resetAccountPassword(id, password),
+    // The API generates the password now (ADR 26, amended); the typed one is
+    // not sent. The screen that shows the generated one comes with the client
+    // work that follows.
+    async ({ id }: { readonly id: string; readonly password: string }) =>
+      await api.resetAccountPassword(id),
   );
 };
 

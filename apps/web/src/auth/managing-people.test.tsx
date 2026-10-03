@@ -111,14 +111,19 @@ describe("people, from the account screen", () => {
       signedInAs("administrator");
     });
 
-    it("sends the username, the typed password and the role, and lists them", async () => {
+    // The API generates the password now (ADR 26, amended): the typed one is
+    // no longer sent. Showing the generated one is the client work that follows.
+    it("sends the username and the role, and lists them", async () => {
       let body: unknown;
       apiServer.use(
         http.post(`${API_URL}/auth/accounts`, async ({ request }) => {
           body = await request.json();
           const account = anAccount({ id: "u3", username: "child" });
           listed = [...listed, account];
-          return HttpResponse.json({ account }, { status: 201 });
+          return HttpResponse.json(
+            { account, temporaryPassword: "abcd-efgh-jkmn-pqrs" },
+            { status: 201 },
+          );
         }),
       );
 
@@ -131,7 +136,7 @@ describe("people, from the account screen", () => {
       await userEvent.click(within(people).getByRole("button", { name: "Add them" }));
 
       await waitFor(() => {
-        expect(body).toEqual({ username: "child", password: "the-child-password", role: "user" });
+        expect(body).toEqual({ username: "child", role: "user" });
       });
       expect(await within(people).findByText("child")).toBeVisible();
     });
@@ -299,12 +304,12 @@ describe("people, from the account screen", () => {
       signedInAs("administrator");
     });
 
-    it("asks for the new password, says they are signed out everywhere, and sends it", async () => {
-      let body: unknown;
+    it("says they are signed out everywhere, and sends no password", async () => {
+      let body: unknown = "not sent";
       apiServer.use(
         http.post(`${API_URL}/auth/accounts/u2/password`, async ({ request }) => {
-          body = await request.json();
-          return HttpResponse.json({ account: PARTNER });
+          body = await request.text();
+          return HttpResponse.json({ account: PARTNER, temporaryPassword: "abcd-efgh-jkmn-pqrs" });
         }),
       );
 
@@ -318,7 +323,7 @@ describe("people, from the account screen", () => {
       await userEvent.click(within(sheet).getByRole("button", { name: "Reset it" }));
 
       await waitFor(() => {
-        expect(body).toEqual({ password: "a-brand-new-password" });
+        expect(body).toBe("");
       });
       await waitFor(() => {
         expect(screen.queryByRole("dialog", { name: "Reset the password of partner?" })).toBeNull();

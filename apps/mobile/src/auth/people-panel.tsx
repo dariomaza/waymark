@@ -70,7 +70,7 @@ const People = (): JSX.Element => {
 
   const onCreate = (): void => {
     create.mutate(
-      { username, password, role: role as Role },
+      { username, role: role as Role },
       {
         onSuccess: () => {
           setComposing(false);
