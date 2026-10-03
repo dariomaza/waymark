@@ -1,4 +1,11 @@
-import { FailureKind, failureKindOf, queryKeys } from "@waymark/api-client";
+import {
+  ApiError,
+  ApiErrorCode,
+  FailureKind,
+  failureKindOf,
+  isMachineCaller,
+  queryKeys,
+} from "@waymark/api-client";
 import {
   NavigationContainer,
   type NavigationState,
@@ -8,7 +15,13 @@ import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { PlatformPressable } from "@react-navigation/elements";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
 import type { Palette, Scheme } from "@waymark/tokens";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
@@ -22,6 +35,7 @@ import {
 
 import { AccountScreen } from "../account/account-screen.js";
 import { ApiProvider, useApi } from "../api/api-context.js";
+import { ChoosePasswordScreen } from "../auth/choose-password-screen.js";
 import { LoginScreen } from "../auth/login-screen.js";
 import { SessionProvider } from "../auth/session-context.js";
 import { expoSecureStorage, type SecureStorage } from "../auth/secure-storage.js";
@@ -304,6 +318,18 @@ const ConfirmedSession = ({
         </Callout>
       </Screen>
     );
+  }
+
+  // A temporary password (ADR 26, amended): every other route would be
+  // refused, so choosing one is the only thing drawn. Read from `/auth/me`,
+  // which `createQueryClient` asks again whenever any request answers
+  // `PASSWORD_CHANGE_REQUIRED` — that is how the app gets here mid-session.
+  if (
+    check.data !== undefined &&
+    !isMachineCaller(check.data) &&
+    check.data.user.mustChangePassword
+  ) {
+    return <ChoosePasswordScreen />;
   }
 
   return (
@@ -595,8 +621,26 @@ export interface QueryClientOptions {
  */
 export const createQueryClient = ({
   offlineRetryDelay = OFFLINE_RETRY_DELAY_MS,
-}: QueryClientOptions = {}): QueryClient =>
-  new QueryClient({
+}: QueryClientOptions = {}): QueryClient => {
+  /**
+   * # A refusal that means "choose your password first" (ADR 26, amended)
+   *
+   * An administrator can reset a password while the app is open. The next
+   * request is refused 403 `PASSWORD_CHANGE_REQUIRED` — which is NOT the end
+   * of the session, so nothing here signs anybody out. `/auth/me` is asked
+   * again instead, it says `mustChangePassword`, and the session gate draws
+   * the screen that chooses one.
+   */
+  const onError = (error: unknown): void => {
+    if (error instanceof ApiError && error.code === ApiErrorCode.PASSWORD_CHANGE_REQUIRED) {
+      // `queryKeys.session(token)` is `["session", token]`: every session asked.
+      void queries.invalidateQueries({ queryKey: [queryKeys.session("")[0]] });
+    }
+  };
+
+  const queries: QueryClient = new QueryClient({
+    queryCache: new QueryCache({ onError }),
+    mutationCache: new MutationCache({ onError }),
     defaultOptions: {
       queries: {
         networkMode: "always",
@@ -609,3 +653,6 @@ export const createQueryClient = ({
       mutations: { networkMode: "always", retry: false },
     },
   });
+
+  return queries;
+};
