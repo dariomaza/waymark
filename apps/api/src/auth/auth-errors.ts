@@ -286,6 +286,18 @@ export class AdministratorOnly extends AuthError {
   }
 }
 
+/**
+ * A session of an account whose password is a temporary one asked for
+ * anything but who it is, signing out, or changing the password (ADR 26,
+ * amended). 403: the person is known, and is being refused until they have
+ * chosen a password of their own.
+ */
+export class PasswordChangeRequired extends AuthError {
+  constructor(readonly username: string) {
+    super("Choose a password of your own before anything else");
+  }
+}
+
 /** The account the path names is not there. Accounts are never deleted. */
 export class AccountNotFound extends AuthError {
   constructor(readonly accountId: string) {

@@ -67,6 +67,7 @@ import {
   PasskeyDidNotVerifyTheUser,
   PasskeyNeedsAPassword,
   PasskeyNotFound,
+  PasswordChangeRequired,
   PasswordTooShort,
   ReadOnlyMachineToken,
   TooManyLoginAttempts,
@@ -537,6 +538,29 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
   void app.register(async (scope) => {
     scope.addHook("onRequest", async (request) => {
       request.caller = await identify(request.headers.authorization);
+
+      /**
+       * A temporary password opens one door (ADR 26, amended), and it is
+       * enforced here, once, for every route in this scope — not route by
+       * route, where the next route added would be the one that forgot.
+       *
+       * Whichever way the session was opened: a passkey kept through a reset
+       * (ADR 19) signs the person in, and they are restricted all the same,
+       * because the restriction is the account's and the account is read
+       * afresh on every request. A machine token is not restricted: it was
+       * issued while the account was whole, a reset does not revoke it (ADR
+       * 26), and creating a new one is one of the routes refused here.
+       */
+      if (
+        request.caller.kind === "user" &&
+        request.caller.user.mustChangePassword &&
+        !OPEN_WHILE_A_PASSWORD_MUST_CHANGE.has(
+          `${request.method} ${request.routeOptions.url ?? ""}`,
+        )
+      ) {
+        throw new PasswordChangeRequired(request.caller.user.username);
+      }
+
       request.access = await accessOfCaller.execute(request.caller);
 
       /**
@@ -650,6 +674,18 @@ export const buildApp = (deps: AppDependencies): FastifyInstance => {
 
   return app;
 };
+
+/**
+ * The only routes a session may call while its account's password is a
+ * temporary one (ADR 26, amended): who am I, sign out, and choose a password.
+ * Matched on the route's pattern, never on the raw URL, so a query string or
+ * a trailing segment cannot pass for one of them.
+ */
+const OPEN_WHILE_A_PASSWORD_MUST_CHANGE: ReadonlySet<string> = new Set([
+  "GET /auth/me",
+  "POST /auth/logout",
+  "POST /auth/password",
+]);
 
 const registerSecurityPlugins = (
   app: FastifyInstance,
@@ -972,6 +1008,10 @@ const sendAuthError = async (
    * administrator has to act on. 422 for a password or a username the request
    * itself got wrong.
    */
+  if (error instanceof PasswordChangeRequired) {
+    return reply.code(403).send(errorBody("PASSWORD_CHANGE_REQUIRED", error.message));
+  }
+
   if (error instanceof AdministratorOnly) {
     return reply.code(403).send(errorBody("ADMINISTRATOR_ONLY", error.message));
   }
