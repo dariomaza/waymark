@@ -3,6 +3,7 @@
 - Status: accepted
 - Date: 2026-10-01
 - Supersedes: ADR 5. Amends: ADR 6, ADR 17, ADR 18.
+- Amended: 2026-10-03 — generated temporary passwords and the forced change.
 
 ## Context
 
@@ -151,8 +152,10 @@ Prisma, as every contract suite does.
 - **An administrator manages the other accounts from the account screen.** That
   means creating an account, changing its role, resetting its password and
   disabling it.
-  - The administrator types the new password, the same way the CLI asks for one,
-    and hands it over in person. Nothing is emailed, because there is no mail.
+  - ~~The administrator types the new password~~ — amended on 2026-10-03: the
+    server generates a temporary one, and the person must replace it at their
+    first sign-in. See *Amended (2026-10-03)* below. It is still handed over in
+    person; nothing is emailed, because there is no mail.
 - **Disabling** revokes every session and machine token the account holds, and
   stops it signing in.
 - **Accounts are disabled, never deleted.** Deleting one would leave its
@@ -222,3 +225,78 @@ So on the day of the deploy, everybody sees what they saw the day before.
   - the person's role in `/auth/me`;
   - for an administrator, the home screen groups other people's root spaces
     under their names.
+
+## Amended (2026-10-03): generated passwords, and the forced change
+
+### What changed
+
+- **The administrator no longer chooses a password.** `POST /auth/accounts`
+  takes `{ username, role }` and `POST /auth/accounts/:id/password` takes no
+  body. A `password` sent to either is refused with 400, as the unknown key it
+  now is, so a client still built for the old routes cannot believe it set one.
+  - The server generates a temporary password and answers it **once**, as
+    `{ account, temporaryPassword }`. Only its scrypt hash is stored, and it is
+    never logged. Both answers are `POST`s, which ADR 13 never caches. The
+    clients are to treat it as ADR 18's *A secret in a browser* treats a
+    machine token secret: shown once, kept only in component state, warned
+    about before it can be dismissed.
+  - **Its format** is four groups of four lower-case letters, such as
+    `wxmc-hepa-rtkd-ufbn`, drawn with `crypto.randomInt` from 23 letters: the
+    alphabet without `i`, `l` and `o`, which read as `1` and `0`. There are no
+    digits and no capitals, so a phone keyboard never changes layer.
+  - **Its entropy is 16 × log2(23) ≈ 72.4 bits**
+    (`TEMPORARY_PASSWORD_ENTROPY_BITS`, asserted to be at least 64). It lives
+    behind a rate-limited sign-in and an scrypt hash, and it lives until the
+    person's first sign-in.
+- **A generated password must be changed.** A new column,
+  `User.mustChangePassword`, is set on create and on reset. Every account that
+  existed before is `false`, and so is every account `create-user` makes: the
+  operator typed that password at a shell, and it is already theirs.
+- **A flagged account is restricted, in one place.** The authentication hook,
+  where `request.caller` is set, refuses every route but `GET /auth/me`,
+  `POST /auth/logout` and `POST /auth/password` with 403
+  `PASSWORD_CHANGE_REQUIRED`. It is not checked route by route, where the next
+  route added would be the one that forgot. `/auth/me` and the sign-in answer
+  carry `mustChangePassword`, so a client knows which screen to show.
+  - **A passkey sign-in is restricted the same way.** A reset keeps passkeys
+    (ADR 19), but the flag is the account's and the account is read on every
+    request, so whichever door opened the session, it opens only these three
+    routes.
+  - **Machine tokens.** A flagged account cannot create one: the route is
+    refused by the hook. A token it already held keeps working, and is not
+    restricted, because a reset does not revoke machine tokens
+    (`ManageAccounts.resetPassword`, the "keeps the machine tokens" tests) and
+    the restriction applies to sessions. Revoking it, or disabling the account,
+    is how it stops.
+- **A person changes their own password.** `POST /auth/password
+  { password, currentPassword? }`, for anybody signed in, at any time.
+  - The 12-character minimum applies. A new password equal to the current one
+    is 422 `PASSWORD_UNCHANGED`.
+  - With a temporary password the current one is not asked for: having just
+    signed in with it is the proof. Otherwise `currentPassword` is required
+    (422 `CURRENT_PASSWORD_REQUIRED`), and a wrong one is refused as a sign-in
+    refuses it (401 `INVALID_CREDENTIALS`), counted by the same limiter.
+  - On success the flag is cleared and every OTHER session of the person ends.
+    The one in use stays.
+  - A machine token is refused with 403, as on every account route (ADR 18).
+
+### Why
+
+The administrator never knows a password that lasts. Before, the person they
+made an account for signed in with a password somebody else had chosen and
+seen, and nothing asked them to change it. Now the only password the
+administrator ever reads is useless once it has been used: the first sign-in
+is followed by a change, and the change ends it.
+
+### What it costs
+
+Somebody who reads the temporary password before the person signs in — over a
+shoulder, from a screenshot, from a chat it was pasted into — can sign in
+first, and choose a password the real person does not know. The mitigations
+are that it is shown once and dies on first use: the person who finds that the
+password they were handed no longer works knows at once that somebody used it,
+and an administrator resets it again. The window is the time between the
+administrator reading it out and the person typing it.
+
+The clients built for the old routes break against these ones. That was
+accepted; they follow in the same piece of work.
