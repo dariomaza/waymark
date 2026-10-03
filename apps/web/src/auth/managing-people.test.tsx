@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { anAccount, aSession, aStorageUnit, aTree } from "@waymark/api-client/testing";
 
@@ -33,6 +33,62 @@ const signedInAs = (role: "administrator" | "user"): void => {
     http.get(`${API_URL}/auth/machine-tokens`, () => HttpResponse.json({ machineTokens: [] })),
   );
 };
+
+/**
+ * Every key and value a storage holds, as one string to search. Read through
+ * `key(i)`, not `Object.keys`: jsdom keeps entries behind an index, so the
+ * obvious spelling would pass against a storage full of secrets.
+ */
+const everythingIn = (storage: Storage | undefined): string => {
+  if (storage === undefined) {
+    return "";
+  }
+
+  const values: string[] = [];
+  for (let at = 0; at < storage.length; at += 1) {
+    const key = storage.key(at);
+    values.push(key ?? "", (key === null ? null : storage.getItem(key)) ?? "");
+  }
+
+  return values.join("\n");
+};
+
+/**
+ * A working `Storage`. This jsdom build has no `localStorage` at all, so an
+ * assertion against the real one would pass whatever the code wrote — the
+ * write would just throw somewhere nobody looks. The tests that promise the
+ * password is never stored put one of these in its place first.
+ */
+const aWorkingStorage = (): Storage => {
+  const entries = new Map<string, string>();
+
+  return {
+    get length() {
+      return entries.size;
+    },
+    key: (at: number) => [...entries.keys()][at] ?? null,
+    getItem: (key: string) => entries.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      entries.set(key, String(value));
+    },
+    removeItem: (key: string) => {
+      entries.delete(key);
+    },
+    clear: () => {
+      entries.clear();
+    },
+  };
+};
+
+/** Real storages in place of the missing ones, for as long as one test runs. */
+const withWorkingStorage = (): void => {
+  vi.stubGlobal("localStorage", aWorkingStorage());
+  vi.stubGlobal("sessionStorage", aWorkingStorage());
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 let listed: ReturnType<typeof anAccount>[];
 
@@ -89,6 +145,18 @@ describe("people, from the account screen", () => {
       expect(within(lodger).getByText("Disabled")).toBeVisible();
     });
 
+    it("says which person has not chosen their password yet", async () => {
+      signedInAs("administrator");
+      theHouseHolds(DARIO, PARTNER, anAccount({ id: "u3", username: "child", mustChangePassword: true }));
+
+      const people = await openPeople();
+
+      const child = await rowOf(people, "child");
+      expect(within(child).getByText("Has not chosen a password yet")).toBeVisible();
+      const partner = await rowOf(people, "partner");
+      expect(within(partner).queryByText("Has not chosen a password yet")).toBeNull();
+    });
+
     /**
      * Not even asked for: `setup.ts` fails a test that makes a request no
      * handler declared, and this one declares no `/auth/accounts` at all.
@@ -111,34 +179,74 @@ describe("people, from the account screen", () => {
       signedInAs("administrator");
     });
 
-    // The API generates the password now (ADR 26, amended): the typed one is
-    // no longer sent. Showing the generated one is the client work that follows.
-    it("sends the username and the role, and lists them", async () => {
+    const addingAnswers = (temporaryPassword: string): { body: () => unknown } => {
       let body: unknown;
       apiServer.use(
         http.post(`${API_URL}/auth/accounts`, async ({ request }) => {
           body = await request.json();
-          const account = anAccount({ id: "u3", username: "child" });
+          const account = anAccount({ id: "u3", username: "child", mustChangePassword: true });
           listed = [...listed, account];
-          return HttpResponse.json(
-            { account, temporaryPassword: "abcd-efgh-jkmn-pqrs" },
-            { status: 201 },
-          );
+          return HttpResponse.json({ account, temporaryPassword }, { status: 201 });
         }),
       );
+      return { body: () => body };
+    };
+
+    const addChild = async (people: HTMLElement): Promise<void> => {
+      await within(people).findByText("partner");
+      await userEvent.click(within(people).getByRole("button", { name: "Add a person" }));
+      await userEvent.type(within(people).getByRole("textbox", { name: "Username" }), "child");
+      await userEvent.selectOptions(within(people).getByRole("combobox", { name: "Role" }), "user");
+      await userEvent.click(within(people).getByRole("button", { name: "Add them" }));
+    };
+
+    /** The server makes the password (ADR 26, amended): nobody types one. */
+    it("asks only for a username and a role, and sends exactly those", async () => {
+      const adding = addingAnswers("wxmc-hepa-rtkd-ufbn");
 
       const people = await openPeople();
       await within(people).findByText("partner");
       await userEvent.click(within(people).getByRole("button", { name: "Add a person" }));
+
+      expect(within(people).queryByLabelText(/password/i)).toBeNull();
+
       await userEvent.type(within(people).getByRole("textbox", { name: "Username" }), "child");
-      await userEvent.type(within(people).getByLabelText("Password"), "the-child-password");
-      await userEvent.selectOptions(within(people).getByRole("combobox", { name: "Role" }), "user");
       await userEvent.click(within(people).getByRole("button", { name: "Add them" }));
 
       await waitFor(() => {
-        expect(body).toEqual({ username: "child", role: "user" });
+        expect(adding.body()).toEqual({ username: "child", role: "user" });
       });
       expect(await within(people).findByText("child")).toBeVisible();
+    });
+
+    it("shows the temporary password once, with a way to copy it and the warning before the way out", async () => {
+      addingAnswers("wxmc-hepa-rtkd-ufbn");
+
+      const people = await openPeople();
+      await addChild(people);
+
+      const shown = await within(people).findByRole("alert");
+      expect(within(shown).getByText("The temporary password for child")).toBeVisible();
+      expect(within(shown).getByText("wxmc-hepa-rtkd-ufbn")).toBeVisible();
+      expect(within(shown).getByRole("button", { name: "Copy" })).toBeVisible();
+      expect(within(shown).getByText(/only time you will see it/i)).toBeVisible();
+      expect(within(shown).getByText(/choose a password of their own/i)).toBeVisible();
+
+      await userEvent.click(within(shown).getByRole("button", { name: "I have it" }));
+
+      expect(within(people).queryByText("wxmc-hepa-rtkd-ufbn")).toBeNull();
+    });
+
+    it("never puts the temporary password in browser storage", async () => {
+      withWorkingStorage();
+      addingAnswers("wxmc-hepa-rtkd-ufbn");
+
+      const people = await openPeople();
+      await addChild(people);
+      await within(people).findByText("wxmc-hepa-rtkd-ufbn");
+
+      expect(everythingIn(globalThis.localStorage)).not.toContain("wxmc-hepa-rtkd-ufbn");
+      expect(everythingIn(globalThis.sessionStorage)).not.toContain("wxmc-hepa-rtkd-ufbn");
     });
 
     it("says a username is taken, naming it", async () => {
@@ -155,7 +263,6 @@ describe("people, from the account screen", () => {
       await within(people).findByText("partner");
       await userEvent.click(within(people).getByRole("button", { name: "Add a person" }));
       await userEvent.type(within(people).getByRole("textbox", { name: "Username" }), "partner");
-      await userEvent.type(within(people).getByLabelText("Password"), "the-partner-password");
       await userEvent.click(within(people).getByRole("button", { name: "Add them" }));
 
       expect(await within(people).findByText("Somebody is already called partner.")).toBeVisible();
@@ -304,52 +411,78 @@ describe("people, from the account screen", () => {
       signedInAs("administrator");
     });
 
-    it("says they are signed out everywhere, and sends no password", async () => {
+    const resetAnswers = (): { body: () => unknown } => {
       let body: unknown = "not sent";
       apiServer.use(
         http.post(`${API_URL}/auth/accounts/u2/password`, async ({ request }) => {
           body = await request.text();
-          return HttpResponse.json({ account: PARTNER, temporaryPassword: "abcd-efgh-jkmn-pqrs" });
+          return HttpResponse.json({
+            account: { ...PARTNER, mustChangePassword: true },
+            temporaryPassword: "wxmc-hepa-rtkd-ufbn",
+          });
         }),
       );
+      return { body: () => body };
+    };
 
+    const askToReset = async (): Promise<HTMLElement> => {
       const people = await openPeople();
       const menu = await openMenuOf(people, "partner");
       await userEvent.click(within(menu).getByRole("button", { name: "Reset password" }));
 
-      const sheet = await screen.findByRole("dialog", { name: "Reset the password of partner?" });
+      return await screen.findByRole("dialog", { name: "Reset the password of partner?" });
+    };
+
+    it("says they are signed out everywhere before the button, asks for no password, and sends none", async () => {
+      const reset = resetAnswers();
+
+      const sheet = await askToReset();
       expect(within(sheet).getByText(/signed out everywhere/i)).toBeVisible();
-      await userEvent.type(within(sheet).getByLabelText("New password"), "a-brand-new-password");
+      expect(within(sheet).queryByLabelText(/password/i)).toBeNull();
       await userEvent.click(within(sheet).getByRole("button", { name: "Reset it" }));
 
       await waitFor(() => {
-        expect(body).toBe("");
-      });
-      await waitFor(() => {
-        expect(screen.queryByRole("dialog", { name: "Reset the password of partner?" })).toBeNull();
+        expect(reset.body()).toBe("");
       });
     });
 
-    it("says how long the password has to be, in the API's number", async () => {
+    it("shows the new temporary password once, never stores it, then closes", async () => {
+      withWorkingStorage();
+      resetAnswers();
+
+      const sheet = await askToReset();
+      await userEvent.click(within(sheet).getByRole("button", { name: "Reset it" }));
+
+      const shown = await within(sheet).findByRole("alert");
+      expect(within(shown).getByText("The temporary password for partner")).toBeVisible();
+      expect(within(shown).getByText("wxmc-hepa-rtkd-ufbn")).toBeVisible();
+      expect(within(shown).getByRole("button", { name: "Copy" })).toBeVisible();
+      expect(within(shown).getByText(/only time you will see it/i)).toBeVisible();
+      expect(everythingIn(globalThis.localStorage)).not.toContain("wxmc-hepa-rtkd-ufbn");
+      expect(everythingIn(globalThis.sessionStorage)).not.toContain("wxmc-hepa-rtkd-ufbn");
+
+      await userEvent.click(within(shown).getByRole("button", { name: "I have it" }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog", { name: "Reset the password of partner?" })).toBeNull();
+      });
+      expect(screen.queryByText("wxmc-hepa-rtkd-ufbn")).toBeNull();
+    });
+
+    it("names the refusal inside the sheet", async () => {
       apiServer.use(
         http.post(`${API_URL}/auth/accounts/u2/password`, () =>
           HttpResponse.json(
-            { error: { code: "PASSWORD_TOO_SHORT", message: "short", details: { minimumLength: 12 } } },
-            { status: 422 },
+            { error: { code: "ACCOUNT_NOT_FOUND", message: "gone" } },
+            { status: 404 },
           ),
         ),
       );
 
-      const people = await openPeople();
-      const menu = await openMenuOf(people, "partner");
-      await userEvent.click(within(menu).getByRole("button", { name: "Reset password" }));
-      const sheet = await screen.findByRole("dialog", { name: "Reset the password of partner?" });
-      await userEvent.type(within(sheet).getByLabelText("New password"), "short");
+      const sheet = await askToReset();
       await userEvent.click(within(sheet).getByRole("button", { name: "Reset it" }));
 
-      expect(
-        await within(sheet).findByText("The password needs at least 12 characters."),
-      ).toBeVisible();
+      expect(await within(sheet).findByText(/not here any more/i)).toBeVisible();
     });
   });
 });

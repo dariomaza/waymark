@@ -556,7 +556,7 @@ export const ES: Dictionary = {
   "people.explains":
     "Todas las personas con cuenta en esta casa. Solo un administrador ve este grupo y solo un administrador puede cambiarlo.",
   "people.handOver":
-    "No se envía nada por correo: tú escribes la contraseña de una persona nueva, o la de un restablecimiento, y se la das en persona.",
+    "No se envía nada por correo: Waymark crea una contraseña temporal para una persona nueva, o al restablecerla, y se la das tú en persona.",
   "people.loading": "Cargando las personas de esta casa",
   "people.addAction": "Añadir una persona",
   "people.usernameLabel": "Usuario",
@@ -577,7 +577,7 @@ export const ES: Dictionary = {
 
   "people.resetTitle": "¿Restablecer la contraseña de {username}?",
   "people.resetWarning":
-    "Se cierra la sesión de {username} en todas partes y necesitará esta contraseña nueva para volver a entrar. Sus passkeys y sus tokens de máquina siguen funcionando.",
+    "Se cierra la sesión de {username} en todas partes y Waymark crea una contraseña temporal nueva para que se la des. Sus passkeys y sus tokens de máquina siguen funcionando.",
   "people.newPasswordLabel": "Contraseña nueva",
   "people.resetConfirm": "Restablécela",
   "people.resetting": "Restableciendo…",
@@ -597,6 +597,17 @@ export const ES: Dictionary = {
   "people.alreadyGone": "Esa cuenta ya no está. Cierra esta pantalla y vuelve a abrirla.",
   "people.notForMachines":
     "Un token de máquina no puede gestionar cuentas. Lo hace un administrador con su sesión iniciada.",
+
+  /** Una contraseña temporal, mostrada una sola vez (ADR 26, enmendado). */
+  "people.temporaryTitle": "La contraseña temporal de {username}",
+  "people.temporaryOnce":
+    "Es la única vez que la verás. Dásela tú en persona: {username} tendrá que elegir una contraseña propia la primera vez que entre con ella.",
+  /** El nombre accesible de la contraseña, junto a su botón de copiar. */
+  "people.temporaryLabel": "Contraseña temporal de {username}",
+  /** El botón que quita la contraseña temporal de la pantalla para siempre. */
+  "people.temporaryDone": "Ya la tengo",
+  /** En la fila de quien aún tiene una contraseña temporal. */
+  "people.mustChange": "Aún no ha elegido su contraseña",
 
   // ---------------------------------------------------------------------
   // Cambiar tu propia contraseña (ADR 26, enmendado)

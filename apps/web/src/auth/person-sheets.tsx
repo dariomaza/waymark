@@ -1,13 +1,13 @@
 import type { AccountView } from "@waymark/api-client";
 import { accountFailureMessage, describeFailure } from "@waymark/i18n";
-import { useId, useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
-import { PasswordField } from "../ui/molecules/password-field.js";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { useTranslate } from "../app/language-context.js";
 import { useDisableAccount, useResetAccountPassword } from "./people-queries.js";
+import { TemporaryPassword } from "./views/temporary-password.js";
 
 /**
  * # The two questions the People group asks before it acts (ADR 26)
@@ -24,46 +24,46 @@ export interface PersonSheetProps {
 }
 
 /**
- * A new password for somebody else, and the consequence said before the
- * button: they are signed out everywhere. Their passkeys and machine tokens
- * keep working (ADR 19), and the sheet says that too.
+ * A new temporary password for somebody else, and the consequence said before
+ * the button: they are signed out everywhere. Their passkeys and machine
+ * tokens keep working (ADR 19), and the sheet says that too. Once it is done,
+ * the sheet shows the password the server made, once, in its own state, and
+ * closes when it is dismissed (ADR 26, amended).
  */
 export const ResetPasswordSheet = ({ account, onClose }: PersonSheetProps): JSX.Element => {
   const t = useTranslate();
-  const fieldId = useId();
   const reset = useResetAccountPassword();
-  const [password, setPassword] = useState("");
+  const [issued, setIssued] = useState<string | null>(null);
 
   return (
     <Sheet title={t("people.resetTitle", { username: account.username })} onClose={onClose}>
-      <p>{t("people.resetWarning", { username: account.username })}</p>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          reset.mutate({ id: account.id, password }, { onSuccess: onClose });
-        }}
-      >
-        <PasswordField
-          id={fieldId}
-          label={t("people.newPasswordLabel")}
-          hint={t("people.passwordHint")}
-          value={password}
-          autoComplete="new-password"
-          onChange={(event) => {
-            setPassword(event.target.value);
-          }}
-        />
-        {reset.isError ? (
-          <Callout tone="wrong">
-            <p>{t(accountFailureMessage(reset.error) ?? describeFailure(reset.error))}</p>
-          </Callout>
-        ) : null}
-        <div className="sheet__commit">
-          <Button type="submit" tone="primary" disabled={reset.isPending}>
-            {reset.isPending ? t("people.resetting") : t("people.resetConfirm")}
-          </Button>
-        </div>
-      </form>
+      {issued === null ? (
+        <>
+          <p>{t("people.resetWarning", { username: account.username })}</p>
+          {reset.isError ? (
+            <Callout tone="wrong">
+              <p>{t(accountFailureMessage(reset.error) ?? describeFailure(reset.error))}</p>
+            </Callout>
+          ) : null}
+          <div className="sheet__commit">
+            <Button
+              tone="primary"
+              disabled={reset.isPending}
+              onClick={() => {
+                reset.mutate(account.id, {
+                  onSuccess: (answer) => {
+                    setIssued(answer.temporaryPassword);
+                  },
+                });
+              }}
+            >
+              {reset.isPending ? t("people.resetting") : t("people.resetConfirm")}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <TemporaryPassword username={account.username} password={issued} onDismiss={onClose} />
+      )}
     </Sheet>
   );
 };

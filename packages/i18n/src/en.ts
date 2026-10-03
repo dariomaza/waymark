@@ -865,7 +865,7 @@ export const EN = {
   "people.explains":
     "Everybody with an account in this house. Only an administrator sees this group, and only an administrator can change it.",
   "people.handOver":
-    "Nothing is emailed: you type the password for a new person, or a reset one, and hand it over yourself.",
+    "Nothing is emailed: Waymark makes a temporary password for a new person, or for a reset, and you hand it over yourself.",
   "people.loading": "Loading the people in this house",
   /** The [+] in the group's title line: the one primary action (ADR 21). */
   "people.addAction": "Add a person",
@@ -898,7 +898,7 @@ export const EN = {
    * otherwise discover from a phone that suddenly asks for a password.
    */
   "people.resetWarning":
-    "{username} is signed out everywhere and needs this new password to sign in again. Their passkeys and machine tokens keep working.",
+    "{username} is signed out everywhere, and Waymark makes a new temporary password for you to hand over. Their passkeys and machine tokens keep working.",
   "people.newPasswordLabel": "New password",
   "people.resetConfirm": "Reset it",
   "people.resetting": "Resetting…",
@@ -927,6 +927,24 @@ export const EN = {
    */
   "people.notForMachines":
     "A machine token cannot manage accounts. An administrator does that, signed in.",
+
+  /**
+   * # A temporary password, shown once (ADR 26, amended)
+   *
+   * The server generated it after adding a person or resetting a password,
+   * and this is the only time anybody can read it. The title names whose it
+   * is; the warning, said before the way out, says it will not be shown again
+   * and that the person replaces it the first time they sign in.
+   */
+  "people.temporaryTitle": "The temporary password for {username}",
+  "people.temporaryOnce":
+    "This is the only time you will see it. Hand it over yourself: {username} has to choose a password of their own the first time they sign in with it.",
+  /** The accessible name of the password itself, beside its copy button. */
+  "people.temporaryLabel": "{username}'s temporary password",
+  /** The button that takes the temporary password off the screen for good. */
+  "people.temporaryDone": "I have it",
+  /** On the row of somebody still holding a temporary password. */
+  "people.mustChange": "Has not chosen a password yet",
 
   // ---------------------------------------------------------------------
   // Changing your own password (ADR 26, amended)
