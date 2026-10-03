@@ -870,9 +870,6 @@ export const EN = {
   /** The [+] in the group's title line: the one primary action (ADR 21). */
   "people.addAction": "Add a person",
   "people.usernameLabel": "Username",
-  "people.passwordLabel": "Password",
-  /** Under the password of a new person, or of a reset. */
-  "people.passwordHint": "At least 12 characters. You hand it over yourself.",
   "people.roleLabel": "Role",
   /** The two roles, as a chip on a row and as the choice in the form. */
   "people.roleAdministrator": "Administrator",
@@ -899,7 +896,6 @@ export const EN = {
    */
   "people.resetWarning":
     "{username} is signed out everywhere, and Waymark makes a new temporary password for you to hand over. Their passkeys and machine tokens keep working.",
-  "people.newPasswordLabel": "New password",
   "people.resetConfirm": "Reset it",
   "people.resetting": "Resetting…",
 

@@ -74,6 +74,9 @@ const useAccountChange = <TVariables, TAnswer extends AccountResponse = AccountR
 
   return useMutation({
     mutationFn: call,
+    // Forgotten as soon as nothing observes it: creating and resetting answer
+    // a temporary password, which belongs in the screen's state alone.
+    gcTime: 0,
     // Settled, not succeeded: a refusal such as "not here any more" is
     // exactly when the list on screen is the thing that is wrong.
     onSettled: () => {
@@ -108,17 +111,11 @@ export const useChangeAccountRole = (): UseMutationResult<
 export const useResetAccountPassword = (): UseMutationResult<
   IssuedAccountResponse,
   Error,
-  { readonly id: string; readonly password: string }
+  string
 > => {
   const api = useApi();
 
-  return useAccountChange(
-    // The API generates the password now (ADR 26, amended); the typed one is
-    // not sent. The screen that shows the generated one comes with the client
-    // work that follows.
-    async ({ id }: { readonly id: string; readonly password: string }) =>
-      await api.resetAccountPassword(id),
-  );
+  return useAccountChange(async (id: string) => await api.resetAccountPassword(id));
 };
 
 export const useDisableAccount = (): UseMutationResult<AccountResponse, Error, string> => {

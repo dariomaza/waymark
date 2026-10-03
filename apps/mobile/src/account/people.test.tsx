@@ -1,7 +1,18 @@
 import { anAccount, aSession } from "@waymark/api-client/testing";
 
+import { inMemorySecureStorage, type SecureStorage } from "../auth/secure-storage.js";
+import { LANGUAGE_KEY } from "../app/language.js";
+import { SESSION_KEY } from "../auth/session-store.js";
 import { API_URL, apiServer, http, HttpResponse } from "../testing/api-server.js";
-import { fireEvent, renderApp, screen, waitFor } from "../testing/render-app.js";
+import { fakeClipboard } from "../testing/fake-clipboard.js";
+import {
+  everythingCached,
+  fireEvent,
+  renderApp,
+  screen,
+  waitFor,
+  within,
+} from "../testing/render-app.js";
 import { theApiKnowsTheHouse } from "../testing/the-house.js";
 
 /**
@@ -54,6 +65,84 @@ const openMenuOf = async (username: string): Promise<typeof screen> => {
   return screen;
 };
 
+/** Adding a person answers this temporary password; the body sent is kept. */
+const addingAnswers = (temporaryPassword: string): { body: () => unknown } => {
+  let body: unknown;
+  apiServer.use(
+    http.post(`${API_URL}/auth/accounts`, async ({ request }) => {
+      body = await request.json();
+      const sent = body as { username: string; role: "administrator" | "user" };
+      const account = anAccount({ id: "u3", username: sent.username, role: sent.role, mustChangePassword: true });
+      listed = [...listed, account];
+      return HttpResponse.json({ account, temporaryPassword }, { status: 201 });
+    }),
+  );
+
+  return { body: () => body };
+};
+
+/** Resetting partner's password answers this one; the body sent is kept. */
+const resetAnswers = (temporaryPassword: string): { body: () => unknown } => {
+  let body: unknown = "not sent";
+  apiServer.use(
+    http.post(`${API_URL}/auth/accounts/u2/password`, async ({ request }) => {
+      body = await request.text();
+      return HttpResponse.json({ account: PARTNER, temporaryPassword });
+    }),
+  );
+
+  return { body: () => body };
+};
+
+const addChild = async (): Promise<void> => {
+  await openYourAccount();
+  await fireEvent.press(await screen.findByRole("button", { name: "Add a person" }));
+  await fireEvent.changeText(screen.getByLabelText("Username"), "child");
+  await fireEvent.press(screen.getByRole("button", { name: "Add them" }));
+};
+
+const askToReset = async (): Promise<void> => {
+  await openYourAccount();
+  const menu = await openMenuOf("partner");
+  await fireEvent.press(menu.getByRole("button", { name: "Reset password" }));
+  await screen.findByRole("header", { name: "Reset the password of partner?" });
+};
+
+/**
+ * The panel that shows a temporary password, and nothing outside it: found by
+ * its title, which names whose password it is.
+ */
+const panelTitled = async (title: string): Promise<ReturnType<typeof within>> => {
+  const heading = await screen.findByText(title);
+  if (heading.parent === null) {
+    throw new Error(`"${title}" is not inside a panel`);
+  }
+
+  return within(heading.parent);
+};
+
+/**
+ * The keystore, keeping every value anything wrote to it — plainly or sealed
+ * — so a test can say a secret was never one of them.
+ */
+const recordingStorage = (): SecureStorage & { written: () => string } => {
+  const values: string[] = [];
+  const held = inMemorySecureStorage({ [SESSION_KEY]: JSON.stringify(aSession()), [LANGUAGE_KEY]: "en" });
+
+  return {
+    ...held,
+    write: async (key, value) => {
+      values.push(key, value);
+      await held.write(key, value);
+    },
+    seal: async (key, value, prompt) => {
+      values.push(key, value);
+      await held.seal(key, value, prompt);
+    },
+    written: () => values.join("\n"),
+  };
+};
+
 describe("people, from the phone", () => {
   beforeEach(() => {
     theApiKnowsTheHouse();
@@ -81,6 +170,17 @@ describe("people, from the phone", () => {
       expect(screen.getAllByText("Disabled")).toHaveLength(1);
     });
 
+    it("says which person has not chosen their password yet", async () => {
+      signedInAs("administrator");
+      theHouseHolds(DARIO, PARTNER, anAccount({ id: "u3", username: "child", mustChangePassword: true }));
+
+      await renderApp({ session: aSession() });
+      await openYourAccount();
+
+      expect(await screen.findByText("child")).toBeOnTheScreen();
+      expect(screen.getAllByText("Has not chosen a password yet")).toHaveLength(1);
+    });
+
     /**
      * Not even asked for: a request no handler answered fails the test, and
      * this one has `/auth/accounts` removed.
@@ -100,35 +200,71 @@ describe("people, from the phone", () => {
   });
 
   describe("adding a person", () => {
-    // The API generates the password now (ADR 26, amended): the typed one is
-    // no longer sent. Showing the generated one is the client work that follows.
-    it("sends the username and the role, and lists them", async () => {
+    it("asks only for a username and a role, and sends exactly those", async () => {
       signedInAs("administrator");
-      let body: unknown;
-      apiServer.use(
-        http.post(`${API_URL}/auth/accounts`, async ({ request }) => {
-          body = await request.json();
-          const account = anAccount({ id: "u3", username: "child", role: "administrator" });
-          listed = [...listed, account];
-          return HttpResponse.json(
-            { account, temporaryPassword: "abcd-efgh-jkmn-pqrs" },
-            { status: 201 },
-          );
-        }),
-      );
+      const adding = addingAnswers("wxmc-hepa-rtkd-ufbn");
 
       await renderApp({ session: aSession() });
       await openYourAccount();
       await fireEvent.press(await screen.findByRole("button", { name: "Add a person" }));
+
+      expect(screen.queryByLabelText(/password/i)).toBeNull();
+
       await fireEvent.changeText(screen.getByLabelText("Username"), "child");
-      await fireEvent.changeText(screen.getByLabelText("Password"), "the-child-password");
       await fireEvent.press(screen.getByRole("radio", { name: "Administrator" }));
       await fireEvent.press(screen.getByRole("button", { name: "Add them" }));
 
       await waitFor(() => {
-        expect(body).toEqual({ username: "child", role: "administrator" });
+        expect(adding.body()).toEqual({ username: "child", role: "administrator" });
       });
       expect(await screen.findByText("child")).toBeOnTheScreen();
+    });
+
+    it("shows the temporary password once, with a way to copy it and the warning before the way out", async () => {
+      signedInAs("administrator");
+      addingAnswers("wxmc-hepa-rtkd-ufbn");
+      const clipboard = fakeClipboard();
+
+      await renderApp({ session: aSession(), clipboard });
+      await addChild();
+
+      const shown = await panelTitled("The temporary password for child");
+      expect(shown.getByText("wxmc-hepa-rtkd-ufbn")).toBeOnTheScreen();
+      expect(shown.getByText(/only time you will see it/i)).toBeOnTheScreen();
+      expect(shown.getByText(/choose a password of their own/i)).toBeOnTheScreen();
+
+      await fireEvent.press(shown.getByRole("button", { name: "Copy" }));
+      await waitFor(() => {
+        expect(clipboard.copied).toEqual(["wxmc-hepa-rtkd-ufbn"]);
+      });
+
+      await fireEvent.press(shown.getByRole("button", { name: "I have it" }));
+
+      await waitFor(() => {
+        expect(screen.queryByText("wxmc-hepa-rtkd-ufbn")).toBeNull();
+      });
+    });
+
+    it("never puts the temporary password in the keystore or the query cache", async () => {
+      signedInAs("administrator");
+      addingAnswers("wxmc-hepa-rtkd-ufbn");
+      const storage = recordingStorage();
+
+      await renderApp({ session: aSession(), storage });
+      await addChild();
+      const shown = await panelTitled("The temporary password for child");
+      expect(shown.getByText("wxmc-hepa-rtkd-ufbn")).toBeOnTheScreen();
+
+      expect(storage.written()).not.toContain("wxmc-hepa-rtkd-ufbn");
+      expect(everythingCached()).not.toContain("wxmc-hepa-rtkd-ufbn");
+
+      await fireEvent.press(shown.getByRole("button", { name: "I have it" }));
+
+      // Forgotten at once (gcTime 0), not when the cache next gets round to it.
+      await waitFor(() => {
+        expect(everythingCached()).not.toContain("wxmc-hepa-rtkd-ufbn");
+      });
+      expect(storage.written()).not.toContain("wxmc-hepa-rtkd-ufbn");
     });
 
     it("says a username is taken, naming it", async () => {
@@ -146,7 +282,6 @@ describe("people, from the phone", () => {
       await openYourAccount();
       await fireEvent.press(await screen.findByRole("button", { name: "Add a person" }));
       await fireEvent.changeText(screen.getByLabelText("Username"), "partner");
-      await fireEvent.changeText(screen.getByLabelText("Password"), "the-partner-password");
       await fireEvent.press(screen.getByRole("button", { name: "Add them" }));
 
       expect(await screen.findByText("Somebody is already called partner.")).toBeOnTheScreen();
@@ -259,53 +394,60 @@ describe("people, from the phone", () => {
   });
 
   describe("resetting a password", () => {
-    it("says they are signed out everywhere, and sends no password", async () => {
+    beforeEach(() => {
       signedInAs("administrator");
-      let body: unknown = "not sent";
-      apiServer.use(
-        http.post(`${API_URL}/auth/accounts/u2/password`, async ({ request }) => {
-          body = await request.text();
-          return HttpResponse.json({ account: PARTNER, temporaryPassword: "abcd-efgh-jkmn-pqrs" });
-        }),
-      );
+    });
+
+    it("says they are signed out everywhere before the button, asks for no password, and sends none", async () => {
+      const reset = resetAnswers("wxmc-hepa-rtkd-ufbn");
 
       await renderApp({ session: aSession() });
-      await openYourAccount();
-      const menu = await openMenuOf("partner");
-      await fireEvent.press(menu.getByRole("button", { name: "Reset password" }));
+      await askToReset();
 
-      await screen.findByRole("header", { name: "Reset the password of partner?" });
-      const sheet = screen;
-      expect(sheet.getByText(/signed out everywhere/i)).toBeOnTheScreen();
-      await fireEvent.changeText(sheet.getByLabelText("New password"), "a-brand-new-password");
-      await fireEvent.press(sheet.getByRole("button", { name: "Reset it" }));
+      expect(screen.getByText(/signed out everywhere/i)).toBeOnTheScreen();
+      expect(screen.queryByLabelText(/password/i)).toBeNull();
+      await fireEvent.press(screen.getByRole("button", { name: "Reset it" }));
 
       await waitFor(() => {
-        expect(body).toBe("");
+        expect(reset.body()).toBe("");
       });
     });
 
-    it("says how long the password has to be, in the API's number", async () => {
-      signedInAs("administrator");
+    it("shows the new temporary password once, never stores it, then closes", async () => {
+      resetAnswers("wxmc-hepa-rtkd-ufbn");
+      const storage = recordingStorage();
+
+      await renderApp({ session: aSession(), storage });
+      await askToReset();
+      await fireEvent.press(screen.getByRole("button", { name: "Reset it" }));
+
+      const shown = await panelTitled("The temporary password for partner");
+      expect(shown.getByText("wxmc-hepa-rtkd-ufbn")).toBeOnTheScreen();
+      expect(shown.getByRole("button", { name: "Copy" })).toBeOnTheScreen();
+      expect(shown.getByText(/only time you will see it/i)).toBeOnTheScreen();
+      expect(storage.written()).not.toContain("wxmc-hepa-rtkd-ufbn");
+      expect(everythingCached()).not.toContain("wxmc-hepa-rtkd-ufbn");
+
+      await fireEvent.press(shown.getByRole("button", { name: "I have it" }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole("header", { name: "Reset the password of partner?" })).toBeNull();
+      });
+      expect(screen.queryByText("wxmc-hepa-rtkd-ufbn")).toBeNull();
+    });
+
+    it("names the refusal inside the sheet", async () => {
       apiServer.use(
         http.post(`${API_URL}/auth/accounts/u2/password`, () =>
-          HttpResponse.json(
-            { error: { code: "PASSWORD_TOO_SHORT", message: "short", details: { minimumLength: 12 } } },
-            { status: 422 },
-          ),
+          HttpResponse.json({ error: { code: "ACCOUNT_NOT_FOUND", message: "gone" } }, { status: 404 }),
         ),
       );
 
       await renderApp({ session: aSession() });
-      await openYourAccount();
-      const menu = await openMenuOf("partner");
-      await fireEvent.press(menu.getByRole("button", { name: "Reset password" }));
-      await screen.findByRole("header", { name: "Reset the password of partner?" });
-      const sheet = screen;
-      await fireEvent.changeText(sheet.getByLabelText("New password"), "short");
-      await fireEvent.press(sheet.getByRole("button", { name: "Reset it" }));
+      await askToReset();
+      await fireEvent.press(screen.getByRole("button", { name: "Reset it" }));
 
-      expect(await sheet.findByText("The password needs at least 12 characters.")).toBeOnTheScreen();
+      expect(await screen.findByText(/not here any more/i)).toBeOnTheScreen();
     });
   });
 });

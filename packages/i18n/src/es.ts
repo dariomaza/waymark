@@ -560,8 +560,6 @@ export const ES: Dictionary = {
   "people.loading": "Cargando las personas de esta casa",
   "people.addAction": "Añadir una persona",
   "people.usernameLabel": "Usuario",
-  "people.passwordLabel": "Contraseña",
-  "people.passwordHint": "Al menos 12 caracteres. Se la das tú en persona.",
   "people.roleLabel": "Rol",
   "people.roleAdministrator": "Administrador",
   "people.roleUser": "Usuario",
@@ -578,7 +576,6 @@ export const ES: Dictionary = {
   "people.resetTitle": "¿Restablecer la contraseña de {username}?",
   "people.resetWarning":
     "Se cierra la sesión de {username} en todas partes y Waymark crea una contraseña temporal nueva para que se la des. Sus passkeys y sus tokens de máquina siguen funcionando.",
-  "people.newPasswordLabel": "Contraseña nueva",
   "people.resetConfirm": "Restablécela",
   "people.resetting": "Restableciendo…",
 
