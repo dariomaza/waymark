@@ -107,6 +107,7 @@ export class ManageAccounts {
       accountId,
       await this.deps.hasher.hash(password),
       this.deps.clock.now(),
+      false,
     );
     if (changed === null) {
       throw new AccountNotFound(accountId);

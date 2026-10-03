@@ -37,6 +37,7 @@ const aUser = (id: string, role: Role): User => ({
   createdAt: NOW,
   updatedAt: NOW,
   disabledAt: null,
+  mustChangePassword: false,
 });
 
 const ADMIN = aUser("admin", Role.ADMINISTRATOR);

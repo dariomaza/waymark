@@ -21,6 +21,13 @@ export interface User {
    * deletions that came with it.
    */
   readonly disabledAt: Date | null;
+  /**
+   * Whether the password is a temporary one an administrator's request
+   * generated (ADR 26, amended). While it is set, the account is restricted:
+   * a session of it may read who it is, sign out and change the password,
+   * and nothing else. Choosing a password of their own clears it.
+   */
+  readonly mustChangePassword: boolean;
 }
 
 /** Whether this account may get in at all. */

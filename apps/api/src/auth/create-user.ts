@@ -75,6 +75,7 @@ export class CreateUser {
       createdAt: now,
       updatedAt: now,
       disabledAt: null,
+      mustChangePassword: false,
     };
 
     await this.deps.users.create(user);

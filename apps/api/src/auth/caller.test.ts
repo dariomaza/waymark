@@ -22,6 +22,7 @@ const aPerson: Caller = {
     createdAt: NOW,
     updatedAt: NOW,
     disabledAt: null,
+    mustChangePassword: false,
   },
   session: {
     id: "session-1",

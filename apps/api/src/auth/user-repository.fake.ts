@@ -86,8 +86,14 @@ export class InMemoryUserRepository implements UserRepository {
     id: string,
     passwordHash: string,
     at: Date,
+    mustChangePassword: boolean,
   ): Promise<User | null> {
-    return this.#change(id, (user) => ({ ...user, passwordHash, updatedAt: at }));
+    return this.#change(id, (user) => ({
+      ...user,
+      passwordHash,
+      mustChangePassword,
+      updatedAt: at,
+    }));
   }
 
   /**

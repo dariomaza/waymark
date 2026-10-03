@@ -36,6 +36,7 @@ const DARIO: User = {
   createdAt: NOW,
   updatedAt: NOW,
   disabledAt: null,
+  mustChangePassword: false,
 };
 
 const SOMEBODY_ELSE: User = { ...DARIO, id: "user-elena", username: "elena" };

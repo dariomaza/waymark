@@ -97,13 +97,20 @@ export class PrismaUserRepository implements UserRepository {
     id: string,
     passwordHash: string,
     at: Date,
+    mustChangePassword: boolean,
   ): Promise<User | null> {
-    return this.#update(id, { passwordHash, updatedAt: at });
+    return this.#update(id, { passwordHash, mustChangePassword, updatedAt: at });
   }
 
   async #update(
     id: string,
-    data: { role?: string; passwordHash?: string; disabledAt?: null; updatedAt: Date },
+    data: {
+      role?: string;
+      passwordHash?: string;
+      mustChangePassword?: boolean;
+      disabledAt?: null;
+      updatedAt: Date;
+    },
   ): Promise<User | null> {
     const { count } = await this.prisma.user.updateMany({ where: { id }, data });
 
@@ -155,5 +162,6 @@ const toUser = (row: UserRow): User => {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     disabledAt: row.disabledAt,
+    mustChangePassword: row.mustChangePassword,
   };
 };
