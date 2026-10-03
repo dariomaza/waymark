@@ -108,6 +108,9 @@ export const ES: Dictionary = {
     "Este token de máquina está limitado a los espacios que se eligieron para él, así que no puede crear una unidad raíz, ni llevar nada arriba del todo ni sacarlo de ahí.",
   "failure.administratorOnly":
     "Solo un administrador puede hacer esto. Sigues con la sesión iniciada; volver a entrar no lo cambiaría.",
+  /** Una ruta rechazada porque la contraseña de la cuenta es temporal (ADR 26, enmendado). */
+  "failure.passwordChangeRequired":
+    "Primero elige una contraseña tuya. Sigues con la sesión iniciada.",
   "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
   "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
   "failure.unexpected":
@@ -594,6 +597,16 @@ export const ES: Dictionary = {
   "people.alreadyGone": "Esa cuenta ya no está. Cierra esta pantalla y vuelve a abrirla.",
   "people.notForMachines":
     "Un token de máquina no puede gestionar cuentas. Lo hace un administrador con su sesión iniciada.",
+
+  // ---------------------------------------------------------------------
+  // Cambiar tu propia contraseña (ADR 26, enmendado)
+  // ---------------------------------------------------------------------
+  /** La contraseña nueva es la que la cuenta ya tiene. */
+  "password.unchanged": "Elige una contraseña distinta de la que tienes ahora.",
+  /** Cambiar tu propia contraseña sin escribir la actual. */
+  "password.currentRequired": "Escribe también tu contraseña actual.",
+  /** La contraseña actual escrita no era la correcta; la sesión sigue. */
+  "password.wrongCurrent": "Esa no es tu contraseña actual. Vuelve a escribirla.",
 
   // ---------------------------------------------------------------------
   // Compartir un espacio (ADR 26)

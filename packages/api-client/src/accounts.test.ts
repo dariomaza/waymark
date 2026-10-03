@@ -77,46 +77,61 @@ describe("managing accounts from a client", () => {
     ]);
   });
 
-  it("creates one with the username, the password and the role", async () => {
+  it("creates one with the username and the role, and hands back its temporary password", async () => {
     const seen: Seen[] = [];
     apiServer.use(
-      http.post(`${API_URL}/auth/accounts`, recording(seen, { account: anAccount() }, 201)),
+      http.post(
+        `${API_URL}/auth/accounts`,
+        recording(
+          seen,
+          { account: anAccount({ mustChangePassword: true }), temporaryPassword: "abcd-efgh-jkmn-pqrs" },
+          201,
+        ),
+      ),
     );
 
-    const { account } = await client().createAccount({
+    const { account, temporaryPassword } = await client().createAccount({
       username: "partner",
-      password: "the-partner-password",
       role: Role.USER,
     });
 
     expect(seen).toEqual([
-      {
-        method: "POST",
-        path: "/auth/accounts",
-        body: { username: "partner", password: "the-partner-password", role: Role.USER },
-      },
+      { method: "POST", path: "/auth/accounts", body: { username: "partner", role: Role.USER } },
     ]);
-    expect(account.username).toBe("partner");
+    expect(account.mustChangePassword).toBe(true);
+    expect(temporaryPassword).toBe("abcd-efgh-jkmn-pqrs");
   });
 
-  it("changes a role, resets a password, disables and enables, each by the account's id", async () => {
+  it("resets a password with no body, and hands back the temporary one", async () => {
+    const seen: Seen[] = [];
+    apiServer.use(
+      http.post(
+        `${API_URL}/auth/accounts/:id/password`,
+        recording(seen, { account: anAccount(), temporaryPassword: "abcd-efgh-jkmn-pqrs" }),
+      ),
+    );
+
+    const { temporaryPassword } = await client().resetAccountPassword("u 2");
+
+    expect(seen).toEqual([{ method: "POST", path: "/auth/accounts/u%202/password", body: undefined }]);
+    expect(temporaryPassword).toBe("abcd-efgh-jkmn-pqrs");
+  });
+
+  it("changes a role, disables and enables, each by the account's id", async () => {
     const seen: Seen[] = [];
     const answer = { account: anAccount() };
     apiServer.use(
       http.post(`${API_URL}/auth/accounts/:id/role`, recording(seen, answer)),
-      http.post(`${API_URL}/auth/accounts/:id/password`, recording(seen, answer)),
       http.post(`${API_URL}/auth/accounts/:id/disable`, recording(seen, answer)),
       http.post(`${API_URL}/auth/accounts/:id/enable`, recording(seen, answer)),
     );
 
     await client().changeAccountRole("u 2", Role.ADMINISTRATOR);
-    await client().resetAccountPassword("u 2", "a-brand-new-password");
     await client().disableAccount("u 2");
     await client().enableAccount("u 2");
 
     expect(seen).toEqual([
       { method: "POST", path: "/auth/accounts/u%202/role", body: { role: Role.ADMINISTRATOR } },
-      { method: "POST", path: "/auth/accounts/u%202/password", body: { password: "a-brand-new-password" } },
       { method: "POST", path: "/auth/accounts/u%202/disable", body: undefined },
       { method: "POST", path: "/auth/accounts/u%202/enable", body: undefined },
     ]);
@@ -156,6 +171,9 @@ describe("the codes of managing accounts", () => {
       ApiErrorCode.OWN_ACCOUNT,
       ApiErrorCode.PASSWORD_TOO_SHORT,
       ApiErrorCode.INVALID_USERNAME,
+      ApiErrorCode.PASSWORD_CHANGE_REQUIRED,
+      ApiErrorCode.PASSWORD_UNCHANGED,
+      ApiErrorCode.CURRENT_PASSWORD_REQUIRED,
     ]).toEqual([
       "ADMINISTRATOR_ONLY",
       "MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS",
@@ -165,6 +183,105 @@ describe("the codes of managing accounts", () => {
       "OWN_ACCOUNT",
       "PASSWORD_TOO_SHORT",
       "INVALID_USERNAME",
+      "PASSWORD_CHANGE_REQUIRED",
+      "PASSWORD_UNCHANGED",
+      "CURRENT_PASSWORD_REQUIRED",
     ]);
+  });
+});
+
+/**
+ * # Changing your own password (ADR 26, amended)
+ *
+ * Every signed-in person may; with a temporary password it is the one thing
+ * they may do, and the current password is not sent.
+ */
+describe("changing your own password from a client", () => {
+  it("sends the new password and the current one", async () => {
+    const seen: Seen[] = [];
+    apiServer.use(
+      http.post(`${API_URL}/auth/password`, recording(seen, { user: anAccount() })),
+    );
+
+    const { user } = await client().changeOwnPassword({
+      password: "a-password-of-my-own",
+      currentPassword: "the-old-password",
+    });
+
+    expect(seen).toEqual([
+      {
+        method: "POST",
+        path: "/auth/password",
+        body: { password: "a-password-of-my-own", currentPassword: "the-old-password" },
+      },
+    ]);
+    expect(user.username).toBe("partner");
+  });
+
+  it("sends no current password when there is none to send", async () => {
+    const seen: Seen[] = [];
+    apiServer.use(
+      http.post(`${API_URL}/auth/password`, recording(seen, { user: anAccount() })),
+    );
+
+    await client().changeOwnPassword({ password: "a-password-of-my-own" });
+
+    expect(seen[0]?.body).toEqual({ password: "a-password-of-my-own" });
+  });
+
+  /**
+   * A wrong current password is refused as a sign-in refuses one, with a 401.
+   * The session that sent it is fine, and the person must not be signed out
+   * for a typo.
+   */
+  it("does not end the session over a wrong current password", async () => {
+    let signedOut = false;
+    apiServer.use(
+      http.post(`${API_URL}/auth/password`, () =>
+        HttpResponse.json(
+          { error: { code: "INVALID_CREDENTIALS", message: "Invalid username or password" } },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const refusal = await createWaymarkClient<File>({
+      baseUrl: API_URL,
+      token: () => "a-live-token",
+      onUnauthorized: () => {
+        signedOut = true;
+      },
+      appendPhoto: () => undefined,
+    })
+      .changeOwnPassword({ password: "a-password-of-my-own", currentPassword: "a-typo" })
+      .catch((error: unknown) => error);
+
+    expect((refusal as ApiError).code).toBe(ApiErrorCode.INVALID_CREDENTIALS);
+    expect(signedOut).toBe(false);
+  });
+
+  it("still ends it when the session itself is refused", async () => {
+    let signedOut = false;
+    apiServer.use(
+      http.post(`${API_URL}/auth/password`, () =>
+        HttpResponse.json(
+          { error: { code: "INVALID_SESSION", message: "The session token is missing" } },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    await createWaymarkClient<File>({
+      baseUrl: API_URL,
+      token: () => "a-live-token",
+      onUnauthorized: () => {
+        signedOut = true;
+      },
+      appendPhoto: () => undefined,
+    })
+      .changeOwnPassword({ password: "a-password-of-my-own" })
+      .catch(() => undefined);
+
+    expect(signedOut).toBe(true);
   });
 });

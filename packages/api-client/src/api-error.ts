@@ -215,6 +215,19 @@ export const ApiErrorCode = {
   /** A username that is nothing once trimmed (422). */
   INVALID_USERNAME: "INVALID_USERNAME",
   /**
+   * # The refusals of a temporary password (ADR 26, amended)
+   */
+  /**
+   * The account's password is a temporary one, and this session may only
+   * read `/auth/me`, sign out and change it (403). Not a session problem:
+   * show the change-password screen.
+   */
+  PASSWORD_CHANGE_REQUIRED: "PASSWORD_CHANGE_REQUIRED",
+  /** The new password is the current one (422). */
+  PASSWORD_UNCHANGED: "PASSWORD_UNCHANGED",
+  /** Changing your own password without the current one (422). */
+  CURRENT_PASSWORD_REQUIRED: "CURRENT_PASSWORD_REQUIRED",
+  /**
    * # The refusals of sharing a space (ADR 26)
    *
    * Only the Share sheet meets these, and only an administrator sees that.

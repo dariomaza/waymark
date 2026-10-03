@@ -1,10 +1,13 @@
 import type { ItemId, PhotoId, Role, ShareLevel, UnitId } from "@waymark/domain";
 
-import { ApiError, OFFLINE_STATUS } from "./api-error.js";
+import { ApiError, ApiErrorCode, OFFLINE_STATUS } from "./api-error.js";
 import type {
   AccountListResponse,
   AccountResponse,
+  ChangeOwnPasswordInput,
   CreateAccountInput,
+  IssuedAccountResponse,
+  UserCallerResponse,
   CallerResponse,
   Credentials,
   CreateItemInput,
@@ -143,6 +146,12 @@ export interface WaymarkClient<TFile> {
    * neither key, which is why widening it cost them nothing.
    */
   me(): Promise<CallerResponse>;
+  /**
+   * Changes the signed-in person's own password (ADR 26, amended), and is the
+   * one call that lifts `mustChangePassword`. Every other session of theirs
+   * ends; this one stays.
+   */
+  changeOwnPassword(input: ChangeOwnPasswordInput): Promise<UserCallerResponse>;
   /** A session only. A machine token is refused 403: it is revoked from a shell. */
   logout(): Promise<void>;
 
@@ -197,10 +206,11 @@ export interface WaymarkClient<TFile> {
    * account, because there is no such route: accounts are disabled.
    */
   accounts(): Promise<AccountListResponse>;
-  createAccount(input: CreateAccountInput): Promise<AccountResponse>;
+  /** Answers the temporary password, once (ADR 26, amended). */
+  createAccount(input: CreateAccountInput): Promise<IssuedAccountResponse>;
   changeAccountRole(id: string, role: Role): Promise<AccountResponse>;
   /** Signs that person out everywhere. Their passkeys stay (ADR 19). */
-  resetAccountPassword(id: string, password: string): Promise<AccountResponse>;
+  resetAccountPassword(id: string): Promise<IssuedAccountResponse>;
   /** Signs them out everywhere and revokes every machine token they issued. */
   disableAccount(id: string): Promise<AccountResponse>;
   enableAccount(id: string): Promise<AccountResponse>;
@@ -365,11 +375,18 @@ export const createWaymarkClient = <TFile>(
       return response;
     }
 
-    if (response.status === 401 && token !== null) {
+    const error = await toApiError(response);
+    // A wrong current password on `/auth/password` is a 401 too, refused as a
+    // sign-in refuses one; the session that sent it is fine (ADR 26, amended).
+    if (
+      response.status === 401 &&
+      token !== null &&
+      error.code !== ApiErrorCode.INVALID_CREDENTIALS
+    ) {
       options.onUnauthorized?.();
     }
 
-    throw await toApiError(response);
+    throw error;
   };
 
   const readJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
@@ -411,6 +428,15 @@ export const createWaymarkClient = <TFile>(
 
     async me() {
       return readJson<CallerResponse>("/auth/me");
+    },
+
+    async changeOwnPassword(input) {
+      return post<UserCallerResponse>("/auth/password", {
+        password: input.password,
+        ...(input.currentPassword === undefined
+          ? {}
+          : { currentPassword: input.currentPassword }),
+      });
     },
 
     async logout() {
@@ -457,9 +483,8 @@ export const createWaymarkClient = <TFile>(
     },
 
     async createAccount(input) {
-      return post<AccountResponse>("/auth/accounts", {
+      return post<IssuedAccountResponse>("/auth/accounts", {
         username: input.username,
-        password: input.password,
         role: input.role,
       });
     },
@@ -468,10 +493,8 @@ export const createWaymarkClient = <TFile>(
       return post<AccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/role`, { role });
     },
 
-    async resetAccountPassword(id, password) {
-      return post<AccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/password`, {
-        password,
-      });
+    async resetAccountPassword(id) {
+      return post<IssuedAccountResponse>(`/auth/accounts/${encodeURIComponent(id)}/password`);
     },
 
     async disableAccount(id) {

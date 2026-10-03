@@ -147,6 +147,13 @@ export const EN = {
    */
   "failure.administratorOnly":
     "Only an administrator can do this. You are still signed in; signing in again would not change it.",
+  /**
+   * Any route refused because the account's password is a temporary one
+   * (ADR 26, amended). A 403 that is not about the session: the person is
+   * signed in and must choose a password of their own first.
+   */
+  "failure.passwordChangeRequired":
+    "Choose a password of your own first. You are still signed in.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
   "failure.server": "Waymark had a problem answering. Try again in a moment.",
   /**
@@ -920,6 +927,19 @@ export const EN = {
    */
   "people.notForMachines":
     "A machine token cannot manage accounts. An administrator does that, signed in.",
+
+  // ---------------------------------------------------------------------
+  // Changing your own password (ADR 26, amended)
+  // ---------------------------------------------------------------------
+  /** The new password is the one the account already has. */
+  "password.unchanged": "Choose a password different from the one you have now.",
+  /** Changing your own password without typing the current one. */
+  "password.currentRequired": "Type your current password too.",
+  /**
+   * The current password typed was wrong. Not a session problem: the person
+   * stays signed in and can try again.
+   */
+  "password.wrongCurrent": "That is not your current password. Try typing it again.",
 
   // ---------------------------------------------------------------------
   // Sharing a space: the administrator's Share sheet (ADR 26)

@@ -56,6 +56,7 @@ export { shortDate } from "./short-date.js";
  */
 export {
   accountFailureMessage,
+  passwordChangeFailureMessage,
   shareFailureMessage,
   cyclicMoveMessage,
   describeFailure,
