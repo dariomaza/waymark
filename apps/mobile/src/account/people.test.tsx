@@ -108,6 +108,16 @@ const askToReset = async (): Promise<void> => {
   await screen.findByRole("header", { name: "Reset the password of partner?" });
 };
 
+/** The People group, and nothing outside it: the account screen has a Password group too. */
+const peopleGroup = (): ReturnType<typeof within> => {
+  const group = screen.getByRole("header", { name: "People" }).parent?.parent ?? null;
+  if (group === null) {
+    throw new Error("People is not the title of a group");
+  }
+
+  return within(group);
+};
+
 /**
  * The panel that shows a temporary password, and nothing outside it: found by
  * its title, which names whose password it is.
@@ -208,7 +218,7 @@ describe("people, from the phone", () => {
       await openYourAccount();
       await fireEvent.press(await screen.findByRole("button", { name: "Add a person" }));
 
-      expect(screen.queryByLabelText(/password/i)).toBeNull();
+      expect(peopleGroup().queryByLabelText(/password/i)).toBeNull();
 
       await fireEvent.changeText(screen.getByLabelText("Username"), "child");
       await fireEvent.press(screen.getByRole("radio", { name: "Administrator" }));

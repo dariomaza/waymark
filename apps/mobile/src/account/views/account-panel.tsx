@@ -15,6 +15,8 @@ export interface AccountPanelProps {
   readonly language: ReactNode;
   /** The appearance row of the preferences: light, dark or the phone's own (ADR 25). */
   readonly appearance: ReactNode;
+  /** The password group: changing your own (ADR 26, amended). It mutates. */
+  readonly password: ReactNode;
   /**
    * The security group: whether this phone keeps the session behind its
    * fingerprint sensor.
@@ -60,6 +62,7 @@ export const AccountPanel = ({
   username,
   language,
   appearance,
+  password,
   biometrics,
   machineTokens,
   people,
@@ -105,6 +108,8 @@ export const AccountPanel = ({
         {language}
         {appearance}
       </SettingsGroup>
+
+      {password}
 
       {biometrics}
 
