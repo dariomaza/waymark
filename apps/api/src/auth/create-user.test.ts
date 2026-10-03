@@ -124,4 +124,29 @@ describe("creating an account from the shell", () => {
 
     expect(created.disabledAt).toBeNull();
   });
+
+  /**
+   * The operator typed this password at a shell, so it is already theirs:
+   * only one an administrator's request generated is temporary (ADR 26,
+   * amended). The first account must open everything at once, or nobody can.
+   */
+  it("does not ask the person to change the password the operator typed", async () => {
+    const created = await createUser.execute({
+      username: "dario",
+      password: "a-real-password",
+    });
+
+    expect(created.mustChangePassword).toBe(false);
+    expect((await users.findById(created.id))?.mustChangePassword).toBe(false);
+  });
+
+  it("marks the password as temporary when the command says it is", async () => {
+    const created = await createUser.execute({
+      username: "dario",
+      password: "a-real-password",
+      mustChangePassword: true,
+    });
+
+    expect((await users.findById(created.id))?.mustChangePassword).toBe(true);
+  });
 });

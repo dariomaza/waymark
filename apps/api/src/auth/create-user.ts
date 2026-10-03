@@ -20,6 +20,13 @@ export interface CreateUserCommand {
    * always one, asked or not: a deployment has to have somebody who can share.
    */
   readonly administrator?: boolean;
+  /**
+   * Whether the password is a temporary one the server generated, which the
+   * person must replace at their first sign-in (ADR 26, amended). Only the
+   * account screen says so; the shell never does, because the operator typed
+   * that password and it is already theirs.
+   */
+  readonly mustChangePassword?: boolean;
 }
 
 /**
@@ -75,7 +82,7 @@ export class CreateUser {
       createdAt: now,
       updatedAt: now,
       disabledAt: null,
-      mustChangePassword: false,
+      mustChangePassword: command.mustChangePassword === true,
     };
 
     await this.deps.users.create(user);

@@ -324,12 +324,20 @@ export interface UserView {
   readonly id: string;
   readonly username: string;
   readonly role: string;
+  /**
+   * Whether the password is a temporary one to be replaced before anything
+   * else (ADR 26, amended). On `/auth/me` and the sign-in answer, so a client
+   * knows to show the change-password screen; on the account list, so an
+   * administrator sees who has not signed in yet.
+   */
+  readonly mustChangePassword: boolean;
 }
 
 export const userView = (user: User): UserView => ({
   id: user.id,
   username: user.username,
   role: user.role,
+  mustChangePassword: user.mustChangePassword,
 });
 
 /**

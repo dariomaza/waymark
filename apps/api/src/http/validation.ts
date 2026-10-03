@@ -95,22 +95,23 @@ export const loginBodySchema = z.strictObject({
 /**
  * # An administrator managing accounts (ADR 26)
  *
- * The password has no minimum HERE: `CreateUser` holds the one minimum every
- * door shares, and answers a short one with `PASSWORD_TOO_SHORT` (422) and
- * the number, which a client can put beside the field.
+ * Neither creating an account nor resetting a password takes one: the server
+ * generates a temporary password and answers it once (ADR 26, amended). A
+ * `password` sent anyway is refused as the unknown key it now is, rather than
+ * ignored, so a client still built for the old route learns at once that the
+ * password it typed was never set.
  */
 const role = z.enum([Role.ADMINISTRATOR, Role.USER]);
-const newPassword = z.string().max(MAX_PASSWORD_LENGTH);
 
 export const createAccountBodySchema = z.strictObject({
   username: z.string().max(MAX_USERNAME_LENGTH),
-  password: newPassword,
   role,
 });
 
 export const changeRoleBodySchema = z.strictObject({ role });
 
-export const resetPasswordBodySchema = z.strictObject({ password: newPassword });
+/** No body at all, or an empty one; anything in it is refused. */
+export const resetPasswordBodySchema = z.strictObject({}).optional();
 
 /** A space and the account it is shared with, both addressed by the path. */
 export const shareParamsSchema = z.strictObject({ id, accountId: id });

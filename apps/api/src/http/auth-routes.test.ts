@@ -243,7 +243,12 @@ describe("authentication over HTTP", () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({
-        user: { id: expect.any(String), username: TEST_USERNAME, role: "administrator" },
+        user: {
+          id: expect.any(String),
+          username: TEST_USERNAME,
+          role: "administrator",
+          mustChangePassword: false,
+        },
       });
     });
 
