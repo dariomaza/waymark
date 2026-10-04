@@ -33,21 +33,18 @@ NFC tag can carry exactly the same URL as an NDEF record, so:
 Suggested order: prove reading with a hand-written tag first, then decide
 whether the writer is worth building.
 
-### A documentation site on GitHub Pages
+### What the documentation site still lacks
 
-The owner (2026-10-01): the README is 1,400 lines and too much to read as one
-page. Proposal: a static docs site published to GitHub Pages from `docs/`,
-built in CI, with the README cut down to what the project is, a screenshot,
-install in five lines, and a link to the site.
+The site is built (VitePress, from `docs/`, deployed to GitHub Pages by
+`.github/workflows/docs.yml`), and the README is cut down to the pitch, "Run
+it" and a link. Two things the owner's proposal (2026-10-01) asked for are not
+done:
 
-- Content already exists and only needs splitting: product tour, self-hosting
-  and deploy (ADR 23), the API, the MCP server, releasing, and the ADR index.
-- Open choices: the generator (a plain Markdown-to-site tool that reads the
-  existing files as they are is preferred over one that needs them rewritten),
-  and whether the site carries the brand (the pinned-w logo, lime on ink,
-  light and dark from `packages/tokens`).
-- It must not become a second copy that drifts: one source per fact, the site
-  built from the same Markdown, and a CI check that its links resolve.
+- **A screenshot in the README.** It needs a real one taken from a running
+  instance, not a mock-up.
+- **Proven on GitHub Pages.** It has been built and served locally under
+  `/waymark/`; until Pages is enabled and the first deploy answers, clean URLs
+  and the base path are unproven where they matter.
 
 ## Known gaps between the clients
 

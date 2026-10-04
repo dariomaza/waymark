@@ -27,3 +27,7 @@ scripts/deploy.env
 # .claude/rules/) ARE committed.
 CLAUDE.local.md
 .claude/settings.local.json
+
+# VitePress output and cache.
+docs/.vitepress/cache/
+docs/.vitepress/dist/
