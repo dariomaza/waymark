@@ -1,0 +1,77 @@
+# The documentation site: built on every pull request and every push to main,
+# deployed to GitHub Pages from main only.
+#
+# The build IS the link check. VitePress fails it on any link between pages
+# that does not resolve, so a page renamed without its links fails here, in
+# review, rather than on the published site. Links that leave `docs/` are
+# rewritten to the repository by `docs/.vitepress/source-links.ts`.
+
+name: Docs
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# One deployment at a time. A newer push supersedes a queued one, but a
+# deployment already running is left to finish rather than cut off halfway.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build the site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # The same setup as ci.yml: pnpm from `packageManager`, Node 22, the
+      # store cached on the lockfile.
+      - name: Set up pnpm and Node
+        uses: pnpm/setup@v3
+        with:
+          runtime: node@22
+          cache: true
+          install: false
+
+      # Only the site and the workspace packages it depends on
+      # (`@waymark/tokens`), none of the API's or the apps' dependencies.
+      - name: Install
+        run: pnpm install --frozen-lockfile --filter @waymark/docs...
+
+      - name: Build (fails on a dead link)
+        run: pnpm --filter @waymark/docs build
+
+      - name: Configure Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v6
+
+      - name: Upload the site
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    name: deploy to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only this job can publish, and only it holds the token that can.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
