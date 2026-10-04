@@ -1,7 +1,7 @@
 /**
  * # One visual vocabulary, for two clients that draw it differently
  *
- * There is one API and two clients (README). `@waymark/i18n` is the contract
+ * There is one API and two clients (docs/architecture.md). `@waymark/i18n` is the contract
  * with the person about WORDS; this is the contract with them about what those
  * words look like.
  *

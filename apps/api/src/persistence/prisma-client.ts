@@ -6,7 +6,7 @@ import { PrismaClient } from "@prisma/client";
  * Nothing outside `src/persistence` should ever hold one: the rest of the
  * application talks to `StorageUnitRepository` and `ItemRepository`, which is
  * what makes "swap SQLite for Postgres later" an adapter change rather than a
- * rewrite (see the README).
+ * rewrite (see docs/architecture.md).
  */
 export const createPrismaClient = (databaseUrl?: string): PrismaClient =>
   databaseUrl === undefined

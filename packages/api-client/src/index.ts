@@ -1,7 +1,7 @@
 /**
  * # The contract with Waymark's API, shared by both clients
  *
- * There is one API and two clients (README), and the reason Expo was chosen
+ * There is one API and two clients (docs/architecture.md), and the reason Expo was chosen
  * over native Kotlin was that the Android app would SHARE this rather than be
  * a second implementation of it. This package is that sharing, written down.
  *

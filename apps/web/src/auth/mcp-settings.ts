@@ -5,7 +5,7 @@
  *
  * A whole `mcpServers` block would have been the presumptuous version. It
  * needs absolute paths into a checkout on a machine this browser has never
- * seen — `/absolute/path/to/waymark/apps/mcp/...` in the README — and those
+ * seen — `/absolute/path/to/waymark/apps/mcp/...` in docs/mcp.md — and those
  * paths differ per MCP client and per person. A config file with one wrong
  * path in it is worse than no config file, because it reads as authoritative
  * and then fails somewhere that has nothing to do with Waymark.
@@ -19,7 +19,7 @@
  * `apps/mcp` is not a dependency of this app and must not become one — it is
  * a Node process on somebody else's machine, and importing it would drag the
  * MCP SDK into a browser bundle to read two strings. These are documentation,
- * the same way the README's block is, and `mcp-settings.test.ts` is what
+ * the same way the block in docs/mcp.md is, and `mcp-settings.test.ts` is what
  * fails if `apps/mcp/src/configuration.ts` ever renames one.
  */
 export const mcpSettings = (endpoint: string, secret: string): string =>

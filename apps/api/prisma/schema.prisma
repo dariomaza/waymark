@@ -125,7 +125,7 @@ model Item {
 /// SQLite has no array type, so the alternatives were a serialized blob or
 /// this. A blob turns "find everything tagged `winter`" into a `LIKE '%winter%'`
 /// full scan that also matches `winterproof`; a child table makes it an indexed
-/// equality lookup. Searching is half the point of the product (see README), so
+/// equality lookup. Searching is half the point of the product (see docs/product/search.md), so
 /// the extra table pays for itself immediately.
 ///
 /// The primary key is `(itemId, position)`, not `(itemId, tag)`: the domain

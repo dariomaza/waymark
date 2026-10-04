@@ -15,7 +15,7 @@ import { useTranslate } from "../app/language-context.js";
  *
  * The QR code on a label encodes this URL and nothing else, because Android's
  * stock camera offers to OPEN a URL and merely offers to COPY a string
- * (README, ADR on QR codes). So this route is the product's front door, and
+ * (docs/product/labels.md, ADR on QR codes). So this route is the product's front door, and
  * it is opened by a phone that may never have seen the app before.
  *
  * Two things therefore have to be true, and the second is the one that is

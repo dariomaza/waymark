@@ -3,8 +3,11 @@
 Self-hosted inventory for the things in a house: spaces that hold spaces, things
 inside them, a QR label on every box, search that answers "where did I put it".
 Two clients (a PWA and an Android app) over one API, plus an MCP server so an
-assistant can be asked where something is. **The README is the product and
-architecture reference (1,300 lines); read the section you need, not all of it.**
+assistant can be asked where something is. **`docs/` is the product and
+architecture reference, one page per subject** (published by VitePress at
+https://dariomaza.github.io/waymark/); read the page you need. The README is
+only the pitch, a five-line "Run it" and a link there — never add a second copy
+of a docs fact to it.
 
 Area-specific rules load on their own from `.claude/rules/` when you touch
 `apps/mobile`, `apps/web`, `apps/api`, `packages/i18n` or the ops files.
@@ -23,6 +26,7 @@ Area-specific rules load on their own from `.claude/rules/` when you touch
 | `apps/mobile` | Expo / React Native, Android. Built on EAS. |
 | `apps/mcp` | stdio MCP server over `api-client`, authenticated with a machine token. |
 | `services/image-processor` | Optional rembg sidecar (ADR 4). |
+| `docs` | The documentation site (`@waymark/docs`, VitePress). Not in the image; no typecheck script. |
 
 Decisions are in `docs/decisions/` (26 ADRs, indexed in its README). What is
 pending, unproven or deliberately postponed is in `docs/roadmap.md` — read it
@@ -36,6 +40,7 @@ pnpm typecheck | grep -c Done        # must print 9 — see the trap below
 pnpm -r --filter '!@waymark/mobile' test
 pnpm --filter @waymark/mobile test   # jest-expo; run it on its own
 pnpm --filter @waymark/web build
+pnpm --filter @waymark/docs build      # fails on a dead link
 cd apps/mobile && EXPO_PUBLIC_WAYMARK_API_URL=https://example.invalid npx expo export --platform android
 ```
 
@@ -109,7 +114,7 @@ contract 407, api-client 111, mcp 91, i18n 1721, api 2053, web 677, mobile 402.
   `scripts/deploy.env` (gitignored; copy the `.example`). It refuses unless the
   tree is clean, the commit is pushed and CI is green for that exact SHA, then
   proves the running commit. `pnpm deploy:check` stops before the server.
-- **Release**: merge release-please's PR. See the README's *Releasing*. Needs the
+- **Release**: merge release-please's PR. See `docs/development/releasing.md`. Needs the
   `EXPO_TOKEN` repository secret; the signing keystore stays on EAS.
 - **Remotes**: `github` (public) and `origin` (the operator's mirror). Push both.
 
