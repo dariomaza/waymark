@@ -147,6 +147,13 @@ export const EN = {
    */
   "failure.administratorOnly":
     "Only an administrator can do this. You are still signed in; signing in again would not change it.",
+  /**
+   * Any route refused because the account's password is a temporary one
+   * (ADR 26, amended). A 403 that is not about the session: the person is
+   * signed in and must choose a password of their own first.
+   */
+  "failure.passwordChangeRequired":
+    "Choose a password of your own first. You are still signed in.",
   "failure.rateLimited": "Too many requests. Wait a moment and try again.",
   "failure.server": "Waymark had a problem answering. Try again in a moment.",
   /**
@@ -858,14 +865,11 @@ export const EN = {
   "people.explains":
     "Everybody with an account in this house. Only an administrator sees this group, and only an administrator can change it.",
   "people.handOver":
-    "Nothing is emailed: you type the password for a new person, or a reset one, and hand it over yourself.",
+    "Nothing is emailed: Waymark makes a temporary password for a new person, or for a reset, and you hand it over yourself.",
   "people.loading": "Loading the people in this house",
   /** The [+] in the group's title line: the one primary action (ADR 21). */
   "people.addAction": "Add a person",
   "people.usernameLabel": "Username",
-  "people.passwordLabel": "Password",
-  /** Under the password of a new person, or of a reset. */
-  "people.passwordHint": "At least 12 characters. You hand it over yourself.",
   "people.roleLabel": "Role",
   /** The two roles, as a chip on a row and as the choice in the form. */
   "people.roleAdministrator": "Administrator",
@@ -891,8 +895,7 @@ export const EN = {
    * otherwise discover from a phone that suddenly asks for a password.
    */
   "people.resetWarning":
-    "{username} is signed out everywhere and needs this new password to sign in again. Their passkeys and machine tokens keep working.",
-  "people.newPasswordLabel": "New password",
+    "{username} is signed out everywhere, and Waymark makes a new temporary password for you to hand over. Their passkeys and machine tokens keep working.",
   "people.resetConfirm": "Reset it",
   "people.resetting": "Resetting…",
 
@@ -920,6 +923,69 @@ export const EN = {
    */
   "people.notForMachines":
     "A machine token cannot manage accounts. An administrator does that, signed in.",
+
+  /**
+   * # A temporary password, shown once (ADR 26, amended)
+   *
+   * The server generated it after adding a person or resetting a password,
+   * and this is the only time anybody can read it. The title names whose it
+   * is; the warning, said before the way out, says it will not be shown again
+   * and that the person replaces it the first time they sign in.
+   */
+  "people.temporaryTitle": "The temporary password for {username}",
+  "people.temporaryOnce":
+    "This is the only time you will see it. Hand it over yourself: {username} has to choose a password of their own the first time they sign in with it.",
+  /** The accessible name of the password itself, beside its copy button. */
+  "people.temporaryLabel": "{username}'s temporary password",
+  /** The button that takes the temporary password off the screen for good. */
+  "people.temporaryDone": "I have it",
+  /** On the row of somebody still holding a temporary password. */
+  "people.mustChange": "Has not chosen a password yet",
+
+  // ---------------------------------------------------------------------
+  // Changing your own password (ADR 26, amended)
+  // ---------------------------------------------------------------------
+  /** The new password is the one the account already has. */
+  "password.unchanged": "Choose a password different from the one you have now.",
+  /** Changing your own password without typing the current one. */
+  "password.currentRequired": "Type your current password too.",
+  /**
+   * The current password typed was wrong. Not a session problem: the person
+   * stays signed in and can try again.
+   */
+  "password.wrongCurrent": "That is not your current password. Try typing it again.",
+
+  /**
+   * # Choosing your password, the first time (ADR 26, amended)
+   *
+   * The only screen a person signed in with a temporary password sees. One
+   * field, one primary action, and a way to sign out.
+   */
+  "password.chooseTitle": "Choose your password",
+  "password.chooseLede":
+    "You signed in with a temporary password. Choose one of your own to carry on; only you will know it.",
+  /** The new password, here and on the account screen. */
+  "password.newLabel": "New password",
+  /** Under the new password: the API's minimum, said before it refuses. */
+  "password.newHint": "At least 12 characters.",
+  "password.chooseAction": "Save my password",
+  "password.saving": "Saving…",
+
+  /**
+   * # Changing your password from the account screen (ADR 26, amended)
+   *
+   * A group of its own. The action opens the form; the form asks for the
+   * current password first, then the new one.
+   */
+  "password.group": "Password",
+  /** Folded behind the group's ⓘ: what changing it does to other sessions. */
+  "password.explains":
+    "Changing your password signs you out on every other device. This one stays signed in.",
+  "password.changeAction": "Change password",
+  "password.currentLabel": "Current password",
+  "password.changeConfirm": "Change it",
+  /** Said once the change is done, inside the group. */
+  "password.changed": "Your password is changed. Every other device is signed out.",
 
   // ---------------------------------------------------------------------
   // Sharing a space: the administrator's Share sheet (ADR 26)

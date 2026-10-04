@@ -1,15 +1,20 @@
 import type { FastifyPluginAsync } from "fastify";
 
+import type { ChangeOwnPassword } from "../../auth/change-own-password.js";
 import type { Login } from "../../auth/login.js";
 import type { Logout } from "../../auth/logout.js";
 import { bearerTokenOf } from "../bearer-token.js";
 import { HttpError } from "../http-error.js";
 import { machineTokenView, userView } from "../views.js";
-import { loginBodySchema } from "../validation.js";
+import { changeOwnPasswordBodySchema, loginBodySchema } from "../validation.js";
 
 export interface AuthRouteOptions {
   readonly login: Login;
   readonly logout: Logout;
+}
+
+export interface AuthenticatedAuthRouteOptions extends AuthRouteOptions {
+  readonly changeOwnPassword: ChangeOwnPassword;
 }
 
 /**
@@ -46,7 +51,7 @@ export const authRoutes: FastifyPluginAsync<AuthRouteOptions> = async (
   });
 };
 
-export const authenticatedAuthRoutes: FastifyPluginAsync<AuthRouteOptions> = async (
+export const authenticatedAuthRoutes: FastifyPluginAsync<AuthenticatedAuthRouteOptions> = async (
   app,
   options,
 ) => {
@@ -111,5 +116,36 @@ export const authenticatedAuthRoutes: FastifyPluginAsync<AuthRouteOptions> = asy
     }
 
     return reply.code(204).send();
+  });
+
+  /**
+   * A person chooses their own password (ADR 26, amended): see
+   * `ChangeOwnPassword` for when the current one is asked for and what the
+   * change ends. One of the three routes open to an account whose password is
+   * temporary, and the one that lifts that restriction.
+   *
+   * A machine token is refused before the body is read, as on every account
+   * route (`account-routes.ts`): a credential that could set a password would
+   * be a program turning itself into a person.
+   */
+  app.post("/auth/password", async (request, reply) => {
+    if (request.caller.kind === "machine") {
+      throw new HttpError(
+        403,
+        "MACHINE_TOKEN_CANNOT_MANAGE_ACCOUNTS",
+        "Passwords are changed by their person, never by a machine token",
+        { machineTokenName: request.caller.machineToken.name },
+      );
+    }
+    const body = changeOwnPasswordBodySchema.parse(request.body);
+    const user = await options.changeOwnPassword.execute({
+      user: request.caller.user,
+      sessionId: request.caller.session.id,
+      password: body.password,
+      currentPassword: body.currentPassword,
+      clientIp: request.clientIp,
+    });
+
+    return reply.code(200).send({ user: userView(user) });
   });
 };

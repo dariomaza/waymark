@@ -10,6 +10,7 @@ import { mustBeAUsablePassword, type CreateUser } from "./create-user.js";
 import type { MachineTokenRepository } from "./machine-token-repository.js";
 import type { PasswordHasher } from "./password-hasher.js";
 import type { SessionRepository } from "./session-repository.js";
+import { generateTemporaryPassword } from "./temporary-password.js";
 import type { User } from "./user.js";
 import {
   LAST_ADMINISTRATOR,
@@ -25,12 +26,26 @@ export interface ManageAccountsDependencies {
   readonly createUser: CreateUser;
   readonly hasher: PasswordHasher;
   readonly clock: Clock;
+  /** Where a temporary password comes from; `generateTemporaryPassword` unless a test says. */
+  readonly temporaryPasswords?: () => string;
 }
 
 export interface NewAccount {
   readonly username: string;
-  readonly password: string;
   readonly role: Role;
+}
+
+/**
+ * An account and the temporary password it was just given (ADR 26, amended).
+ *
+ * The password is here, in the answer to the one request that made it, and
+ * nowhere else: only its hash is stored, it is never logged, and no later
+ * request can read it back. Whoever made the request hands it to the person,
+ * who must replace it the first time they sign in.
+ */
+export interface IssuedAccount {
+  readonly account: User;
+  readonly temporaryPassword: string;
 }
 
 /**
@@ -71,15 +86,23 @@ export class ManageAccounts {
     return await this.deps.users.list();
   }
 
-  /** Same normalisation, same minimum and same conflict as the shell. */
-  async create(by: User, account: NewAccount): Promise<User> {
+  /**
+   * Same normalisation and same conflict as the shell. The password is
+   * generated, never chosen by the administrator, and marked as one the person
+   * must replace: the administrator never knows a password that lasts.
+   */
+  async create(by: User, account: NewAccount): Promise<IssuedAccount> {
     mustAdminister(by);
 
-    return await this.deps.createUser.execute({
+    const temporaryPassword = this.#temporaryPassword();
+    const created = await this.deps.createUser.execute({
       username: account.username,
-      password: account.password,
+      password: temporaryPassword,
       administrator: account.role === Role.ADMINISTRATOR,
+      mustChangePassword: true,
     });
+
+    return { account: created, temporaryPassword };
   }
 
   async changeRole(by: User, accountId: string, role: Role): Promise<User> {
@@ -93,20 +116,26 @@ export class ManageAccounts {
   }
 
   /**
-   * A new password, and every session of that account goes with the old one.
+   * A new temporary password, generated like a new account's and marked to be
+   * replaced at the next sign-in, and every session of that account goes with
+   * the old one.
+   *
    * Its passkeys stay (ADR 19): a passkey is a door of its own and resetting
-   * a password is not a statement about a device. So do its machine tokens,
-   * which are revoked one by one by whoever issued them, or by disabling.
+   * a password is not a statement about a device. A passkey sign-in is still
+   * restricted until the password is changed, because the restriction is the
+   * account's and not the session's. So do its machine tokens, which are
+   * revoked one by one by whoever issued them, or by disabling.
    */
-  async resetPassword(by: User, accountId: string, password: string): Promise<User> {
+  async resetPassword(by: User, accountId: string): Promise<IssuedAccount> {
     mustAdminister(by);
     notYourOwn(by, accountId);
-    mustBeAUsablePassword(password);
 
+    const temporaryPassword = this.#temporaryPassword();
     const changed = await this.deps.users.changePassword(
       accountId,
-      await this.deps.hasher.hash(password),
+      await this.deps.hasher.hash(temporaryPassword),
       this.deps.clock.now(),
+      true,
     );
     if (changed === null) {
       throw new AccountNotFound(accountId);
@@ -114,7 +143,7 @@ export class ManageAccounts {
 
     await this.deps.sessions.deleteAllOf(accountId);
 
-    return changed;
+    return { account: changed, temporaryPassword };
   }
 
   /**
@@ -145,6 +174,15 @@ export class ManageAccounts {
   }
 
   /** The person can sign in again. Tokens revoked by the disable stay revoked. */
+  #temporaryPassword(): string {
+    const password = (this.deps.temporaryPasswords ?? generateTemporaryPassword)();
+    // A generator that broke would otherwise hand out a password no sign-in
+    // accepts; better refused here than discovered by the person.
+    mustBeAUsablePassword(password);
+
+    return password;
+  }
+
   async enable(by: User, accountId: string): Promise<User> {
     mustAdminister(by);
 

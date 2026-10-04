@@ -43,6 +43,7 @@ const DARIO: User = {
   createdAt: NOW,
   updatedAt: NOW,
   disabledAt: null,
+  mustChangePassword: false,
 };
 
 /** Just enough of the port to answer "who is this". */
@@ -95,6 +96,10 @@ class RecordingSessionRepository implements SessionRepository {
   }
 
   async deleteAllOf(): Promise<number> {
+    throw new Error("not part of this ceremony");
+  }
+
+  async deleteAllOfExcept(): Promise<number> {
     throw new Error("not part of this ceremony");
   }
 

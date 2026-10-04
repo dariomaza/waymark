@@ -1,5 +1,10 @@
-import { FailureKind, failureKindOf } from "@waymark/api-client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ApiError, ApiErrorCode, FailureKind, failureKindOf } from "@waymark/api-client";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { useState, type JSX } from "react";
 import { Route, Routes } from "react-router-dom";
 
@@ -156,8 +161,26 @@ export interface QueryClientOptions {
  */
 export const createQueryClient = ({
   offlineRetryDelay = OFFLINE_RETRY_DELAY_MS,
-}: QueryClientOptions = {}): QueryClient =>
-  new QueryClient({
+}: QueryClientOptions = {}): QueryClient => {
+  /**
+   * # A refusal that means "choose your password first" (ADR 26, amended)
+   *
+   * An administrator can reset a password while the app is open. The next
+   * request is refused 403 `PASSWORD_CHANGE_REQUIRED` — which is NOT the end
+   * of the session, so nothing here signs anybody out. `/auth/me` is asked
+   * again instead, it says `mustChangePassword`, and the session gate draws
+   * the screen that chooses one.
+   */
+  const onError = (error: unknown): void => {
+    if (error instanceof ApiError && error.code === ApiErrorCode.PASSWORD_CHANGE_REQUIRED) {
+      // `queryKeys.session(token)` is `["session", token]`: every session asked.
+      void queries.invalidateQueries({ queryKey: ["session"] });
+    }
+  };
+
+  const queries: QueryClient = new QueryClient({
+    queryCache: new QueryCache({ onError }),
+    mutationCache: new MutationCache({ onError }),
     defaultOptions: {
       queries: {
         networkMode: "always",
@@ -170,3 +193,6 @@ export const createQueryClient = ({
       mutations: { networkMode: "always", retry: false },
     },
   });
+
+  return queries;
+};

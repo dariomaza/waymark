@@ -261,9 +261,10 @@ JSON, and a write to a path nothing serves is JSON.
 | Method   | Route                       | Answers                                      |
 | -------- | --------------------------- | -------------------------------------------- |
 | `GET`    | `/health`                   | `{ status, commit }` — `commit` is which one is running (ADR 23) |
-| `POST`   | `/auth/login`               | `{ token, expiresAt, user }`                 |
+| `POST`   | `/auth/login`               | `{ token, expiresAt, user }` — `user.mustChangePassword` says a temporary password must be replaced |
 | `GET`    | `/auth/me`                  | `{ user }`, or `{ machineToken }` for a machine |
 | `POST`   | `/auth/logout`              | `204` — a session only; a machine token gets 403 |
+| `POST`   | `/auth/password`            | `{ user }` — body `{ password, currentPassword? }`; your own, ends your other sessions; a machine token gets 403 |
 | `POST`   | `/auth/passkey-login/options` | `{ ceremonyId, options }` — no session, no username |
 | `POST`   | `/auth/passkey-login`       | `{ token, expiresAt, user }` — the same session a password opens |
 | `GET`    | `/auth/passkeys`            | `{ passkeys }` — your own devices, never anybody else's |
@@ -271,9 +272,9 @@ JSON, and a write to a path nothing serves is JSON.
 | `POST`   | `/auth/passkeys`            | `201 { passkey }` — needs a password-backed session |
 | `DELETE` | `/auth/passkeys/:id`        | `204` — one device, any session                |
 | `GET`    | `/auth/accounts`            | `{ accounts }` — every account, its role and state; administrator only |
-| `POST`   | `/auth/accounts`            | `201 { account }` — body `{ username, password, role }`; administrator only |
+| `POST`   | `/auth/accounts`            | `201 { account, temporaryPassword }` — body `{ username, role }`; administrator only |
 | `POST`   | `/auth/accounts/:id/role`   | `{ account }` — body `{ role }`; administrator only |
-| `POST`   | `/auth/accounts/:id/password` | `{ account }` — body `{ password }`, signs them out; administrator only |
+| `POST`   | `/auth/accounts/:id/password` | `{ account, temporaryPassword }` — no body, signs them out; administrator only |
 | `POST`   | `/auth/accounts/:id/disable` | `{ account }` — signs them out, revokes their tokens; administrator only |
 | `POST`   | `/auth/accounts/:id/enable` | `{ account }`; administrator only            |
 | `GET`    | `/search`                   | `{ query, terms, items, storageUnits }`      |
@@ -373,6 +374,19 @@ The account and share routes refuse with codes of their own:
 | `ACCOUNT_DISABLED`                     | 409    | Enable it first; then the same share succeeds.       |
 | `ALREADY_HAS_EDIT`                     | 409    | The tree's owner, or an administrator, already may edit it. |
 | `PASSWORD_TOO_SHORT`                   | 422    | Under the 12 character minimum.                      |
+| `PASSWORD_CHANGE_REQUIRED`             | 403    | The password is a temporary one: only `/auth/me`, `/auth/logout` and `/auth/password` until it is changed. |
+| `PASSWORD_UNCHANGED`                   | 422    | The new password is the current one.                 |
+| `CURRENT_PASSWORD_REQUIRED`            | 422    | Changing your own password needs the current one, unless it is temporary. |
+
+A password made from the account screen, on create or on reset, is generated
+by the server: four groups of four lower-case letters, about 72 bits, answered
+once as `temporaryPassword` and never readable again. The person must replace
+it with `POST /auth/password` the first time they sign in; until then every
+other route answers `PASSWORD_CHANGE_REQUIRED`, whether they signed in with
+the password or a passkey. A wrong `currentPassword` is answered as a wrong
+sign-in, `401 INVALID_CREDENTIALS`, and counted by the same limiter — it does
+not mean the session ended. The first account, made with `create-user`, is
+never flagged (ADR 26, amended).
 
 ## Search
 

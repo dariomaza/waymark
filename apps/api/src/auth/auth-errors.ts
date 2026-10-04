@@ -60,6 +60,27 @@ export class PasswordTooShort extends AuthError {
   }
 }
 
+/**
+ * A new password equal to the current one (ADR 26, amended). With a temporary
+ * password it would keep the very one the administrator saw, so it is
+ * refused rather than accepted as a change that changed nothing.
+ */
+export class PasswordUnchanged extends AuthError {
+  constructor() {
+    super("The new password must be different from the current one");
+  }
+}
+
+/**
+ * Changing your own password without saying what it is now. Asked of every
+ * account except one whose password is temporary (ADR 26, amended).
+ */
+export class CurrentPasswordRequired extends AuthError {
+  constructor() {
+    super("Changing your password needs your current one");
+  }
+}
+
 /** A username that is nothing once trimmed. */
 export class InvalidUsername extends AuthError {
   constructor() {
@@ -283,6 +304,18 @@ export class AdministratorOnly extends AuthError {
     act = "manages accounts",
   ) {
     super(`Only an administrator ${act}`);
+  }
+}
+
+/**
+ * A session of an account whose password is a temporary one asked for
+ * anything but who it is, signing out, or changing the password (ADR 26,
+ * amended). 403: the person is known, and is being refused until they have
+ * chosen a password of their own.
+ */
+export class PasswordChangeRequired extends AuthError {
+  constructor(readonly username: string) {
+    super("Choose a password of your own before anything else");
   }
 }
 

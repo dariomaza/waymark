@@ -3,6 +3,7 @@ import {
   queryKeys,
   type AccountListResponse,
   type AccountResponse,
+  type IssuedAccountResponse,
   type CreateAccountInput,
   type UserView,
 } from "@waymark/api-client";
@@ -65,13 +66,16 @@ export const useAccounts = (enabled: boolean): UseQueryResult<AccountListRespons
 };
 
 /** Every change answers the account as it stands; the list is fetched again. */
-const useAccountChange = <TVariables>(
-  call: (variables: TVariables) => Promise<AccountResponse>,
-): UseMutationResult<AccountResponse, Error, TVariables> => {
+const useAccountChange = <TVariables, TAnswer extends AccountResponse = AccountResponse>(
+  call: (variables: TVariables) => Promise<TAnswer>,
+): UseMutationResult<TAnswer, Error, TVariables> => {
   const queries = useQueryClient();
 
   return useMutation({
     mutationFn: call,
+    // Forgotten as soon as nothing observes it: creating and resetting answer
+    // a temporary password, which belongs in the screen's state alone.
+    gcTime: 0,
     // Settled, not succeeded: a refusal such as "not here any more" is
     // exactly when the list on screen is the thing that is wrong.
     onSettled: () => {
@@ -81,7 +85,7 @@ const useAccountChange = <TVariables>(
 };
 
 export const useCreateAccount = (): UseMutationResult<
-  AccountResponse,
+  IssuedAccountResponse,
   Error,
   CreateAccountInput
 > => {
@@ -104,16 +108,13 @@ export const useChangeAccountRole = (): UseMutationResult<
 };
 
 export const useResetAccountPassword = (): UseMutationResult<
-  AccountResponse,
+  IssuedAccountResponse,
   Error,
-  { readonly id: string; readonly password: string }
+  string
 > => {
   const api = useApi();
 
-  return useAccountChange(
-    async ({ id, password }: { readonly id: string; readonly password: string }) =>
-      await api.resetAccountPassword(id, password),
-  );
+  return useAccountChange(async (id: string) => await api.resetAccountPassword(id));
 };
 
 export const useDisableAccount = (): UseMutationResult<AccountResponse, Error, string> => {

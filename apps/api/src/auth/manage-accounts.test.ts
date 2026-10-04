@@ -115,7 +115,7 @@ describe("managing accounts", () => {
     await expect(manage.changeRole(dario, dario.id, Role.USER)).rejects.toBeInstanceOf(OwnAccount);
     await expect(manage.disable(dario, dario.id)).rejects.toBeInstanceOf(OwnAccount);
     await expect(
-      manage.resetPassword(dario, dario.id, "a-brand-new-password"),
+      manage.resetPassword(dario, dario.id),
     ).rejects.toBeInstanceOf(OwnAccount);
   });
 });

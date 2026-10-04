@@ -147,6 +147,15 @@ export interface UserView {
    * from a session kept since sign-in.
    */
   readonly role: Role;
+  /**
+   * The password is a temporary one an administrator's request generated,
+   * and must be replaced before anything else (ADR 26, amended). While it is
+   * `true`, every route but `GET /auth/me`, `POST /auth/logout` and
+   * `POST /auth/password` answers 403 `PASSWORD_CHANGE_REQUIRED`: a client
+   * that sees it on `/auth/me` or the sign-in answer shows the change-password
+   * screen and nothing else.
+   */
+  readonly mustChangePassword: boolean;
 }
 
 /**
@@ -169,14 +178,37 @@ export interface AccountResponse {
 }
 
 /**
- * What an administrator types to make an account. The password is typed
- * here and handed over in person; there is no mail (ADR 26). The API holds
- * the minimum length and answers `PASSWORD_TOO_SHORT` with it.
+ * # An account and the temporary password it was just given (ADR 26, amended)
+ *
+ * The answer to creating an account and to resetting a password. The server
+ * generated `temporaryPassword` (four groups of four lower-case letters) and
+ * this is the only time anybody can read it: show it once, for the
+ * administrator to hand over in person, and never store it. The person must
+ * replace it when they first sign in.
+ */
+export interface IssuedAccountResponse {
+  readonly account: AccountView;
+  readonly temporaryPassword: string;
+}
+
+/**
+ * What an administrator types to make an account. No password: the server
+ * generates a temporary one and answers it (ADR 26, amended).
  */
 export interface CreateAccountInput {
   readonly username: string;
-  readonly password: string;
   readonly role: Role;
+}
+
+/**
+ * Changing your own password (ADR 26, amended). `currentPassword` is required
+ * unless `mustChangePassword` is true, when it is left out: the API answers
+ * 422 `CURRENT_PASSWORD_REQUIRED` without it, and 401 `INVALID_CREDENTIALS`
+ * for a wrong one — which does NOT end the session.
+ */
+export interface ChangeOwnPasswordInput {
+  readonly password: string;
+  readonly currentPassword?: string | undefined;
 }
 
 export interface SessionView {

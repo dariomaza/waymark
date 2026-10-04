@@ -108,6 +108,9 @@ export const ES: Dictionary = {
     "Este token de máquina está limitado a los espacios que se eligieron para él, así que no puede crear una unidad raíz, ni llevar nada arriba del todo ni sacarlo de ahí.",
   "failure.administratorOnly":
     "Solo un administrador puede hacer esto. Sigues con la sesión iniciada; volver a entrar no lo cambiaría.",
+  /** Una ruta rechazada porque la contraseña de la cuenta es temporal (ADR 26, enmendado). */
+  "failure.passwordChangeRequired":
+    "Primero elige una contraseña tuya. Sigues con la sesión iniciada.",
   "failure.rateLimited": "Demasiadas peticiones. Espera un momento e inténtalo de nuevo.",
   "failure.server": "Waymark ha tenido un problema al responder. Inténtalo de nuevo en un momento.",
   "failure.unexpected":
@@ -553,12 +556,10 @@ export const ES: Dictionary = {
   "people.explains":
     "Todas las personas con cuenta en esta casa. Solo un administrador ve este grupo y solo un administrador puede cambiarlo.",
   "people.handOver":
-    "No se envía nada por correo: tú escribes la contraseña de una persona nueva, o la de un restablecimiento, y se la das en persona.",
+    "No se envía nada por correo: Waymark crea una contraseña temporal para una persona nueva, o al restablecerla, y se la das tú en persona.",
   "people.loading": "Cargando las personas de esta casa",
   "people.addAction": "Añadir una persona",
   "people.usernameLabel": "Usuario",
-  "people.passwordLabel": "Contraseña",
-  "people.passwordHint": "Al menos 12 caracteres. Se la das tú en persona.",
   "people.roleLabel": "Rol",
   "people.roleAdministrator": "Administrador",
   "people.roleUser": "Usuario",
@@ -574,8 +575,7 @@ export const ES: Dictionary = {
 
   "people.resetTitle": "¿Restablecer la contraseña de {username}?",
   "people.resetWarning":
-    "Se cierra la sesión de {username} en todas partes y necesitará esta contraseña nueva para volver a entrar. Sus passkeys y sus tokens de máquina siguen funcionando.",
-  "people.newPasswordLabel": "Contraseña nueva",
+    "Se cierra la sesión de {username} en todas partes y Waymark crea una contraseña temporal nueva para que se la des. Sus passkeys y sus tokens de máquina siguen funcionando.",
   "people.resetConfirm": "Restablécela",
   "people.resetting": "Restableciendo…",
 
@@ -594,6 +594,49 @@ export const ES: Dictionary = {
   "people.alreadyGone": "Esa cuenta ya no está. Cierra esta pantalla y vuelve a abrirla.",
   "people.notForMachines":
     "Un token de máquina no puede gestionar cuentas. Lo hace un administrador con su sesión iniciada.",
+
+  /** Una contraseña temporal, mostrada una sola vez (ADR 26, enmendado). */
+  "people.temporaryTitle": "La contraseña temporal de {username}",
+  "people.temporaryOnce":
+    "Es la única vez que la verás. Dásela tú en persona: {username} tendrá que elegir una contraseña propia la primera vez que entre con ella.",
+  /** El nombre accesible de la contraseña, junto a su botón de copiar. */
+  "people.temporaryLabel": "Contraseña temporal de {username}",
+  /** El botón que quita la contraseña temporal de la pantalla para siempre. */
+  "people.temporaryDone": "Ya la tengo",
+  /** En la fila de quien aún tiene una contraseña temporal. */
+  "people.mustChange": "Aún no ha elegido su contraseña",
+
+  // ---------------------------------------------------------------------
+  // Cambiar tu propia contraseña (ADR 26, enmendado)
+  // ---------------------------------------------------------------------
+  /** La contraseña nueva es la que la cuenta ya tiene. */
+  "password.unchanged": "Elige una contraseña distinta de la que tienes ahora.",
+  /** Cambiar tu propia contraseña sin escribir la actual. */
+  "password.currentRequired": "Escribe también tu contraseña actual.",
+  /** La contraseña actual escrita no era la correcta; la sesión sigue. */
+  "password.wrongCurrent": "Esa no es tu contraseña actual. Vuelve a escribirla.",
+
+  /** Elegir tu contraseña la primera vez (ADR 26, enmendado). */
+  "password.chooseTitle": "Elige tu contraseña",
+  "password.chooseLede":
+    "Has entrado con una contraseña temporal. Elige una tuya para seguir; solo la sabrás tú.",
+  /** La contraseña nueva, aquí y en la pantalla de la cuenta. */
+  "password.newLabel": "Contraseña nueva",
+  /** Bajo la contraseña nueva: el mínimo de la API, dicho antes de que la rechace. */
+  "password.newHint": "Al menos 12 caracteres.",
+  "password.chooseAction": "Guardar mi contraseña",
+  "password.saving": "Guardando…",
+
+  /** Cambiar tu contraseña desde la pantalla de la cuenta (ADR 26, enmendado). */
+  "password.group": "Contraseña",
+  /** Tras la ⓘ del grupo: lo que el cambio hace con las demás sesiones. */
+  "password.explains":
+    "Cambiar tu contraseña cierra tu sesión en todos los demás dispositivos. En este sigues dentro.",
+  "password.changeAction": "Cambiar la contraseña",
+  "password.currentLabel": "Contraseña actual",
+  "password.changeConfirm": "Cambiarla",
+  /** Dicho cuando el cambio está hecho, dentro del grupo. */
+  "password.changed": "Tu contraseña ha cambiado. Se ha cerrado la sesión en los demás dispositivos.",
 
   // ---------------------------------------------------------------------
   // Compartir un espacio (ADR 26)

@@ -6,11 +6,11 @@ import { StyleSheet, Text, View } from "react-native";
 import { useTranslate } from "../app/language-context.js";
 import { Button } from "../ui/atoms/button.js";
 import { Callout } from "../ui/atoms/callout.js";
-import { PasswordField } from "../ui/atoms/password-field.js";
 import { Sheet } from "../ui/organisms/sheet.js";
 import { space, text } from "../ui/styles/tokens.js";
 import { themed } from "../ui/styles/theme.js";
 import { useDisableAccount, useResetAccountPassword } from "./people-queries.js";
+import { TemporaryPassword } from "./views/temporary-password.js";
 
 /**
  * # The two questions the People group asks before it acts (ADR 26)
@@ -27,39 +27,52 @@ export interface PersonSheetProps {
   readonly onClose: () => void;
 }
 
+/**
+ * A new temporary password for somebody else, and the consequence said before
+ * the button: they are signed out everywhere. Once it is done, the sheet shows
+ * the password the server made, once, in its own state, and closes when it is
+ * dismissed (ADR 26, amended).
+ */
 export const ResetPasswordSheet = ({ account, onClose }: PersonSheetProps): JSX.Element => {
   const styles = useStyles();
   const t = useTranslate();
   const reset = useResetAccountPassword();
-  const [password, setPassword] = useState("");
+  const [issued, setIssued] = useState<string | null>(null);
 
   return (
     <Sheet title={t("people.resetTitle", { username: account.username })} onClose={onClose}>
-      <View style={styles.block}>
-        <Text style={styles.text}>{t("people.resetWarning", { username: account.username })}</Text>
-        <PasswordField
-          label={t("people.newPasswordLabel")}
-          hint={t("people.passwordHint")}
-          value={password}
-          onChangeText={setPassword}
-        />
-        {reset.isError ? (
-          <Callout tone="wrong">
-            {t(accountFailureMessage(reset.error) ?? describeFailure(reset.error))}
-          </Callout>
-        ) : null}
-        <Button
-          tone="primary"
-          block
-          disabled={reset.isPending}
-          label={t("people.resetConfirm")}
-          onPress={() => {
-            reset.mutate({ id: account.id, password }, { onSuccess: onClose });
-          }}
-        >
-          {reset.isPending ? t("people.resetting") : t("people.resetConfirm")}
-        </Button>
-      </View>
+      {issued === null ? (
+        <View style={styles.block}>
+          <Text style={styles.text}>
+            {t("people.resetWarning", { username: account.username })}
+          </Text>
+          {reset.isError ? (
+            <Callout tone="wrong">
+              {t(accountFailureMessage(reset.error) ?? describeFailure(reset.error))}
+            </Callout>
+          ) : null}
+          <Button
+            tone="primary"
+            block
+            disabled={reset.isPending}
+            label={t("people.resetConfirm")}
+            onPress={() => {
+              reset.mutate(account.id, {
+                onSuccess: (answer) => {
+                  setIssued(answer.temporaryPassword);
+                  // Let go of the answer, so the mutation (gcTime 0) is
+                  // forgotten now rather than when the sheet closes.
+                  reset.reset();
+                },
+              });
+            }}
+          >
+            {reset.isPending ? t("people.resetting") : t("people.resetConfirm")}
+          </Button>
+        </View>
+      ) : (
+        <TemporaryPassword username={account.username} password={issued} onDismiss={onClose} />
+      )}
     </Sheet>
   );
 };

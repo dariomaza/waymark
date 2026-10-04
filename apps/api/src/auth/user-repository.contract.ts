@@ -32,6 +32,7 @@ const anAccount = (
   createdAt: new Date("2026-04-01T10:00:00.000Z"),
   updatedAt: new Date("2026-04-01T10:00:00.000Z"),
   disabledAt: null,
+  mustChangePassword: false,
   ...overrides,
 });
 
@@ -62,6 +63,14 @@ export const userRepositoryContract = (
       await users.create(partner);
 
       expect(await users.findById("partner")).toEqual(partner);
+    });
+
+    it("gives back that the person must change their password first", async () => {
+      const child = anAccount("child", { mustChangePassword: true });
+
+      await users.create(child);
+
+      expect(await users.findById("child")).toEqual(child);
     });
 
     it("refuses a second account with a username already taken", async () => {
@@ -226,14 +235,30 @@ export const userRepositoryContract = (
       it("keeps the new hash and stamps the change", async () => {
         await users.create(anAccount("partner"));
 
-        const changed = await users.changePassword("partner", "scrypt$new", LATER);
+        const changed = await users.changePassword("partner", "scrypt$new", LATER, false);
 
         expect(changed).toMatchObject({ passwordHash: "scrypt$new", updatedAt: LATER });
         expect((await users.findById("partner"))?.passwordHash).toBe("scrypt$new");
       });
 
+      it("marks a temporary one as one to be changed at the next sign-in", async () => {
+        await users.create(anAccount("partner"));
+
+        await users.changePassword("partner", "scrypt$temporary", LATER, true);
+
+        expect((await users.findById("partner"))?.mustChangePassword).toBe(true);
+      });
+
+      it("clears the mark when the person chooses their own", async () => {
+        await users.create(anAccount("partner", { mustChangePassword: true }));
+
+        await users.changePassword("partner", "scrypt$chosen", LATER, false);
+
+        expect((await users.findById("partner"))?.mustChangePassword).toBe(false);
+      });
+
       it("answers null for an account that is not there", async () => {
-        expect(await users.changePassword("nobody", "scrypt$new", LATER)).toBeNull();
+        expect(await users.changePassword("nobody", "scrypt$new", LATER, false)).toBeNull();
       });
     });
   });

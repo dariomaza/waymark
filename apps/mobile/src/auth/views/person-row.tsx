@@ -80,6 +80,9 @@ export const PersonRow = ({ account, isYou, onAct }: PersonRowProps): JSX.Elemen
           {administrator ? t("people.roleAdministrator") : t("people.roleUser")}
         </Text>
         {isYou ? <Text style={styles.fact}>{t("people.you")}</Text> : null}
+        {account.mustChangePassword ? (
+          <Text style={styles.fact}>{t("people.mustChange")}</Text>
+        ) : null}
         {disabled ? (
           <Text style={[styles.fact, styles.disabled]}>{t("people.disabled")}</Text>
         ) : null}

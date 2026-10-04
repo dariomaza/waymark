@@ -106,6 +106,21 @@ export const discardQueryCaches = (): void => {
 };
 
 /**
+ * Everything the query caches of this test hold — every query's data and
+ * every mutation's answer — as one string to search. For the promise that a
+ * secret is never cached: a temporary password lives in a screen's state and
+ * nowhere else.
+ */
+export const everythingCached = (): string =>
+  caches
+    .flatMap((cache) => [
+      ...cache.getQueryCache().getAll().map((query) => query.state.data),
+      ...cache.getMutationCache().getAll().map((mutation) => mutation.state.data),
+    ])
+    .map((data) => JSON.stringify(data) ?? "")
+    .join("\n");
+
+/**
  * Renders the WHOLE app, at a screen, the way a phone would.
  *
  * Not a screen in isolation: the navigators, the session gate, the query cache

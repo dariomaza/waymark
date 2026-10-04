@@ -70,6 +70,8 @@ export type {
   AccountView,
   CreateAccountInput,
   CallerResponse,
+  ChangeOwnPasswordInput,
+  IssuedAccountResponse,
   CreateItemInput,
   CreateMachineTokenInput,
   CreateStorageUnitInput,

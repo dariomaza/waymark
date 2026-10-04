@@ -30,7 +30,8 @@ describe("managing accounts over HTTP", () => {
   let admin: string;
 
   const PARTNER_PASSWORD = "the-partner-password";
-  const NEW_PASSWORD = "a-brand-new-password";
+  /** What every generated password looks like (`auth/temporary-password.ts`). */
+  const TEMPORARY = /^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/u;
 
   beforeAll(async () => {
     api = await createTestApi();
@@ -52,6 +53,12 @@ describe("managing accounts over HTTP", () => {
     readonly username: string;
     readonly role: string;
     readonly disabledAt: string | null;
+    readonly mustChangePassword: boolean;
+  }
+
+  interface Issued {
+    readonly account: Account;
+    readonly temporaryPassword: string;
   }
 
   const list = async (token = admin) =>
@@ -87,6 +94,14 @@ describe("managing accounts over HTTP", () => {
     });
   };
 
+  /** Resets a password and answers the temporary one the response carried. */
+  const reset = async (username: string): Promise<string> => {
+    const response = await act(username, "password");
+    expect(response.statusCode).toBe(200);
+
+    return (response.json() as Issued).temporaryPassword;
+  };
+
   const create = async (payload: Record<string, unknown>, headers = api.authHeaders(admin)) =>
     await api.app.inject({ method: "POST", url: "/auth/accounts", headers, payload });
 
@@ -116,37 +131,58 @@ describe("managing accounts over HTTP", () => {
   });
 
   describe("creating an account", () => {
-    it("makes one the person can sign in to with the password the administrator typed", async () => {
+    it("generates the password, answers it once, and the person can sign in with it", async () => {
+      const response = await create({ username: "  Child ", role: "user" });
+
+      expect(response.statusCode).toBe(201);
+      const { account, temporaryPassword } = response.json() as Issued;
+      expect(account).toMatchObject({ username: "child", role: "user", disabledAt: null });
+      expect(temporaryPassword).toMatch(TEMPORARY);
+      expect((await signIn("child", temporaryPassword)).statusCode).toBe(200);
+    });
+
+    it("never lists the password again", async () => {
+      const { temporaryPassword } = (
+        await create({ username: "child", role: "user" })
+      ).json() as Issued;
+
+      expect((await list()).body).not.toContain(temporaryPassword);
+    });
+
+    it("makes each account a password of its own", async () => {
+      const first = (await create({ username: "child", role: "user" })).json() as Issued;
+      const second = (await create({ username: "other", role: "user" })).json() as Issued;
+
+      expect(first.temporaryPassword).not.toBe(second.temporaryPassword);
+    });
+
+    it("marks it as one whose password must be changed at the first sign-in", async () => {
+      const { account } = (await create({ username: "child", role: "user" })).json() as Issued;
+
+      expect(account.mustChangePassword).toBe(true);
+      expect((await accountOf("child")).mustChangePassword).toBe(true);
+    });
+
+    /** The administrator never chooses a password that lasts (ADR 26, amended). */
+    it("refuses a password in the request, as a key it does not know", async () => {
       const response = await create({
-        username: "  Child ",
+        username: "child",
         password: "the-child-password",
         role: "user",
       });
 
-      expect(response.statusCode).toBe(201);
-      expect(response.json()).toMatchObject({
-        account: { username: "child", role: "user", disabledAt: null },
-      });
-      expect((await signIn("child", "the-child-password")).statusCode).toBe(200);
+      expect(response.statusCode).toBe(400);
+      expect((await signIn("child", "the-child-password")).statusCode).toBe(401);
     });
 
     it("makes an administrator when asked to", async () => {
-      await create({ username: "second", password: "the-second-password", role: "administrator" });
+      await create({ username: "second", role: "administrator" });
 
       expect((await accountOf("second")).role).toBe("administrator");
     });
 
-    it("refuses a password shorter than twelve characters, as the shell does", async () => {
-      const response = await create({ username: "child", password: "x".repeat(11), role: "user" });
-
-      expect(response.statusCode).toBe(422);
-      expect(response.json()).toMatchObject({
-        error: { code: "PASSWORD_TOO_SHORT", details: { minimumLength: 12 } },
-      });
-    });
-
     it("answers a username already taken with a conflict, whatever its case", async () => {
-      const response = await create({ username: "PARTNER", password: "yet-another-password", role: "user" });
+      const response = await create({ username: "PARTNER", role: "user" });
 
       expect(response.statusCode).toBe(409);
       expect(response.json()).toMatchObject({
@@ -155,7 +191,7 @@ describe("managing accounts over HTTP", () => {
     });
 
     it("refuses a role that is not one", async () => {
-      const response = await create({ username: "child", password: "the-child-password", role: "owner" });
+      const response = await create({ username: "child", role: "owner" });
 
       expect(response.statusCode).toBe(400);
     });
@@ -209,26 +245,48 @@ describe("managing accounts over HTTP", () => {
   });
 
   describe("resetting a password", () => {
-    it("lets the person in with the new one and no longer with the old", async () => {
-      const response = await act("partner", "password", { password: NEW_PASSWORD });
+    it("generates a new one, answers it once, and the old one stops working", async () => {
+      const response = await act("partner", "password");
 
       expect(response.statusCode).toBe(200);
-      expect((await signIn("partner", NEW_PASSWORD)).statusCode).toBe(200);
+      const { account, temporaryPassword } = response.json() as Issued;
+      expect(account).toMatchObject({ username: "partner" });
+      expect(temporaryPassword).toMatch(TEMPORARY);
+      expect((await signIn("partner", temporaryPassword)).statusCode).toBe(200);
       expect((await signIn("partner", PARTNER_PASSWORD)).statusCode).toBe(401);
+    });
+
+    it("makes a different one every time", async () => {
+      expect(await reset("partner")).not.toBe(await reset("partner"));
+    });
+
+    it("marks the account as one whose password must be changed", async () => {
+      const response = await act("partner", "password");
+
+      expect((response.json() as Issued).account.mustChangePassword).toBe(true);
+      expect((await accountOf("partner")).mustChangePassword).toBe(true);
+    });
+
+    it("refuses a password in the request, and changes nothing", async () => {
+      const response = await act("partner", "password", { password: "a-brand-new-password" });
+
+      expect(response.statusCode).toBe(400);
+      expect((await signIn("partner", PARTNER_PASSWORD)).statusCode).toBe(200);
+      expect((await accountOf("partner")).mustChangePassword).toBe(false);
     });
 
     it("signs them out everywhere", async () => {
       const phone = await api.login("partner", PARTNER_PASSWORD);
       const laptop = await api.login("partner", PARTNER_PASSWORD);
 
-      await act("partner", "password", { password: NEW_PASSWORD });
+      await reset("partner");
 
       expect((await me(phone)).statusCode).toBe(401);
       expect((await me(laptop)).statusCode).toBe(401);
     });
 
     it("leaves everybody else signed in", async () => {
-      await act("partner", "password", { password: NEW_PASSWORD });
+      await reset("partner");
 
       expect((await me(admin)).statusCode).toBe(200);
     });
@@ -236,7 +294,7 @@ describe("managing accounts over HTTP", () => {
     it("keeps the machine tokens they issued, which are revoked on their own", async () => {
       const token = await api.createMachineToken("partner-mcp", "read", undefined, "partner");
 
-      await act("partner", "password", { password: NEW_PASSWORD });
+      await reset("partner");
 
       const response = await api.app.inject({
         method: "GET",
@@ -246,21 +304,13 @@ describe("managing accounts over HTTP", () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it("refuses a password shorter than twelve characters, and changes nothing", async () => {
-      const response = await act("partner", "password", { password: "short" });
-
-      expect(response.statusCode).toBe(422);
-      expect(response.json()).toMatchObject({ error: { code: "PASSWORD_TOO_SHORT" } });
-      expect((await signIn("partner", PARTNER_PASSWORD)).statusCode).toBe(200);
-    });
-
     /**
      * Your own password is changed knowing your current one, which this route
      * does not ask for. A session left open on a borrowed laptop must not be
      * able to lock its owner out.
      */
     it("refuses to reset your own", async () => {
-      const response = await act(TEST_USERNAME, "password", { password: NEW_PASSWORD });
+      const response = await act(TEST_USERNAME, "password");
 
       expect(response.statusCode).toBe(409);
       expect(response.json()).toMatchObject({ error: { code: "OWN_ACCOUNT" } });
@@ -491,7 +541,7 @@ describe("managing accounts over HTTP", () => {
     });
 
     it("is kept by a password reset", async () => {
-      await act("partner", "password", { password: NEW_PASSWORD });
+      await reset("partner");
 
       expect((await signInWithThePhone()).statusCode).toBe(200);
     });
@@ -509,15 +559,10 @@ describe("managing accounts over HTTP", () => {
           method: "POST",
           url: "/auth/accounts",
           headers,
-          payload: { username: "child", password: "the-child-password", role: "user" },
+          payload: { username: "child", role: "user" },
         }),
         api.app.inject({ method: "POST", url: `/auth/accounts/${id}/role`, headers, payload: { role: "user" } }),
-        api.app.inject({
-          method: "POST",
-          url: `/auth/accounts/${id}/password`,
-          headers,
-          payload: { password: NEW_PASSWORD },
-        }),
+        api.app.inject({ method: "POST", url: `/auth/accounts/${id}/password`, headers }),
         api.app.inject({ method: "POST", url: `/auth/accounts/${id}/disable`, headers }),
         api.app.inject({ method: "POST", url: `/auth/accounts/${id}/enable`, headers }),
       ]);
@@ -527,7 +572,8 @@ describe("managing accounts over HTTP", () => {
         expect(response.json()).toMatchObject({ error: { code: "ADMINISTRATOR_ONLY" } });
       }
       expect((await accountOf(TEST_USERNAME)).role).toBe("administrator");
-      expect((await signIn("child", "the-child-password")).statusCode).toBe(401);
+      expect((await list()).body).not.toContain('"child"');
+      expect((await accountOf(TEST_USERNAME)).mustChangePassword).toBe(false);
     });
 
     it("refuses an administrator's read-write machine token, on every route, with 403", async () => {
@@ -541,15 +587,10 @@ describe("managing accounts over HTTP", () => {
           method: "POST",
           url: "/auth/accounts",
           headers,
-          payload: { username: "child", password: "the-child-password", role: "user" },
+          payload: { username: "child", role: "user" },
         }),
         api.app.inject({ method: "POST", url: `/auth/accounts/${id}/role`, headers, payload: { role: "administrator" } }),
-        api.app.inject({
-          method: "POST",
-          url: `/auth/accounts/${id}/password`,
-          headers,
-          payload: { password: NEW_PASSWORD },
-        }),
+        api.app.inject({ method: "POST", url: `/auth/accounts/${id}/password`, headers }),
         api.app.inject({ method: "POST", url: `/auth/accounts/${id}/disable`, headers }),
         api.app.inject({ method: "POST", url: `/auth/accounts/${id}/enable`, headers }),
       ]);
@@ -562,6 +603,7 @@ describe("managing accounts over HTTP", () => {
       }
       expect((await accountOf("partner")).role).toBe("user");
       expect((await signIn("partner", PARTNER_PASSWORD)).statusCode).toBe(200);
+      expect((await list()).body).not.toContain('"child"');
     });
 
     it("refuses a read machine token the list too, which no scope hook stops", async () => {
@@ -583,7 +625,7 @@ describe("managing accounts over HTTP", () => {
       const token = await api.createMachineToken("dario-mcp", "read");
 
       const response = await create(
-        { username: "child", password: "the-child-password", role: "user" },
+        { username: "child", role: "user" },
         api.machineHeaders(token),
       );
 

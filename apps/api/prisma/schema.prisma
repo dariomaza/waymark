@@ -255,6 +255,11 @@ model User {
   /// inventory. Every way in reads this column, so a session or a token left
   /// behind by an interrupted disable still opens nothing.
   disabledAt DateTime?
+  /// Whether the password is a temporary one an administrator generated
+  /// (ADR 26, amended). While it is, a session of this account may only read
+  /// who it is, sign out and change the password. False for every account made
+  /// from the shell: the operator typed that password.
+  mustChangePassword Boolean @default(false)
 
   sessions Session[]
   machineTokens MachineToken[]

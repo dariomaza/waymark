@@ -194,6 +194,38 @@ export const accountFailureMessage = (error: unknown): Message | null => {
 };
 
 /**
+ * # What refusing to change your own password means (ADR 26, amended)
+ *
+ * Each is a different next step: pick another one, type the current one,
+ * type it again correctly, make it longer, wait. A wrong current password is
+ * a 401 like a wrong sign-in, and it is NOT the end of the session, so the
+ * sentence says what was wrong and nothing about signing in. `null` for
+ * anything else.
+ */
+export const passwordChangeFailureMessage = (error: unknown): Message | null => {
+  if (!(error instanceof ApiError)) {
+    return null;
+  }
+
+  switch (error.code) {
+    case ApiErrorCode.PASSWORD_UNCHANGED:
+      return message("password.unchanged");
+    case ApiErrorCode.CURRENT_PASSWORD_REQUIRED:
+      return message("password.currentRequired");
+    case ApiErrorCode.INVALID_CREDENTIALS:
+      return message("password.wrongCurrent");
+    case ApiErrorCode.PASSWORD_TOO_SHORT:
+      return message("people.passwordTooShort", {
+        minimum: detailNumber(error, "minimumLength") ?? 12,
+      });
+    case ApiErrorCode.TOO_MANY_LOGIN_ATTEMPTS:
+      return message("failure.rateLimited");
+    default:
+      return null;
+  }
+};
+
+/**
  * # What the Share sheet's refusals mean (ADR 26)
  *
  * The sheet only offers people who may be given a share, so these are what a
@@ -433,6 +465,11 @@ export const describeFailure = (error: unknown): Message => {
   // Signed in and not an administrator (ADR 26): the role, not the session.
   if (error.code === ApiErrorCode.ADMINISTRATOR_ONLY) {
     return message("failure.administratorOnly");
+  }
+  // Signed in with a temporary password (ADR 26, amended): the next step is
+  // choosing one, not signing in again.
+  if (error.code === ApiErrorCode.PASSWORD_CHANGE_REQUIRED) {
+    return message("failure.passwordChangeRequired");
   }
 
   switch (failureKindOf(error)) {

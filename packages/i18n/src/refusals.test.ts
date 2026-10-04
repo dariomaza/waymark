@@ -14,6 +14,7 @@ import {
   notEmptyMessage,
   passkeyCeremonyFailureMessage,
   passkeyFailureMessage,
+  passwordChangeFailureMessage,
   photoReadFailureMessage,
   tooManyPhotosMessage,
 } from "./refusals.js";
@@ -728,5 +729,55 @@ describe("what refusing to share a space becomes", () => {
   it("stays out of the way of every other failure", () => {
     expect(shareFailureMessage(refusal(404, "STORAGE_UNIT_NOT_FOUND"))).toBeNull();
     expect(shareFailureMessage(new Error("not from the API"))).toBeNull();
+  });
+});
+
+/**
+ * # A temporary password, and changing your own (ADR 26, amended)
+ */
+describe("what refusing a password change becomes", () => {
+  const refusal = (status: number, code: string, details: Record<string, unknown> = {}) =>
+    new ApiError(status, code, "the API's own words", details);
+
+  /**
+   * A 403 that is not about the session: the person is signed in, and must
+   * choose a password of their own first. "Sign in again" would be wrong.
+   */
+  it("says a restricted session must change its password, not that it ended", () => {
+    const said = describeFailure(refusal(403, "PASSWORD_CHANGE_REQUIRED"));
+
+    expect(said.key).toBe("failure.passwordChangeRequired");
+    expect(en(said)).not.toMatch(/session has ended/iu);
+  });
+
+  it("gives each refusal of the change its own sentence", () => {
+    const keys = [
+      passwordChangeFailureMessage(refusal(422, "PASSWORD_UNCHANGED")),
+      passwordChangeFailureMessage(refusal(422, "CURRENT_PASSWORD_REQUIRED")),
+      passwordChangeFailureMessage(refusal(401, "INVALID_CREDENTIALS")),
+      passwordChangeFailureMessage(refusal(422, "PASSWORD_TOO_SHORT", { minimumLength: 12 })),
+      passwordChangeFailureMessage(refusal(429, "TOO_MANY_LOGIN_ATTEMPTS")),
+    ].map((said) => said?.key);
+
+    expect(keys).toEqual([
+      "password.unchanged",
+      "password.currentRequired",
+      "password.wrongCurrent",
+      "people.passwordTooShort",
+      "failure.rateLimited",
+    ]);
+  });
+
+  /** A typo in the current password is not the end of the session. */
+  it("says a wrong current password is wrong, and nothing about signing in again", () => {
+    const said = passwordChangeFailureMessage(refusal(401, "INVALID_CREDENTIALS"));
+
+    expect(en(said)).toMatch(/current password/iu);
+    expect(en(said)).not.toMatch(/sign in/iu);
+  });
+
+  it("stays out of the way of every other failure", () => {
+    expect(passwordChangeFailureMessage(refusal(409, "STORAGE_UNIT_NOT_EMPTY"))).toBeNull();
+    expect(passwordChangeFailureMessage(new Error("boom"))).toBeNull();
   });
 });

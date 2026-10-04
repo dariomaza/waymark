@@ -52,6 +52,15 @@ export interface UserRepository {
   /** `null` when there is no such account. */
   enable(id: string, at: Date): Promise<User | null>;
 
-  /** The hash must already be made. `null` when there is no such account. */
-  changePassword(id: string, passwordHash: string, at: Date): Promise<User | null>;
+  /**
+   * The hash must already be made. `mustChangePassword` says whether it is a
+   * temporary one, to be replaced at the next sign-in (ADR 26, amended).
+   * `null` when there is no such account.
+   */
+  changePassword(
+    id: string,
+    passwordHash: string,
+    at: Date,
+    mustChangePassword: boolean,
+  ): Promise<User | null>;
 }

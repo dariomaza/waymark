@@ -177,6 +177,8 @@ export interface SessionOverrides {
   readonly expiresAt?: string;
   readonly username?: string;
   readonly role?: Role;
+  /** Whether the person must replace a temporary password first (ADR 26, amended). */
+  readonly mustChangePassword?: boolean;
 }
 
 /**
@@ -191,6 +193,7 @@ export const aSession = (overrides: SessionOverrides = {}): SessionView => ({
     id: "u1",
     username: overrides.username ?? "dario",
     role: overrides.role ?? Role.USER,
+    mustChangePassword: overrides.mustChangePassword ?? false,
   },
 });
 
@@ -200,6 +203,7 @@ export const anAccount = (overrides: Partial<AccountView> = {}): AccountView => 
   username: "partner",
   role: Role.USER,
   disabledAt: null,
+  mustChangePassword: false,
   createdAt: "2026-10-01T10:00:00.000Z",
   ...overrides,
 });

@@ -8,7 +8,6 @@ import { Callout } from "../ui/atoms/callout.js";
 import { Loading } from "../ui/atoms/loading.js";
 import { SelectField } from "../ui/atoms/select-field.js";
 import { TextField } from "../ui/atoms/text-field.js";
-import { PasswordField } from "../ui/molecules/password-field.js";
 import { SettingsGroup } from "../ui/molecules/settings-group.js";
 import { useTranslate } from "../app/language-context.js";
 import {
@@ -21,6 +20,7 @@ import {
 import { DisablePersonSheet, ResetPasswordSheet } from "./person-sheets.js";
 import { useSession } from "./use-session.js";
 import { PersonRow, type PersonAct } from "./views/person-row.js";
+import { TemporaryPassword } from "./views/temporary-password.js";
 
 /** The question a sheet is asking about one person, if any. */
 interface Asking {
@@ -69,7 +69,12 @@ const People = (): JSX.Element => {
 
   const [composing, setComposing] = useState(false);
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  /**
+   * The temporary password of the person just added: only here, in this
+   * component's state, and gone when it is dismissed or the screen is left
+   * (ADR 18's "A secret in a browser"). Never the query cache, never storage.
+   */
+  const [issued, setIssued] = useState<{ username: string; password: string } | null>(null);
   const [role, setRole] = useState<Role>(Role.USER);
   const [asking, setAsking] = useState<Asking | null>(null);
 
@@ -84,13 +89,13 @@ const People = (): JSX.Element => {
     event.preventDefault();
 
     create.mutate(
-      { username, password, role },
+      { username, role },
       {
-        onSuccess: () => {
+        onSuccess: (answer) => {
           setComposing(false);
           setUsername("");
-          setPassword("");
           setRole(Role.USER);
+          setIssued({ username: answer.account.username, password: answer.temporaryPassword });
         },
       },
     );
@@ -130,6 +135,7 @@ const People = (): JSX.Element => {
             icon="plus"
             aria-label={t("people.addAction")}
             onClick={() => {
+              setIssued(null);
               setComposing(true);
             }}
           />
@@ -168,6 +174,18 @@ const People = (): JSX.Element => {
         </ul>
       )}
 
+      {issued === null ? null : (
+        <div className="settings-group__block">
+          <TemporaryPassword
+            username={issued.username}
+            password={issued.password}
+            onDismiss={() => {
+              setIssued(null);
+            }}
+          />
+        </div>
+      )}
+
       {composing ? (
         <form className="settings-group__block" onSubmit={onCreate}>
           <TextField
@@ -180,21 +198,6 @@ const People = (): JSX.Element => {
             spellCheck={false}
             onChange={(event) => {
               setUsername(event.target.value);
-            }}
-          />
-          {/*
-            One field with the reveal the sign-in form has, rather than two to
-            compare: the administrator is about to read it out or write it
-            down, so seeing it is the check.
-          */}
-          <PasswordField
-            id={`${formId}-password`}
-            label={t("people.passwordLabel")}
-            hint={t("people.passwordHint")}
-            value={password}
-            autoComplete="new-password"
-            onChange={(event) => {
-              setPassword(event.target.value);
             }}
           />
           <SelectField

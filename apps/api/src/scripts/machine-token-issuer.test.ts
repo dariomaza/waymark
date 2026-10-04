@@ -17,6 +17,7 @@ const anAccount = (id: string, role: Role, createdAt: string): User => ({
   createdAt: new Date(createdAt),
   updatedAt: new Date(createdAt),
   disabledAt: null,
+  mustChangePassword: false,
 });
 
 const HOUSE = [

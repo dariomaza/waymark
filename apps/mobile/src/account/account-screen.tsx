@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "../app/language-switcher.js";
 import { ThemeSwitcher } from "../app/theme-switcher.js";
 import { BiometricUnlockSetting } from "../auth/biometric-unlock-setting.js";
 import { MachineTokensPanel } from "../auth/machine-tokens-panel.js";
+import { PasswordPanel } from "../auth/password-panel.js";
 import { PeoplePanel } from "../auth/people-panel.js";
 import { useSessionState, useSignOut } from "../auth/use-session.js";
 import { Screen } from "../ui/organisms/screen.js";
@@ -39,6 +40,11 @@ export const AccountScreen = (): JSX.Element => {
         username={state.status === "known" ? (state.session?.user.username ?? null) : null}
         language={<LanguageSwitcher />}
         appearance={<ThemeSwitcher />}
+        /*
+         * Changing your own password (ADR 26, amended): about the person, so
+         * right after the preferences and before the devices.
+         */
+        password={<PasswordPanel />}
         /*
          * Handed in for the same reason the panel's other two are, and drawing
          * nothing at all on a phone with no sensor, nothing enrolled or no
