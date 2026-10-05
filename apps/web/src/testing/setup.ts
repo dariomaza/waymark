@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 
 import { Blob as NodeBlob, File as NodeFile } from "node:buffer";
 
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { languageStore } from "../app/language.js";
@@ -66,6 +66,23 @@ class DomAwareFormData extends NodeFormData {
 }
 
 globalThis.FormData = DomAwareFormData as unknown as typeof FormData;
+
+/**
+ * # How long a `findBy` waits: three seconds, not Testing Library's one
+ *
+ * A `findBy` is a real-time deadline, and the first test in a file pays for
+ * everything that is cold — the first render, the first requests through MSW.
+ * Measured on "opens the box whose sticker was in front of the lens": about
+ * 300 ms on an idle laptop, about 780 ms on the same laptop with every core
+ * busy, and 1.2-1.3 s on CI, where this suite runs on four cores beside the
+ * API's. It failed CI twice in a row there for nothing but load.
+ *
+ * Nothing in the app waits on a clock to remove (the cure for the offline
+ * retry); what is slow is the machine. So the deadline goes up, once, here,
+ * rather than per test. The cost is that a `findBy` that will never succeed
+ * takes three seconds to say so instead of one.
+ */
+configure({ asyncUtilTimeout: 3_000 });
 
 beforeAll(() => {
   // A request no test declared a handler for is a test that does not know what
