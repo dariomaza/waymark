@@ -1,6 +1,9 @@
 packages:
   - "apps/*"
   - "packages/*"
+  # The documentation site (VitePress). Not in the image: `.dockerignore`
+  # drops `docs`, and no app depends on it.
+  - "docs"
 
 allowBuilds:
   esbuild: true

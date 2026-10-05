@@ -57,7 +57,7 @@ export interface RootStackParamList extends Record<string, object | undefined> {
  * The one URL shape this app answers to.
  *
  * Android's stock camera offers to OPEN a URL and merely offers to copy a
- * string, which is why a label encodes one (README). The host is whatever
+ * string, which is why a label encodes one (docs/product/labels.md). The host is whatever
  * `WAYMARK_PUBLIC_BASE_URL` was when the sticker was printed, so the app
  * claims the PATH and lets the operating system decide which hosts it
  * verifies — a client that only accepted one host would stop reading labels

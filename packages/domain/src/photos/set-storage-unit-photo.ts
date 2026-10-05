@@ -31,7 +31,7 @@ export interface SetStorageUnitPhotoResult {
  * append, and a replacement always releases what it displaced.
  *
  * This is a named operation and not a `PATCH` for the same reason move and
- * empty are (see the README): a unit has no general update, and a photo change
+ * empty are (see docs/api.md): a unit has no general update, and a photo change
  * is the only field change there is.
  *
  * It needs edit on the unit (ADR 26).

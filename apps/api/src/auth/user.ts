@@ -38,7 +38,7 @@ export const isActive = (user: User): boolean => user.disabledAt === null;
  *
  * `Dario` and `dario` being two accounts is a support problem, and doing it
  * with a case insensitive collation would behave differently on SQLite and on
- * the Postgres the README expects one day.
+ * the Postgres docs/architecture.md expects one day.
  */
 export const normalizeUsername = (raw: string): string =>
   raw.trim().toLowerCase();
