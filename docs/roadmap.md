@@ -33,18 +33,13 @@ NFC tag can carry exactly the same URL as an NDEF record, so:
 Suggested order: prove reading with a hand-written tag first, then decide
 whether the writer is worth building.
 
-### What the documentation site still lacks
+### A screenshot in the README
 
-The site is built (VitePress, from `docs/`, deployed to GitHub Pages by
-`.github/workflows/docs.yml`), and the README is cut down to the pitch, "Run
-it" and a link. Two things the owner's proposal (2026-10-01) asked for are not
-done:
-
-- **A screenshot in the README.** It needs a real one taken from a running
-  instance, not a mock-up.
-- **Proven on GitHub Pages.** It has been built and served locally under
-  `/waymark/`; until Pages is enabled and the first deploy answers, clean URLs
-  and the base path are unproven where they matter.
+The documentation site is built and published (VitePress, from `docs/`, deployed
+to GitHub Pages by `.github/workflows/docs.yml`), and the README is cut down to
+the pitch, "Run it" and a link. One thing the owner's proposal (2026-10-01)
+asked for is not done: a screenshot in the README. It needs a real one taken
+from a running instance, not a mock-up.
 
 ## Known gaps between the clients
 
@@ -82,10 +77,6 @@ Tests assert styles and bytes; these need a person, a phone or a printer.
 - **ADR 26 on a phone.** Sharing, the *People* group, the token space picker
   and the grouped home screen have not been seen on a real phone at 360 px,
   and their new Spanish copy has had no native reader.
-- **The release pipeline end to end.** release-please's configuration was
-  dry-run against the real repository, but no release PR has been merged yet,
-  so `release.yml` has never run, and the `EXPO_TOKEN` secret has never been
-  used.
 - **The MCP server against a real API, driven by a real assistant.**
 
 ## Postponed improvements

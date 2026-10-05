@@ -1,11 +1,12 @@
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { aSession, aStorageUnit, aTree } from "@waymark/api-client/testing";
 
 import { sessionStore } from "./session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { renderApp, screen, userEvent, waitFor, within } from "../testing/render-app.js";
+import { everythingIn, withWorkingStorage } from "../testing/working-storage.js";
 
 /**
  * # Credentials for programs, from the account sheet
@@ -19,6 +20,10 @@ import { renderApp, screen, userEvent, waitFor, within } from "../testing/render
  * exactly one response, and the interface has to say so while it is still on
  * screen rather than afterwards.
  */
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const garage = aStorageUnit({ id: "garage", name: "Garage", kind: "ROOM" });
 
@@ -46,31 +51,6 @@ const answerWith = (machineTokens: Record<string, unknown>[]): void => {
      */
     http.get(`${API_URL}/auth/passkeys`, () => HttpResponse.json({ passkeys: [] })),
   );
-};
-
-/**
- * Every value a `Storage` holds, as one string.
- *
- * `JSON.stringify(localStorage)` answers `undefined`: `Storage` keeps its
- * entries behind an index rather than as enumerable own properties, so the
- * obvious spelling of this assertion would pass against a storage full of
- * secrets.
- */
-const everythingIn = (storage: Storage | undefined): string => {
-  // `sessionStorage` is not always there under this jsdom build. A storage
-  // that does not exist cannot be holding a secret, which is the answer this
-  // assertion wants anyway.
-  if (storage === undefined) {
-    return "";
-  }
-
-  const values: string[] = [];
-  for (let at = 0; at < storage.length; at += 1) {
-    const key = storage.key(at);
-    values.push(key ?? "", (key === null ? null : storage.getItem(key)) ?? "");
-  }
-
-  return values.join("\u0000");
 };
 
 /**
@@ -388,8 +368,13 @@ describe("machine tokens, from the account screen", () => {
       expect(within(reopened).queryByText("wmk_the-only-copy")).toBeNull();
     });
 
-    /** Nothing writes it anywhere a later session could read it back. */
+    /**
+     * Nothing writes it anywhere a later session could read it back. Working
+     * storages first: this jsdom has no `localStorage`, and without one this
+     * passed with the panel writing the secret straight into it.
+     */
     it("never puts the secret in browser storage", async () => {
+      withWorkingStorage();
       createAnswering("wmk_the-only-copy");
 
       const account = await openTheAccountScreen();
@@ -397,8 +382,8 @@ describe("machine tokens, from the account screen", () => {
       await createOne(account);
       await within(account).findByText("wmk_the-only-copy");
 
-      expect(everythingIn(window.localStorage)).not.toContain("wmk_the-only-copy");
-      expect(everythingIn(window.sessionStorage)).not.toContain("wmk_the-only-copy");
+      expect(everythingIn(globalThis.localStorage)).not.toContain("wmk_the-only-copy");
+      expect(everythingIn(globalThis.sessionStorage)).not.toContain("wmk_the-only-copy");
     });
 
     it("shows the new token in the list without being asked to refresh", async () => {

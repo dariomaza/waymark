@@ -6,6 +6,7 @@ import { anAccount, aSession, aStorageUnit, aTree } from "@waymark/api-client/te
 import { sessionStore } from "./session-store.js";
 import { apiServer, API_URL } from "../testing/api-server.js";
 import { renderApp, screen, userEvent, waitFor, within } from "../testing/render-app.js";
+import { everythingIn, withWorkingStorage } from "../testing/working-storage.js";
 
 /**
  * # People: an administrator manages the other accounts (ADR 26)
@@ -32,58 +33,6 @@ const signedInAs = (role: "administrator" | "user"): void => {
     http.get(`${API_URL}/auth/passkeys`, () => HttpResponse.json({ passkeys: [] })),
     http.get(`${API_URL}/auth/machine-tokens`, () => HttpResponse.json({ machineTokens: [] })),
   );
-};
-
-/**
- * Every key and value a storage holds, as one string to search. Read through
- * `key(i)`, not `Object.keys`: jsdom keeps entries behind an index, so the
- * obvious spelling would pass against a storage full of secrets.
- */
-const everythingIn = (storage: Storage | undefined): string => {
-  if (storage === undefined) {
-    return "";
-  }
-
-  const values: string[] = [];
-  for (let at = 0; at < storage.length; at += 1) {
-    const key = storage.key(at);
-    values.push(key ?? "", (key === null ? null : storage.getItem(key)) ?? "");
-  }
-
-  return values.join("\n");
-};
-
-/**
- * A working `Storage`. This jsdom build has no `localStorage` at all, so an
- * assertion against the real one would pass whatever the code wrote — the
- * write would just throw somewhere nobody looks. The tests that promise the
- * password is never stored put one of these in its place first.
- */
-const aWorkingStorage = (): Storage => {
-  const entries = new Map<string, string>();
-
-  return {
-    get length() {
-      return entries.size;
-    },
-    key: (at: number) => [...entries.keys()][at] ?? null,
-    getItem: (key: string) => entries.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      entries.set(key, String(value));
-    },
-    removeItem: (key: string) => {
-      entries.delete(key);
-    },
-    clear: () => {
-      entries.clear();
-    },
-  };
-};
-
-/** Real storages in place of the missing ones, for as long as one test runs. */
-const withWorkingStorage = (): void => {
-  vi.stubGlobal("localStorage", aWorkingStorage());
-  vi.stubGlobal("sessionStorage", aWorkingStorage());
 };
 
 afterEach(() => {
