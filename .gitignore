@@ -31,3 +31,4 @@ CLAUDE.local.md
 # VitePress output and cache.
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+docs/.vitepress/.temp/
