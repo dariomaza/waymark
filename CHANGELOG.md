@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/dariomaza/waymark/compare/v0.4.0...v0.4.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **deploy:** let exported WAYMARK_DEPLOY_* variables win over deploy.env ([6141a5c](https://github.com/dariomaza/waymark/commit/6141a5c45ab230416844ec2e063bf1ee62f454c7))
+
 ## [0.4.0](https://github.com/dariomaza/waymark/compare/v0.3.0...v0.4.0) (2026-10-04)
 
 
