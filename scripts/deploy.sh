@@ -30,11 +30,13 @@
 # compose plumbing that carries the value in. CI builds the image AND runs it,
 # asserting it reports the commit it was built with.
 #
-# This script is not unit-tested. It is covered by having been run — every
-# refusal below, and one real deploy end to end. The one line a test does read
-# is the pair of compose files background removal deploys with:
+# The rest of this script is covered by having been run — every refusal below,
+# and one real deploy end to end — with two exceptions. A test reads the pair of
+# compose files background removal deploys with:
 # `turning-background-removal-on-reaches-the-sidecar.test.ts` checks they are
-# the files that exist, in the order compose must merge them.
+# the files that exist, in the order compose must merge them. And
+# `an-exported-deploy-variable-beats-deploy-env.test.ts` runs a copy of this
+# script to prove an exported variable wins over `deploy.env`.
 #
 # ## Usage
 #
@@ -89,12 +91,30 @@ set -euo pipefail
 # values live in `scripts/deploy.env`, which git ignores, and the committed
 # `scripts/deploy.env.example` says what they are. Real environment variables
 # still win over the file.
+#
+# Sourcing alone would not make that true: the file's plain `NAME=value` lines
+# overwrite whatever the environment had. So every WAYMARK_DEPLOY_* already set
+# is remembered first and put back afterwards, and the file keeps its plain
+# syntax. `an-exported-deploy-variable-beats-deploy-env.test.ts` holds this.
 readonly DEPLOY_ENV="$(dirname "$0")/deploy.env"
 if [ -f "$DEPLOY_ENV" ]; then
+  from_environment=()
+  while IFS= read -r name; do
+    from_environment+=("$name=${!name}")
+  done < <(compgen -v WAYMARK_DEPLOY_ || true)
+
   set -a
   # shellcheck source=/dev/null
   . "$DEPLOY_ENV"
   set +a
+
+  # `${a[@]+...}` because bash 3.2, the one macOS ships, treats an empty array
+  # as unset under `set -u`.
+  for assignment in ${from_environment[@]+"${from_environment[@]}"}; do
+    # shellcheck disable=SC2163 # it holds `NAME=value`, exported as such
+    export "$assignment"
+  done
+  unset from_environment name assignment
 fi
 
 # The four that have no honest default. A missing one refuses before anything
@@ -162,7 +182,7 @@ refuse() {
 }
 
 usage() {
-  sed -n '3,83p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '3,85p' "$0" | sed 's/^# \{0,1\}//'
   exit 0
 }
 
